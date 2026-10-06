@@ -743,7 +743,7 @@ let gates = [], orbs = [], parts = [], pops = [], trail = [];
 let rings = [], ghosts = [], banners = [], scorePunch = 0, popT = -1, squash = 0, tier = 0, newBestShown = false, runBestRef = 0, wasReady = false, ghostT = 0, feverGlow = 0;
 const cam = { z:1, tz:1, fx:180, fy:320 };
 let shields = 0, reviveLeft = 0, orbsGot = 0, runTrial = false, PK = null;
-let lastWarnT = 0; const hudCache = {d:'', s:'', sl:''};
+let lastWarnT = 0, pillBot = 0, banDrop = 0; const hudCache = {d:'', s:'', sl:''};   // pillBot: bottom of the status-pill band this frame (0 = none); banDrop slides big banners below it
 let skillCharge = 0, skillWasReady = false, boostT = 0, lowGravT = 0, autoT = 0, cloneT = 0, rushT = 0, foreT = 0, freezeT = 0, potionT = 0, godT = 0, hurtT = 0, danger = 0, contUsed = false;
 let bounceLeft = 0, rewindLeft = 0, perfCount = 0, phaseT = 0, giantT = 0, inkT = 0, guardUsed = false, travel = 0, hist = [], bolts = [];
 let score, gatesPassed, combo, maxCombo, perfects, speed, dashMeter, dashT, invuln, magnetT, slowT, zoneIdx, zoneBanner, deathT, spawnIdx, runDay;
@@ -1298,7 +1298,7 @@ function update(rdt){
   const dt = rdt * (state === 'dying' ? .35 : timeScale);
   T += dt * (freezeT > 0 && state === 'play' ? .03 : 1);
   shake = Math.max(0, shake - rdt*40); flash = Math.max(0, flash - rdt*1.8); FX.amb = Math.max(0, FX.amb - rdt*12);
-  zoneBanner = Math.max(0, zoneBanner - rdt);
+  zoneBanner = Math.max(0, zoneBanner - rdt); banDrop += (Math.max(0, pillBot + 32 - LH*.27) - banDrop) * Math.min(1, rdt*12);
 
   const z = ZONES[zoneIdx], k = Math.min(1, rdt*1.6);
   lerpC(pal.sky0, z.sky[0], k); lerpC(pal.sky1, z.sky[1], k); lerpC(pal.a, z.a, k); lerpC(pal.b, z.b, k); lerpC(pal.gate, z.gate, k);
@@ -1644,11 +1644,11 @@ function render(){
     const edge = (x0,y0,x1,y1,rx,ry,rw,rh) => { const gr = ctx.createLinearGradient(x0,y0,x1,y1); gr.addColorStop(0, `hsla(${hue},100%,60%,${feverGlow*(.3+.25*pu)})`); gr.addColorStop(1,'hsla(0,0%,0%,0)'); ctx.fillStyle = gr; ctx.fillRect(rx,ry,rw,rh); };
     edge(0,0,w,0, 0,0,w,LH); edge(LW,0,LW-w,0, LW-w,0,w,LH); edge(0,0,0,w, 0,0,LW,w); edge(0,LH,0,LH-w, 0,LH-w,LW,w);
   }
-  if (state === 'play' || state === 'paused' || state === 'dying') drawHUD();
+  pillBot = 0; if (state === 'play' || state === 'paused' || state === 'dying') drawHUD();
   for (const b of banners){
     const k = b.t / b.dur, inT = .16, outT = .2;
     const e = k < inT ? 1 - Math.pow(1 - k/inT, 3) : k > 1 - outT ? 1 - (k - (1-outT))/outT : 1;
-    const x = k < inT ? LW/2 + (1-e)*LW : k > 1 - outT ? LW/2 - (1-e)*LW*.6 : LW/2, y = b.big ? LH*.27 : LH*.5;
+    const x = k < inT ? LW/2 + (1-e)*LW : k > 1 - outT ? LW/2 - (1-e)*LW*.6 : LW/2, y = b.big ? LH*.27 + banDrop : LH*.5;
     ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, e*1.2)); ctx.translate(x, y); ctx.transform(1,0,-.18,1,0,0);
     ctx.fillStyle = 'rgba(7,5,15,.55)'; ctx.fillRect(-LW, -26, LW*2, 44);
     ctx.fillStyle = hsl(b.col); ctx.fillRect(-LW, -26, LW*2, 2); ctx.fillRect(-LW, 16, LW*2, 2);
@@ -2043,9 +2043,9 @@ function drawHUD(){
   if (mode === 'daily'){ ctx.fillStyle = 'rgba(79,240,255,.85)'; ctx.fillText(t('daily') + ' · ' + fmtDay(runDay), 16, LH - 30); }
   else if (mode === 'endless'){ ctx.fillStyle = hsl(pal.b, .85); ctx.fillText(t('stage', {n: curStage + 1}) + ' · ' + ZONES[stTier(curStage)].name + ' · ' + Math.min(gatesPassed, stGoal(curStage)) + '/' + stGoal(curStage), 16, LH - 30); }
   if (runTrial){ ctx.fillStyle = 'hsla(45,100%,60%,.9)'; ctx.fillText(t('trialRun') + ' · ' + B.name, 16, LH - 46); }
-  let px = 16;
-  const ind = (label, tv, max, c) => { ctx.fillStyle = hsl(c,.25); roundRect(px, 44, 84, 20, 10); ctx.fill(); ctx.fillStyle = hsl(c); roundRect(px, 44, 84*Math.min(1, tv/max), 20, 10); ctx.globalAlpha=.4; ctx.fill(); ctx.globalAlpha=1; ctx.fillStyle='#fff'; ctx.font=`700 10.5px "Chakra Petch", ${SYS}`; ctx.textAlign='center'; ctx.fillText(label, px+42, 58); px += 90; if (px > LW - 120){ px = 16; } };
-  if (godT > 0) ind(t('sk_' + B.id), godT, TMAX.god, [45,100,58]);
+  // Status pills: collected first, then drawn as centred rows in their own band under the score block (clear of score, combo, best bar, hearts and the top buttons)
+  const pills = [], ind = (label, tv, max, c) => pills.push([label, Math.max(0, Math.min(1, tv/max)), c]);
+  if (godT > potionT + .05) ind(/^(titan|aegis|phoenix|solaris)$/.test(B.id) ? t('sk_' + B.id) : t('potionP'), godT, TMAX.god, [45,100,58]);
   if (potionT > 0) ind(t('potionP'), potionT, TMAX.potion, [320,100,66]);
   if (boostT > 0 || foreT > 0 || lowGravT > 0 || autoT > 0 || rushT > 0 || freezeT > 0 || FX.resoT > 0) ind(t('sk_' + B.id), Math.max(boostT/(TMAX.boost||1), foreT/(TMAX.fore||1), lowGravT/(TMAX.glide||1), autoT/(TMAX.auto||1), rushT/(TMAX.rush||1), freezeT/(TMAX.freeze||1), FX.resoT/(TMAX.reso||1)), 1, B.uiCol || B.col);
   if (rewindLeft > 0) ind('⟲ x' + rewindLeft, rewindLeft, PK.rewind, [40,90,62]);
@@ -2055,6 +2055,14 @@ function drawHUD(){
   if (magnetT > 0) ind(t('magnetP'), magnetT, TMAX.magnet, [48,100,58]);
   if (slowT > 0) ind(t('slowP'), slowT, TMAX.slow, [280,100,68]);
   if (FX.heavyT > 0) ind(t('heavyP'), FX.heavyT, TMAX.heavy, [145,30,55]);
+  { const pw = 84, ph = 18, gp = 6, per = Math.max(1, Math.min(4, Math.floor((LW - 16 + gp)/(pw + gp)))), y0 = runBestRef > 0 && mode !== 'versus' ? 150 : 124;
+    ctx.font = `700 10.5px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; if (pills.length) pillBot = y0 + Math.ceil(pills.length/per)*(ph + 4) - 4;
+    pills.forEach(([label, k, c], i) => {
+      const row = Math.floor(i/per), n = Math.min(per, pills.length - row*per), x = LW/2 - (n*(pw + gp) - gp)/2 + (i % per)*(pw + gp), y = y0 + row*(ph + 4);
+      ctx.fillStyle = 'rgba(7,5,15,.5)'; roundRect(x, y, pw, ph, 9); ctx.fill(); ctx.fillStyle = hsl(c,.25); ctx.fill();
+      ctx.fillStyle = hsl(c); roundRect(x, y, pw*k, ph, 9); ctx.globalAlpha = .4; ctx.fill(); ctx.globalAlpha = 1;
+      ctx.fillStyle = '#fff'; ctx.fillText(label, x + pw/2, y + 13, pw - 10);
+    }); }
   if (zoneBanner > 0){
     const a = Math.min(1, zoneBanner) * Math.min(1, (2.4 - zoneBanner)*3);
     ctx.globalAlpha = Math.max(0,a); ctx.textAlign = 'center';
