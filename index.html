@@ -2314,7 +2314,7 @@ function renderLB(){
   $('lbStatus').textContent = st;
   $('nickForm').hidden = lbState === 'online' && readOnly;
   // place on game-over card
-  if (state === 'over' && lbState === 'online' && uid && !readOnly){
+  if (state === 'over' && mode !== 'versus' && lbState === 'online' && uid && !readOnly){   // a versus card keeps its result line
     const p = myPlace(mode === 'daily' ? lbDaily : lbAll);
     $('oPlace').textContent = p ? t('place', {n:p}) : t('outside');
   }
@@ -2451,11 +2451,13 @@ async function netJoin(name){
     try {
       try { await c.realtime.setAuth(); } catch(e){}   // private channel: the socket must carry the player's token
       await new Promise((res, rej) => {
-        const to = setTimeout(() => rej(new Error('timeout')), 8000);
+        const to = setTimeout(() => rej(new Error('timeout')), 20000);
         ch.subscribe((s, err) => {
           if (gone) return;
           if (s === 'SUBSCRIBED'){ clearTimeout(to); if (up){ track(); tx.send(); } else res(); }   // again after a reconnect: presence and state must be re-sent
-          else if (!up && (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT' || s === 'CLOSED')){ clearTimeout(to); rej(err || new Error(s)); }
+          else if (!up && s === 'CLOSED'){ clearTimeout(to); rej(err || new Error(s)); }
+          // CHANNEL_ERROR / TIMED_OUT before the first SUBSCRIBED are not final: the client re-joins by itself, and a Realtime tenant
+          // that was idle refuses the first joins while it starts up. Only the deadline above gives up.
         });
       });
       if ((await track()) !== 'ok') throw new Error('track');
