@@ -1669,7 +1669,7 @@ function render(){
     ctx.font = `${b.big ? 28 : 18}px Bungee, ${SYS}`; ctx.textAlign = 'center'; ctx.shadowColor = hsl(b.col); ctx.shadowBlur = 20;
     ctx.fillStyle = '#fff'; ctx.fillText(b.text, 0, b.big ? 4 : 0); ctx.restore();
   }
-  if (state === 'menu' && best > 0){
+  if (state === 'menu' && best > 0 && bestRoom){
     ctx.font = `600 13px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(243,238,252,.7)';
     ctx.fillText(`${t('best')} ${best}`, LW/2, LH - 22);
   }
@@ -1949,7 +1949,13 @@ function renderHangar(){
 }
 // Keep the menu on one screen: if it would scroll, switch to the tighter spacing (.tight), then let the unit text block give up
 // height (it scrolls inside the card, min 40px). Anything shorter than that still scrolls the menu as before.
+let bestRoom = false;   // the canvas "Best N" line is drawn only when it has free space under the menu's last row
 function fitMenu(){
+  fitMenuBox();
+  const m = $('menu'), kids = [...m.children].filter(c => c.offsetHeight), r = cv.getBoundingClientRect();
+  bestRoom = !m.hidden && kids.length > 0 && kids[kids.length - 1].getBoundingClientRect().bottom < r.top + (LH - 38) / LH * r.height;
+}
+function fitMenuBox(){
   const m = $('menu'), el = $('hgInfo'); if (m.hidden) return;
   m.classList.remove('tight'); el.classList.remove('clip'); el.style.maxHeight = '';
   if (m.scrollHeight <= m.clientHeight) return;
