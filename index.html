@@ -457,7 +457,7 @@ const BIRDS = [
   { id:'mochi',   name:'MOCHI',   rarity:1, col:[350,100,90], wingCol:[340,85,78], speed:0.98, flap:430, grav:1300, maxFall:640, dash:1.00, r:13.5, window:18, bonus:0, nose:15, h:13, span:20, stats:[3,3,4,3],
     xpMul:2, magnet:95 },
   { id:'aegis',   name:'AEGIS',   rarity:2, col:[44,90,56],   wingCol:[210,25,78], speed:1.00, flap:500, grav:1600, maxFall:740, dash:1.00, r:14,   window:16, bonus:0, nose:17, h:14, span:28, stats:[3,4,2,3],
-    shieldStart:2, shieldMax:3, shieldRegen:15 },
+    shieldStart:2, shieldMax:3, shieldRegen:40 },
   { id:'phoenix', name:'PHOENIX', rarity:3, col:[14,100,56],  wingCol:[42,100,60], speed:1.06, flap:480, grav:1520, maxFall:720, dash:1.15, r:13,   window:18, bonus:1, nose:19, h:12, span:34, stats:[4,4,3,3],
     revive:1, feverAt:7 },
   { id:'zero',    name:'ZERO',    rarity:3, col:[268,35,22],  wingCol:[288,100,66],speed:1.10, flap:480, grav:1560, maxFall:740, dash:1.20, r:12.5, window:16, bonus:0, uiCol:[288,100,66], nose:21, h:11, span:26, stats:[4,3,3,5],
@@ -485,7 +485,7 @@ const BIRDS = [
     shieldStart:1, feverMul:3, comboGuard:true, coinMul:2, xpMul:2, gemMul:2 },
   { id:'aurora',  name:'AURORA',  rarity:4, col:[160,90,58],  wingCol:[280,90,72],  speed:1.04, flap:470, grav:1420, maxFall:680, dash:1.10, r:13,   window:20, bonus:1, nose:17, h:12, span:34, stats:[3,3,4,3], comboKeep:.5 },
   { id:'tempest', name:'TEMPEST', rarity:4, col:[215,75,52],  wingCol:[185,100,70], speed:1.15, flap:490, grav:1600, maxFall:760, dash:1.40, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,3,2,5], dashPts:2, dashRefund:.3 },
-  { id:'pleiad',  name:'PLEIAD',  rarity:4, col:[232,65,62],  wingCol:[50,100,72],  speed:1.00, flap:480, grav:1500, maxFall:700, dash:1.10, r:13.5, window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3], shieldStart:2, shieldMax:2, shieldRegen:12, shieldBurst:true },
+  { id:'pleiad',  name:'PLEIAD',  rarity:4, col:[232,65,62],  wingCol:[50,100,72],  speed:1.00, flap:480, grav:1500, maxFall:700, dash:1.10, r:13.5, window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3], shieldStart:2, shieldMax:2, shieldRegen:60, shieldBurst:true },
   { id:'pulsar',  name:'PULSAR',  rarity:4, col:[320,100,62], wingCol:[180,100,66], speed:1.06, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:19, bonus:2, nose:19, h:12, span:28, stats:[4,3,3,3], perfCharge:.08, feverAt:8 }
 ];
 BIRDS.sort((a, b) => (a.rarity || 0) - (b.rarity || 0));   // stable: basics first, then by rarity
@@ -530,16 +530,16 @@ const I18N_D_KEYS = ['r_common','r_epic','r_mythic','r_legendary','r_mochi','r_a
   'shop','testBuild','pass','passDesc','starter','starterDesc','gemPack','owned','trial','trialUsed','passOnly','needMore','unlocked','granted','levelUp','rewards','trialRun','rebirth','fairNote','soldOut'];
 const I18N_D = {
 ko:['기본','에픽','미식','레전더리','힐링형','철벽형','불사형','암살형',
- '경험치 2배. 가까운 오브를 자동으로 끌어당긴다.','실드 2개를 달고 출발(최대 3개). 게이트 15개마다 실드 1개 재충전.','한 판에 한 번 불꽃 속에서 부활한다. 피버가 7콤보에서 시작된다.','대시 게이지가 가득 찬 채 출발. 대시가 1.5배 길고 대시 관통 점수 2배.',
+ '경험치 2배. 가까운 오브를 자동으로 끌어당긴다.','실드 2개를 달고 출발(최대 3개). 게이트 40개마다 실드 1개 재충전.','한 판에 한 번 불꽃 속에서 부활한다. 피버가 7콤보에서 시작된다.','대시 게이지가 가득 찬 채 출발. 대시가 1.5배 길고 대시 관통 점수 2배.',
  '상점','테스트 빌드: 실제 결제 없이 바로 지급됩니다.','플럭스 패스 · 시즌 1','ZERO 유닛 + 젬 150 + 크레딧 2,000 · 4주','스타터 팩','MOCHI + 젬 100 · 첫 7일 한 번만','젬 {n}개','보유 중','체험하기 (오늘 1회)','오늘 체험을 이미 사용했어요','플럭스 패스 전용','재화가 부족해요','{u} 해금!','지급 완료','레벨 업!','획득 보상','체험 중','부활!','오늘의 챌린지에서는 프리미엄 능력이 일부 제한됩니다','구매 완료'],
 en:['Common','Epic','Mythic','Legendary','Healer','Fortress','Undying','Assassin',
- 'Double XP. Pulls nearby orbs in on its own.','Starts with 2 shields (max 3). Recharges 1 shield every 15 gates.','Rises from the flames once per run. Fever starts at a 7 combo.','Starts with a full dash meter. Dashes last 1.5x longer and score double.',
+ 'Double XP. Pulls nearby orbs in on its own.','Starts with 2 shields (max 3). Recharges 1 shield every 40 gates.','Rises from the flames once per run. Fever starts at a 7 combo.','Starts with a full dash meter. Dashes last 1.5x longer and score double.',
  'Shop','Test build: items are granted instantly with no real payment.','Flux Pass · Season 1','ZERO unit + 150 gems + 2,000 credits · 4 weeks','Starter Pack','MOCHI + 100 gems · once, first 7 days','{n} gems','Owned','Try it (1 free run today)','Free run already used today','Flux Pass exclusive','Not enough currency','{u} unlocked!','Granted','LEVEL UP!','Rewards','TRIAL RUN','REBIRTH!','Premium perks are partly limited in the Daily Challenge','Purchased'],
 ja:['ノーマル','エピック','ミシック','レジェンダリー','ヒーラー型','鉄壁型','不死型','暗殺型',
- '経験値2倍。近くのオーブを自動で引き寄せる。','シールド2枚で出発(最大3枚)。ゲート15個ごとに1枚回復。','1プレイに1回、炎の中から復活する。フィーバーが7コンボで始まる。','ダッシュゲージ満タンで出発。ダッシュが1.5倍長く、貫通スコア2倍。',
+ '経験値2倍。近くのオーブを自動で引き寄せる。','シールド2枚で出発(最大3枚)。ゲート40個ごとに1枚回復。','1プレイに1回、炎の中から復活する。フィーバーが7コンボで始まる。','ダッシュゲージ満タンで出発。ダッシュが1.5倍長く、貫通スコア2倍。',
  'ショップ','テストビルド:実際の決済なしですぐに付与されます。','フラックスパス · シーズン1','ZEROユニット + ジェム150 + クレジット2,000 · 4週間','スターターパック','MOCHI + ジェム100 · 最初の7日間に1回','ジェム{n}個','所持中','体験する(今日1回)','今日の体験は使用済み','フラックスパス限定','通貨が足りません','{u} 解放!','付与しました','レベルアップ!','獲得報酬','体験中','復活!','デイリーチャレンジではプレミアム能力が一部制限されます','購入済み'],
 zh:['普通','史诗','神话','传说','治愈型','铁壁型','不死型','刺客型',
- '经验2倍。自动吸附附近的能量球。','开局自带2层护盾(最多3层)。每通过15个关卡恢复1层。','每局可在烈焰中复活一次。连击7次即进入狂热。','开局冲刺能量全满。冲刺时间1.5倍,冲刺穿越得分翻倍。',
+ '经验2倍。自动吸附附近的能量球。','开局自带2层护盾(最多3层)。每通过40个关卡恢复1层。','每局可在烈焰中复活一次。连击7次即进入狂热。','开局冲刺能量全满。冲刺时间1.5倍,冲刺穿越得分翻倍。',
  '商店','测试版本:无需真实付款,立即发放。','通量通行证 · 第1赛季','ZERO机体 + 宝石150 + 信用点2,000 · 4周','新手礼包','MOCHI + 宝石100 · 前7天限购一次','宝石{n}个','已拥有','免费试玩(今日1次)','今日试玩已用完','通行证专属','货币不足','{u} 已解锁!','已发放','升级!','获得奖励','试玩中','涅槃重生!','每日挑战中高级能力会受到部分限制','已购买']
 };
 const NEW_U = ['pixel','neko','buzz','kraken','specter','oracle','raijin','chrono','goliath','solaris'];
@@ -593,14 +593,14 @@ ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 �
  confirmCoin:'{u}을(를) 코인 {n}개로 구매할까요?', needCoin:'코인이 {n}개 부족해요', needGem:'젬이 {n}개 부족해요',
  r_aurora:'극광형', p_aurora:'콤보가 끊겨도 절반이 남는다. 퍼펙트 판정이 넓고 퍼펙트마다 +1점.', sk_aurora:'극광 회랑', sd_aurora:'다음 게이트 {n}개가 내 높이로 모이고 멈추며 틈이 넓어진다',
  r_tempest:'폭풍형', p_tempest:'대시 관통 점수 2배. 대시로 게이트를 부수면 게이지 30% 환급(대시당 1회).', sk_tempest:'태풍의 눈', sd_tempest:'게이지를 쓰지 않는 1.5배 길이 대시를 즉시 발동',
- r_pleiad:'성단형', p_pleiad:'실드 2개로 출발(최대 2개), 게이트 12개마다 1개 재충전. 실드가 깨지면 그 게이트도 부서진다.', sk_pleiad:'궤도 포격', sd_pleiad:'앞 게이트 {n}개를 차례로 부수고 실드 +1',
+ r_pleiad:'성단형', p_pleiad:'실드 2개로 출발(최대 2개), 게이트 60개마다 1개 재충전. 실드가 깨지면 그 게이트도 부서진다.', sk_pleiad:'궤도 포격', sd_pleiad:'앞 게이트 {n}개를 차례로 부수고 실드 +1',
  r_pulsar:'맥동형', p_pulsar:'퍼펙트마다 +2점, 스킬이 더 빨리 찬다. 피버가 8콤보에서 시작된다.', sk_pulsar:'공명', sd_pulsar:'{n}초간 퍼펙트 점수 2배, 판정이 넓어진다'},
 en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', tierRule2:'Narrower gaps · 0.5s haze', tierRule3:'Narrowest gaps · 2s haze · tap within 2s',
  idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/60',
  confirmCoin:'Buy {u} for {n} coins?', needCoin:'{n} more coins needed', needGem:'{n} more gems needed',
  r_aurora:'Skyweaver', p_aurora:'A broken combo keeps half. Wide Perfect window, +1 on every Perfect.', sk_aurora:'Aurora Lane', sd_aurora:'The next {n} gates slide to your height, stop moving and widen',
  r_tempest:'Stormbreaker', p_tempest:'Dash-through points x2. Smashing a gate with a dash refunds 30% meter (once per dash).', sk_tempest:'Eye of the Storm', sd_tempest:'Fires a free dash that lasts 1.5x longer',
- r_pleiad:'Star Guard', p_pleiad:'Starts with 2 shields (max 2), recharges 1 every 12 gates. A breaking shield also breaks that gate.', sk_pleiad:'Orbital Barrage', sd_pleiad:'Smashes the next {n} gates one by one and adds a shield',
+ r_pleiad:'Star Guard', p_pleiad:'Starts with 2 shields (max 2), recharges 1 every 60 gates. A breaking shield also breaks that gate.', sk_pleiad:'Orbital Barrage', sd_pleiad:'Smashes the next {n} gates one by one and adds a shield',
  r_pulsar:'Resonator', p_pulsar:'+2 on every Perfect and faster skill charge. Fever starts at an 8 combo.', sk_pulsar:'Resonance', sd_pulsar:'Perfects score double and the window widens for {n}s'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
@@ -1085,14 +1085,14 @@ function toMenu(){
 }
 
 /* ---------- unit skills ---------- */
-// One row per unit: cd (s) by rarity 16/16/18/20/22, effect values, and f = overrides for fair modes (daily / versus, cd 18 for all)
+// One row per unit: cd (s) tuned per unit from bot runs (base by rarity 16/16/18/20/22), effect values, and f = overrides for fair modes (daily / versus, cd 18 for all)
 const SK = {
  volt:{cd:16,dur:3,f:{cd:18,dur:2}}, blitz:{cd:16,n:1,f:{cd:18}}, nimbus:{cd:16,dur:2.5,f:{cd:18,dur:2}}, titan:{cd:16,dur:1,heavy:2.5,f:{cd:18}},
  mochi:{cd:16,dur:2,f:{cd:18,dur:1.5}}, pixel:{cd:16,dur:5,f:{cd:18,dur:3}}, neko:{cd:16,dur:3,f:{cd:18,dur:2}}, buzz:{cd:16,n:2,f:{cd:18,n:1}},
- aegis:{cd:18,dur:3,sh:1,f:{cd:18,dur:1,sh:0}}, kraken:{cd:18,dur:4,f:{cd:18,dur:2}}, specter:{cd:18,dur:3,f:{cd:18,dur:1.2}}, oracle:{cd:18,dur:6,f:{cd:18,dur:3}},
- phoenix:{cd:20,dur:4,f:{cd:18,dur:1}}, zero:{cd:20,dur:8,f:{cd:18,dur:4}}, raijin:{cd:20,n:2,f:{cd:18,n:1}}, chrono:{cd:20,dur:3,f:{cd:18,dur:1.2}}, goliath:{cd:20,dur:4,f:{cd:18,dur:1.5}},
- solaris:{cd:22,dur:4.5,fever:1,f:{cd:18,dur:1,fever:0}}, aurora:{cd:22,n:3,gap:24,f:{cd:18,n:1,gap:0}}, tempest:{cd:22,len:1.5,f:{cd:18,len:1}},
- pleiad:{cd:22,n:3,sh:1,f:{cd:18,n:1,sh:0}}, pulsar:{cd:22,dur:4,mul:2,f:{cd:18,dur:2,mul:1}}
+ aegis:{cd:34,dur:3,sh:1,f:{cd:18,dur:1,sh:0}}, kraken:{cd:10,dur:5,f:{cd:18,dur:2}}, specter:{cd:13,dur:4,f:{cd:18,dur:1.2}}, oracle:{cd:18,dur:6,f:{cd:18,dur:3}},
+ phoenix:{cd:20,dur:4,f:{cd:18,dur:1}}, zero:{cd:11,dur:8,f:{cd:18,dur:4}}, raijin:{cd:20,n:2,f:{cd:18,n:1}}, chrono:{cd:20,dur:3,f:{cd:18,dur:1.2}}, goliath:{cd:13,dur:5,f:{cd:18,dur:1.5}},
+ solaris:{cd:22,dur:4.5,fever:1,f:{cd:18,dur:1,fever:0}}, aurora:{cd:9,n:6,gap:40,f:{cd:18,n:1,gap:0}}, tempest:{cd:22,len:1.5,f:{cd:18,len:1}},
+ pleiad:{cd:40,n:2,sh:1,f:{cd:18,n:1,sh:0}}, pulsar:{cd:22,dur:4,mul:2,f:{cd:18,dur:2,mul:1}}
 };
 const fairMode = () => mode === 'daily' || mode === 'versus';
 const skv = k => { const s = SK[B.id]; return fairMode() && s.f && s.f[k] != null ? s.f[k] : s[k]; };
