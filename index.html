@@ -2141,7 +2141,7 @@ async function initSupabase(cfg){
     lbState = 'online'; await refreshBoards();
     setInterval(() => { if (lbOpen || state === 'over' || state === 'menu') refreshBoards(); }, 20000);
     if (best > ((myDoc && myDoc.best) || 0)) submitScore(best, 0, 'endless', dayKey());
-  } catch(e){ sb = null; lbState = 'offline'; renderLB(); }
+  } catch(e){ sb = null; backend = 'none'; lbState = 'offline'; renderLB(); }
 }
 async function initDB(){
   const cfg = window.FW_CONFIG || {};
