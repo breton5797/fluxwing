@@ -10,7 +10,7 @@ npm test         # 단위 + 봇 비행 테스트
 npm run coverage # 커버리지 리포트
 ```
 
-ES 모듈을 쓰므로 `index.html`을 파일로 직접 열면 동작하지 않는다. 정적 서버(위 `dev` 스크립트 또는 아무 호스팅)로 띄운다. 배포는 저장소 루트를 그대로 정적 호스팅에 올리면 된다.
+ES 모듈을 쓰므로 `v2.html`을 파일로 직접 열면 동작하지 않는다. 정적 서버(위 `dev` 스크립트 또는 아무 호스팅)로 띄운다. 배포는 저장소 루트를 그대로 정적 호스팅에 올리면 된다.
 
 ## 조작
 
@@ -38,7 +38,8 @@ ES 모듈을 쓰므로 `index.html`을 파일로 직접 열면 동작하지 않�
 ## 구조
 
 ```
-index.html, styles.css   화면 뼈대와 오버레이
+index.html               Flux Wing 2027 최종본 (단일 파일, 배포 루트)
+v2.html, styles.css      Flux Wing 2 화면 뼈대와 오버레이
 src/config.js            모든 튜닝 상수
 src/rng.js               시드 RNG, 날짜 키
 src/logic.js             순수 규칙: 코스 생성, 난이도, 판정, 점수

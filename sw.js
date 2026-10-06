@@ -2,7 +2,7 @@
 // answers when the network cannot.
 const CACHE = 'fluxwing2-v1';
 const SHELL = [
-  './', 'index.html', 'styles.css', 'icon.svg', 'manifest.webmanifest',
+  'v2.html', 'styles.css', 'icon.svg', 'manifest.webmanifest',
   'src/main.js', 'src/audio.js', 'src/config.js', 'src/feedback.js', 'src/fx.js', 'src/logic.js',
   'src/progress.js', 'src/render.js', 'src/rng.js', 'src/sim.js', 'src/storage.js', 'src/ui.js',
 ];
@@ -41,7 +41,7 @@ self.addEventListener('fetch', event => {
       .catch(async () => {
         const hit = await caches.match(request);
         if (hit) return hit;
-        if (request.mode === 'navigate') return (await caches.match('index.html')) || Response.error();
+        if (request.mode === 'navigate') return (await caches.match('v2.html')) || Response.error();
         return Response.error();
       }),
   );

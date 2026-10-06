@@ -3,7 +3,7 @@
   "short_name": "Flux Wing 2",
   "description": "원터치 비행의 2027 버전. 니어미스 콤보, 페이즈 대시, 피버, 데일리 런.",
   "lang": "ko",
-  "start_url": "./",
+  "start_url": "v2.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
