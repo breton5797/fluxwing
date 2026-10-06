@@ -2475,16 +2475,17 @@ renderVsBadge();
 let last = performance.now();
 function loop(now){
   const rdt = Math.min(.034, (now - last)/1000); last = now;
-  if (state !== 'paused') update(rdt);
+  if (state !== 'paused' && !(window.FW && window.FW.hold)) update(rdt);
   render(); drawHangarPreview(); musicTick(); tutTick(rdt); if (state === 'play' || state === 'dying' || state === 'over') vsTick(rdt);
   requestAnimationFrame(loop);
 }
-// Dev handle (only with #dev in the URL): read-only views for console checks + FW.selfTest()
+// Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n), ev(code)
 if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { stTier, stD0, stGoal, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N,
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T}; },
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter}; },
   get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
+  hold: false, step(dt, n){ for (let i = 0; i < (n || 1); i++) update(dt); }, ev(code){ return eval(code); },
   selfTest(){
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b), S = [0,9,10,24,25,39,40,49], fails = [];
     const checks = {
