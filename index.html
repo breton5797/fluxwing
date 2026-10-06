@@ -490,7 +490,8 @@ function perks(){
     inkEvery: d ? 0 : (B.inkEvery || 0), phaseEvery: d ? 0 : (B.phaseEvery || 0), giantEvery: d ? 0 : (B.giantEvery || 0),
     oracle: !!B.oracle, windowBonus: d ? 0 : (B.windowBonus || 0),
     boltEvery: d ? 0 : (B.boltEvery || 0), rewind: d ? 0 : (B.rewind || 0),
-    feverMul: d ? 2 : (B.feverMul || 2), comboGuard: d ? false : !!B.comboGuard
+    feverMul: d ? 2 : (B.feverMul || 2), comboGuard: d ? false : !!B.comboGuard,
+    bonus: d ? Math.min(1, B.bonus||0) : (B.bonus||0), comboKeep: d ? 0 : (B.comboKeep||0), dashRefund: d ? 0 : (B.dashRefund||0), shieldBurst: d ? false : !!B.shieldBurst, perfCharge: d ? .06 : (B.perfCharge||.06), gemMul: B.gemMul||1
   };
 }
 const I18N_C = {
@@ -800,7 +801,7 @@ function spawnGate(x){
   }
 }
 const gY = g => g.base + (g.type === 'move' ? Math.sin(T*1.7 + g.ph) * g.amp : 0);
-const gGap = g => g.gap + (g.type === 'pulse' ? Math.sin(T*2.3 + g.ph) * Math.min(26, g.gap - 112) : 0) + (inkT > 0 ? 46 * Math.min(1, inkT, (4 - inkT) * 3) : 0);
+const gGap = g => g.gap + (g.type === 'pulse' ? Math.sin(T*2.3 + g.ph) * Math.min(26, g.gap - 112) : 0) + (inkT > 0 ? 46 * Math.min(1, inkT, (TMAX.ink - inkT) * 3) : 0);
 
 /* ---------- stages: per-zone background art, gate skins, music ---------- */
 // 50 stages in 4 tiers (10/15/15/10). A tier picks the zone art, gap scale, gate mix and rules; the stage sets the head start and goal.
@@ -1047,12 +1048,27 @@ function toMenu(){
 }
 
 /* ---------- unit skills ---------- */
-const SKILL_CD = {volt:16, blitz:14, nimbus:15, titan:18, mochi:16, aegis:20, phoenix:22, zero:18, pixel:15, neko:16, buzz:18, kraken:16, specter:16, oracle:18, raijin:18, chrono:20, goliath:20, solaris:24};
+// One row per unit: cd (s) by rarity 16/16/18/20/22, effect values, and f = overrides for fair modes (daily / versus, cd 18 for all)
+const SK = {
+ volt:{cd:16,dur:3,f:{cd:18,dur:2}}, blitz:{cd:16,n:1,f:{cd:18}}, nimbus:{cd:16,dur:2.5,f:{cd:18,dur:2}}, titan:{cd:16,dur:1,heavy:2.5,f:{cd:18}},
+ mochi:{cd:16,dur:2,f:{cd:18,dur:1.5}}, pixel:{cd:16,dur:5,f:{cd:18,dur:3}}, neko:{cd:16,dur:3,f:{cd:18,dur:2}}, buzz:{cd:16,n:2,f:{cd:18,n:1}},
+ aegis:{cd:18,dur:3,sh:1,f:{cd:18,dur:1,sh:0}}, kraken:{cd:18,dur:4,f:{cd:18,dur:2}}, specter:{cd:18,dur:3,f:{cd:18,dur:1.2}}, oracle:{cd:18,dur:6,f:{cd:18,dur:3}},
+ phoenix:{cd:20,dur:4,f:{cd:18,dur:1}}, zero:{cd:20,dur:8,f:{cd:18,dur:4}}, raijin:{cd:20,n:2,f:{cd:18,n:1}}, chrono:{cd:20,dur:3,f:{cd:18,dur:1.2}}, goliath:{cd:20,dur:4,f:{cd:18,dur:1.5}},
+ solaris:{cd:22,dur:4.5,fever:1,f:{cd:18,dur:1,fever:0}}, aurora:{cd:22,n:3,gap:24,f:{cd:18,n:1,gap:0}}, tempest:{cd:22,len:1.5,f:{cd:18,len:1}},
+ pleiad:{cd:22,n:3,sh:1,f:{cd:18,n:1,sh:0}}, pulsar:{cd:22,dur:4,mul:2,f:{cd:18,dur:2,mul:1}}
+};
+const fairMode = () => mode === 'daily' || mode === 'versus';
+const skv = k => { const s = SK[B.id]; return fairMode() && s.f && s.f[k] != null ? s.f[k] : s[k]; };
+const skillCd = () => skv('cd');
+const skN = id => { const s = SK[id]; return s.dur ?? s.n ?? ''; };   // {n} in the hangar skill text
+const SK_FX = [[180,.2,3],[240,.3,5],[300,.4,7],[0,.55,10],[0,.7,14]];   // cast fx by rarity: first ring radius (0 = screen-wide), flash, shake
 function strikeNext(){
-  const tg = gates.find(q => !q.scored && !q.broken && q.x > bird.x + 40); if (!tg) return;
+  const tg = gates.find(q => !q.scored && !q.broken && q.x > bird.x + 40); if (!tg) return false;
   tg.broken = true; tg.flash = 1; const ty = gY(tg); bolts.push({x: tg.x + tg.w/2, y: ty, life:.45, seed: Math.random()*1000});
   shards(tg.x + tg.w/2, ty, [55,100,70], 30); ring(tg.x + tg.w/2, ty, 140, [205,100,70], .5, 6); flash = Math.max(flash, .6); shake = Math.max(shake, 12);
-  banner(t('fx_bolt'), [205,100,65], .9, false); haptic('shatter'); noise(.4, .3); tone(90, .4, 'sawtooth', .2, -40);
+  if (B.id === 'raijin') banner(t('fx_bolt'), [205,100,65], .9, false);
+  haptic('shatter'); noise(.4, .3); tone(90, .4, 'sawtooth', .2, -40);
+  return true;
 }
 function blink(){
   const g = gates.find(q => !q.scored && q.x + q.w > bird.x - bird.r); if (!g) return;
@@ -1063,37 +1079,40 @@ function blink(){
   for (let i=0;i<20;i++) part(bird.x - dx, oldY, (Math.random()-.5)*260, (Math.random()-.5)*260, .5, B.wingCol, 2.5);
 }
 function summonPowers(){
-  const kinds = ['shield','magnet','slow','potion'];
-  for (let i=0;i<2;i++) orbs.push({x: bird.x + 170 + i*110, y: Math.max(80, Math.min(GROUND - 80, bird.y + (i ? 40 : -40))), k: kinds[Math.random()*4|0], got:false, t:0});
+  const kinds = ['shield','magnet','slow'];
+  for (let i=0;i<skv('n');i++) orbs.push({x: bird.x + 170 + i*110, y: Math.max(80, Math.min(GROUND - 80, bird.y + (i ? 40 : -40))), k: kinds[Math.random()*3|0], got:false, t:0});
   for (let i=0;i<14;i++) part(bird.x, bird.y, 60 + Math.random()*240, (Math.random()-.5)*200, .7, [46,100,60], 3);
 }
 function useSkill(){
   if (state !== 'play' || skillCharge < 1) return;
-  skillCharge = 0; const id = B.id, c = B.uiCol || B.col;
-  ring(bird.x, bird.y, 240, c, .6, 8); ring(bird.x, bird.y, 110, [45,100,72], .45, 4);
-  flash = Math.max(flash, .35); cam.z = Math.max(cam.z, 1.07); shake = Math.max(shake, 6); haptic('fever'); SFX.skill();
+  skillCharge = 0; const id = B.id, c = B.uiCol || B.col, rar = B.rarity || 0, fxv = SK_FX[rar];
+  ring(bird.x, bird.y, rar === 3 ? LW : rar === 4 ? LW*1.4 : fxv[0], c, .6, 8); ring(bird.x, bird.y, 110, [45,100,72], .45, 4);
+  flash = Math.max(flash, fxv[1]); cam.z = Math.max(cam.z, 1.07); shake = Math.max(shake, fxv[2]); haptic('fever'); SFX.skill();
   banner(t('sk_' + id), c, 1, false);
   switch (id){
-    case 'volt': boostT = 4; break;
-    case 'blitz': blink(); break;
-    case 'nimbus': lowGravT = 4; break;
-    case 'titan': setGod(3); break;
-    case 'mochi': autoT = 3; break;
-    case 'aegis': shields = Math.min(Math.max(PK.shieldMax, 1) + 1, shields + 1); popT = 0; break;
-    case 'phoenix': setGod(5); break;
-    case 'zero': cloneT = 6; break;
-    case 'pixel': rushT = 5; break;
-    case 'neko': slowT = Math.max(slowT, 4); TMAX.slow = slowT; break;
+    case 'volt': boostT = TMAX.boost = skv('dur'); break;
+    case 'blitz': blink(); dashMeter = 0; break;
+    case 'nimbus': lowGravT = TMAX.glide = skv('dur'); break;
+    case 'titan': setGod(skv('dur')); FX.heavyT = TMAX.heavy = skv('heavy'); break;
+    case 'mochi': autoT = TMAX.auto = skv('dur'); break;
+    case 'aegis': setGod(skv('dur')); if (skv('sh') && shields === 0){ shields = 1; popT = 0; } break;
+    case 'phoenix': setGod(skv('dur')); break;
+    case 'zero': cloneT = skv('dur'); break;
+    case 'pixel': rushT = TMAX.rush = skv('dur'); break;
+    case 'neko': slowT = Math.max(slowT, skv('dur')); TMAX.slow = slowT; break;
     case 'buzz': summonPowers(); break;
-    case 'kraken': inkT = 4; break;
-    case 'specter': phaseT = 2.2; break;
-    case 'oracle': foreT = 5; break;
-    case 'raijin': strikeNext(); setTimeout(() => { if (state === 'play') strikeNext(); }, 180); break;
-    case 'chrono': freezeT = 2.5; break;
-    case 'goliath': giantT = 3; break;
+    case 'kraken': inkT = TMAX.ink = skv('dur'); break;
+    case 'specter': phaseT = TMAX.phase = skv('dur'); break;
+    case 'oracle': foreT = TMAX.fore = skv('dur'); break;
+    case 'raijin': FX.strikeN = skv('n'); FX.strikeT = 0; break;
+    case 'chrono': freezeT = TMAX.freeze = skv('dur'); break;
+    case 'goliath': giantT = TMAX.giant = skv('dur'); break;
     case 'solaris':
-      combo = Math.max(combo, PK.feverAt); setGod(2);
-      if (tier < 2){ tier = 2; guardUsed = false; banner(t('fever').replace('2', PK.feverMul), [300,100,68], 1.4); SFX.fever(); }
+      setGod(skv('dur'));
+      if (skv('fever')){
+        combo = Math.max(combo, PK.feverAt);
+        if (tier < 2){ tier = 2; guardUsed = false; banner(t('fever').replace('2', PK.feverMul), [300,100,68], 1.4); SFX.fever(); }
+      }
       break;
   }
 }
@@ -1296,7 +1315,7 @@ function update(rdt){
   if (boostT > 0) boostT -= dt; if (lowGravT > 0) lowGravT -= dt; if (autoT > 0) autoT -= dt; if (cloneT > 0) cloneT -= dt;
   if (rushT > 0) rushT -= dt; if (foreT > 0) foreT -= dt; if (potionT > 0) potionT -= dt; if (godT > 0) godT -= dt; if (freezeT > 0) freezeT -= rdt;
   hurtT = Math.max(0, hurtT - rdt);
-  skillCharge = Math.min(1, skillCharge + dt / (SKILL_CD[B.id] || 18));
+  skillCharge = Math.min(1, skillCharge + dt / skillCd());
   if (skillCharge >= 1 && !skillWasReady){ skillWasReady = true; tone(660,.08,'sine',.08); tone(990,.12,'sine',.08,0,.07); haptic('ready'); }
   if (skillCharge < 1) skillWasReady = false;
   if ((B.rarity || 0) >= 3 && Math.random() < .3) part(bird.x + (Math.random()-.5)*26, bird.y + 10, -40, -60 - Math.random()*40, .6, B.rarity === 4 ? [Math.random()*360,100,70] : [42,100,62], 1.8);
@@ -1304,7 +1323,8 @@ function update(rdt){
   for (const bo of bolts) bo.life -= rdt; bolts = bolts.filter(bo => bo.life > 0);
   if (magnetT > 0) magnetT -= dt;
   if (slowT > 0) slowT -= rdt;
-  if (FX.fogT > 0) FX.fogT -= rdt;
+  if (FX.fogT > 0) FX.fogT -= rdt; if (FX.heavyT > 0) FX.heavyT -= dt; if (FX.resoT > 0) FX.resoT -= dt;
+  if (FX.strikeN > 0){ FX.strikeT -= rdt; if (FX.strikeT <= 0 && strikeNext()){ FX.strikeN--; FX.strikeT = .18; } }
   // Hard tier: go 2s (game time) without a tap and the engine stalls — invincibility, glide and combo are lost
   if (mode === 'endless' && stTier(curStage) === 3){
     if (!(autoT > 0 || freezeT > 0 || dashT > 0)) FX.idleT += dt;
@@ -1318,8 +1338,8 @@ function update(rdt){
   if (freezeT > 0){ bird.vy *= .85; }
   else if (autoT > 0 && nextG){ const ty = gY(nextG); bird.vy += ((ty - bird.y) * 5 - bird.vy) * Math.min(1, dt*8); }
   else if (dashT > 0){ bird.vy *= .85; part(bird.x-10, bird.y+(Math.random()-.5)*14, -300, 0, .3, pal.b, 2.5); }
-  else bird.vy += B.grav * (lowGravT > 0 ? .35 : 1) * dt;
-  bird.vy = Math.min(bird.vy, B.maxFall * (lowGravT > 0 ? .45 : 1));
+  else bird.vy += B.grav * (lowGravT > 0 ? .5 : 1) * dt;
+  bird.vy = Math.min(bird.vy, B.maxFall * (lowGravT > 0 ? .6 : 1));
   if (potionT > 0 && Math.random() < .7) part(bird.x - 10, bird.y, -200, (Math.random()-.5)*80, .4, [(T*400)%360,100,65], 3);
   bird.y += bird.vy*dt;
   bird.rot += ((dashT > 0 ? 0 : Math.max(-.55, Math.min(1.3, bird.vy/(B.maxFall*.78)))) - bird.rot) * Math.min(1, dt*10);
@@ -1371,7 +1391,7 @@ function update(rdt){
       }
       if (g.dashed){
         const dp = 2 * PK.dashPts; addScore(dp); pop(t('phase') + ' +' + dp, bird.x, bird.y-30, pal.b, true);
-      } else if (g.minClear < B.window + PK.windowBonus + (boostT > 0 ? 14 : 0) + (foreT > 0 ? 20 : 0) && g.minClear > -5){
+      } else if (g.minClear < B.window + PK.windowBonus + (boostT > 0 ? 10 : 0) + (FX.resoT > 0 ? 10 : 0) + (foreT > 0 ? 20 : 0) && g.minClear > -5){
         combo++; perfects++; maxCombo = Math.max(maxCombo, combo);
         const nt = combo >= PK.feverAt ? 2 : combo >= Math.min(5, PK.feverAt - 3) ? 1 : 0;
         if (nt > tier){
@@ -1379,11 +1399,11 @@ function update(rdt){
           if (nt === 2){ guardUsed = false; banner(t('fever').replace('2', PK.feverMul), [300,100,68], 1.7); SFX.fever(); haptic('fever'); flash = .5; ring(bird.x, bird.y, LW*1.2, [300,100,68], .8, 8); }
           else { banner(t('hot'), [28,100,60], 1.2); SFX.hot(); haptic('combo5'); ring(bird.x, bird.y, LW*.8, [28,100,60], .6, 6); }
         } else haptic('perfect');
-        const pts = (1 + combo + B.bonus) * (tier === 2 ? PK.feverMul : 1); addScore(pts);
+        const pts = (1 + combo + PK.bonus) * (tier === 2 ? PK.feverMul : 1) * (FX.resoT > 0 ? FX.resoMul : 1); addScore(pts);
         if (PK.boltEvery && ++perfCount % PK.boltEvery === 0){
           strikeNext();
         }
-        dashMeter = Math.min(1, dashMeter + .34*B.dash); skillCharge = Math.min(1, skillCharge + .06);
+        dashMeter = Math.min(1, dashMeter + .34*B.dash); skillCharge = Math.min(1, skillCharge + (FX.resoT > 0 ? 0 : PK.perfCharge));
         SFX.perfect(combo); flash = Math.max(flash, .18); hitstop = .06; shake = Math.max(shake, 4);
         g.flash = 1; cam.z = Math.max(cam.z, 1.035);
         { const cy2 = gY(g), gp2 = gGap(g); ring(g.x + g.w, bird.y < cy2 ? cy2 - gp2/2 : cy2 + gp2/2, 95, tier === 2 ? [300,100,68] : pal.a, .45, 3); }
@@ -1395,14 +1415,14 @@ function update(rdt){
         } else {
           if (combo > 1) pop(t('comboBreak'), bird.x, bird.y+36, [0,0,70]);
           if (tier === 2) banner(t('feverEnd'), [0,0,78], .9, false);
-          tier = 0; combo = 0; addScore(1); SFX.pass();
+          combo = PK.comboKeep ? Math.floor(combo * PK.comboKeep) : 0; tier = combo >= Math.min(5, PK.feverAt - 3) ? 1 : 0; addScore(1); SFX.pass();
         }
         dashMeter = Math.min(1, dashMeter + .08*B.dash);
       }
       if (PK.shieldRegen && gatesPassed % PK.shieldRegen === 0 && shields < PK.shieldMax){ shields++; popT = 0; ring(bird.x, bird.y, 120, [190,100,70], .5, 5); pop(t('shieldP') + ' +1', bird.x, bird.y-34, [190,100,70], true); haptic('power'); SFX.power(); }
-      if (PK.inkEvery && gatesPassed % PK.inkEvery === 0){ inkT = 4; banner(t('fx_ink'), [285,80,70], .9, false); for (let i=0;i<40;i++){ const a = Math.random()*6.28, sp = 60 + Math.random()*260; part(bird.x, bird.y, Math.cos(a)*sp, Math.sin(a)*sp, 1, [285,60,25 + Math.random()*20], 4 + Math.random()*4); } ring(bird.x, bird.y, LW, [285,70,55], .8, 10); haptic('power'); tone(160, .4, 'sine', .2, -80); }
-      if (PK.phaseEvery && gatesPassed % PK.phaseEvery === 0){ phaseT = 1.6; banner(t('fx_phase'), [185,100,80], .9, false); ring(bird.x, bird.y, 160, [185,100,80], .6, 5); haptic('ready'); tone(900, .5, 'sine', .08, -500); }
-      if (PK.giantEvery && gatesPassed % PK.giantEvery === 0){ giantT = 3; banner(t('fx_giant'), [25,100,60], 1.1); ring(bird.x, bird.y, LW, [25,100,60], .8, 12); shake = Math.max(shake, 14); haptic('fever'); tone(70, .6, 'sawtooth', .22, 40); noise(.5, .2); }
+      if (PK.inkEvery && gatesPassed % PK.inkEvery === 0){ inkT = TMAX.ink = 4; banner(t('fx_ink'), [285,80,70], .9, false); for (let i=0;i<40;i++){ const a = Math.random()*6.28, sp = 60 + Math.random()*260; part(bird.x, bird.y, Math.cos(a)*sp, Math.sin(a)*sp, 1, [285,60,25 + Math.random()*20], 4 + Math.random()*4); } ring(bird.x, bird.y, LW, [285,70,55], .8, 10); haptic('power'); tone(160, .4, 'sine', .2, -80); }
+      if (PK.phaseEvery && gatesPassed % PK.phaseEvery === 0){ phaseT = TMAX.phase = 1.6; banner(t('fx_phase'), [185,100,80], .9, false); ring(bird.x, bird.y, 160, [185,100,80], .6, 5); haptic('ready'); tone(900, .5, 'sine', .08, -500); }
+      if (PK.giantEvery && gatesPassed % PK.giantEvery === 0){ giantT = TMAX.giant = 3; banner(t('fx_giant'), [25,100,60], 1.1); ring(bird.x, bird.y, LW, [25,100,60], .8, 12); shake = Math.max(shake, 14); haptic('fever'); tone(70, .6, 'sawtooth', .22, 40); noise(.5, .2); }
       const nz = mode === 'endless' ? zoneIdx : Math.min(ZONES.length-1, Math.floor(gatesPassed/12));
       if (nz !== zoneIdx){ zoneIdx = nz; zoneBanner = 2.4; SFX.zone(); haptic('zone'); flash = Math.max(flash, .55); ring(bird.x, bird.y, LW*1.4, ZONES[nz].b, 1, 12); }
     }
@@ -1570,7 +1590,7 @@ function render(){
     if (FX.fogT > 0){ const fi = hard ? .25 : .1; ctx.fillStyle = `rgba(205,214,235,${(hard ? .42 : .28) * (RM ? 1 : Math.max(0, Math.min(1, (FX.fogDur - FX.fogT)/fi, FX.fogT/fi)))})`; ctx.fillRect(0,0,LW,LH); }
   }
   if (inkT > 0){ const vg2 = ctx.createRadialGradient(LW/2,LH/2,LH*.25,LW/2,LH/2,LH*.8); vg2.addColorStop(0,'rgba(0,0,0,0)'); vg2.addColorStop(1, `hsla(285,70%,18%,${Math.min(.55, inkT*.3)})`); ctx.fillStyle = vg2; ctx.fillRect(0,0,LW,LH); }
-  if (freezeT > 0){ ctx.fillStyle = `hsla(200,80%,70%,${Math.min(.22, freezeT*.15)})`; ctx.fillRect(0,0,LW,LH); ctx.strokeStyle = 'hsla(200,100%,85%,.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(bird.x, bird.y, 60, -1.57, -1.57 + 6.283*(freezeT/2.5)); ctx.stroke(); }
+  if (freezeT > 0){ ctx.fillStyle = `hsla(200,80%,70%,${Math.min(.22, freezeT*.15)})`; ctx.fillRect(0,0,LW,LH); ctx.strokeStyle = 'hsla(200,100%,85%,.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(bird.x, bird.y, 60, -1.57, -1.57 + 6.283*(freezeT/TMAX.freeze)); ctx.stroke(); }
   if (hurtT > 0){ const vh = ctx.createRadialGradient(LW/2,LH/2,LH*.2,LW/2,LH/2,LH*.75); vh.addColorStop(0,'rgba(0,0,0,0)'); vh.addColorStop(1, `rgba(255,30,60,${hurtT})`); ctx.fillStyle = vh; ctx.fillRect(0,0,LW,LH); }
   if (giantT > 0 && !RM){ ctx.fillStyle = `hsla(25,100%,55%,${.08 + .05*Math.sin(T*20)})`; ctx.fillRect(0,0,LW,LH); }
   if (slowT > 0 || dashT > 0){
@@ -1827,7 +1847,7 @@ function drawBird(){
     ctx.beginPath(); for (let i=0;i<6;i++){ const a = i/6*6.283; ctx.lineTo(Math.cos(a)*R, Math.sin(a)*R); } ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.restore();
   }
-  if (giantT > 0) vs *= 1 + Math.min(1, (3 - giantT) * 5, giantT * 4);
+  if (giantT > 0) vs *= 1 + Math.min(1, (TMAX.giant - giantT) * 5, giantT * 4);
   if (phaseT > 0) ctx.globalAlpha = .4 + .15*Math.sin(T*30);
   ctx.rotate(bird.rot); ctx.scale(vs*(1 - .12*squash), vs*(1 + .22*squash));
   drawShape(ctx, B, bird.wing, dashT > 0 ? B.wingCol : tier === 2 ? [(T*240)%360,100,64] : (B.uiCol || B.col));
@@ -1853,7 +1873,7 @@ function renderHangar(){
     else { btn(B.price.cr.toLocaleString(), () => unlockBird(B, 'cr'), '', 'cred'); if (B.price.gem) btn(String(B.price.gem), () => unlockBird(B, 'gem'), '', 'gem'); }
   }
   $('hgRole').textContent = t('r_' + B.id);
-  { const hs = $('hgSkill'); hs.textContent = ''; const b1 = document.createElement('b'); b1.textContent = `SKILL · ${t('sk_' + B.id)}`; hs.append(b1, document.createTextNode(` — ${t('sd_' + B.id)} (${SKILL_CD[B.id]}s)`)); }
+  { const hs = $('hgSkill'); hs.textContent = ''; const b1 = document.createElement('b'); b1.textContent = `SKILL · ${t('sk_' + B.id)}`; hs.append(b1, document.createTextNode(` — ${t('sd_' + B.id)} (${SK[B.id].cd}s)`)); }
   $('hgPassive').textContent = t('p_' + B.id) + (B.rarity ? ' ' + t('fairNote') + '.' : '');
   const st = $('hgStats'); st.textContent = '';
   B.stats.forEach((v, j) => {
@@ -1980,13 +2000,14 @@ function drawHUD(){
   const ind = (label, tv, max, c) => { ctx.fillStyle = hsl(c,.25); roundRect(px, 44, 84, 20, 10); ctx.fill(); ctx.fillStyle = hsl(c); roundRect(px, 44, 84*Math.min(1, tv/max), 20, 10); ctx.globalAlpha=.4; ctx.fill(); ctx.globalAlpha=1; ctx.fillStyle='#fff'; ctx.font=`700 10.5px "Chakra Petch", ${SYS}`; ctx.textAlign='center'; ctx.fillText(label, px+42, 58); px += 90; if (px > LW - 120){ px = 16; } };
   if (godT > 0) ind(t('sk_' + B.id), godT, TMAX.god, [45,100,58]);
   if (potionT > 0) ind(t('potionP'), potionT, TMAX.potion, [320,100,66]);
-  if (boostT > 0 || foreT > 0 || lowGravT > 0 || autoT > 0 || rushT > 0 || freezeT > 0) ind(t('sk_' + B.id), Math.max(boostT, foreT/1.25, lowGravT, autoT*1.33, rushT/1.25, freezeT*1.6), 4, B.uiCol || B.col);
+  if (boostT > 0 || foreT > 0 || lowGravT > 0 || autoT > 0 || rushT > 0 || freezeT > 0 || FX.resoT > 0) ind(t('sk_' + B.id), Math.max(boostT/(TMAX.boost||1), foreT/(TMAX.fore||1), lowGravT/(TMAX.glide||1), autoT/(TMAX.auto||1), rushT/(TMAX.rush||1), freezeT/(TMAX.freeze||1), FX.resoT/(TMAX.reso||1)), 1, B.uiCol || B.col);
   if (rewindLeft > 0) ind('⟲ x' + rewindLeft, rewindLeft, PK.rewind, [40,90,62]);
-  if (phaseT > 0) ind(t('fx_phase'), phaseT, 1.6, [185,100,75]);
-  if (giantT > 0) ind(t('fx_giant'), giantT, 3, [25,100,58]);
-  if (inkT > 0) ind(t('fx_ink'), inkT, 4, [285,70,62]);
+  if (phaseT > 0) ind(t('fx_phase'), phaseT, TMAX.phase, [185,100,75]);
+  if (giantT > 0) ind(t('fx_giant'), giantT, TMAX.giant, [25,100,58]);
+  if (inkT > 0) ind(t('fx_ink'), inkT, TMAX.ink, [285,70,62]);
   if (magnetT > 0) ind(t('magnetP'), magnetT, TMAX.magnet, [48,100,58]);
   if (slowT > 0) ind(t('slowP'), slowT, TMAX.slow, [280,100,68]);
+  if (FX.heavyT > 0) ind(t('heavyP'), FX.heavyT, TMAX.heavy, [145,30,55]);
   if (zoneBanner > 0){
     const a = Math.min(1, zoneBanner) * Math.min(1, (2.4 - zoneBanner)*3);
     ctx.globalAlpha = Math.max(0,a); ctx.textAlign = 'center';
@@ -1996,7 +2017,7 @@ function drawHUD(){
     ctx.fillText(ZONES[zoneIdx].name, LW/2, LH*.36 + 34); ctx.shadowBlur = 0; ctx.globalAlpha = 1;
   }
   { const pd = dashMeter.toFixed(2); if (pd !== hudCache.d){ hudCache.d = pd; const el = $('dashBtn'); el.style.setProperty('--p', pd); el.classList.toggle('ready', dashMeter >= 1); $('dashPct').textContent = dashMeter >= 1 ? 'GO!' : Math.floor(dashMeter*100) + '%'; } }
-  { const ps = skillCharge.toFixed(2), lbl = skillCharge >= 1 ? t('sk_' + B.id) : Math.ceil((1 - skillCharge) * (SKILL_CD[B.id] || 18)) + 's';
+  { const ps = skillCharge.toFixed(2), lbl = skillCharge >= 1 ? t('sk_' + B.id) : Math.ceil((1 - skillCharge) * skillCd()) + 's';
     if (ps !== hudCache.s){ hudCache.s = ps; const el = $('skillBtn'); el.style.setProperty('--p', ps); el.classList.toggle('ready', skillCharge >= 1); }
     if (lbl !== hudCache.sl){ hudCache.sl = lbl; $('skillName').textContent = lbl; } }
 }
@@ -2412,7 +2433,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL): read-only views for console checks + FW.selfTest()
-if (location.hash === '#dev') window.FW = { stTier, stD0, stGoal, stFogN, runD, powKind, BIRDS, I18N,
+if (location.hash === '#dev') window.FW = { stTier, stD0, stGoal, stFogN, runD, powKind, SK, skv, skillCd, BIRDS, I18N,
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T}; },
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter}; },
