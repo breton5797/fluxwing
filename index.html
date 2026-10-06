@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#07050f">
+<meta name="description" content="Flux Wing 2 — 원터치 비행의 2027 버전. 니어미스 콤보, 페이즈 대시, 피버, 데일리 런.">
+<title>Flux Wing 2</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="stage">
+  <canvas id="c" aria-label="Flux Wing 2 게임 화면"></canvas>
+
+  <div id="topBar">
+    <div class="pill" id="shardPill" aria-label="보유 샤드"><i>◆</i><span id="shardCount">0</span></div>
+    <button class="ib" id="sfxBtn" aria-label="효과음 켜기/끄기" aria-pressed="true">♪</button>
+    <button class="ib" id="musicBtn" aria-label="배경음악 켜기/끄기" aria-pressed="true">♫</button>
+    <button class="ib" id="pauseBtn" aria-label="일시정지" hidden>II</button>
+  </div>
+  <button id="dashBtn" aria-label="대시" hidden>DASH</button>
+  <div id="coach" hidden>
+    <b>탭 · SPACE</b>로 날갯짓<br>게이트 가장자리를 스치면 <em>PERFECT</em>
+  </div>
+
+  <section class="overlay" id="menu">
+    <div>
+      <div class="logo">FLUX<br>WING <span>2</span></div>
+      <div class="year">2027 EDITION</div>
+    </div>
+    <p class="tag">탭 한 번의 손맛은 그대로. 아슬아슬하게 스쳐 콤보를 쌓고, 피버를 터뜨리고, 대시로 뚫어라.</p>
+    <div class="modes">
+      <button class="btn" id="playBtn">PLAY</button>
+      <button class="btn alt" id="dailyBtn">DAILY RUN<small id="dailyInfo"></small></button>
+    </div>
+    <nav class="tabs" aria-label="메뉴">
+      <button class="tab" data-panel="missions">MISSIONS<i id="missionDot" hidden></i></button>
+      <button class="tab" data-panel="skins">SKINS</button>
+      <button class="tab" data-panel="records">RECORDS</button>
+      <button class="tab" data-panel="help">HOW TO</button>
+    </nav>
+    <div class="hint" id="menuBest"></div>
+  </section>
+
+  <section class="overlay" id="panel" hidden>
+    <div class="card wide">
+      <h2 class="panel-title" id="panelTitle"></h2>
+      <div id="panelBody"></div>
+      <button class="btn small" id="panelClose">BACK</button>
+    </div>
+  </section>
+
+  <section class="overlay" id="pauseScr" hidden>
+    <div class="over-title cool">PAUSED</div>
+    <button class="btn" id="resumeBtn">RESUME</button>
+    <button class="btn alt small" id="quitBtn">MENU</button>
+  </section>
+
+  <section class="overlay" id="reviveScr" hidden>
+    <div class="card">
+      <div class="over-title cool">CONTINUE?</div>
+      <div class="big" id="reviveCount">4</div>
+      <button class="btn" id="reviveBtn">REVIVE <i>◆</i><span id="reviveCost"></span></button>
+      <button class="btn alt small" id="skipBtn">SKIP</button>
+    </div>
+  </section>
+
+  <section class="overlay" id="over" hidden>
+    <div class="card">
+      <div class="over-title">SIGNAL LOST</div>
+      <div class="hint" id="oMode"></div>
+      <div class="big" id="oScore">0</div>
+      <div class="rank" id="oRank">RANK C</div>
+      <div class="newbest" id="oNew" hidden>NEW BEST</div>
+      <div class="stats" id="oStats"></div>
+      <div id="oMissions"></div>
+      <div class="row">
+        <button class="btn" id="retryBtn">RETRY</button>
+      </div>
+      <div class="row">
+        <button class="btn alt small" id="shareBtn">SHARE</button>
+        <button class="btn alt small" id="menuBtn">MENU</button>
+      </div>
+    </div>
+  </section>
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
