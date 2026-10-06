@@ -841,15 +841,16 @@ const gGap = g => g.gap + (g.lane ? g.laneGap : g.type === 'pulse' ? Math.sin(T*
 /* ---------- stages: per-zone background art, gate skins, music ---------- */
 // 50 stages in 4 tiers (10/15/15/10). A tier picks the zone art, gap scale, gate mix and rules; the stage sets the head start and goal.
 const ST_N = 50, ST_FIRST = [0,10,25,40], ST_CNT = [10,15,15,10];
-const ST_D0 = [0,.05,.15,.22], ST_GM = [1.2,1.06,.95,.93];
+const ST_D0 = [0,.10,.20,.30], ST_SPAN = .08, ST_GM = [1.2,1.1,1,.92], ST_G0 = [10,21,29,37];   // head start per tier (+ST_SPAN across the tier), gap scale, first goal
 const ST_MOVE = [.04,.10,.16,.22], ST_PULSE = [.02,.05,.09,.13];
 const ST_COIN = [1,1.25,1.5,2];
 const ZONE_MOVE = [.16,.42,.2,.36], ZONE_PULSE = [.06,.1,.36,.3];   // daily / versus only (by 12-gate zone)
 const STAGE_DKEY = ['easy','normal','hard','expert'];               // indexed by tier
 const stTier = i => i < 10 ? 0 : i < 25 ? 1 : i < 40 ? 2 : 3;
 const stPos  = i => { const t = stTier(i); return (i - ST_FIRST[t]) / (ST_CNT[t] - 1); };
-const stD0   = i => ST_D0[stTier(i)] + .18 * stPos(i);
-const stGoal = i => 10 + i - 5 * stTier(i);
+const stD0   = i => ST_D0[stTier(i)] + ST_SPAN * stPos(i);
+const stGoal = i => { const t = stTier(i); return ST_G0[t] + ((i - ST_FIRST[t]) >> 1); };   // +1 every second stage, a jump at each tier
+const stGap0 = i => Math.max(128, (212 - stD0(i)*62) * ST_GM[stTier(i)]);   // gap of a stage's first gates, before jitter
 const stFogN = i => { const t = stTier(i); return t === 2 ? 10 - Math.floor((i-25)/5) : t === 3 ? 12 - Math.floor((i-40)/5) : 0; };
 function runD(k){
   if (mode !== 'endless') return Math.min(1, Math.min(k/45, 1));
@@ -2523,7 +2524,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { stTier, stD0, stGoal, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N,
+if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N,
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T}; },
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter}; },
@@ -2532,8 +2533,10 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
   selfTest(){
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b), S = [0,9,10,24,25,39,40,49], fails = [];
     const checks = {
-      goal: () => eq(S.map(stGoal), [10,19,15,29,25,39,35,44]),
-      d0: () => eq(S.map(i => +stD0(i).toFixed(2)), [0,.18,.05,.23,.15,.33,.22,.4]),
+      goal: () => eq(S.map(stGoal), [10,14,21,28,29,36,37,41]),
+      d0: () => eq(S.map(i => +stD0(i).toFixed(2)), [0,.08,.1,.18,.2,.28,.3,.38]),
+      curve: () => { for (let i = 1; i < ST_N; i++){ const b = stTier(i) !== stTier(i-1); if (stD0(i) < stD0(i-1) || stGoal(i) < stGoal(i-1) || stGap0(i) > stGap0(i-1) || (b && stGap0(i) > stGap0(i-1) - 12)) return false; }
+        return [1,2,3].every(t => ST_MOVE[t] + ST_PULSE[t] >= ST_MOVE[t-1] + ST_PULSE[t-1]); },
       pow: () => eq([0,.19,.2,.59,.6,.79,.8,.99].map(powKind), ['shield','shield','magnet','magnet','slow','slow','potion','potion']),
       sk22: () => BIRDS.length === 22 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
       ultra5: () => BIRDS.filter(b => b.rarity === 4).length === 5,
