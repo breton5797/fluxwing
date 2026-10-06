@@ -841,7 +841,7 @@ const gGap = g => g.gap + (g.lane ? g.laneGap : g.type === 'pulse' ? Math.sin(T*
 /* ---------- stages: per-zone background art, gate skins, music ---------- */
 // 50 stages in 4 tiers (10/15/15/10). A tier picks the zone art, gap scale, gate mix and rules; the stage sets the head start and goal.
 const ST_N = 50, ST_FIRST = [0,10,25,40], ST_CNT = [10,15,15,10];
-const ST_D0 = [0,.10,.15,.22], ST_GM = [1.12,1.02,.95,.93];
+const ST_D0 = [0,.05,.15,.22], ST_GM = [1.2,1.06,.95,.93];
 const ST_MOVE = [.04,.10,.16,.22], ST_PULSE = [.02,.05,.09,.13];
 const ST_COIN = [1,1.25,1.5,2];
 const ZONE_MOVE = [.16,.42,.2,.36], ZONE_PULSE = [.06,.1,.36,.3];   // daily / versus only (by 12-gate zone)
@@ -2533,7 +2533,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b), S = [0,9,10,24,25,39,40,49], fails = [];
     const checks = {
       goal: () => eq(S.map(stGoal), [10,19,15,29,25,39,35,44]),
-      d0: () => eq(S.map(i => +stD0(i).toFixed(2)), [0,.18,.1,.28,.15,.33,.22,.4]),
+      d0: () => eq(S.map(i => +stD0(i).toFixed(2)), [0,.18,.05,.23,.15,.33,.22,.4]),
       pow: () => eq([0,.19,.2,.59,.6,.79,.8,.99].map(powKind), ['shield','shield','magnet','magnet','slow','slow','potion','potion']),
       sk22: () => BIRDS.length === 22 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
       ultra5: () => BIRDS.filter(b => b.rarity === 4).length === 5,
