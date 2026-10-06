@@ -2399,7 +2399,9 @@ function vsOnRoom(){
   }
   if (vs.phase === 'play' || vs.phase === 'done'){
     const o = others.find(p => p.id === vs.oppId);
-    if (!o){ if (vs.phase === 'play' && !vs.result) vsFinish('win', true); return; }
+    // Rival gone: a forfeit win only if they were still flying. If they had already died, their final score stands and ours is compared to it
+    // (otherwise a trailing player could pause until the dead leader gives up waiting, and collect the win).
+    if (!o){ if (vs.phase === 'play' && !vs.result){ const b = vs.oppFinal || 0; if (vs.oppAlive) vsFinish('win', true); else vsFinish(score > b ? 'win' : score < b ? 'lose' : 'draw', false); } return; }
     const st = o.st || {};
     if (typeof st.y === 'number') vs.oppY = st.y;
     vs.oppScore = st.sc | 0; vs.oppBird = st.b || st.bird || 'volt'; vs.oppNick = cleanNick(st.n || st.nick || '');
