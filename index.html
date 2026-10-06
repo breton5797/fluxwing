@@ -45,7 +45,7 @@ select.ghost{appearance:none;-webkit-appearance:none;padding-right:16px}
 select.ghost option{background:#140e26;color:var(--ink)}
 .keys{display:grid;grid-template-columns:auto auto;gap:6px 14px;font-size:13px;color:var(--dim);text-align:left}
 .keys b{color:var(--ink);font-weight:700;letter-spacing:.06em}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px 22px;width:min(340px,100%);display:flex;flex-direction:column;gap:12px;backdrop-filter:blur(6px)}
+.card{box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px 22px;width:min(386px,100%);display:flex;flex-direction:column;gap:12px;backdrop-filter:blur(6px)}
 .over-title{font-family:var(--display);font-size:30px;color:var(--hot);letter-spacing:.04em}
 .modetag{font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--cool)}
 .big{font-family:"Bungee",Impact,sans-serif;font-size:60px;line-height:1;font-variant-numeric:tabular-nums}
@@ -92,7 +92,8 @@ select.ghost option{background:#140e26;color:var(--ink)}
 #skillBtn{right:102px;--ring:var(--gold)}
 @keyframes pulse2{50%{box-shadow:0 0 38px var(--ring)}}
 #topBtns{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:8px}
-.ib{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:rgba(14,10,30,.55);color:var(--ink);font:700 15px var(--body);cursor:pointer}
+.ib{position:relative;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:rgba(14,10,30,.55);color:var(--ink);font:700 15px var(--body);cursor:pointer}
+.ib::after{content:"";position:absolute;inset:-4px;border-radius:50%}   /* 46px touch target around the 38px button */
 .ib:focus-visible,#dashBtn:focus-visible{outline:2px solid var(--cool);outline-offset:3px}
 @keyframes pulse{50%{box-shadow:0 0 34px rgba(79,240,255,.95)}}
 /* menu: logo animation, start button, mode pair */
@@ -128,7 +129,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .vscard{text-align:center}
 .tierbox{display:flex;align-items:center;justify-content:center;gap:10px;font:700 14px var(--body)}
 .tierbadge{font:15px "Bungee",Impact,sans-serif;padding:4px 12px;border-radius:999px;color:#0b0718}
-.vsbtns{display:grid;gap:8px}
+.vsbtns{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
 .vsbtns .ghost{padding:12px;font-size:14px}
 .coderow{display:flex;gap:8px}
 .coderow input{flex:1;min-width:0;text-align:center;letter-spacing:.4em;font:20px "Bungee",Impact,sans-serif;background:rgba(243,238,252,.06);border:1px solid var(--line);border-radius:10px;padding:8px;color:var(--ink);user-select:text;-webkit-user-select:text;touch-action:auto}
@@ -199,7 +200,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 .lvbar i{display:block;height:100%;background:var(--cool)}
 .rar{display:inline-block;font:700 10px var(--body);letter-spacing:.14em;padding:3px 8px;border-radius:999px;margin-left:8px;vertical-align:7px;color:#0b0718}
 .hg-lock{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.hg-lock .ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 13px}
+.hg-lock .ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 13px;min-height:44px}
 .hg-lock .ghost.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .hg-lock .note{width:100%;font-size:12px;color:var(--dim)}
 .hangar.premium{border-color:rgba(255,210,90,.45);box-shadow:0 0 24px rgba(255,210,90,.12)}
@@ -1009,13 +1010,14 @@ function renderStages(){
 }
 function openStages(){ renderStages(); $('stageScr').hidden = false; const c = $('stageList').querySelector('.cur'); if (c) c.scrollIntoView({block:'center'}); }
 $('stageClose').addEventListener('click', e => { e.stopPropagation(); $('stageScr').hidden = true; });
-$('stageScr').addEventListener('pointerdown', e => { if (e.target === $('stageScr')) $('stageScr').hidden = true; });
+// Backdrop taps act on click, not pointerdown: closing on pointerdown let the same tap's click land on the control underneath (touch)
+$('stageScr').addEventListener('click', e => { if (e.target === $('stageScr')) $('stageScr').hidden = true; });
 
 /* ---------- input ---------- */
-let lbOpen = false;
+let lbOpen = false, overAt = 0;   // overAt: when the game-over card came up; it must be up for a moment before a tap can restart
 function flap(){
   audioInit();
-  if (state === 'menu' || state === 'over'){ if (state === 'over' && (deathT < .6 || mode === 'versus')) return; if (state === 'menu'){ startFromMenu(); return; } startGame(mode); return; }
+  if (state === 'menu' || state === 'over'){ if (state === 'over' && (performance.now() - overAt < 450 || mode === 'versus')) return; if (state === 'menu'){ startFromMenu(); return; } startGame(mode); return; }
   if (state !== 'play' || dashT > 0) return;
   bird.vy = -B.flap; bird.wing = 1; squash = 1; SFX.flap(); haptic('flap'); tutFlaps++; FX.idleT = 0; FX.idleWarn = false;
   for (let i=0;i<5;i++) part(bird.x-6, bird.y+6, -60-Math.random()*80, 40+Math.random()*80, .35, B.wingCol, 2);
@@ -1045,7 +1047,7 @@ $('startBtn').addEventListener('click', e => { e.stopPropagation(); audioInit();
 $('dailyBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); startGame('daily'); });
 $('retryBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); if (mode === 'versus'){ toMenu(); openVs(); } else startGame(mode); });
 $('menuBtn').addEventListener('click', e => { e.stopPropagation(); toMenu(); });
-$('over').addEventListener('pointerdown', e => { if (e.target === $('over')) flap(); });
+$('over').addEventListener('click', e => { if (e.target === $('over')) flap(); });
 $('resumeBtn').addEventListener('click', togglePause);
 $('pauseBtn').addEventListener('click', e => { e.stopPropagation(); togglePause(); });
 $('muteBtn').addEventListener('click', e => {
@@ -1249,7 +1251,7 @@ $('contAd').addEventListener('click', e => {
 $('contCoin').addEventListener('click', e => { e.stopPropagation(); if (W.coins < CONT_COST) return; W.coins -= CONT_COST; saveW(); renderWallet(); closeCont(true); });
 $('contNo').addEventListener('click', e => { e.stopPropagation(); closeCont(false); });
 function showOver(){
-  state = 'over';
+  state = 'over'; overAt = performance.now();
   let nb, shownBest;
   if (mode === 'daily'){
     const prev = dailyBestLocal(runDay); nb = score > prev;
@@ -2034,7 +2036,7 @@ $('shopBtn').hidden = !SHOP_ON;
 $('shopBtn').addEventListener('click', e => { if (!SHOP_ON) return; e.stopPropagation(); openShop(); });
 $('wGemBtn').addEventListener('click', e => { if (!SHOP_ON) return; e.stopPropagation(); openShop(); });
 $('shopClose').addEventListener('click', closeShop);
-$('shopScr').addEventListener('pointerdown', e => { if (e.target === $('shopScr')) closeShop(); });
+$('shopScr').addEventListener('click', e => { if (e.target === $('shopScr')) closeShop(); });
 $('wallet').addEventListener('pointerdown', e => e.stopPropagation());
 
 function drawHUD(){
@@ -2234,7 +2236,7 @@ function closeLB(){ lbOpen = false; $('lbScr').hidden = true; statusMsg = ''; }
 $('lbBtn').addEventListener('click', e => { e.stopPropagation(); openLB('daily'); });
 $('oLbBtn').addEventListener('click', e => { e.stopPropagation(); openLB(mode === 'daily' ? 'daily' : 'all'); });
 $('lbClose').addEventListener('click', closeLB);
-$('lbScr').addEventListener('pointerdown', e => { if (e.target === $('lbScr')) closeLB(); });
+$('lbScr').addEventListener('click', e => { if (e.target === $('lbScr')) closeLB(); });
 document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { lbTab = b.dataset.tab; renderLB(); }));
 $('nickForm').addEventListener('submit', e => {
   e.preventDefault();
@@ -2280,7 +2282,7 @@ function startFromMenu(){
 }
 $('helpBtn').addEventListener('click', e => { e.stopPropagation(); SFX.click(); $('helpScr').hidden = false; });
 $('helpClose').addEventListener('click', e => { e.stopPropagation(); $('helpScr').hidden = true; });
-$('helpScr').addEventListener('pointerdown', e => { if (e.target === $('helpScr')) $('helpScr').hidden = true; });
+$('helpScr').addEventListener('click', e => { if (e.target === $('helpScr')) $('helpScr').hidden = true; });
 
 /* ---------- 2-player versus: same seeded course, rival shown as a ghost ---------- */
 const TIERS = [0, 100, 250, 500, 900], TIER_COL = [[25,60,55],[210,15,78],[45,100,58],[190,100,65],[290,100,72]];
@@ -2495,7 +2497,7 @@ function drawRival(){
 }
 $('vsBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); SFX.click(); openVs(); });
 $('vsClose').addEventListener('click', e => { e.stopPropagation(); vsReset(); closeVsScr(); });
-$('vsScr').addEventListener('pointerdown', e => { if (e.target === $('vsScr') && vs.phase === 'idle') closeVsScr(); });
+$('vsScr').addEventListener('click', e => { if (e.target === $('vsScr') && vs.phase === 'idle') closeVsScr(); });
 $('vsAuto').addEventListener('click', e => { e.stopPropagation(); audioInit(); vsAuto(); });
 $('vsMake').addEventListener('click', e => { e.stopPropagation(); audioInit(); vsMake(); });
 $('vsJoin').addEventListener('click', e => { e.stopPropagation(); audioInit(); vsJoinCode(); });
