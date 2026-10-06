@@ -401,6 +401,15 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
   </div>
 </div>
 
+<!-- ================= ONLINE CONFIG (Supabase) =================
+     Empty values = offline build: device-only records, versus against the AI, no third-party request at all.
+     Fill both in to switch on the global leaderboard and online versus (backend: supabase/schema.sql). -->
+<script>
+// Only the publishable / anon key ever goes here. Never a secret or service_role key.
+window.FW_CONFIG = { supabaseUrl: '', supabaseAnonKey: '' };
+</script>
+<!-- ============================================================ -->
+
 <script>
 (() => {
 'use strict';
@@ -590,6 +599,7 @@ SK_IDS.forEach((id,i) => { for (const l in I18N){ const tx = (SK_TXT[l] || SK_TX
 const I18N_N = {
 ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 틈', tierRule2:'더 좁은 틈 · 0.5초 안개', tierRule3:'가장 좁은 틈 · 2초 안개 · 2초 안에 탭',
  idleRule:'2초 안에 탭!', idleStall:'엔진 정지!', heavyP:'무거움', gemP:'젬 +1', gemHint:'젬은 스테이지 플레이 중 1% 확률로 나와요 · {n}/60',
+ lbRetry:'기록을 올리지 못했어요. 곧 다시 시도합니다', lbRate:'전송이 너무 잦아요. 잠시 후 다시 올립니다', lbReject:'서버가 이 기록을 받지 않았어요', vsStranded:'상대가 들어오지 않았어요. 다시 찾는 중…',
  confirmCoin:'{u}을(를) 코인 {n}개로 구매할까요?', needCoin:'코인이 {n}개 부족해요', needGem:'젬이 {n}개 부족해요',
  r_aurora:'극광형', p_aurora:'콤보가 끊겨도 절반이 남는다. 퍼펙트 판정이 넓고 퍼펙트마다 +1점.', sk_aurora:'극광 회랑', sd_aurora:'다음 게이트 {n}개가 내 높이로 모이고 멈추며 틈이 넓어진다',
  r_tempest:'폭풍형', p_tempest:'대시 관통 점수 2배. 대시로 게이트를 부수면 게이지 30% 환급(대시당 1회).', sk_tempest:'태풍의 눈', sd_tempest:'게이지를 쓰지 않는 1.5배 길이 대시를 즉시 발동',
@@ -597,6 +607,7 @@ ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 �
  r_pulsar:'맥동형', p_pulsar:'퍼펙트마다 +2점, 스킬이 더 빨리 찬다. 피버가 8콤보에서 시작된다.', sk_pulsar:'공명', sd_pulsar:'{n}초간 퍼펙트 점수 2배, 판정이 넓어진다'},
 en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', tierRule2:'Narrower gaps · 0.5s haze', tierRule3:'Narrowest gaps · 2s haze · tap within 2s',
  idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/60',
+ lbRetry:"Couldn't post your score. Retrying soon", lbRate:'Posting too fast. It will be sent in a moment', lbReject:'The server did not accept this score', vsStranded:"Opponent didn't show up. Searching again…",
  confirmCoin:'Buy {u} for {n} coins?', needCoin:'{n} more coins needed', needGem:'{n} more gems needed',
  r_aurora:'Skyweaver', p_aurora:'A broken combo keeps half. Wide Perfect window, +1 on every Perfect.', sk_aurora:'Aurora Lane', sd_aurora:'The next {n} gates slide to your height, stop moving and widen',
  r_tempest:'Stormbreaker', p_tempest:'Dash-through points x2. Smashing a gate with a dash refunds 30% meter (once per dash).', sk_tempest:'Eye of the Storm', sd_tempest:'Fires a free dash that lasts 1.5x longer',
@@ -1256,7 +1267,7 @@ function showOver(){
   let nb, shownBest;
   if (mode === 'daily'){
     const prev = dailyBestLocal(runDay); nb = score > prev;
-    if (nb) store.set('fw27_daily_' + runDay, score);
+    if (nb){ store.set('fw27_daily_' + runDay, score); store.set('fw27_dg', {k: runDay, g: gatesPassed}); }
     shownBest = Math.max(prev, score);
     $('oBestLbl').textContent = t('bestToday');
     $('oMode').textContent = B.name + ' · ' + t('modeDaily', {d: fmtDay(runDay)});
@@ -1268,7 +1279,7 @@ function showOver(){
     $('oBestLbl').textContent = t('best');
     $('oMode').textContent = B.name + ' · ' + t('modeEndless');
   }
-  if (score > best && mode !== 'versus'){ best = score; store.set('fw27_best', best); }
+  if (score > best && mode !== 'versus'){ best = score; store.set('fw27_best', best); store.set('fw27_bestg', gatesPassed); }
   if (mode === 'endless'){ stg.gates[curStage] = Math.max(stg.gates[curStage], gatesPassed); stg.score[curStage] = Math.max(stg.score[curStage], score); store.set('fw27_stg2', stg); $('oMode').textContent = B.name + ' · ' + t('stage', {n: curStage + 1}) + ' ' + ZONES[stTier(curStage)].name; }
   $('oBest').textContent = shownBest;
   $('oGates').textContent = gatesPassed; $('oPerf').textContent = perfects; $('oCombo').textContent = maxCombo;
@@ -2124,35 +2135,92 @@ function subscribeDaily(){
   unsubDaily = db.collection('scores').where('dailyKey','==',key).orderBy('dailyScore','desc').limit(50)
     .onSnapshot(s => { lbDaily = s.docs.map(d => ({id:d.id, ...d.data()})); renderLB(); }, () => {});
 }
-/* Supabase backend (public web build): anonymous auth + submit_score RPC. See supabase/schema.sql */
+/* Supabase backend (public web build): anonymous auth + submit_score RPC. See supabase/schema.sql
+   The SDK is fetched only when FW_CONFIG is filled in. Any failure (CDN blocked, bad config, sign-in refused, schema missing) leaves the game offline. */
+const SDK_SRC = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js';   // exact version: the hash below is for this file only
+const SDK_SRI = 'sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok';
+const LB_COLS = 'player_id,nick,cc,best,bird,daily_key,daily_score,daily_bird';
+const supaCfg = () => { const c = window.FW_CONFIG || {}; return c.supabaseUrl && c.supabaseAnonKey ? c : null; };
+let sdkP = null, sbC = null, lbPoll = 0, needSync = false, lastRpc = 0, reauthP = null, dbP = null, dbAt = 0, dbBusy = false;
+function loadSdk(){
+  if (window.supabase && window.supabase.createClient) return Promise.resolve(true);
+  if (sdkP) return sdkP;
+  return sdkP = new Promise(res => {
+    const el = document.createElement('script'); let done = false;
+    const fin = ok => { if (done) return; done = true; clearTimeout(to); if (!ok){ sdkP = null; el.remove(); } res(ok); };
+    const to = setTimeout(() => fin(false), 10000);
+    el.src = SDK_SRC; el.integrity = SDK_SRI; el.crossOrigin = 'anonymous'; el.async = true;
+    el.onload = () => fin(!!(window.supabase && window.supabase.createClient)); el.onerror = () => fin(false);
+    document.head.appendChild(el);
+  });
+}
 const fromRow = r => ({id:r.player_id, nick:r.nick, cc:r.cc, best:r.best, bird:r.bird, dailyKey:r.daily_key || '', dailyScore:r.daily_score, dailyBird:r.daily_bird});
 async function refreshBoards(){
   if (!sb) return;
-  const key = dayKey();
-  const [a, d] = await Promise.all([
-    sb.from('fw_scores').select('player_id,nick,cc,best,bird,daily_key,daily_score,daily_bird').gt('best',0).order('best',{ascending:false}).limit(50),
-    sb.from('fw_scores').select('player_id,nick,cc,best,bird,daily_key,daily_score,daily_bird').eq('daily_key',key).gt('daily_score',0).order('daily_score',{ascending:false}).limit(50)
-  ]);
-  if (!a.error) lbAll = a.data.map(fromRow);
-  if (!d.error) lbDaily = d.data.map(fromRow);
-  renderLB();
+  try {
+    const key = dayKey(), c = sb;
+    const [a, d] = await Promise.all([
+      c.from('fw_scores').select(LB_COLS).gt('best',0).order('best',{ascending:false}).limit(50),
+      c.from('fw_scores').select(LB_COLS).eq('daily_key',key).gt('daily_score',0).order('daily_score',{ascending:false}).limit(50)
+    ]);
+    if (sb !== c) return;
+    if (!a.error && a.data) lbAll = a.data.map(fromRow);
+    if (!d.error && d.data) lbDaily = d.data.map(fromRow);
+    renderLB();
+  } catch(e){}
 }
+function sbOff(){ sb = null; backend = 'none'; uid = null; lbState = 'offline'; clearInterval(lbPoll); lbPoll = 0; renderLB(); }
+// The stored session is gone or was refused: start a fresh anonymous player (a new leaderboard identity). Single flight.
+function sbReauth(){
+  if (reauthP) return reauthP;
+  return reauthP = (async () => {
+    try {
+      try { await sbC.auth.signOut({scope: 'local'}); } catch(e){}
+      const r = await sbC.auth.signInAnonymously(); if (r.error || !r.data || !r.data.session) throw r.error || new Error('session');
+      uid = r.data.session.user.id; myDoc = null; needSync = true; return true;
+    } catch(e){ sbOff(); return false; } finally { reauthP = null; }
+  })();
+}
+const sbAuthErr = r => r.status === 401 || /fw_auth|jwt/i.test(String((r.error && r.error.message) || ''));
+const sbRpc = async a => { try { return await sb.rpc('submit_score', a); } catch(e){ return {error: e || {}}; } };
 async function initSupabase(cfg){
   try {
-    sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {auth:{persistSession:true, autoRefreshToken:true}});
-    let { data:{ session } } = await sb.auth.getSession();
-    if (!session){ const res = await sb.auth.signInAnonymously(); if (res.error) throw res.error; session = res.data.session; }
-    uid = session.user.id; backend = 'supa';
-    const me = await sb.from('fw_scores').select('*').eq('player_id', uid).maybeSingle();
-    if (me.data) myDoc = fromRow(me.data);
+    if (!(await loadSdk())) throw new Error('sdk');
+    if (!sbC){
+      sbC = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:false}});
+      sbC.auth.onAuthStateChange((ev, s) => {   // keep this callback synchronous: no Supabase calls inside it
+        if (backend !== 'supa') return;
+        if (s && s.user){ if (uid !== s.user.id){ uid = s.user.id; myDoc = null; } }
+        else if (ev === 'SIGNED_OUT' && !reauthP) setTimeout(() => { if (backend === 'supa' && !reauthP) sbReauth().then(ok => { if (ok) syncLocal(); }); }, 0);
+      });
+    }
+    const mine = id => sbC.from('fw_scores').select(LB_COLS).eq('player_id', id).maybeSingle();
+    let { data:{ session } } = await sbC.auth.getSession();
+    if (!session){ const res = await sbC.auth.signInAnonymously(); if (res.error) throw res.error; session = res.data.session; }
+    if (!session || !session.user) throw new Error('session');
+    let me = await mine(session.user.id);
+    if (me.error && me.status === 401){   // stored token no longer valid for this project: one fresh sign-in
+      try { await sbC.auth.signOut({scope: 'local'}); } catch(e){}
+      const res = await sbC.auth.signInAnonymously(); if (res.error || !res.data.session) throw res.error || new Error('session');
+      session = res.data.session; me = await mine(session.user.id);
+    }
+    if (me.error) throw me.error;
+    uid = session.user.id; sb = sbC; backend = 'supa'; myDoc = me.data ? fromRow(me.data) : null;
     lbState = 'online'; await refreshBoards();
-    setInterval(() => { if (lbOpen || state === 'over' || state === 'menu') refreshBoards(); }, 20000);
-    if (best > ((myDoc && myDoc.best) || 0)) submitScore(best, 0, 'endless', dayKey());
-  } catch(e){ sb = null; backend = 'none'; lbState = 'offline'; renderLB(); }
+    if (!lbPoll) lbPoll = setInterval(() => { if (!sb || document.hidden) return; if (needSync) syncLocal(); if (lbOpen || state === 'over') refreshBoards(); }, 20000);
+    syncLocal();
+  } catch(e){ sbOff(); }
+}
+// Push what this device has and the board lacks: a best or today's daily made offline, before sign-in finished, or whose submit failed.
+function syncLocal(){
+  needSync = false; if (backend !== 'supa' || !uid) return;
+  const k = dayKey(), dl = dailyBestLocal(k), dg = store.get('fw27_dg', null);
+  if (best > ((myDoc && myDoc.best) || 0) && best !== store.get('fw27_rej', 0)) submitScore(best, store.get('fw27_bestg', 0), 'endless', k);
+  if (dg && dg.k === k && dl > ((myDoc && myDoc.dailyKey === k && myDoc.dailyScore) || 0)) submitScore(dl, dg.g, 'daily', k);
 }
 async function initDB(){
-  const cfg = window.FW_CONFIG || {};
-  if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase) return initSupabase(cfg);
+  const cfg = supaCfg();
+  if (cfg) return initSupabase(cfg);
   try {
     const c = window.claude;
     if (!c || typeof c.use !== 'function'){ lbState = 'offline'; renderLB(); return; }
@@ -2171,8 +2239,14 @@ async function initDB(){
     if (uid && best > ((myDoc && myDoc.best) || 0)) submitScore(best, 0, 'endless', dayKey());
   } catch(e){ lbState = 'offline'; renderLB(); }
 }
+// Single flight. A failed Supabase start-up is tried again when the player opens the board or versus (at most every 15 s).
+function online(){
+  if (dbP && (dbBusy || backend !== 'none' || !supaCfg() || Date.now() - dbAt < 15000)) return dbP;
+  dbBusy = true; dbAt = Date.now();
+  return dbP = initDB().catch(() => {}).then(() => { dbBusy = false; });
+}
 function submitScore(sc, gp, m, key){
-  if (backend === 'none' || !uid || readOnly) return;
+  if (backend === 'none' || !uid || readOnly){ if (supaCfg()) needSync = true; return; }   // not signed in yet: syncLocal() sends it later
   writeQ = writeQ.then(async () => {
     const doc = Object.assign({nick, cc:CC, lang, best:0, gates:0, at:0, dailyKey:'', dailyScore:0}, myDoc || {});
     let changed = false;
@@ -2185,14 +2259,24 @@ function submitScore(sc, gp, m, key){
     doc.lang = lang;
     if (!changed || (doc.best <= 0 && doc.dailyScore <= 0)) return;
     if (backend === 'supa'){
-      const { error } = await sb.rpc('submit_score', { p_score: sc, p_gates: gp || 0, p_mode: m, p_day: key, p_bird: B.id, p_nick: nick, p_cc: CC, p_lang: lang });
-      if (!error){ myDoc = doc; statusMsg = t('posted'); refreshBoards(); }
+      const args = { p_score: sc, p_gates: gp || 0, p_mode: m, p_day: key, p_bird: B.id, p_nick: nick, p_cc: CC, p_lang: lang }, sent = {nick, cc: CC};
+      const gap = 2300 - (Date.now() - lastRpc); if (gap > 0) await new Promise(r => setTimeout(r, gap));   // the server wants 2 s between submits
+      let r = await sbRpc(args);
+      if (r.error && sbAuthErr(r) && await sbReauth()) r = await sbRpc(args);
+      lastRpc = Date.now();
+      if (backend !== 'supa') return;
+      if (!r.error){ myDoc = r.data && r.data.player_id ? Object.assign(fromRow(r.data), sent) : doc; statusMsg = t('posted'); refreshBoards(); }
+      else {
+        const msg = String(r.error.message || '');
+        if (/fw_(bad_input|implausible)/.test(msg)){ statusMsg = t('lbReject'); if (sc === best) store.set('fw27_rej', sc); }
+        else { statusMsg = t(/fw_rate_limited/.test(msg) ? 'lbRate' : 'lbRetry'); needSync = true; }
+      }
     } else {
       try { await db.doc('scores/' + uid).set(doc); myDoc = doc; statusMsg = t('posted'); }
       catch(e){ if (e && e.code === 'invalid_argument'){ readOnly = true; statusMsg = t('readOnly'); } }
     }
     renderLB();
-  });
+  }).catch(() => {});   // one failed write must not block every later one
 }
 
 const flag = cc => /^[A-Z]{2}$/.test(cc || '') ? String.fromCodePoint(...[...cc].map(ch => 127397 + ch.charCodeAt(0))) : '🌐';
@@ -2238,6 +2322,7 @@ function renderLB(){
 function openLB(tab){
   lbTab = tab || (mode === 'daily' || state === 'menu' ? 'daily' : 'all');
   lbOpen = true; $('nickIn').value = nick; $('lbScr').hidden = false; renderLB(); if (sb) refreshBoards();
+  online().then(() => { if (needSync) syncLocal(); });
 }
 function closeLB(){ lbOpen = false; $('lbScr').hidden = true; statusMsg = ''; }
 $('lbBtn').addEventListener('click', e => { e.stopPropagation(); openLB('daily'); });
@@ -2303,17 +2388,26 @@ function renderVsBadge(){
 let netKind = 'none', roomApi = null, netReady = null;
 const myPeer = 'p' + Math.random().toString(36).slice(2, 12);
 function netInit(){
-  if (netReady) return netReady;
-  netReady = (async () => {
+  if (netReady && !(netKind === 'supa' && !sb)) return netReady;
+  netKind = 'none';
+  const p = netReady = (async () => {
     if (location.hash === '#localtest' && 'BroadcastChannel' in window){ netKind = 'local'; return; }
-    const cfg = window.FW_CONFIG || {};
-    if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase){ netKind = 'supa'; return; }
+    if (supaCfg()){ await online(); if (sb){ netKind = 'supa'; return; } }
     try { const c = window.claude; if (c && typeof c.use === 'function'){ const rm = await c.use('room'); if (rm){ roomApi = rm; netKind = 'room'; } } } catch(e){}
-  })();
-  return netReady;
+  })().then(() => { if (netKind === 'none' && supaCfg() && netReady === p) netReady = null; });   // offline this time: look again on the next try
+  return p;
 }
 const sanitizeId = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 14) || 'x';
-const NET_VER = 'v2-';   // versus rooms are per balance version: old builds never meet new ones
+const NET_VER = 'v3-';   // versus rooms are per protocol / balance version: old builds never meet new ones (v3: pick handshake in the lobby, addressed "go")
+// State sends are throttled: at most one per NET_TX ms per channel (the newest state wins), so a player stays near 5 messages/s
+// whatever the caller does. Supabase Realtime counts every message sent and delivered against the project's messages-per-second quota.
+const NET_TX = 180, NET_HB = 2000, VS_SEND = 200;
+function netTx(push){
+  let last = 0, tq = 0, dead = false;
+  const fire = () => { tq = 0; if (dead) return; last = Date.now(); try { push(); } catch(e){} };
+  return { send(){ if (dead || tq) return; const w = NET_TX - (Date.now() - last); if (w <= 0) fire(); else tq = setTimeout(fire, w); },
+    idle: () => Date.now() - last, stop(){ dead = true; clearTimeout(tq); } };
+}
 async function netJoin(name){
   name = NET_VER + name;
   if (netKind === 'room'){
@@ -2327,60 +2421,99 @@ async function netJoin(name){
   }
   if (netKind === 'local'){
     const bc = new BroadcastChannel('fw-' + name), others = new Map(); let mine = {}, cb = null;
-    const send = () => bc.postMessage({id: myPeer, st: mine});
-    bc.onmessage = e => { const m = e.data || {}; if (!m.id) return; if (m.bye) others.delete(m.id); else { const fresh = !others.has(m.id); others.set(m.id, {st: m.st || {}, t: Date.now()}); if (fresh) send(); } if (cb) cb(); };
-    const hb = setInterval(() => { send(); const now = Date.now(); for (const [k, v] of others) if (now - v.t > 4000) others.delete(k); if (cb) cb(); }, 1000);
-    send();
+    const tx = netTx(() => bc.postMessage({id: myPeer, st: mine}));
+    bc.onmessage = e => { const m = e.data || {}; if (!m.id) return; if (m.bye) others.delete(m.id); else { const fresh = !others.has(m.id); others.set(m.id, {st: m.st || {}, t: Date.now()}); if (fresh) tx.send(); } if (cb) cb(); };
+    const hb = setInterval(() => { if (tx.idle() >= 950) tx.send(); const now = Date.now(); for (const [k, v] of others) if (now - v.t > 4000) others.delete(k); if (cb) cb(); }, 1000);
+    tx.send();
     return {
       peers: () => [{id: myPeer, me: true, st: mine}, ...[...others].map(([id, v]) => ({id, me: false, st: v.st}))],
-      set: o => { mine = Object.assign({}, mine, o); send(); }, onChange: f => { cb = f; },
-      leave: () => { clearInterval(hb); try { bc.postMessage({id: myPeer, bye: true}); bc.close(); } catch(e){} }
+      set: o => { mine = Object.assign({}, mine, o); tx.send(); }, onChange: f => { cb = f; },
+      leave: () => { clearInterval(hb); tx.stop(); try { bc.postMessage({id: myPeer, bye: true}); bc.close(); } catch(e){} }
     };
   }
   if (netKind === 'supa' && sb){
-    const ch = sb.channel('fw-' + name, {config: {presence: {key: myPeer}, broadcast: {self: false}}});
-    const states = new Map(); let mine = {}, cb = null, members = new Set([myPeer]);
-    ch.on('presence', {event: 'sync'}, () => { members = new Set(Object.keys(ch.presenceState())); members.add(myPeer); for (const k of [...states.keys()]) if (!members.has(k)) states.delete(k); if (cb) cb(); });
-    ch.on('broadcast', {event: 'st'}, ({payload}) => { if (payload && payload.id){ states.set(payload.id, payload.st || {}); if (cb) cb(); } });
-    await new Promise((res, rej) => { const to = setTimeout(() => rej(new Error('timeout')), 8000); ch.subscribe(s => { if (s === 'SUBSCRIBED'){ clearTimeout(to); ch.track({t: Date.now()}); res(); } }); });
-    const send = () => ch.send({type: 'broadcast', event: 'st', payload: {id: myPeer, st: mine}});
-    const hb = setInterval(send, 1000);
+    const c = sb, topic = 'fw-' + name;
+    // channel() hands back a live channel of the same topic if one is still registered, and a channel can be subscribed only once: clear it first
+    const old = c.getChannels().find(x => x.topic === 'realtime:' + topic); if (old){ try { await c.removeChannel(old); } catch(e){} }
+    const ch = c.channel(topic, {config: {private: true, presence: {key: myPeer}, broadcast: {self: false, ack: false}}});
+    const states = new Map(); let mine = {}, cb = null, members = new Set([myPeer]), gone = false, hb = 0, up = false;
+    const tx = netTx(() => { Promise.resolve(ch.send({type: 'broadcast', event: 'st', payload: {id: myPeer, st: mine}})).catch(() => {}); });
+    const kill = () => { if (gone) return; gone = true; clearInterval(hb); tx.stop(); Promise.resolve().then(() => c.removeChannel(ch)).catch(() => {}); };   // removeChannel = unsubscribe + teardown
+    const track = () => Promise.resolve().then(() => ch.track({t: Date.now()})).catch(() => 'error');
+    ch.on('presence', {event: 'sync'}, () => {
+      const now = new Set(Object.keys(ch.presenceState())); now.add(myPeer); let grew = false;
+      for (const k of now) if (!members.has(k)) grew = true;
+      members = now; for (const k of [...states.keys()]) if (!members.has(k)) states.delete(k);
+      if (grew && up) tx.send();   // broadcasts are not replayed: tell the newcomer our state
+      if (cb) cb();
+    });
+    ch.on('broadcast', {event: 'st'}, ({payload}) => { if (payload && payload.id && payload.id !== myPeer){ states.set(payload.id, payload.st || {}); if (cb) cb(); } });
+    try {
+      try { await c.realtime.setAuth(); } catch(e){}   // private channel: the socket must carry the player's token
+      await new Promise((res, rej) => {
+        const to = setTimeout(() => rej(new Error('timeout')), 8000);
+        ch.subscribe((s, err) => {
+          if (gone) return;
+          if (s === 'SUBSCRIBED'){ clearTimeout(to); if (up){ track(); tx.send(); } else res(); }   // again after a reconnect: presence and state must be re-sent
+          else if (!up && (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT' || s === 'CLOSED')){ clearTimeout(to); rej(err || new Error(s)); }
+        });
+      });
+      if ((await track()) !== 'ok') throw new Error('track');
+    } catch(e){ kill(); throw e; }
+    up = true; hb = setInterval(() => { if (tx.idle() >= NET_HB) tx.send(); }, 1000);
     return {
       peers: () => [{id: myPeer, me: true, st: mine}, ...[...members].filter(k => k !== myPeer).map(k => ({id: k, me: false, st: states.get(k) || {}}))],
-      set: o => { mine = Object.assign({}, mine, o); send(); }, onChange: f => { cb = f; },
-      leave: () => { clearInterval(hb); try { ch.unsubscribe(); } catch(e){} }
+      set: o => { if (gone) return; mine = Object.assign({}, mine, o); tx.send(); }, onChange: f => { cb = f; },
+      leave: kill
     };
   }
   throw new Error('no-net');
 }
 
 const vs = {phase: 'idle', lobby: null, room: null, seed: 0, host: false, myId: '', oppId: '', opp: null, ai: null, waitT: 0, timer: 0,
-  lastSend: 0, oppY: 300, oppVis: 300, oppScore: 0, oppAlive: true, oppBird: 'volt', oppNick: '', myFinal: null, result: '', oppFinal: null};
+  lastSend: 0, oppY: 300, oppVis: 300, oppScore: 0, oppAlive: true, oppBird: 'volt', oppNick: '', myFinal: null, result: '', oppFinal: null,
+  tok: 0, pick: '', pickAt: 0, want: '', skip: new Set(), strT: 0, oppRef: null, oppFrom: 300, oppT0: 0, oppDur: VS_SEND, oppRx: 0};
 function vsShow(main){ $('vsMain').hidden = !main; $('vsWait').hidden = main; }
 function openVs(){ renderVsBadge(); vsShow(true); $('vsScr').hidden = false; lbOpen = true; netInit(); }
 function closeVsScr(){ $('vsScr').hidden = true; lbOpen = false; }
 function vsLeave(){
-  clearInterval(vs.timer); vs.timer = 0;
+  clearInterval(vs.timer); vs.timer = 0; clearTimeout(vs.strT); vs.strT = 0;
   if (vs.lobby){ vs.lobby.leave(); vs.lobby = null; }
   if (vs.room){ vs.room.leave(); vs.room = null; }
 }
-function vsReset(){ vsLeave(); Object.assign(vs, {phase: 'idle', seed: 0, host: false, oppId: '', opp: null, ai: null, myFinal: null, result: '', oppFinal: null, oppAlive: true, oppScore: 0}); }
-async function vsAuto(){
+// tok: every reset invalidates whatever join is still in flight, so a cancelled search can never leave a ghost in the lobby or a room
+function vsReset(){ vsLeave(); vs.tok++; Object.assign(vs, {phase: 'idle', seed: 0, host: false, oppId: '', opp: null, ai: null, myFinal: null, result: '', oppFinal: null, oppAlive: true, oppScore: 0, pick: '', want: '', oppRef: null}); }
+// Quick match. keep/skip carry the remaining search time and the peers already given up on when a stranded player goes back to searching.
+async function vsAuto(keep, skip){
   await netInit(); if (netKind === 'none'){ toast(t('onlineNA')); return; }
-  vsReset(); vs.phase = 'search'; vsShow(false); $('vsCode').textContent = ''; vs.waitT = 60;
+  vsReset(); const tok = vs.tok; vs.phase = 'search'; vsShow(false); $('vsCode').textContent = ''; vs.waitT = keep > 0 ? keep : 60; vs.skip = skip || new Set();
   $('vsStatus').textContent = t('searching', {s: vs.waitT});
-  try { vs.lobby = await netJoin('fw-lobby'); } catch(e){ toast(t('onlineNA')); vsShow(true); vs.phase = 'idle'; return; }
-  vs.lobby.set({wait: Date.now(), bird: B.id, rp});
-  vs.lobby.onChange(vsTryPair); vsTryPair();
-  vs.timer = setInterval(() => { if (vs.phase !== 'search') return; vs.waitT--; $('vsStatus').textContent = t('searching', {s: vs.waitT}); if (vs.waitT <= 0){ toast(t('aiFallback')); vsStartAi(); } }, 1000);
+  let lb; try { lb = await netJoin('fw-lobby'); } catch(e){ if (tok === vs.tok){ toast(t('onlineNA')); vsShow(true); vs.phase = 'idle'; } return; }
+  if (tok !== vs.tok){ lb.leave(); return; }
+  vs.lobby = lb; lb.set({wait: Date.now(), bird: B.id, rp, pick: ''});
+  lb.onChange(vsTryPair); vsTryPair();
+  vs.timer = setInterval(() => {
+    if (vs.phase !== 'search') return; vs.waitT--; $('vsStatus').textContent = t('searching', {s: vs.waitT});
+    if (vs.waitT <= 0){ toast(t('aiFallback')); vsStartAi(); return; }
+    if (vs.pick && Date.now() - vs.pickAt > 4000){ vs.skip.add(vs.pick); vsTryPair(); }   // the peer we picked never answered: look past it
+  }, 1000);
 }
+// Lobby pairing. Everyone publishes {wait, pick}. A pair is made only when both sides have picked each other, so two players can never
+// leave for different rooms. Candidates are ordered by (wait, id), the same for every viewer; pairs already locked together (or whose
+// partner has left) are skipped, and someone who has already picked me wins over my own choice, which settles any disagreement at once.
 function vsTryPair(){
   if (vs.phase !== 'search' || !vs.lobby) return;
-  const w = vs.lobby.peers().filter(p => p.st && p.st.wait).sort((a, b) => (a.st.wait - b.st.wait) || (a.id < b.id ? -1 : 1));
-  const i = w.findIndex(p => p.me); if (i < 0) return;
-  const j = i % 2 === 0 ? i + 1 : i - 1, partner = w[j]; if (!partner) return;
-  const name = 'm-' + [w[i].id, partner.id].map(sanitizeId).sort().join('-');
-  clearInterval(vs.timer); vs.lobby.leave(); vs.lobby = null; vsEnterRoom(name, '');
+  const ps = vs.lobby.peers(), me = ps.find(p => p.me); if (!me) return;
+  const w = ps.filter(p => p.me || (p.st && p.st.wait)), pk = p => (p.st && p.st.pick) || '';
+  const taken = p => { const k = pk(p); if (!k || k === me.id) return false; const q = w.find(x => x.id === k); return !q || pk(q) === p.id; };
+  const free = w.filter(p => p.me || (!vs.skip.has(p.id) && !taken(p))).sort((a, b) => ((a.st.wait || 0) - (b.st.wait || 0)) || (a.id < b.id ? -1 : 1));
+  const i = free.findIndex(p => p.me), partner = free.find(p => !p.me && pk(p) === me.id) || free[i % 2 === 0 ? i + 1 : i - 1] || null, pid = partner ? partner.id : '';
+  if (pid !== vs.pick){ vs.pick = pid; vs.pickAt = Date.now(); vs.lobby.set({pick: pid}); }
+  if (!partner || pk(partner) !== me.id) return;
+  const name = 'm-' + [me.id, partner.id].map(sanitizeId).sort().join('-'), lb = vs.lobby;
+  clearInterval(vs.timer); vs.timer = 0; vs.lobby = null; vs.want = partner.id;
+  setTimeout(() => lb.leave(), 1500);   // stay visible for a moment so the partner (and everyone else) sees the pick before we vanish
+  vsEnterRoom(name, '');
 }
 async function vsMake(){ await netInit(); if (netKind === 'none'){ toast(t('onlineNA')); return; } const code = String(1000 + Math.floor(Math.random()*9000)); vsReset(); vsEnterRoom('c-' + code, code); }
 async function vsJoinCode(){
@@ -2388,20 +2521,33 @@ async function vsJoinCode(){
   await netInit(); if (netKind === 'none'){ toast(t('onlineNA')); return; } vsReset(); vsEnterRoom('c-' + code, code);
 }
 async function vsEnterRoom(name, code){
+  const tok = vs.tok;
   vs.phase = 'room'; vsShow(false); $('vsCode').textContent = code; $('vsStatus').textContent = code ? t('shareCode') + ' · ' + t('waitingOpp') : t('matchFound');
-  try { vs.room = await netJoin(name); } catch(e){ toast(t('onlineNA')); vsShow(true); vs.phase = 'idle'; return; }
-  vs.room.set({nick, bird: B.id, rp, ready: 1, al: 1});
-  vs.room.onChange(vsOnRoom); vsOnRoom();
+  let rm; try { rm = await netJoin(name); } catch(e){ if (tok !== vs.tok) return; if (!code) return vsRequeue(); toast(t('onlineNA')); vsShow(true); vs.phase = 'idle'; return; }
+  if (tok !== vs.tok){ rm.leave(); return; }
+  vs.room = rm; rm.set({nick, bird: B.id, rp, ready: 1, al: 1});
+  rm.onChange(vsOnRoom); vsOnRoom();
+  // quick match only: the partner never arrived (it paired elsewhere, closed the tab, lost the network)
+  if (!code) vs.strT = setTimeout(() => { if (tok === vs.tok && vs.phase === 'room') vsRequeue(); }, 8000);
+}
+// Stranded in an empty quick-match room: back to searching with the time that is left, or the AI when there is none.
+function vsRequeue(){
+  const left = vs.waitT, skip = vs.skip; if (vs.want) skip.add(vs.want);
+  if (left <= 5){ toast(t('aiFallback')); vsReset(); vsStartAi(); return; }
+  toast(t('vsStranded')); vsAuto(left, skip);
 }
 function vsOnRoom(){
   if (!vs.room) return;
   const ps = vs.room.peers(), me = ps.find(p => p.me), others = ps.filter(p => !p.me);
   if (me) vs.myId = me.id;
   if (vs.phase === 'room'){
-    if (!others.length) return;
-    const o = others[0]; vs.oppId = o.id; vs.host = vs.myId < o.id;
-    if (vs.host && !vs.seed){ vs.seed = (Math.random()*4294967296) >>> 0 || 7; vs.room.set({go: vs.seed}); vsCountdown(); }
-    else if (!vs.host && o.st && o.st.go && !vs.seed){ vs.seed = o.st.go; vsCountdown(); }
+    // "go" is addressed (vs = the opponent's id): a third player walking into a room that is already playing can neither start nor be started
+    const eng = p => (p.st && p.st.vs) || '';
+    const o = others.find(p => p.st && p.st.go && eng(p) === vs.myId) || others.find(p => p.st && p.st.ready && !eng(p));   // ready: its state has arrived
+    if (!o) return;
+    vs.oppId = o.id; vs.host = vs.myId < o.id;
+    if (vs.host && !vs.seed){ vs.seed = (Math.random()*4294967296) >>> 0 || 7; vs.room.set({go: vs.seed, vs: o.id}); vsCountdown(); }
+    else if (!vs.host && o.st && o.st.go && eng(o) === vs.myId && !vs.seed){ vs.seed = o.st.go; vs.room.set({vs: o.id}); vsCountdown(); }
     return;
   }
   if (vs.phase === 'play' || vs.phase === 'done'){
@@ -2410,7 +2556,8 @@ function vsOnRoom(){
     // (otherwise a trailing player could pause until the dead leader gives up waiting, and collect the win).
     if (!o){ if (vs.phase === 'play' && !vs.result){ const b = vs.oppFinal || 0; if (vs.oppAlive) vsFinish('win', true); else vsFinish(score > b ? 'win' : score < b ? 'lose' : 'draw', false); } return; }
     const st = o.st || {};
-    if (typeof st.y === 'number') vs.oppY = st.y;
+    // Each new state message is one sample: the ghost glides from where it is drawn now to the new height over one send interval
+    if (st !== vs.oppRef && typeof st.y === 'number' && st.y !== vs.oppY){ const now = performance.now(); vs.oppRef = st; vs.oppDur = Math.max(80, Math.min(400, vs.oppRx ? now - vs.oppRx : VS_SEND)); vs.oppRx = vs.oppT0 = now; vs.oppFrom = vs.oppVis; vs.oppY = st.y; }
     vs.oppScore = st.sc | 0; vs.oppBird = st.b || st.bird || 'volt'; vs.oppNick = cleanNick(st.n || st.nick || '');
     if (st.al === 0 && vs.oppAlive){ vs.oppAlive = false; vs.oppFinal = vs.oppScore; vsBurst(); }
     vsResolve();
@@ -2425,7 +2572,7 @@ function vsCountdown(){
 }
 function vsBegin(){
   if (!isOwned(B)){ B = BIRDS[0]; renderHangar(); }
-  vs.phase = 'play'; vs.oppAlive = true; vs.oppScore = 0; vs.myFinal = null; vs.oppFinal = null; vs.result = ''; vs.oppY = vs.oppVis = 300;
+  vs.phase = 'play'; vs.oppAlive = true; vs.oppScore = 0; vs.myFinal = null; vs.oppFinal = null; vs.result = ''; vs.oppY = vs.oppVis = vs.oppFrom = 300; vs.oppRef = null; vs.oppRx = 0;
   startGame('versus');
 }
 function vsStartAi(){
@@ -2450,11 +2597,12 @@ function vsTick(dt){
       if (!a.alive){ vs.oppAlive = false; vs.oppFinal = a.score; vsBurst(); }
     }
     vsResolve();
-  } else if (vs.room){
+    vs.oppVis += (vs.oppY - vs.oppVis) * Math.min(1, dt*12);
+  } else {
     const now = performance.now();
-    if (now - vs.lastSend > 90 && state === 'play'){ vs.lastSend = now; vs.room.set({y: Math.round(bird.y), sc: score, al: 1, g: gatesPassed, b: B.id, n: nick}); }
+    if (vs.room && now - vs.lastSend >= VS_SEND && state === 'play'){ vs.lastSend = now; vs.room.set({y: Math.round(bird.y), sc: score, al: 1, g: gatesPassed, b: B.id, n: nick}); }
+    vs.oppVis = vs.oppFrom + (vs.oppY - vs.oppFrom) * Math.min(1, (now - vs.oppT0) / vs.oppDur);   // 5 samples a second, drawn as one continuous glide
   }
-  vs.oppVis += (vs.oppY - vs.oppVis) * Math.min(1, dt*12);
 }
 function vsBurst(){ for (let i=0;i<24;i++){ const a = Math.random()*6.28, s = 60 + Math.random()*200; part(bird.x, vs.oppVis, Math.cos(a)*s, Math.sin(a)*s, .7, [0,100,62], 3); } pop(t('opp') + ' ✕', bird.x, vs.oppVis - 30, [0,100,70], true); }
 function vsOnMyDeath(){
@@ -2550,7 +2698,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
 resize(); reset(); state = 'menu';
 applyI18n(); renderWallet();
 requestAnimationFrame(loop);
-initDB();
+online();
 })();
 </script>
 
