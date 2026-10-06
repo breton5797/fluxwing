@@ -188,7 +188,6 @@ button.wpill{cursor:pointer}
 button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 .ic{display:inline-block;flex:none}
 .ic.coin{width:11px;height:11px;border-radius:50%;background:var(--gold);box-shadow:inset -2px -2px 0 rgba(0,0,0,.25)}
-.ic.cred{width:8px;height:8px;transform:rotate(45deg);background:var(--cool)}
 .ic.gem{width:12px;height:12px;background:linear-gradient(135deg,#ffb3dc,#ff4f8b);clip-path:polygon(50% 0,100% 38%,50% 100%,0 38%)}
 .lvbar{width:22px;height:5px;border-radius:3px;background:rgba(243,238,252,.15);overflow:hidden}
 .lvbar i{display:block;height:100%;background:var(--cool)}
@@ -224,8 +223,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
   <div class="wallet" id="wallet">
     <span class="wpill" id="wLv">Lv 1 <span class="lvbar"><i id="wXp" style="width:0%"></i></span></span>
     <span class="wpill"><i class="ic coin"></i><span id="wCoin">0</span></span>
-    <span class="wpill"><i class="ic cred"></i><span id="wCred">0</span></span>
-    <button class="wpill" id="wGemBtn" aria-label="Shop"><i class="ic gem"></i><span id="wGem">0</span></button>
+    <span class="wpill" id="wGemBtn"><i class="ic gem"></i><span id="wGem">0</span></span>
   </div>
   <div id="toast" hidden></div>
   <div id="topBtns">
@@ -444,42 +442,43 @@ const BIRDS = [
   { id:'titan',  name:'TITAN',  col:[145,80,52],  wingCol:[60,100,60],  speed:0.97, flap:590, grav:1850, maxFall:760, dash:1.40, r:15.5, window:16, bonus:0, shieldStart:1,  nose:17, h:16, span:26, stats:[3,5,1,5] },
   // ---- premium ----
   { id:'mochi',   name:'MOCHI',   rarity:1, col:[350,100,90], wingCol:[340,85,78], speed:0.98, flap:430, grav:1300, maxFall:640, dash:1.00, r:13.5, window:18, bonus:0, nose:15, h:13, span:20, stats:[3,3,4,3],
-    xpMul:2, magnet:95, price:{cr:1000, gem:149} },
+    xpMul:2, magnet:95 },
   { id:'aegis',   name:'AEGIS',   rarity:2, col:[44,90,56],   wingCol:[210,25,78], speed:1.00, flap:500, grav:1600, maxFall:740, dash:1.00, r:14,   window:16, bonus:0, nose:17, h:14, span:28, stats:[3,4,2,3],
-    shieldStart:2, shieldMax:3, shieldRegen:15, price:{cr:2500, gem:299} },
+    shieldStart:2, shieldMax:3, shieldRegen:15 },
   { id:'phoenix', name:'PHOENIX', rarity:3, col:[14,100,56],  wingCol:[42,100,60], speed:1.06, flap:480, grav:1520, maxFall:720, dash:1.15, r:13,   window:18, bonus:1, nose:19, h:12, span:34, stats:[4,4,3,3],
-    revive:1, feverAt:7, price:{cr:5000, gem:599} },
+    revive:1, feverAt:7 },
   { id:'zero',    name:'ZERO',    rarity:3, col:[268,35,22],  wingCol:[288,100,66],speed:1.10, flap:480, grav:1560, maxFall:740, dash:1.20, r:12.5, window:16, bonus:0, uiCol:[288,100,66], nose:21, h:11, span:26, stats:[4,3,3,5],
-    dashFull:true, dashLen:1.5, dashPts:2, price:{pass:true, cr:5000} },
+    dashFull:true, dashLen:1.5, dashPts:2 },
   // ---- high-end premium (special abilities) ----
   { id:'pixel',   name:'PIXEL',   rarity:1, col:[48,100,58],  wingCol:[20,100,58],  speed:1.00, flap:470, grav:1500, maxFall:720, dash:1.00, r:13,   window:16, bonus:0, nose:16, h:13, span:26, stats:[3,3,3,3],
-    coinMul:2, orbShieldEvery:50, shieldMax:2, price:{cr:1000, gem:149} },
+    coinMul:2, orbShieldEvery:50, shieldMax:2 },
   { id:'neko',    name:'NEKO',    rarity:1, col:[275,60,86],  wingCol:[330,80,75],  speed:0.98, flap:450, grav:1400, maxFall:680, dash:1.00, r:13,   window:17, bonus:0, nose:16, h:13, span:24, stats:[3,3,4,3],
-    bounce:99, price:{cr:1000, gem:149} },
+    bounce:99 },
   { id:'buzz',    name:'BUZZ',    rarity:1, col:[46,100,55],  wingCol:[200,60,92],  speed:1.02, flap:420, grav:1250, maxFall:600, dash:1.05, r:12,   window:17, bonus:0, nose:16, h:12, span:24, stats:[3,2,4,3],
-    powerChance:2, powerDur:1.5, price:{cr:1000, gem:149} },
+    powerChance:2, powerDur:1.5 },
   { id:'kraken',  name:'KRAKEN',  rarity:2, col:[285,65,55],  wingCol:[320,80,65],  speed:0.96, flap:500, grav:1550, maxFall:700, dash:1.00, r:14,   window:16, bonus:0, nose:16, h:13, span:26, stats:[2,4,3,3],
-    inkEvery:10, price:{cr:2500, gem:299} },
+    inkEvery:10 },
   { id:'specter', name:'SPECTER', rarity:2, col:[185,60,92],  wingCol:[185,100,70], speed:1.04, flap:440, grav:1300, maxFall:620, dash:1.10, r:12.5, window:17, bonus:0, nose:16, h:13, span:26, stats:[4,3,4,3],
-    phaseEvery:12, price:{cr:2500, gem:299} },
+    phaseEvery:12 },
   { id:'oracle',  name:'ORACLE',  rarity:2, col:[170,70,42],  wingCol:[55,100,65],  speed:1.00, flap:460, grav:1450, maxFall:690, dash:1.00, r:13,   window:16, bonus:0, nose:15, h:14, span:30, stats:[3,3,4,3],
-    oracle:true, windowBonus:8, price:{cr:2500, gem:299} },
+    oracle:true, windowBonus:8 },
   { id:'raijin',  name:'RAIJIN',  rarity:3, col:[205,100,55], wingCol:[55,100,62],  speed:1.12, flap:500, grav:1650, maxFall:780, dash:1.20, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,4,2,4],
-    boltEvery:3, price:{cr:5000, gem:599} },
+    boltEvery:3 },
   { id:'chrono',  name:'CHRONO',  rarity:3, col:[32,60,46],   wingCol:[40,85,65],   speed:1.00, flap:470, grav:1480, maxFall:700, dash:1.00, r:13,   window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3],
-    rewind:2, price:{cr:5000, gem:599} },
+    rewind:2 },
   { id:'goliath', name:'GOLIATH', rarity:3, col:[220,15,58],  wingCol:[25,100,55],  speed:0.95, flap:560, grav:1800, maxFall:780, dash:1.30, r:15,   window:16, bonus:0, nose:17, h:16, span:26, stats:[2,5,1,5],
-    giantEvery:20, price:{cr:5000, gem:599} },
+    giantEvery:20 },
   { id:'solaris', name:'SOLARIS', rarity:4, col:[45,100,62],  wingCol:[18,100,60],  speed:1.08, flap:490, grav:1550, maxFall:740, dash:1.20, r:13.5, window:18, bonus:1, nose:18, h:13, span:32, stats:[4,4,3,4],
-    shieldStart:1, feverMul:3, comboGuard:true, coinMul:2, xpMul:2, gemMul:2, price:{cr:12000, gem:999} },
-  { id:'aurora',  name:'AURORA',  rarity:4, col:[160,90,58],  wingCol:[280,90,72],  speed:1.04, flap:470, grav:1420, maxFall:680, dash:1.10, r:13,   window:20, bonus:1, nose:17, h:12, span:34, stats:[3,3,4,3], comboKeep:.5, price:{cr:12000, gem:999} },
-  { id:'tempest', name:'TEMPEST', rarity:4, col:[215,75,52],  wingCol:[185,100,70], speed:1.15, flap:490, grav:1600, maxFall:760, dash:1.40, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,3,2,5], dashPts:2, dashRefund:.3, price:{cr:12000, gem:999} },
-  { id:'pleiad',  name:'PLEIAD',  rarity:4, col:[232,65,62],  wingCol:[50,100,72],  speed:1.00, flap:480, grav:1500, maxFall:700, dash:1.10, r:13.5, window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3], shieldStart:2, shieldMax:2, shieldRegen:12, shieldBurst:true, price:{cr:12000, gem:999} },
-  { id:'pulsar',  name:'PULSAR',  rarity:4, col:[320,100,62], wingCol:[180,100,66], speed:1.06, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:19, bonus:2, nose:19, h:12, span:28, stats:[4,3,3,3], perfCharge:.08, feverAt:8, price:{cr:12000, gem:999} }
+    shieldStart:1, feverMul:3, comboGuard:true, coinMul:2, xpMul:2, gemMul:2 },
+  { id:'aurora',  name:'AURORA',  rarity:4, col:[160,90,58],  wingCol:[280,90,72],  speed:1.04, flap:470, grav:1420, maxFall:680, dash:1.10, r:13,   window:20, bonus:1, nose:17, h:12, span:34, stats:[3,3,4,3], comboKeep:.5 },
+  { id:'tempest', name:'TEMPEST', rarity:4, col:[215,75,52],  wingCol:[185,100,70], speed:1.15, flap:490, grav:1600, maxFall:760, dash:1.40, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,3,2,5], dashPts:2, dashRefund:.3 },
+  { id:'pleiad',  name:'PLEIAD',  rarity:4, col:[232,65,62],  wingCol:[50,100,72],  speed:1.00, flap:480, grav:1500, maxFall:700, dash:1.10, r:13.5, window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3], shieldStart:2, shieldMax:2, shieldRegen:12, shieldBurst:true },
+  { id:'pulsar',  name:'PULSAR',  rarity:4, col:[320,100,62], wingCol:[180,100,66], speed:1.06, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:19, bonus:2, nose:19, h:12, span:28, stats:[4,3,3,3], perfCharge:.08, feverAt:8 }
 ];
 BIRDS.sort((a, b) => (a.rarity || 0) - (b.rarity || 0));   // stable: basics first, then by rarity
 const RARITY_COL = [[0,0,70],[280,90,68],[350,90,64],[45,100,58],[300,100,74]];
 const RARITY_KEY = ['r_common','r_epic','r_mythic','r_legendary','r_ultra'];
+const PRICE = [null, {coin:2000}, {coin:5000}, {coin:10000}, {gem:60}]; const priceOf = b => PRICE[b.rarity || 0];   // by rarity; Ultra is gems only
 // Effective perks: Daily Challenge runs in fair mode (see design doc)
 function perks(){
   const d = mode === 'daily' || mode === 'versus';
@@ -552,16 +551,16 @@ I18N_D_KEYS.forEach((k,i) => { for (const l in I18N) I18N[l][k] = (I18N_D[l] || 
 const I18N_F_KEYS = ['start','stageSel','stage','locked','unlockHint','bestG','vs','autoMatch','makeRoom','joinRoom','aiMatch','searching','roomCode','waitingOpp','enterCode','join','cancel','aiFallback','youWin','youLose','drawR','rankPts','t0','t1','t2','t3','t4','forfeit','onlineNA','opp','watching','rematch','seasonNote','help','hControls','hScore','hMoney','hUnits','tut1','tut2','tut3','skillLbl','potionP','contTitle','contAd','contCoin','giveUp','adPlaying','confirmBuy','confirmUnlock','buy','danger','easy','normal','hard','expert','vsVs','shareCode','matchFound'];
 const I18N_F = {
 ko:['START','스테이지 선택','STAGE {n}','잠김','이전 스테이지를 클리어하면 열려요','최고 {n}점','2인 대전','자동 매치','방 만들기','코드로 참가','AI와 대전','상대 찾는 중… {s}초','방 코드','상대를 기다리는 중…','4자리 코드','참가','취소','1분 동안 상대가 없어 AI와 대전합니다','승리!','패배','무승부','랭크 점수','브론즈','실버','골드','다이아','마스터','상대가 나가서 승리했어요','온라인 대전에 연결할 수 없어요. AI와는 대전할 수 있어요.','상대','상대가 아직 날고 있어요…','다시 대전','한 달 시즌이 끝나면 랭크 상위 10명에게 한정 유닛을 드려요','도움말',
- '조작 — 화면 탭(스페이스)으로 날갯짓. 게이지가 차면 DASH(Shift)로 벽을 뚫고, SKILL(S)로 유닛 고유 스킬을 써요.','점수 — 게이트 통과 1점. 가장자리를 아슬아슬하게 스치면 PERFECT로 콤보 점수, 10콤보부터 피버 2배.','재화 — 코인(오브)은 이어하기, 크레딧(레벨업)은 유닛 해금, 젬(결제)은 즉시 해금과 패스에 써요.','유닛 — 기본·에픽·미식·레전더리·울트라 5등급. 모두 고유 스킬과 아우라가 있고, 오늘의 챌린지와 2인 대전에서는 능력이 공정하게 제한돼요.',
+ '조작 — 화면 탭(스페이스)으로 날갯짓. 게이지가 차면 DASH(Shift)로 벽을 뚫고, SKILL(S)로 유닛 고유 스킬을 써요.','점수 — 게이트 통과 1점. 가장자리를 아슬아슬하게 스치면 PERFECT로 콤보 점수, 10콤보부터 피버 2배.','재화 — 코인(오브·레벨업·스테이지 첫 클리어)으로 유닛을 사요. 젬은 스테이지 플레이 중 1% 확률로 떨어지고, 60개를 모으면 울트라 유닛 1기를 살 수 있어요.','유닛 — 기본·에픽·미식·레전더리·울트라 5등급. 모두 고유 스킬과 아우라가 있고, 오늘의 챌린지와 2인 대전에서는 능력이 공정하게 제한돼요.',
  '화면을 탭해서 날아오르세요','게이트 가장자리를 아슬아슬하게 스치면 PERFECT!','게이지가 차면 DASH, SKILL 버튼으로 고유 스킬!','스킬','무적 질주!','이어서 할까요?','광고 보고 이어하기','{n} 코인으로 이어하기','그만하기','광고 재생 중 (테스트 빌드)','{item} · {price}\n구매할까요?','{u}을(를) 젬 {n}개로 해금할까요?','구매','위험!','쉬움','일반','보통','어려움','VS','친구에게 이 코드를 알려주세요','상대를 찾았어요!'],
 en:['START','Select stage','STAGE {n}','Locked','Clear the previous stage to unlock','Best {n}','Versus','Quick match','Create room','Join with code','Play the AI','Finding an opponent… {s}s','Room code','Waiting for an opponent…','4-digit code','Join','Cancel','No opponent in 1 minute. Playing the AI.','VICTORY!','DEFEAT','DRAW','Rank points','Bronze','Silver','Gold','Diamond','Master','Your opponent left. You win.','Online versus is unavailable here. You can still play the AI.','Rival','Your rival is still flying…','Rematch','Top 10 ranked players each monthly season get a limited unit','Help',
- 'Controls — tap (Space) to flap. When the meter fills, DASH (Shift) breaks walls; SKILL (S) fires your unit’s own skill.','Score — 1 point per gate. Skim an edge for a PERFECT and combo points; Fever doubles points from a 10 combo.','Currencies — coins (orbs) pay for continues, credits (level-ups) unlock units, gems (purchases) unlock instantly and buy the pass.','Units — Common, Epic, Mythic, Legendary, Ultra. Every unit has a skill and an aura; Daily Challenge and Versus cap abilities for fairness.',
+ 'Controls — tap (Space) to flap. When the meter fills, DASH (Shift) breaks walls; SKILL (S) fires your unit’s own skill.','Score — 1 point per gate. Skim an edge for a PERFECT and combo points; Fever doubles points from a 10 combo.','Currencies — coins (orbs, level-ups, first stage clears) buy units. Gems drop at a 1% chance during stage play; 60 gems buy one Ultra unit.','Units — Common, Epic, Mythic, Legendary, Ultra. Every unit has a skill and an aura; Daily Challenge and Versus cap abilities for fairness.',
  'Tap the screen to fly up','Skim a gate edge for a PERFECT!','Meter full? DASH. Then fire your SKILL!','Skill','UNSTOPPABLE!','Continue?','Watch an ad to continue','Continue for {n} coins','Give up','Ad playing (test build)','{item} · {price}\nBuy now?','Unlock {u} for {n} gems?','Buy','DANGER!','Easy','Normal','Hard','Expert','VS','Share this code with your friend','Opponent found!'],
 ja:['START','ステージ選択','STAGE {n}','ロック中','前のステージをクリアすると解放','ベスト {n}','2人対戦','オートマッチ','ルーム作成','コードで参加','AIと対戦','対戦相手を検索中… {s}秒','ルームコード','相手を待っています…','4桁のコード','参加','キャンセル','1分間相手がいないためAIと対戦します','勝利!','敗北','引き分け','ランクポイント','ブロンズ','シルバー','ゴールド','ダイヤ','マスター','相手が退出したため勝利','オンライン対戦に接続できません。AI対戦は可能です。','相手','相手はまだ飛んでいます…','再戦','月間シーズン終了時、ランク上位10名に限定ユニット','ヘルプ',
- '操作 — タップ(スペース)で羽ばたく。ゲージが溜まったらDASH(Shift)で壁を突破、SKILL(S)で固有スキル。','スコア — ゲート通過で1点。ふちをかすめるとPERFECTでコンボ得点、10コンボからフィーバー2倍。','通貨 — コイン(オーブ)はコンティニュー、クレジット(レベルアップ)はユニット解放、ジェム(購入)は即時解放とパス。','ユニット — ノーマル〜ウルトラの5等級。全ユニットに固有スキルとオーラ。デイリーと対戦では能力を公平に制限。',
+ '操作 — タップ(スペース)で羽ばたく。ゲージが溜まったらDASH(Shift)で壁を突破、SKILL(S)で固有スキル。','スコア — ゲート通過で1点。ふちをかすめるとPERFECTでコンボ得点、10コンボからフィーバー2倍。','通貨 — コイン(オーブ・レベルアップ・ステージ初クリア)でユニットを購入。ジェムはステージプレイ中に1%の確率でドロップし、60個でウルトラユニット1体。','ユニット — ノーマル〜ウルトラの5等級。全ユニットに固有スキルとオーラ。デイリーと対戦では能力を公平に制限。',
  '画面をタップして飛び上がろう','ゲートのふちをかすめるとPERFECT!','ゲージが溜まったらDASH、SKILLで固有スキル!','スキル','無敵ダッシュ!','続けますか?','広告を見て続ける','{n}コインで続ける','やめる','広告再生中(テストビルド)','{item} · {price}\n購入しますか?','{u}をジェム{n}個で解放しますか?','購入','危険!','やさしい','ふつう','むずかしい','最上級','VS','このコードを友だちに伝えてね','相手が見つかりました!'],
 zh:['START','选择关卡','STAGE {n}','未解锁','通关上一关后解锁','最高 {n}','双人对战','自动匹配','创建房间','输入代码加入','与AI对战','正在寻找对手… {s}秒','房间代码','等待对手…','4位代码','加入','取消','1分钟内没有对手,改为与AI对战','胜利!','失败','平局','段位分','青铜','白银','黄金','钻石','大师','对手已离开,你获胜','无法连接在线对战,可以与AI对战。','对手','对手还在飞…','再战','每月赛季结束时,段位前10名获得限定机体','帮助',
- '操作 — 点击(空格)振翅。能量满后DASH(Shift)冲破墙壁,SKILL(S)释放专属技能。','得分 — 通过关卡得1分。擦边通过为PERFECT并累积连击,10连击起狂热2倍。','货币 — 金币(能量球)用于续关,信用点(升级)解锁机体,宝石(付费)立即解锁和购买通行证。','机体 — 普通到究极5个等级,全部拥有专属技能和光环。每日挑战与对战会公平限制能力。',
+ '操作 — 点击(空格)振翅。能量满后DASH(Shift)冲破墙壁,SKILL(S)释放专属技能。','得分 — 通过关卡得1分。擦边通过为PERFECT并累积连击,10连击起狂热2倍。','货币 — 金币(能量球、升级、关卡首通)用于购买机体。宝石在关卡中以1%概率掉落,集齐60个可购买1台究极机体。','机体 — 普通到究极5个等级,全部拥有专属技能和光环。每日挑战与对战会公平限制能力。',
  '点击屏幕向上飞','擦过关卡边缘即可PERFECT!','能量满了就DASH,再用SKILL释放技能!','技能','无敌冲刺!','要继续吗?','看广告继续','用{n}金币继续','放弃','广告播放中(测试版本)','{item} · {price}\n确定购买吗?','用{n}个宝石解锁{u}吗?','购买','危险!','简单','普通','困难','极难','VS','把这个代码告诉朋友','找到对手了!']
 };
 I18N_F_KEYS.forEach((k,i) => { for (const l in I18N) I18N[l][k] = (I18N_F[l] || I18N_F.en)[i]; });
@@ -597,13 +596,19 @@ let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
 
 /* ---------- economy (local; moves server-side at paid launch) ---------- */
 const clampI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
-const W = Object.assign({xp:0, lvl:1, coins:0, credits:0, gems:0}, store.get('fw27_wallet', {}));
+// Wallet lives in fw27_wallet2. First load converts the old fw27_wallet once (credits x2 -> coins, gems x0.06 rounded up) and never writes it.
+const W = (() => {
+  const w = store.get('fw27_wallet2', null), o = w || store.get('fw27_wallet', {}) || {};
+  const n = {xp: clampI(o.xp, 0, 99), lvl: clampI(o.lvl, 1, 1e6), coins: clampI(o.coins, 0, 1e12), gems: clampI(o.gems, 0, 1e9)};
+  if (!w){ n.coins += clampI(o.credits, 0, 1e12) * 2; n.gems = Math.ceil(n.gems * 6 / 100); store.set('fw27_wallet2', n); }
+  return n;
+})();
 const owned = new Set(store.get('fw27_owned', ['volt','blitz','nimbus','titan']));
 let hasPass = store.get('fw27_pass', false), starterBought = store.get('fw27_starter', false);
 const XP_PER_LEVEL = 100;
-const saveW = () => { store.set('fw27_wallet', W); store.set('fw27_owned', [...owned]); store.set('fw27_pass', hasPass); store.set('fw27_starter', starterBought); };
+const saveW = () => { store.set('fw27_wallet2', W); store.set('fw27_owned', [...owned]); store.set('fw27_pass', hasPass); store.set('fw27_starter', starterBought); };
 const isOwned = b => owned.has(b.id);
-function grantXP(n){ let ups = 0; W.xp += n; while (W.xp >= XP_PER_LEVEL){ W.xp -= XP_PER_LEVEL; W.lvl++; W.credits += 40; W.coins += 50; if (W.lvl % 5 === 0) W.gems += 10; ups++; } return ups; }
+function grantXP(n){ let ups = 0; W.xp += n; while (W.xp >= XP_PER_LEVEL){ W.xp -= XP_PER_LEVEL; W.lvl++; W.coins += 50; if (W.lvl % 5 === 0) W.gems += 1; ups++; } return ups; }
 
 function detectLang(){
   const saved = store.get('fw27_lang', null);
@@ -807,7 +812,9 @@ function spawnGate(x){
     orbs.push({ x:x + g.w/2, y:base, k:powKind(pk), got:false, t:0, gate:g });
   }
   if (FX.laneN > 0) laneApply(g);
+  if (mode === 'endless' && idx > 4 && Math.random() < GEM_P * (B.gemMul || 1)) orbs.push({ x: x + g.w + 90, y: base, k:'gem', got:false, t:0 });
 }
+let GEM_P = .01;   // gem drop chance per gate (stage mode)
 // AURORA lane: a laned gate sits still at base + off and is laneGap wider; g.base itself never changes, so course layout is untouched
 function laneApply(g){
   if (FX.laneN <= 0) return;
@@ -1256,13 +1263,13 @@ function showOver(){
   $('over').hidden = false; vsFillOver(); if (mode === 'versus') vsResolve();
   if (mode !== 'versus') submitScore(score, gatesPassed, mode, runDay);
   // rewards
-  const xpGain = Math.round((gatesPassed + perfects*2 + Math.floor(score/10)) * PK.xpMul), coinGain = Math.round(orbsGot * PK.coinMul);
-  let crGain = 0;
-  if (mode === 'daily' && store.get('fw27_dbonus','') !== runDay){ store.set('fw27_dbonus', runDay); crGain += 30; W.credits += 30; }
-  W.coins += coinGain; const ups = grantXP(xpGain); crGain += ups*40; saveW();
+  const xpGain = Math.round((gatesPassed + perfects*2 + Math.floor(score/10)) * PK.xpMul), coinGain = Math.round(orbsGot * PK.coinMul * (mode === 'endless' ? ST_COIN[stTier(curStage)] : 1));
+  const gems0 = W.gems; let dCoin = 0;
+  if (mode === 'daily' && store.get('fw27_dbonus','') !== runDay){ store.set('fw27_dbonus', runDay); dCoin = 60; W.coins += 60; W.gems += 1; }
+  W.coins += coinGain; const ups = grantXP(xpGain); saveW();
   const rw = $('oRewards'); rw.textContent = '';
   const pill = (cls, txt) => { const p = document.createElement('span'); p.className = 'wpill'; if (cls){ const i = document.createElement('i'); i.className = 'ic ' + cls; p.appendChild(i); } p.appendChild(document.createTextNode(txt)); rw.appendChild(p); };
-  pill('', `+${xpGain} XP` + (PK.xpMul > 1 ? ` ×${PK.xpMul}` : '')); pill('coin', '+' + (coinGain + ups*50)); if (crGain) pill('cred', '+' + crGain);
+  pill('', `+${xpGain} XP` + (PK.xpMul > 1 ? ` ×${PK.xpMul}` : '')); pill('coin', '+' + (coinGain + ups*50 + FX.clearCoin + dCoin)); { const gn = FX.gemsRun + (W.gems - gems0); if (gn > 0) pill('gem', '+' + gn); }
   $('oLvup').hidden = !ups; if (ups) $('oLvup').textContent = `${t('levelUp')} Lv ${W.lvl}`;
   $('oTrial').hidden = !runTrial; if (runTrial) $('oTrial').textContent = t('trialRun') + ' · ' + B.name;
   $('wallet').hidden = false; renderWallet();
@@ -1466,12 +1473,13 @@ function update(rdt){
     if (o.gate) { o.x = o.gate.x + o.gate.w/2; o.y = gY(o.gate); }
     if (o.got) continue;
     const dx = bird.x - o.x, dy = bird.y - o.y, d = Math.hypot(dx,dy);
-    const mr = rushT > 0 ? 240 : magnetT > 0 ? 190 : PK.magnet;
-    if (mr && o.k === 'orb' && d < mr && d > 0){ o.x += dx/d * 520*dt; o.y += dy/d * 520*dt; }
-    if (d < bird.r + (o.k==='orb'?10:16)){
+    const mr = o.k === 'gem' ? 110 : rushT > 0 ? 240 : magnetT > 0 ? 190 : PK.magnet;
+    if (mr && (o.k === 'orb' || o.k === 'gem') && d < mr && d > 0){ o.x += dx/d * 520*dt; o.y += dy/d * 520*dt; }
+    if (d < bird.r + (o.k==='orb'?10:o.k==='gem'?22:16)){
       o.got = true;
       if (o.k === 'orb' && PK.orbShieldEvery && (orbsGot + 1) % PK.orbShieldEvery === 0 && shields < PK.shieldMax){ shields++; popT = 0; pop(t('shieldP') + ' +1', bird.x, bird.y-34, [48,100,62], true); SFX.power(); haptic('power'); }
       if (o.k === 'orb'){ orbsGot += rushT > 0 ? 2 : 1; dashMeter = Math.min(1, dashMeter + .05*B.dash); SFX.orb(); for (let i=0;i<6;i++) part(o.x,o.y,(Math.random()-.5)*160,(Math.random()-.5)*160,.35,[48,100,65],2); }
+      else if (o.k === 'gem'){ W.gems++; FX.gemsRun++; saveW(); pop(t('gemP'), bird.x, bird.y-34, [335,100,72], true); ring(bird.x, bird.y, 160, [335,100,72], .6, 6); flash = Math.max(flash, .3); SFX.power(); haptic('power'); }
       else {
         SFX.power(); haptic('power');
         if (o.k === 'shield'){ shields = Math.min(PK.shieldMax, shields + 1); popT = 0; flash = Math.max(flash, .3); ring(bird.x, bird.y, 150, [190,100,70], .6, 7); pop(t('shieldP'), bird.x, bird.y-34, [190,100,70], true); }
@@ -1557,6 +1565,11 @@ function render(){
       ctx.save(); ctx.translate(o.x, o.y + bob); ctx.rotate(o.t*2);
       ctx.shadowColor = 'hsl(48,100%,60%)'; ctx.shadowBlur = 14;
       ctx.fillStyle = 'hsl(48,100%,66%)'; ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(6,0); ctx.lineTo(0,8); ctx.lineTo(-6,0); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    } else if (o.k === 'gem'){
+      ctx.save(); ctx.translate(o.x, o.y + bob);
+      ctx.shadowColor = 'hsl(335,100%,70%)'; ctx.shadowBlur = 18;
+      ctx.fillStyle = 'hsl(335,100%,70%)'; ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(9,-2); ctx.lineTo(0,11); ctx.lineTo(-9,-2); ctx.closePath(); ctx.fill();
       ctx.restore();
     } else drawPower(o, bob);
   }
@@ -1893,8 +1906,8 @@ function renderHangar(){
     const btn = (label, fn, cls, icon) => { const b = document.createElement('button'); b.className = 'ghost' + (cls ? ' ' + cls : ''); if (icon){ const i = document.createElement('i'); i.className = 'ic ' + icon; b.appendChild(i); } b.appendChild(document.createTextNode(label)); b.addEventListener('click', e => { e.stopPropagation(); audioInit(); fn(); }); lk.appendChild(b); };
     if (store.get('fw27_trial','') !== dayKey()) btn(t('trial'), () => startGame('endless'), 'primary');
     else { const n = document.createElement('div'); n.className = 'note'; n.textContent = t('trialUsed'); lk.appendChild(n); }
-    if (B.price.pass && !hasPass) btn(t('passOnly'), () => openShop());
-    else { btn(B.price.cr.toLocaleString(), () => unlockBird(B, 'cr'), '', 'cred'); if (B.price.gem) btn(String(B.price.gem), () => unlockBird(B, 'gem'), '', 'gem'); }
+    const p = priceOf(B); btn(p.gem ? String(p.gem) : p.coin.toLocaleString(), () => unlockBird(B), '', p.gem ? 'gem' : 'coin');
+    if (p.gem){ const n = document.createElement('div'); n.className = 'note'; n.textContent = t('gemHint', {n: W.gems}); lk.appendChild(n); }
   }
   $('hgRole').textContent = t('r_' + B.id);
   { const hc = $('hgChips'); hc.textContent = '';
@@ -1945,7 +1958,7 @@ function drawHangarPreview(){
 /* ---------- wallet, unlocks, shop ---------- */
 function renderWallet(){
   $('wLv').firstChild.nodeValue = `Lv ${W.lvl} `; $('wXp').style.width = (W.xp / XP_PER_LEVEL * 100) + '%';
-  $('wCoin').textContent = W.coins.toLocaleString(); $('wCred').textContent = W.credits.toLocaleString(); $('wGem').textContent = W.gems.toLocaleString();
+  $('wCoin').textContent = W.coins.toLocaleString(); $('wGem').textContent = W.gems.toLocaleString();
 }
 let toastT = 0;
 function toast(msg){ const el = $('toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 2200); }
@@ -1959,13 +1972,19 @@ function confirmDlg(msg, yes){ $('confMsg').textContent = msg; confCb = yes; $('
 function confClose(){ $('confScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden; }
 $('confYes').addEventListener('click', e => { e.stopPropagation(); const f = confCb; confCb = null; confClose(); if (f) f(); });
 $('confNo').addEventListener('click', e => { e.stopPropagation(); confCb = null; confClose(); });
-function unlockBird(b, how){
-  if (how === 'cr'){ if (W.credits < b.price.cr) return toast(t('needMore')); W.credits -= b.price.cr; owned.add(b.id); saveW(); celebrate(b); return; }
-  if (W.gems < b.price.gem){ openShop(); return toast(t('needMore')); }
-  confirmDlg(t('confirmUnlock', {u: b.name, n: b.price.gem}), () => { if (W.gems < b.price.gem) return; W.gems -= b.price.gem; owned.add(b.id); saveW(); celebrate(b); });
+function unlockBird(b){
+  const p = priceOf(b);
+  if (p.gem){
+    if (W.gems < p.gem) return toast(t('needGem', {n: p.gem - W.gems}));
+    return confirmDlg(t('confirmUnlock', {u:b.name, n:p.gem}), () => { if (W.gems < p.gem) return; W.gems -= p.gem; owned.add(b.id); saveW(); celebrate(b); });
+  }
+  if (W.coins < p.coin) return toast(t('needCoin', {n: (p.coin - W.coins).toLocaleString()}));
+  confirmDlg(t('confirmCoin', {u:b.name, n:p.coin.toLocaleString()}), () => { if (W.coins < p.coin) return; W.coins -= p.coin; owned.add(b.id); saveW(); celebrate(b); });
 }
+const SHOP_ON = false;
+// 재가격 필요: SHOP_ON = true 전에 60젬 경제 기준으로 젬 팩 수량 재설정
 const SHOP = [
-  { id:'pass',    hero:true, name:() => t('pass'),    desc:() => t('passDesc'),    price:'₩4,900', done:() => hasPass, buy:() => { hasPass = true; owned.add('zero'); W.gems += 150; W.credits += 2000; return birdById('zero'); } },
+  { id:'pass',    hero:true, name:() => t('pass'),    desc:() => t('passDesc'),    price:'₩4,900', done:() => hasPass, buy:() => { hasPass = true; owned.add('zero'); W.gems += 150; W.coins += 4000; return birdById('zero'); } },
   { id:'starter', hero:true, name:() => t('starter'), desc:() => t('starterDesc'), price:'₩3,300', done:() => starterBought, buy:() => { starterBought = true; owned.add('mochi'); W.gems += 100; return birdById('mochi'); } },
   { id:'g80',   name:() => t('gemPack', {n:80}),    desc:() => '', price:'₩1,200',  buy:() => { W.gems += 80; } },
   { id:'g500',  name:() => t('gemPack', {n:500}),   desc:() => '', price:'₩6,500',  buy:() => { W.gems += 500; } },
@@ -1986,8 +2005,9 @@ function renderShop(){
 }
 function openShop(){ renderShop(); $('shopScr').hidden = false; lbOpen = true; }
 function closeShop(){ $('shopScr').hidden = true; lbOpen = !$('lbScr').hidden; }
-$('shopBtn').addEventListener('click', e => { e.stopPropagation(); openShop(); });
-$('wGemBtn').addEventListener('click', e => { e.stopPropagation(); openShop(); });
+$('shopBtn').hidden = !SHOP_ON;
+$('shopBtn').addEventListener('click', e => { if (!SHOP_ON) return; e.stopPropagation(); openShop(); });
+$('wGemBtn').addEventListener('click', e => { if (!SHOP_ON) return; e.stopPropagation(); openShop(); });
 $('shopClose').addEventListener('click', closeShop);
 $('shopScr').addEventListener('pointerdown', e => { if (e.target === $('shopScr')) closeShop(); });
 $('wallet').addEventListener('pointerdown', e => e.stopPropagation());
@@ -2460,11 +2480,11 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL): read-only views for console checks + FW.selfTest()
-if (location.hash === '#dev') window.FW = { stTier, stD0, stGoal, stFogN, runD, powKind, SK, skv, skillCd, BIRDS, I18N,
+if (location.hash === '#dev') window.FW = { stTier, stD0, stGoal, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N,
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T}; },
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter}; },
-  get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); },
+  get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
   selfTest(){
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b), S = [0,9,10,24,25,39,40,49], fails = [];
     const checks = {
