@@ -762,6 +762,10 @@ function reset(){
 }
 
 const diff = () => runD(gatesPassed);
+// Power-up tuning (all modes). powKind maps the gate's second power roll to a kind: shield 20 / magnet 40 / slow 20 / potion 20.
+const POW = { potion:3, potionSpeed:1.2, slow:3, slowScale:.7, magnet:7, shieldInv:.8 };
+const powKind = p => p < .20 ? 'shield' : p < .60 ? 'magnet' : p < .80 ? 'slow' : 'potion';
+function setGod(s){ if (s > godT){ godT = s; TMAX.god = s; } }
 // Course layout depends only on the seed and gate index, never on screen size or play timing.
 function spawnGate(x){
   const idx = spawnIdx++;
@@ -792,8 +796,7 @@ function spawnGate(x){
   }
   const pr = rng(), pk = rng();
   if (idx > 4 && pr < .14 * (PK ? PK.powerChance : 1)){
-    const kinds = ['shield','magnet','slow','potion'];
-    orbs.push({ x:x + g.w/2, y:base, k:kinds[pk*4|0], got:false, t:0, gate:g });
+    orbs.push({ x:x + g.w/2, y:base, k:powKind(pk), got:false, t:0, gate:g });
   }
 }
 const gY = g => g.base + (g.type === 'move' ? Math.sin(T*1.7 + g.ph) * g.amp : 0);
@@ -1074,13 +1077,13 @@ function useSkill(){
     case 'volt': boostT = 4; break;
     case 'blitz': blink(); break;
     case 'nimbus': lowGravT = 4; break;
-    case 'titan': godT = Math.max(godT, 3); break;
+    case 'titan': setGod(3); break;
     case 'mochi': autoT = 3; break;
     case 'aegis': shields = Math.min(Math.max(PK.shieldMax, 1) + 1, shields + 1); popT = 0; break;
-    case 'phoenix': godT = Math.max(godT, 5); break;
+    case 'phoenix': setGod(5); break;
     case 'zero': cloneT = 6; break;
     case 'pixel': rushT = 5; break;
-    case 'neko': slowT = Math.max(slowT, 4); break;
+    case 'neko': slowT = Math.max(slowT, 4); TMAX.slow = slowT; break;
     case 'buzz': summonPowers(); break;
     case 'kraken': inkT = 4; break;
     case 'specter': phaseT = 2.2; break;
@@ -1089,7 +1092,7 @@ function useSkill(){
     case 'chrono': freezeT = 2.5; break;
     case 'goliath': giantT = 3; break;
     case 'solaris':
-      combo = Math.max(combo, PK.feverAt); godT = Math.max(godT, 2);
+      combo = Math.max(combo, PK.feverAt); setGod(2);
       if (tier < 2){ tier = 2; guardUsed = false; banner(t('fever').replace('2', PK.feverMul), [300,100,68], 1.4); SFX.fever(); }
       break;
   }
@@ -1175,7 +1178,7 @@ function openCont(){
 function closeCont(go){
   clearInterval(contTimer); clearInterval(adTimer); adTimer = 0; $('contScr').hidden = true;
   if (!go){ showOver(); return; }
-  contUsed = true; state = 'play'; FX.fogT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; godT = 2.5; hurtT = 0;
+  contUsed = true; state = 'play'; FX.fogT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; setGod(2.5); hurtT = 0;
   cam.tz = 1; cam.fx = LW/2; cam.fy = LH/2;
   for (const g of gates) if (Math.abs(g.x + g.w/2 - bird.x) < 140) g.broken = true;
   $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false;
@@ -1245,7 +1248,7 @@ function showOver(){
 /* ---------- update ---------- */
 function update(rdt){
   if (hitstop > 0){ hitstop -= rdt; rdt *= .05; }
-  const target = slowT > 0 ? .6 : 1;
+  const target = slowT > 0 ? POW.slowScale : 1;
   timeScale += (target - timeScale) * Math.min(1, rdt*6);
   const dt = rdt * (state === 'dying' ? .35 : timeScale);
   T += dt * (freezeT > 0 && state === 'play' ? .03 : 1);
@@ -1255,7 +1258,7 @@ function update(rdt){
   const z = ZONES[zoneIdx], k = Math.min(1, rdt*1.6);
   lerpC(pal.sky0, z.sky[0], k); lerpC(pal.sky1, z.sky[1], k); lerpC(pal.a, z.a, k); lerpC(pal.b, z.b, k); lerpC(pal.gate, z.gate, k);
 
-  const vx = state === 'play' ? (freezeT > 0 ? 0 : speed * (dashT > 0 ? 2.6 : 1) * (potionT > 0 ? 1.3 : 1)) : state === 'menu' ? 120 : 30;
+  const vx = state === 'play' ? (freezeT > 0 ? 0 : speed * (dashT > 0 ? 2.6 : 1) * (potionT > 0 ? POW.potionSpeed : 1) * (FX.heavyT > 0 ? .8 : 1)) : state === 'menu' ? 120 : 30;
   bgOff += vx * dt;
   scorePunch = Math.max(0, scorePunch - rdt*4);
   squash = Math.max(0, squash - rdt*6);
@@ -1432,9 +1435,9 @@ function update(rdt){
       else {
         SFX.power(); haptic('power');
         if (o.k === 'shield'){ shields = Math.min(PK.shieldMax, shields + 1); popT = 0; flash = Math.max(flash, .3); ring(bird.x, bird.y, 150, [190,100,70], .6, 7); pop(t('shieldP'), bird.x, bird.y-34, [190,100,70], true); }
-        if (o.k === 'magnet'){ magnetT = 7 * PK.powerDur; ring(bird.x, bird.y, 190, [48,100,60], .6, 5); pop(t('magnetP'), bird.x, bird.y-34, [48,100,65], true); }
-        if (o.k === 'potion'){ potionT = 5 * PK.powerDur; godT = Math.max(godT, 5 * PK.powerDur); banner(t('potionP'), [320,100,70], 1, false); ring(bird.x, bird.y, LW, [320,100,70], .8, 9); flash = Math.max(flash, .4); }
-        if (o.k === 'slow'){ slowT = 4.5 * PK.powerDur; ring(bird.x, bird.y, LW, [280,100,72], .9, 8); cam.z = Math.max(cam.z, 1.05); pop(t('slowP'), bird.x, bird.y-34, [280,100,72], true); }
+        if (o.k === 'magnet'){ magnetT = TMAX.magnet = POW.magnet * PK.powerDur; ring(bird.x, bird.y, 190, [48,100,60], .6, 5); pop(t('magnetP'), bird.x, bird.y-34, [48,100,65], true); }
+        if (o.k === 'potion'){ potionT = TMAX.potion = POW.potion * PK.powerDur; setGod(POW.potion * PK.powerDur); banner(t('potionP'), [320,100,70], 1, false); ring(bird.x, bird.y, LW, [320,100,70], .8, 9); flash = Math.max(flash, .4); }
+        if (o.k === 'slow'){ slowT = TMAX.slow = POW.slow * PK.powerDur; ring(bird.x, bird.y, LW, [280,100,72], .9, 8); cam.z = Math.max(cam.z, 1.05); pop(t('slowP'), bird.x, bird.y-34, [280,100,72], true); }
       }
     }
   }
@@ -1448,7 +1451,7 @@ function cloneHit(){
 }
 function breakShield(){
   hurtT = .45;
-  shields = Math.max(0, shields - 1); invuln = 1.1; popT = -1;
+  shields = Math.max(0, shields - 1); invuln = POW.shieldInv; popT = -1;
   shards(bird.x, bird.y, [190,100,78], 22); ring(bird.x, bird.y, 170, [190,100,78], .5, 7); SFX.shield(); haptic('shieldBreak'); shake = 10; flash = .3;
   pop(t('shieldBreak'), bird.x, bird.y-34, [190,100,70]);
   for (let i=0;i<20;i++){ const a=Math.random()*6.28; part(bird.x,bird.y,Math.cos(a)*220,Math.sin(a)*220,.5,[190,100,70],2.5); }
@@ -1975,15 +1978,15 @@ function drawHUD(){
   if (runTrial){ ctx.fillStyle = 'hsla(45,100%,60%,.9)'; ctx.fillText(t('trialRun') + ' · ' + B.name, 16, LH - 46); }
   let px = 16;
   const ind = (label, tv, max, c) => { ctx.fillStyle = hsl(c,.25); roundRect(px, 44, 84, 20, 10); ctx.fill(); ctx.fillStyle = hsl(c); roundRect(px, 44, 84*Math.min(1, tv/max), 20, 10); ctx.globalAlpha=.4; ctx.fill(); ctx.globalAlpha=1; ctx.fillStyle='#fff'; ctx.font=`700 10.5px "Chakra Petch", ${SYS}`; ctx.textAlign='center'; ctx.fillText(label, px+42, 58); px += 90; if (px > LW - 120){ px = 16; } };
-  if (godT > 0) ind(t('sk_' + B.id), godT, 5, [45,100,58]);
-  if (potionT > 0) ind(t('potionP'), potionT, 5, [320,100,66]);
+  if (godT > 0) ind(t('sk_' + B.id), godT, TMAX.god, [45,100,58]);
+  if (potionT > 0) ind(t('potionP'), potionT, TMAX.potion, [320,100,66]);
   if (boostT > 0 || foreT > 0 || lowGravT > 0 || autoT > 0 || rushT > 0 || freezeT > 0) ind(t('sk_' + B.id), Math.max(boostT, foreT/1.25, lowGravT, autoT*1.33, rushT/1.25, freezeT*1.6), 4, B.uiCol || B.col);
   if (rewindLeft > 0) ind('⟲ x' + rewindLeft, rewindLeft, PK.rewind, [40,90,62]);
   if (phaseT > 0) ind(t('fx_phase'), phaseT, 1.6, [185,100,75]);
   if (giantT > 0) ind(t('fx_giant'), giantT, 3, [25,100,58]);
   if (inkT > 0) ind(t('fx_ink'), inkT, 4, [285,70,62]);
-  if (magnetT > 0) ind(t('magnetP'), magnetT, 7, [48,100,58]);
-  if (slowT > 0) ind(t('slowP'), slowT, 4.5, [280,100,68]);
+  if (magnetT > 0) ind(t('magnetP'), magnetT, TMAX.magnet, [48,100,58]);
+  if (slowT > 0) ind(t('slowP'), slowT, TMAX.slow, [280,100,68]);
   if (zoneBanner > 0){
     const a = Math.min(1, zoneBanner) * Math.min(1, (2.4 - zoneBanner)*3);
     ctx.globalAlpha = Math.max(0,a); ctx.textAlign = 'center';
@@ -2200,7 +2203,9 @@ function netInit(){
   return netReady;
 }
 const sanitizeId = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 14) || 'x';
+const NET_VER = 'v2-';   // versus rooms are per balance version: old builds never meet new ones
 async function netJoin(name){
+  name = NET_VER + name;
   if (netKind === 'room'){
     const R = await roomApi.join(name); let cb = null;
     const un = R.onPeers(() => { if (cb) cb(); }, () => {});
@@ -2407,7 +2412,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL): read-only views for console checks + FW.selfTest()
-if (location.hash === '#dev') window.FW = { stTier, stD0, stGoal, stFogN, runD, BIRDS, I18N,
+if (location.hash === '#dev') window.FW = { stTier, stD0, stGoal, stFogN, runD, powKind, BIRDS, I18N,
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T}; },
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter}; },
