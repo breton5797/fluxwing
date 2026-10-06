@@ -161,7 +161,7 @@ begin
 
   -- sanitise the profile fields: control characters, zero-width / bidi marks and <> removed, whitespace collapsed, 14 chars max
   v_nick := left(btrim(regexp_replace(
-              regexp_replace(coalesce(p_nick, ''), '[\u0001-\u001F\u007F-\u009F​-‏ -‮⁠-⁩﻿<>]', '', 'g'),
+              regexp_replace(coalesce(p_nick, ''), '[\u0001-\u001F\u007F-\u009F\u200B-\u200F\u2028-\u202E\u2060-\u2069\uFEFF<>]', '', 'g'),
               '\s+', ' ', 'g')), 14);
   v_nick := btrim(v_nick);
   if char_length(v_nick) < 2 then v_nick := 'Pilot'; end if;
