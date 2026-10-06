@@ -111,16 +111,18 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .vsbtn small{color:var(--hot)!important}
 /* generic modal card bits */
 .mtitle{font-family:var(--display);font-size:24px;margin:0;letter-spacing:.03em}
-.stages{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.stg{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px;min-height:118px;border-radius:14px;border:1px solid var(--line);color:#fff;text-align:left;cursor:pointer;overflow:hidden;font:600 12px var(--body)}
-.stg b{font:15px "Bungee",Impact,sans-serif;letter-spacing:.03em;text-shadow:0 2px 8px rgba(0,0,0,.6)}
-.stg .no{font:700 10px var(--body);letter-spacing:.16em;opacity:.85}
-.stg .stars{color:var(--gold);letter-spacing:.1em}
-.stg .bst{margin-top:auto;font-variant-numeric:tabular-nums;opacity:.9}
-.stg[disabled]{cursor:default;filter:grayscale(.85) brightness(.55)}
-.stg .lk{position:absolute;inset:auto 10px 10px auto;font-size:11px;color:var(--ink);opacity:.9}
-.stg:not([disabled]):hover{transform:translateY(-2px)}
-.stg:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
+.stages{display:block;max-height:60vh;overflow-y:auto}
+.sthead{padding:8px 10px;border-radius:10px;font:700 12px var(--body);color:#fff}
+.strule{font-weight:600;font-size:11px;opacity:.85;margin-top:2px}
+.stgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:6px 0 14px}
+.stc{position:relative;min-height:54px;border-radius:10px;border:1px solid var(--line);background:rgba(14,10,30,.7);color:#fff;font:700 15px var(--body);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
+.stc small{font:600 10px var(--body);opacity:.8}
+.stc.done{border-color:var(--gold)}
+.stc.cur{outline:2px solid var(--cool)}
+.stc[disabled]{cursor:default;filter:grayscale(.85) brightness(.55)}
+.stc .lk{position:absolute;inset:auto 4px 3px auto;font-size:9px;color:var(--ink);opacity:.9}
+.stc:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
+.stnote{font:600 11px var(--body);color:var(--ink);opacity:.75;text-align:center}
 .helpcard p{margin:0;font-size:14px;line-height:1.55;color:var(--ink)}
 .helpcard p b{color:var(--cool)}
 .vscard{text-align:center}
@@ -541,16 +543,16 @@ I18N_D_KEYS.forEach((k,i) => { for (const l in I18N) I18N[l][k] = (I18N_D[l] || 
 
 const I18N_F_KEYS = ['start','stageSel','stage','locked','unlockHint','bestG','vs','autoMatch','makeRoom','joinRoom','aiMatch','searching','roomCode','waitingOpp','enterCode','join','cancel','aiFallback','youWin','youLose','drawR','rankPts','t0','t1','t2','t3','t4','forfeit','onlineNA','opp','watching','rematch','seasonNote','help','hControls','hScore','hMoney','hUnits','tut1','tut2','tut3','skillLbl','potionP','contTitle','contAd','contCoin','giveUp','adPlaying','confirmBuy','confirmUnlock','buy','danger','easy','normal','hard','expert','vsVs','shareCode','matchFound'];
 const I18N_F = {
-ko:['START','스테이지 선택','STAGE {n}','잠김','이전 스테이지에서 게이트 20개를 통과하면 열려요','최고 {n}점','2인 대전','자동 매치','방 만들기','코드로 참가','AI와 대전','상대 찾는 중… {s}초','방 코드','상대를 기다리는 중…','4자리 코드','참가','취소','1분 동안 상대가 없어 AI와 대전합니다','승리!','패배','무승부','랭크 점수','브론즈','실버','골드','다이아','마스터','상대가 나가서 승리했어요','온라인 대전에 연결할 수 없어요. AI와는 대전할 수 있어요.','상대','상대가 아직 날고 있어요…','다시 대전','한 달 시즌이 끝나면 랭크 상위 10명에게 한정 유닛을 드려요','도움말',
+ko:['START','스테이지 선택','STAGE {n}','잠김','이전 스테이지를 클리어하면 열려요','최고 {n}점','2인 대전','자동 매치','방 만들기','코드로 참가','AI와 대전','상대 찾는 중… {s}초','방 코드','상대를 기다리는 중…','4자리 코드','참가','취소','1분 동안 상대가 없어 AI와 대전합니다','승리!','패배','무승부','랭크 점수','브론즈','실버','골드','다이아','마스터','상대가 나가서 승리했어요','온라인 대전에 연결할 수 없어요. AI와는 대전할 수 있어요.','상대','상대가 아직 날고 있어요…','다시 대전','한 달 시즌이 끝나면 랭크 상위 10명에게 한정 유닛을 드려요','도움말',
  '조작 — 화면 탭(스페이스)으로 날갯짓. 게이지가 차면 DASH(Shift)로 벽을 뚫고, SKILL(S)로 유닛 고유 스킬을 써요.','점수 — 게이트 통과 1점. 가장자리를 아슬아슬하게 스치면 PERFECT로 콤보 점수, 10콤보부터 피버 2배.','재화 — 코인(오브)은 이어하기, 크레딧(레벨업)은 유닛 해금, 젬(결제)은 즉시 해금과 패스에 써요.','유닛 — 기본·에픽·미식·레전더리·울트라 5등급. 모두 고유 스킬과 아우라가 있고, 오늘의 챌린지와 2인 대전에서는 능력이 공정하게 제한돼요.',
- '화면을 탭해서 날아오르세요','게이트 가장자리를 아슬아슬하게 스치면 PERFECT!','게이지가 차면 DASH, SKILL 버튼으로 고유 스킬!','스킬','무적 질주!','이어서 할까요?','광고 보고 이어하기','{n} 코인으로 이어하기','그만하기','광고 재생 중 (테스트 빌드)','{item} · {price}\n구매할까요?','{u}을(를) 젬 {n}개로 해금할까요?','구매','위험!','쉬움','보통','어려움','최상','VS','친구에게 이 코드를 알려주세요','상대를 찾았어요!'],
-en:['START','Select stage','STAGE {n}','Locked','Pass 20 gates in the previous stage to unlock','Best {n}','Versus','Quick match','Create room','Join with code','Play the AI','Finding an opponent… {s}s','Room code','Waiting for an opponent…','4-digit code','Join','Cancel','No opponent in 1 minute. Playing the AI.','VICTORY!','DEFEAT','DRAW','Rank points','Bronze','Silver','Gold','Diamond','Master','Your opponent left. You win.','Online versus is unavailable here. You can still play the AI.','Rival','Your rival is still flying…','Rematch','Top 10 ranked players each monthly season get a limited unit','Help',
+ '화면을 탭해서 날아오르세요','게이트 가장자리를 아슬아슬하게 스치면 PERFECT!','게이지가 차면 DASH, SKILL 버튼으로 고유 스킬!','스킬','무적 질주!','이어서 할까요?','광고 보고 이어하기','{n} 코인으로 이어하기','그만하기','광고 재생 중 (테스트 빌드)','{item} · {price}\n구매할까요?','{u}을(를) 젬 {n}개로 해금할까요?','구매','위험!','쉬움','일반','보통','어려움','VS','친구에게 이 코드를 알려주세요','상대를 찾았어요!'],
+en:['START','Select stage','STAGE {n}','Locked','Clear the previous stage to unlock','Best {n}','Versus','Quick match','Create room','Join with code','Play the AI','Finding an opponent… {s}s','Room code','Waiting for an opponent…','4-digit code','Join','Cancel','No opponent in 1 minute. Playing the AI.','VICTORY!','DEFEAT','DRAW','Rank points','Bronze','Silver','Gold','Diamond','Master','Your opponent left. You win.','Online versus is unavailable here. You can still play the AI.','Rival','Your rival is still flying…','Rematch','Top 10 ranked players each monthly season get a limited unit','Help',
  'Controls — tap (Space) to flap. When the meter fills, DASH (Shift) breaks walls; SKILL (S) fires your unit’s own skill.','Score — 1 point per gate. Skim an edge for a PERFECT and combo points; Fever doubles points from a 10 combo.','Currencies — coins (orbs) pay for continues, credits (level-ups) unlock units, gems (purchases) unlock instantly and buy the pass.','Units — Common, Epic, Mythic, Legendary, Ultra. Every unit has a skill and an aura; Daily Challenge and Versus cap abilities for fairness.',
  'Tap the screen to fly up','Skim a gate edge for a PERFECT!','Meter full? DASH. Then fire your SKILL!','Skill','UNSTOPPABLE!','Continue?','Watch an ad to continue','Continue for {n} coins','Give up','Ad playing (test build)','{item} · {price}\nBuy now?','Unlock {u} for {n} gems?','Buy','DANGER!','Easy','Normal','Hard','Expert','VS','Share this code with your friend','Opponent found!'],
-ja:['START','ステージ選択','STAGE {n}','ロック中','前のステージでゲート20個通過で解放','ベスト {n}','2人対戦','オートマッチ','ルーム作成','コードで参加','AIと対戦','対戦相手を検索中… {s}秒','ルームコード','相手を待っています…','4桁のコード','参加','キャンセル','1分間相手がいないためAIと対戦します','勝利!','敗北','引き分け','ランクポイント','ブロンズ','シルバー','ゴールド','ダイヤ','マスター','相手が退出したため勝利','オンライン対戦に接続できません。AI対戦は可能です。','相手','相手はまだ飛んでいます…','再戦','月間シーズン終了時、ランク上位10名に限定ユニット','ヘルプ',
+ja:['START','ステージ選択','STAGE {n}','ロック中','前のステージをクリアすると解放','ベスト {n}','2人対戦','オートマッチ','ルーム作成','コードで参加','AIと対戦','対戦相手を検索中… {s}秒','ルームコード','相手を待っています…','4桁のコード','参加','キャンセル','1分間相手がいないためAIと対戦します','勝利!','敗北','引き分け','ランクポイント','ブロンズ','シルバー','ゴールド','ダイヤ','マスター','相手が退出したため勝利','オンライン対戦に接続できません。AI対戦は可能です。','相手','相手はまだ飛んでいます…','再戦','月間シーズン終了時、ランク上位10名に限定ユニット','ヘルプ',
  '操作 — タップ(スペース)で羽ばたく。ゲージが溜まったらDASH(Shift)で壁を突破、SKILL(S)で固有スキル。','スコア — ゲート通過で1点。ふちをかすめるとPERFECTでコンボ得点、10コンボからフィーバー2倍。','通貨 — コイン(オーブ)はコンティニュー、クレジット(レベルアップ)はユニット解放、ジェム(購入)は即時解放とパス。','ユニット — ノーマル〜ウルトラの5等級。全ユニットに固有スキルとオーラ。デイリーと対戦では能力を公平に制限。',
  '画面をタップして飛び上がろう','ゲートのふちをかすめるとPERFECT!','ゲージが溜まったらDASH、SKILLで固有スキル!','スキル','無敵ダッシュ!','続けますか?','広告を見て続ける','{n}コインで続ける','やめる','広告再生中(テストビルド)','{item} · {price}\n購入しますか?','{u}をジェム{n}個で解放しますか?','購入','危険!','やさしい','ふつう','むずかしい','最上級','VS','このコードを友だちに伝えてね','相手が見つかりました!'],
-zh:['START','选择关卡','STAGE {n}','未解锁','在上一关通过20个关卡后解锁','最高 {n}','双人对战','自动匹配','创建房间','输入代码加入','与AI对战','正在寻找对手… {s}秒','房间代码','等待对手…','4位代码','加入','取消','1分钟内没有对手,改为与AI对战','胜利!','失败','平局','段位分','青铜','白银','黄金','钻石','大师','对手已离开,你获胜','无法连接在线对战,可以与AI对战。','对手','对手还在飞…','再战','每月赛季结束时,段位前10名获得限定机体','帮助',
+zh:['START','选择关卡','STAGE {n}','未解锁','通关上一关后解锁','最高 {n}','双人对战','自动匹配','创建房间','输入代码加入','与AI对战','正在寻找对手… {s}秒','房间代码','等待对手…','4位代码','加入','取消','1分钟内没有对手,改为与AI对战','胜利!','失败','平局','段位分','青铜','白银','黄金','钻石','大师','对手已离开,你获胜','无法连接在线对战,可以与AI对战。','对手','对手还在飞…','再战','每月赛季结束时,段位前10名获得限定机体','帮助',
  '操作 — 点击(空格)振翅。能量满后DASH(Shift)冲破墙壁,SKILL(S)释放专属技能。','得分 — 通过关卡得1分。擦边通过为PERFECT并累积连击,10连击起狂热2倍。','货币 — 金币(能量球)用于续关,信用点(升级)解锁机体,宝石(付费)立即解锁和购买通行证。','机体 — 普通到究极5个等级,全部拥有专属技能和光环。每日挑战与对战会公平限制能力。',
  '点击屏幕向上飞','擦过关卡边缘即可PERFECT!','能量满了就DASH,再用SKILL释放技能!','技能','无敌冲刺!','要继续吗?','看广告继续','用{n}金币继续','放弃','广告播放中(测试版本)','{item} · {price}\n确定购买吗?','用{n}个宝石解锁{u}吗?','购买','危险!','简单','普通','困难','极难','VS','把这个代码告诉朋友','找到对手了!']
 };
@@ -564,10 +566,29 @@ ja:[['オーバードライブ','4秒間パーフェクト判定が大きく広�
 zh:[['超速驱动','4秒内完美判定大幅放宽'],['闪现','瞬移穿过前方关卡'],['滑翔','4秒内重力减弱'],['钢铁之躯','无敌3秒'],['麻薯泡泡','3秒内自动沿关卡中央飞行'],['屏障','立即获得1层护盾'],['不死','5秒内不会死亡'],['影分身','6秒内分身替你承受1次碰撞'],['金币冲刺','5秒内金币2倍+强力磁铁'],['猫之感知','时间减慢4秒'],['蜂群召唤','在前方召唤2个道具'],['墨汁爆发','4秒内所有缝隙变宽'],['灵体化','2.2秒内穿墙'],['预知','5秒内轻松完美+显示路线'],['雷霆','闪电击碎前方2个关卡'],['时间停止','世界静止2.5秒'],['泰坦降临','巨大化3秒撞碎关卡'],['超新星','立即进入狂热+无敌2秒']]
 };
 SK_IDS.forEach((id,i) => { for (const l in I18N){ const tx = (SK_TXT[l] || SK_TXT.en)[i]; I18N[l]['sk_' + id] = tx[0]; I18N[l]['sd_' + id] = tx[1]; } });
+// Key-based additions (ko/en; other languages fall back to en). The index arrays above keep their length and order.
+const I18N_N = {
+ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 틈', tierRule2:'더 좁은 틈 · 0.5초 안개', tierRule3:'가장 좁은 틈 · 2초 안개 · 2초 안에 탭',
+ idleRule:'2초 안에 탭!', idleStall:'엔진 정지!', heavyP:'무거움', gemP:'젬 +1', gemHint:'젬은 스테이지 플레이 중 1% 확률로 나와요 · {n}/60',
+ confirmCoin:'{u}을(를) 코인 {n}개로 구매할까요?', needCoin:'코인이 {n}개 부족해요', needGem:'젬이 {n}개 부족해요',
+ r_aurora:'극광형', p_aurora:'콤보가 끊겨도 절반이 남는다. 퍼펙트 판정이 넓고 퍼펙트마다 +1점.', sk_aurora:'극광 회랑', sd_aurora:'다음 게이트 {n}개가 내 높이로 모이고 멈추며 틈이 넓어진다',
+ r_tempest:'폭풍형', p_tempest:'대시 관통 점수 2배. 대시로 게이트를 부수면 게이지 30% 환급(대시당 1회).', sk_tempest:'태풍의 눈', sd_tempest:'게이지를 쓰지 않는 1.5배 길이 대시를 즉시 발동',
+ r_pleiad:'성단형', p_pleiad:'실드 2개로 출발(최대 2개), 게이트 12개마다 1개 재충전. 실드가 깨지면 그 게이트도 부서진다.', sk_pleiad:'궤도 포격', sd_pleiad:'앞 게이트 {n}개를 차례로 부수고 실드 +1',
+ r_pulsar:'맥동형', p_pulsar:'퍼펙트마다 +2점, 스킬이 더 빨리 찬다. 피버가 8콤보에서 시작된다.', sk_pulsar:'공명', sd_pulsar:'{n}초간 퍼펙트 점수 2배, 판정이 넓어진다'},
+en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', tierRule2:'Narrower gaps · 0.5s haze', tierRule3:'Narrowest gaps · 2s haze · tap within 2s',
+ idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/60',
+ confirmCoin:'Buy {u} for {n} coins?', needCoin:'{n} more coins needed', needGem:'{n} more gems needed',
+ r_aurora:'Skyweaver', p_aurora:'A broken combo keeps half. Wide Perfect window, +1 on every Perfect.', sk_aurora:'Aurora Lane', sd_aurora:'The next {n} gates slide to your height, stop moving and widen',
+ r_tempest:'Stormbreaker', p_tempest:'Dash-through points x2. Smashing a gate with a dash refunds 30% meter (once per dash).', sk_tempest:'Eye of the Storm', sd_tempest:'Fires a free dash that lasts 1.5x longer',
+ r_pleiad:'Star Guard', p_pleiad:'Starts with 2 shields (max 2), recharges 1 every 12 gates. A breaking shield also breaks that gate.', sk_pleiad:'Orbital Barrage', sd_pleiad:'Smashes the next {n} gates one by one and adds a shield',
+ r_pulsar:'Resonator', p_pulsar:'+2 on every Perfect and faster skill charge. Fever starts at an 8 combo.', sk_pulsar:'Resonance', sd_pulsar:'Perfects score double and the window widens for {n}s'}
+};
+for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
 const birdById = id => BIRDS.find(b => b.id === id);
 let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
 
 /* ---------- economy (local; moves server-side at paid launch) ---------- */
+const clampI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
 const W = Object.assign({xp:0, lvl:1, coins:0, credits:0, gems:0}, store.get('fw27_wallet', {}));
 const owned = new Set(store.get('fw27_owned', ['volt','blitz','nimbus','titan']));
 let hasPass = store.get('fw27_pass', false), starterBought = store.get('fw27_starter', false);
@@ -713,6 +734,10 @@ let lastWarnT = 0; const hudCache = {d:'', s:'', sl:''};
 let skillCharge = 0, skillWasReady = false, boostT = 0, lowGravT = 0, autoT = 0, cloneT = 0, rushT = 0, foreT = 0, freezeT = 0, potionT = 0, godT = 0, hurtT = 0, danger = 0, contUsed = false;
 let bounceLeft = 0, rewindLeft = 0, perfCount = 0, phaseT = 0, giantT = 0, inkT = 0, guardUsed = false, travel = 0, hist = [], bolts = [];
 let score, gatesPassed, combo, maxCombo, perfects, speed, dashMeter, dashT, invuln, magnetT, slowT, zoneIdx, zoneBanner, deathT, spawnIdx, runDay;
+// Per-run state for stage rules and the newer skills; TMAX remembers each timer's value when it was set (render/HUD read it).
+const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:0, clearDone:false, clearCoin:0, gemsRun:0,
+  laneN:0, laneY:0, strikeN:0, strikeT:0, stormDash:false, dashHit:false, resoT:0, resoMul:1 });
+let FX = newFx(); const TMAX = {};
 
 function reset(){
   T = 0; timeScale = 1; hitstop = 0; shake = 0; flash = 0;
@@ -720,7 +745,7 @@ function reset(){
   gates = []; orbs = []; parts = []; pops = []; trail = [];
   score = 0; gatesPassed = 0; combo = 0; maxCombo = 0; perfects = 0;
   bird.r = B.r;
-  PK = perks();
+  PK = perks(); FX = newFx();
   skillCharge = .35; skillWasReady = false; boostT = lowGravT = autoT = cloneT = rushT = foreT = freezeT = potionT = godT = hurtT = 0; danger = 0; contUsed = false;
   bounceLeft = PK.bounce; rewindLeft = PK.rewind; perfCount = 0; phaseT = 0; giantT = 0; inkT = 0; guardUsed = false; travel = 0; hist = []; bolts = [];
   speed = 190; dashMeter = PK.dashFull ? 1 : 0; dashT = 0; invuln = 0; shields = PK.shieldStart; reviveLeft = PK.revive; orbsGot = 0; magnetT = 0; slowT = 0;
@@ -731,23 +756,25 @@ function reset(){
   runBestRef = mode === 'daily' ? dailyBestLocal(runDay) : mode === 'endless' ? stg.score[curStage] : 0;
   // Daily: same seed for everyone today. Endless: fresh seed every run.
   rng = mode === 'daily' ? mulberry32(hashStr('fluxwing27:' + runDay)) : mode === 'versus' ? mulberry32(vs.seed >>> 0) : mulberry32((Math.random()*4294967296)>>>0);
-  zoneIdx = mode === 'endless' ? curStage : 0;
+  zoneIdx = mode === 'endless' ? stTier(curStage) : 0;
   { const Z = ZONES[zoneIdx]; Object.assign(pal, JSON.parse(JSON.stringify({ sky0:Z.sky[0], sky1:Z.sky[1], a:Z.a, b:Z.b, gate:Z.gate }))); }
   spawnGate(LW + 80);
 }
 
-const diff = () => { const sb = stageBase(); return Math.min(1, sb + Math.min(gatesPassed / 45, 1) * (1 - sb)); };
+const diff = () => runD(gatesPassed);
 // Course layout depends only on the seed and gate index, never on screen size or play timing.
 function spawnGate(x){
   const idx = spawnIdx++;
-  const sb = stageBase(), d = Math.min(1, sb + Math.min(Math.max(idx - 2, 0) / 45, 1) * (1 - sb));
-  const stIx = mode === 'endless' ? curStage : Math.min(3, Math.floor(idx / 12));
-  const gap = 212 - d*62 + (rng()*14 - 7);
+  const d = runD(Math.max(idx - 2, 0));
+  const stIx = Math.min(3, Math.floor(idx / 12));
+  const jit = rng()*14 - 7; const tr = stTier(curStage), inSt = mode === 'endless';
+  const gap = inSt ? Math.max(128, (212 - d*62) * ST_GM[tr]) + jit : 212 - d*62 + jit;
+  const mv = inSt ? ST_MOVE[tr] : ZONE_MOVE[stIx], pu = inSt ? ST_PULSE[tr] : ZONE_PULSE[stIx];
   let type = 'static';
   const r = rng();
   if (idx > 5){
-    if (r < STAGE_MOVE[stIx] + d*.2) type = 'move';
-    else if (r < STAGE_MOVE[stIx] + STAGE_PULSE[stIx] + d*.25) type = 'pulse';
+    if (r < mv + d*.2) type = 'move';
+    else if (r < mv + pu + d*.25) type = 'pulse';
   }
   const amp = type === 'move' ? 34 + d*46 : 0;
   const margin = 70 + amp + gap/2;
@@ -770,16 +797,42 @@ function spawnGate(x){
   }
 }
 const gY = g => g.base + (g.type === 'move' ? Math.sin(T*1.7 + g.ph) * g.amp : 0);
-const gGap = g => g.gap + (g.type === 'pulse' ? Math.sin(T*2.3 + g.ph) * 26 : 0) + (inkT > 0 ? 46 * Math.min(1, inkT, (4 - inkT) * 3) : 0);
+const gGap = g => g.gap + (g.type === 'pulse' ? Math.sin(T*2.3 + g.ph) * Math.min(26, g.gap - 112) : 0) + (inkT > 0 ? 46 * Math.min(1, inkT, (4 - inkT) * 3) : 0);
 
 /* ---------- stages: per-zone background art, gate skins, music ---------- */
-const STAGE_DIFF = [0, .22, .45, .68];             // difficulty head start per stage
-const STAGE_MOVE = [.16, .42, .2, .36], STAGE_PULSE = [.06, .1, .36, .3];
-const STAGE_STARS = [1, 2, 3, 4], STAGE_DKEY = ['easy','normal','hard','expert'];
-let curStage = store.get('fw27_stage', 0);
-const stg = Object.assign({gates:[0,0,0,0], score:[0,0,0,0]}, store.get('fw27_stg', {}));
-const stageUnlocked = i => i === 0 || stg.gates[i-1] >= 20 || W.lvl >= i*4;
-const stageBase = () => mode === 'endless' ? STAGE_DIFF[curStage] : 0;
+// 50 stages in 4 tiers (10/15/15/10). A tier picks the zone art, gap scale, gate mix and rules; the stage sets the head start and goal.
+const ST_N = 50, ST_FIRST = [0,10,25,40], ST_CNT = [10,15,15,10];
+const ST_D0 = [0,.24,.48,.72], ST_GM = [1,.93,.86,.80];
+const ST_MOVE = [.08,.18,.28,.36], ST_PULSE = [.04,.10,.18,.26];
+const ST_COIN = [1,1.25,1.5,2];
+const ZONE_MOVE = [.16,.42,.2,.36], ZONE_PULSE = [.06,.1,.36,.3];   // daily / versus only (by 12-gate zone)
+const STAGE_DKEY = ['easy','normal','hard','expert'];               // indexed by tier
+const stTier = i => i < 10 ? 0 : i < 25 ? 1 : i < 40 ? 2 : 3;
+const stPos  = i => { const t = stTier(i); return (i - ST_FIRST[t]) / (ST_CNT[t] - 1); };
+const stD0   = i => ST_D0[stTier(i)] + .18 * stPos(i);
+const stGoal = i => 10 + i - 5 * stTier(i);
+const stFogN = i => { const t = stTier(i); return t === 2 ? 10 - Math.floor((i-25)/5) : t === 3 ? 12 - Math.floor((i-40)/5) : 0; };
+function runD(k){
+  if (mode !== 'endless') return Math.min(1, Math.min(k/45, 1));
+  const d0 = stD0(curStage), cap = Math.min(1, d0 + .35);
+  return k <= 45 ? d0 + (k/45)*(cap - d0) : Math.min(1, cap + (k - 45)*.008);
+}
+// Saves: new keys only. The old fw27_stg / fw27_stage (4-stage build) are read once to carry the unlock over, never written.
+const stg = (() => {
+  const s = store.get('fw27_stg2', null);
+  if (s && Array.isArray(s.gates) && s.gates.length === ST_N){
+    const arr = a => Array.from({length: ST_N}, (_, i) => clampI(Array.isArray(a) ? a[i] : 0, 0, 1e9));
+    return {gates: arr(s.gates), score: arr(s.score), clr: arr(s.clr).map(v => v ? 1 : 0), open: clampI(s.open, 0, ST_N - 1)};
+  }
+  const o = store.get('fw27_stg', null), og = o && Array.isArray(o.gates) ? o.gates : [];
+  let j = 0; for (let i = 1; i < 4; i++) if ((Number(og[i-1]) || 0) >= 20 || W.lvl >= i*4) j = i;
+  const z = () => Array(ST_N).fill(0), n = {gates: z(), score: z(), clr: z(), open: ST_FIRST[j]};
+  store.set('fw27_stg2', n); return n;
+})();
+const stageUnlocked = i => i <= stg.open || W.lvl >= 10 + 2*i;
+let curStage = store.get('fw27_stage2', null);
+if (curStage === null){ curStage = ST_FIRST[clampI(store.get('fw27_stage', 0), 0, 3)]; if (!stageUnlocked(curStage)) curStage = stg.open; store.set('fw27_stage2', curStage); }
+curStage = clampI(curStage, 0, ST_N - 1);
 
 const voidCubes = Array.from({length:14}, (_, i) => ({x: Math.random()*700, y: 40 + Math.random()*420, s: 8 + Math.random()*26, sp: .05 + Math.random()*.25, r: Math.random()*6, vr: (Math.random()-.5)*1.2}));
 function bgTide(){
@@ -897,22 +950,26 @@ function musicTick(){
 /* stage select */
 function renderStages(){
   const L = $('stageList'); L.textContent = '';
-  ZONES.forEach((z, i) => {
-    const b = document.createElement('button'); b.className = 'stg';
-    const ok = stageUnlocked(i); b.disabled = !ok;
-    b.style.background = `linear-gradient(160deg, ${hsl(z.sky[0])} 0%, ${hsl(z.sky[1])} 70%, ${hsl(z.a,1,-20)} 100%)`;
-    b.style.borderColor = hsl(z.b, .7);
-    const no = document.createElement('span'); no.className = 'no'; no.textContent = t('stage', {n: i + 1});
-    const nm = document.createElement('b'); nm.textContent = z.name; nm.style.color = hsl(z.b, 1, 10);
-    const st = document.createElement('span'); st.className = 'stars'; st.textContent = '★'.repeat(STAGE_STARS[i]) + '☆'.repeat(4 - STAGE_STARS[i]) + ' ' + t(STAGE_DKEY[i]);
-    const bs = document.createElement('span'); bs.className = 'bst'; bs.textContent = ok ? t('bestG', {n: stg.score[i]}) : t('unlockHint');
-    b.append(no, nm, st, bs);
-    if (!ok){ const lk = document.createElement('span'); lk.className = 'lk'; lk.textContent = '🔒'; b.appendChild(lk); }
-    b.addEventListener('click', e => { e.stopPropagation(); if (!ok) return; audioInit(); SFX.click(); curStage = i; store.set('fw27_stage', i); $('stageScr').hidden = true; startGame('endless'); });
-    L.appendChild(b);
-  });
+  for (let tr = 0; tr < 4; tr++){
+    const z = ZONES[tr], hd = document.createElement('div'); hd.className = 'sthead';
+    hd.style.background = `linear-gradient(160deg, ${hsl(z.sky[0])} 0%, ${hsl(z.sky[1])} 70%, ${hsl(z.a,1,-20)} 100%)`;
+    hd.textContent = '★'.repeat(tr + 1) + ' ' + t(STAGE_DKEY[tr]) + ' · ' + z.name;
+    const ru = document.createElement('div'); ru.className = 'strule'; ru.textContent = t('tierRule' + tr); hd.appendChild(ru);
+    const gr = document.createElement('div'); gr.className = 'stgrid';
+    for (let i = ST_FIRST[tr]; i < ST_FIRST[tr] + ST_CNT[tr]; i++){
+      const b = document.createElement('button'); b.className = 'stc' + (stg.clr[i] ? ' done' : '') + (i === curStage ? ' cur' : '');
+      const ok = stageUnlocked(i); b.disabled = !ok; b.setAttribute('aria-label', t('stage', {n: i + 1}));
+      const sm = document.createElement('small'); sm.textContent = Math.min(stg.gates[i], stGoal(i)) + '/' + stGoal(i);
+      b.append(document.createTextNode(i + 1), sm);
+      if (!ok){ const lk = document.createElement('span'); lk.className = 'lk'; lk.textContent = '🔒'; b.appendChild(lk); }
+      b.addEventListener('click', e => { e.stopPropagation(); if (!ok) return; audioInit(); SFX.click(); curStage = i; store.set('fw27_stage2', i); $('stageScr').hidden = true; startGame('endless'); });
+      gr.appendChild(b);
+    }
+    L.append(hd, gr);
+  }
+  const nt = document.createElement('div'); nt.className = 'stnote'; nt.textContent = t('unlockHint'); L.appendChild(nt);
 }
-function openStages(){ renderStages(); $('stageScr').hidden = false; }
+function openStages(){ renderStages(); $('stageScr').hidden = false; const c = $('stageList').querySelector('.cur'); if (c) c.scrollIntoView({block:'center'}); }
 $('stageClose').addEventListener('click', e => { e.stopPropagation(); $('stageScr').hidden = true; });
 $('stageScr').addEventListener('pointerdown', e => { if (e.target === $('stageScr')) $('stageScr').hidden = true; });
 
@@ -1148,7 +1205,7 @@ function showOver(){
     $('oMode').textContent = B.name + ' · ' + t('modeEndless');
   }
   if (score > best && mode !== 'versus'){ best = score; store.set('fw27_best', best); }
-  if (mode === 'endless'){ stg.gates[curStage] = Math.max(stg.gates[curStage], gatesPassed); stg.score[curStage] = Math.max(stg.score[curStage], score); store.set('fw27_stg', stg); $('oMode').textContent = B.name + ' · ' + t('stage', {n: curStage + 1}) + ' ' + ZONES[curStage].name; }
+  if (mode === 'endless'){ stg.gates[curStage] = Math.max(stg.gates[curStage], gatesPassed); stg.score[curStage] = Math.max(stg.score[curStage], score); store.set('fw27_stg2', stg); $('oMode').textContent = B.name + ' · ' + t('stage', {n: curStage + 1}) + ' ' + ZONES[stTier(curStage)].name; }
   $('oBest').textContent = shownBest;
   $('oGates').textContent = gatesPassed; $('oPerf').textContent = perfects; $('oCombo').textContent = maxCombo;
   const rank = score >= 150 ? 'S' : score >= 80 ? 'A' : score >= 35 ? 'B' : 'C';
@@ -1291,6 +1348,11 @@ function update(rdt){
     }
     if (!g.scored && bird.x - bird.r > g.x + g.w){
       g.scored = true; gatesPassed++;
+      if (mode === 'endless' && !FX.clearDone && gatesPassed >= stGoal(curStage)){
+        FX.clearDone = true; const first = !stg.clr[curStage]; stg.clr[curStage] = 1; stg.open = Math.max(stg.open, Math.min(ST_N-1, curStage+1));
+        if (first){ FX.clearCoin = 100 + 10*(curStage+1); W.coins += FX.clearCoin; saveW(); }
+        store.set('fw27_stg2', stg); banner(t('stClear',{n:curStage+1}), [48,100,62], 1.8); SFX.fanfare(); haptic('newBest'); confetti(bird.x+60, bird.y, 50); flash = Math.max(flash,.5); shake = Math.max(shake,8);
+      }
       if (g.dashed){
         const dp = 2 * PK.dashPts; addScore(dp); pop(t('phase') + ' +' + dp, bird.x, bird.y-30, pal.b, true);
       } else if (g.minClear < B.window + PK.windowBonus + (boostT > 0 ? 14 : 0) + (foreT > 0 ? 20 : 0) && g.minClear > -5){
@@ -1888,7 +1950,7 @@ function drawHUD(){
   }
   ctx.textAlign = 'left'; ctx.font = `700 11px "Chakra Petch", ${SYS}`;
   if (mode === 'daily'){ ctx.fillStyle = 'rgba(79,240,255,.85)'; ctx.fillText(t('daily') + ' · ' + fmtDay(runDay), 16, LH - 30); }
-  else if (mode === 'endless'){ ctx.fillStyle = hsl(pal.b, .85); ctx.fillText(t('stage', {n: curStage + 1}) + ' · ' + ZONES[curStage].name, 16, LH - 30); }
+  else if (mode === 'endless'){ ctx.fillStyle = hsl(pal.b, .85); ctx.fillText(t('stage', {n: curStage + 1}) + ' · ' + ZONES[stTier(curStage)].name + ' · ' + Math.min(gatesPassed, stGoal(curStage)) + '/' + stGoal(curStage), 16, LH - 30); }
   if (runTrial){ ctx.fillStyle = 'hsla(45,100%,60%,.9)'; ctx.fillText(t('trialRun') + ' · ' + B.name, 16, LH - 46); }
   let px = 16;
   const ind = (label, tv, max, c) => { ctx.fillStyle = hsl(c,.25); roundRect(px, 44, 84, 20, 10); ctx.fill(); ctx.fillStyle = hsl(c); roundRect(px, 44, 84*Math.min(1, tv/max), 20, 10); ctx.globalAlpha=.4; ctx.fill(); ctx.globalAlpha=1; ctx.fillStyle='#fff'; ctx.font=`700 10.5px "Chakra Petch", ${SYS}`; ctx.textAlign='center'; ctx.fillText(label, px+42, 58); px += 90; if (px > LW - 120){ px = 16; } };
@@ -2324,11 +2386,11 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL): read-only views for console checks + FW.selfTest()
-if (location.hash === '#dev') window.FW = { BIRDS, I18N,
-  get W(){ return W; }, get stg(){ return stg; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
+if (location.hash === '#dev') window.FW = { stTier, stD0, stGoal, stFogN, runD, BIRDS, I18N,
+  get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T}; },
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter}; },
-  get stage(){ return curStage; }, set stage(v){ curStage = Math.max(0, Math.min(stg.gates.length - 1, Math.floor(Number(v) || 0))); },
+  get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); },
   selfTest(){
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b), S = [0,9,10,24,25,39,40,49], fails = [];
     const checks = {
