@@ -607,7 +607,7 @@ const owned = new Set(store.get('fw27_owned', ['volt','blitz','nimbus','titan'])
 let hasPass = store.get('fw27_pass', false), starterBought = store.get('fw27_starter', false);
 const XP_PER_LEVEL = 100;
 const saveW = () => { store.set('fw27_wallet2', W); store.set('fw27_owned', [...owned]); store.set('fw27_pass', hasPass); store.set('fw27_starter', starterBought); };
-const isOwned = b => owned.has(b.id);
+const isOwned = b => !b.rarity || owned.has(b.id);
 function grantXP(n){ let ups = 0; W.xp += n; while (W.xp >= XP_PER_LEVEL){ W.xp -= XP_PER_LEVEL; W.lvl++; W.coins += 50; if (W.lvl % 5 === 0) W.gems += 1; ups++; } return ups; }
 
 function detectLang(){
@@ -818,7 +818,7 @@ let GEM_P = .01;   // gem drop chance per gate (stage mode)
 // AURORA lane: a laned gate sits still at base + off and is laneGap wider; g.base itself never changes, so course layout is untouched
 function laneApply(g){
   if (FX.laneN <= 0) return;
-  const k = FX.laneN === 1 ? .5 : 1, gb = skv('gap'), m = 70 + (g.gap + gb)/2;
+  const k = FX.laneN === 1 ? .25 : 1, gb = skv('gap'), m = 70 + (g.gap + gb)/2;
   const c = g.base + Math.max(-140, Math.min(140, FX.laneY - g.base)) * k;
   g.off = Math.max(m, Math.min(GROUND - m, c)) - g.base; g.lane = 1; g.laneGap = gb; g.flash = 1; FX.laneN--;
 }
@@ -846,7 +846,7 @@ function runD(k){
 // Saves: new keys only. The old fw27_stg / fw27_stage (4-stage build) are read once to carry the unlock over, never written.
 const stg = (() => {
   const s = store.get('fw27_stg2', null);
-  if (s && Array.isArray(s.gates) && s.gates.length === ST_N){
+  if (s && typeof s === 'object'){
     const arr = a => Array.from({length: ST_N}, (_, i) => clampI(Array.isArray(a) ? a[i] : 0, 0, 1e9));
     return {gates: arr(s.gates), score: arr(s.score), clr: arr(s.clr).map(v => v ? 1 : 0), open: clampI(s.open, 0, ST_N - 1)};
   }
@@ -1022,7 +1022,7 @@ addEventListener('keydown', e => {
   if (e.repeat) return;
   const tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' && (e.code === 'Space' || e.code === 'Enter')) return;
-  if (lbOpen){ if (e.code === 'Escape'){ if (!$('shopScr').hidden) closeShop(); else closeLB(); } return; }
+  if (lbOpen){ if (e.code === 'Escape'){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else closeLB(); } return; }
   if (state === 'menu' && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')){ e.preventDefault(); pickBird(BIRDS.indexOf(B) + (e.code === 'ArrowRight' ? 1 : -1)); return; }
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){ e.preventDefault(); if (state==='paused') togglePause(); else flap(); }
   else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyD' || e.code === 'KeyE'){ e.preventDefault(); dash(); }
@@ -2480,7 +2480,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL): read-only views for console checks + FW.selfTest()
-if (location.hash === '#dev') window.FW = { stTier, stD0, stGoal, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N,
+if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { stTier, stD0, stGoal, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N,
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T}; },
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter}; },
