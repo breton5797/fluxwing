@@ -1491,7 +1491,7 @@ function update(rdt){
     if (mr && (o.k === 'orb' || o.k === 'gem') && d < mr && d > 0){ o.x += dx/d * 520*dt; o.y += dy/d * 520*dt; }
     if (d < bird.r + (o.k==='orb'?10:o.k==='gem'?22:16)){
       o.got = true;
-      if (o.k === 'orb' && PK.orbShieldEvery && (orbsGot + 1) % PK.orbShieldEvery === 0 && shields < PK.shieldMax){ shields++; popT = 0; pop(t('shieldP') + ' +1', bird.x, bird.y-34, [48,100,62], true); SFX.power(); haptic('power'); }
+      if (o.k === 'orb' && PK.orbShieldEvery && Math.floor((orbsGot + (rushT > 0 ? 2 : 1)) / PK.orbShieldEvery) > Math.floor(orbsGot / PK.orbShieldEvery) && shields < PK.shieldMax){ shields++; popT = 0; pop(t('shieldP') + ' +1', bird.x, bird.y-34, [48,100,62], true); SFX.power(); haptic('power'); }
       if (o.k === 'orb'){ orbsGot += rushT > 0 ? 2 : 1; dashMeter = Math.min(1, dashMeter + .05*B.dash); SFX.orb(); for (let i=0;i<6;i++) part(o.x,o.y,(Math.random()-.5)*160,(Math.random()-.5)*160,.35,[48,100,65],2); }
       else if (o.k === 'gem'){ W.gems++; FX.gemsRun++; saveW(); pop(t('gemP'), bird.x, bird.y-34, [335,100,72], true); ring(bird.x, bird.y, 160, [335,100,72], .6, 6); flash = Math.max(flash, .3); SFX.power(); haptic('power'); }
       else {
