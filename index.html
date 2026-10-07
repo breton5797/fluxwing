@@ -3397,7 +3397,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots
   TIER_FX, UNIT_ART, UNIT_FX, unitTier, cast(){ skillCharge = 1; useSkill(); }, kill(){ die(); }, sig(k){ sigFx(B.id, k, gates.find(g => !g.scored)); }, dbg: {render, drawBird, drawShape, skyEvent},   // QA only: fire a cast / death / passive moment, count draws
-  get timers(){ return {godT, potionT, slowT, invuln, dashMeter}; },
+  get timers(){ return {godT, potionT, slowT, invuln, dashMeter, lowGravT}; },   // QA only: timers a player reads off the screen (lowGravT: the bot's flight model follows NIMBUS's glide)
   get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
   hold: false, step(dt, n){ for (let i = 0; i < (n || 1); i++) update(dt); },
   selfTest(){
