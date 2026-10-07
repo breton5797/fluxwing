@@ -647,12 +647,13 @@ const owned = new Set(store.get('fw27_owned', ['volt','blitz','nimbus','titan'])
 let hasPass = store.get('fw27_pass', false), starterBought = store.get('fw27_starter', false);
 const XP_PER_LEVEL = 100;
 // Diamonds come from milestones only, so unit passives (SOLARIS x2) never multiply them. Provisional amounts: retune after measuring.
-const DIA_LEVEL = 35, DIA_DAILY = 20, DIA_CLEAR = [40, 75, 115, 150];   // per level-up / first daily run of the day / first clear of a stage, by tier
+const INCOME_X = 5;   // one multiplier on every coin source (score, field, level-up, first clear, daily); the diamond grants below already include it
+const DIA_LEVEL = 175, DIA_DAILY = 100, DIA_CLEAR = [200, 375, 575, 750];   // per level-up / first daily run of the day / first clear of a stage, by tier
 const diaClear = i => DIA_CLEAR[stTier(i)];
 const shortOf = p => CUR.map(([k, w]) => [k, Math.max(0, p[k] - W[w])]).filter(x => x[1] > 0);   // [price field, missing amount] for each currency the wallet cannot cover
 const saveW = () => { store.set('fw27_wallet2', W); store.set('fw27_owned', [...owned]); store.set('fw27_pass', hasPass); store.set('fw27_starter', starterBought); };
 const isOwned = b => !b.rarity || owned.has(b.id);
-function grantXP(n){ let ups = 0; W.xp += n; while (W.xp >= XP_PER_LEVEL){ W.xp -= XP_PER_LEVEL; W.lvl++; W.coins += 50; W.dia += DIA_LEVEL; if (W.lvl % 5 === 0) W.gems += 1; ups++; } return ups; }
+function grantXP(n){ let ups = 0; W.xp += n; while (W.xp >= XP_PER_LEVEL){ W.xp -= XP_PER_LEVEL; W.lvl++; W.coins += 50*INCOME_X; W.dia += DIA_LEVEL; if (W.lvl % 5 === 0) W.gems += 1; ups++; } return ups; }
 
 function detectLang(){
   const saved = store.get('fw27_lang', null);
@@ -880,7 +881,7 @@ const ST_N = 50, ST_FIRST = [0,10,25,40], ST_CNT = [10,15,15,10];
 const ST_D0 = [0,.10,.20,.30], ST_SPAN = .08, ST_GM = [1.2,1.1,1,.92], ST_G0 = [10,21,29,37];   // head start per tier (+ST_SPAN across the tier), gap scale, first goal
 const ST_MOVE = [.04,.10,.16,.22], ST_PULSE = [.02,.05,.09,.13];
 const ST_SCOIN = [30,40,55,67], ST_ORBP = [.30,.40,.50,.67];   // coin income by tier: coins per 50 score at the end of a run, chance that a gate spawns its field-coin orb row
-const scoreCoins = (sc, tr) => Math.floor(sc / 50) * ST_SCOIN[tr];   // partial 50s do not carry
+const scoreCoins = (sc, tr) => Math.floor(sc / 50) * ST_SCOIN[tr] * INCOME_X;   // partial 50s do not carry
 const ZONE_MOVE = [.16,.42,.2,.36], ZONE_PULSE = [.06,.1,.36,.3];   // daily / versus only (by 12-gate zone)
 const STAGE_DKEY = ['easy','normal','hard','expert'];               // indexed by tier
 const stTier = i => i < 10 ? 0 : i < 25 ? 1 : i < 40 ? 2 : 3;
@@ -1333,15 +1334,15 @@ function showOver(){
   // rewards
   // coins: field coins (orbs picked up) + score coins (stage mode, per 50 score by tier); the unit's coin multiplier applies to both
   const inSt = mode === 'endless', xpGain = Math.round((gatesPassed + perfects*2 + Math.floor(score/10)) * PK.xpMul);
-  const fieldCoin = Math.round(orbsGot * PK.coinMul), scoreCoin = inSt ? Math.round(scoreCoins(score, stTier(curStage)) * PK.coinMul) : 0;
+  const fieldCoin = Math.round(orbsGot * INCOME_X * PK.coinMul), scoreCoin = inSt ? Math.round(scoreCoins(score, stTier(curStage)) * PK.coinMul) : 0;
   const gems0 = W.gems, dia0 = W.dia; let dCoin = 0;
-  if (mode === 'daily' && store.get('fw27_dbonus','') !== runDay){ store.set('fw27_dbonus', runDay); dCoin = 60; W.coins += 60; W.gems += 1; W.dia += DIA_DAILY; }
+  if (mode === 'daily' && store.get('fw27_dbonus','') !== runDay){ store.set('fw27_dbonus', runDay); dCoin = 60*INCOME_X; W.coins += dCoin; W.gems += 1; W.dia += DIA_DAILY; }
   W.coins += fieldCoin + scoreCoin; const ups = grantXP(xpGain); saveW();
   const rw = $('oRewards'); rw.textContent = '';
   const pill = (cls, txt) => { const p = document.createElement('span'); p.className = 'wpill'; if (cls){ const i = document.createElement('i'); i.className = 'ic ' + cls; p.appendChild(i); } p.appendChild(document.createTextNode(txt)); rw.appendChild(p); };
   const cm = PK.coinMul > 1 ? ` ×${PK.coinMul}` : '', cpill = (k, n, x = '') => pill('coin', `${t(k)} +${n.toLocaleString()}${x}`);   // one coin pill per source
   pill('', `+${xpGain} XP` + (PK.xpMul > 1 ? ` ×${PK.xpMul}` : '')); if (inSt) cpill('rwScore', scoreCoin, cm); cpill('rwField', fieldCoin, cm);
-  if (ups) cpill('rwLevel', ups*50); if (FX.clearCoin) cpill('rwClear', FX.clearCoin); if (dCoin) cpill('rwDaily', dCoin);
+  if (ups) cpill('rwLevel', ups*50*INCOME_X); if (FX.clearCoin) cpill('rwClear', FX.clearCoin); if (dCoin) cpill('rwDaily', dCoin);
   { const dn = FX.clearDia + (W.dia - dia0), gn = FX.gemsRun + (W.gems - gems0); if (dn > 0) pill('dia', '+' + dn.toLocaleString()); if (gn > 0) pill('gem', '+' + gn); }
   $('oLvup').hidden = !ups; if (ups) $('oLvup').textContent = `${t('levelUp')} Lv ${W.lvl}`;
   $('oTrial').hidden = !runTrial; if (runTrial) $('oTrial').textContent = t('trialRun') + ' · ' + B.name;
@@ -1492,7 +1493,7 @@ function update(rdt){
       g.scored = true; gatesPassed++; sigFx(B.id, 'pass', g); FX.gustLock = Math.max(0, FX.gustLock - 1);
       if (mode === 'endless' && !FX.clearDone && gatesPassed >= stGoal(curStage)){
         FX.clearDone = true; const first = !stg.clr[curStage]; stg.clr[curStage] = 1; stg.open = Math.max(stg.open, Math.min(ST_N-1, curStage+1));
-        if (first){ FX.clearCoin = 100 + 10*(curStage+1); FX.clearDia = diaClear(curStage); W.coins += FX.clearCoin; W.dia += FX.clearDia; saveW(); }
+        if (first){ FX.clearCoin = (100 + 10*(curStage+1))*INCOME_X; FX.clearDia = diaClear(curStage); W.coins += FX.clearCoin; W.dia += FX.clearDia; saveW(); }
         store.set('fw27_stg2', stg); banner(t('stClear',{n:curStage+1}), [48,100,62], 1.8); if (first) banner(t('diaP', {n: FX.clearDia.toLocaleString()}), [185,100,66], 1.2, false); SFX.fanfare(); haptic('newBest'); confetti(bird.x+60, bird.y, 50); flash = Math.max(flash,.5); shake = Math.max(shake,8);
       }
       if (mode === 'endless'){
@@ -3392,7 +3393,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
+if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots
@@ -3423,7 +3424,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       rarity: () => { const ids = r => BIRDS.filter(b => b.rarity === r).map(b => b.id).sort();
         return eq(RARITY_KEY, ['r_common','r_epic','r_legendary','r_mythic','r_ultra']) && eq(ids(2), ['chrono','goliath','phoenix','raijin','zero']) && eq(ids(3), ['aegis','kraken','oracle','specter'])
           && BIRDS.every((b, i) => !i || (b.rarity || 0) >= (BIRDS[i-1].rarity || 0)) && [2,3,4].every(r => CUR.every(([k]) => PRICE[r][k] > PRICE[r-1][k])); },
-      coinTbl: () => eq(ST_SCOIN, [30,40,55,67]) && eq(ST_ORBP, [.3,.4,.5,.67]) && eq([0,49,50,99,100,275].map(s => scoreCoins(s, 0)), [0,0,30,30,60,150]) && eq([1,2,3].map(tr => scoreCoins(120, tr)), [80,110,134]),
+      coinTbl: () => eq(ST_SCOIN, [30,40,55,67]) && eq(ST_ORBP, [.3,.4,.5,.67]) && INCOME_X === 5 && eq([0,49,50,99,100,275].map(s => scoreCoins(s, 0)), [0,0,150,150,300,750]) && eq([1,2,3].map(tr => scoreCoins(120, tr)), [400,550,670]),
       dia: () => eq([0,9,10,24,25,39,40,49].map(diaClear), [0,0,1,1,2,2,3,3].map(i => DIA_CLEAR[i])) && [DIA_LEVEL, DIA_DAILY, ...DIA_CLEAR].every(n => Number.isInteger(n) && n > 0),
       mech: () => { const pk = (id, m) => { const b0 = B, m0 = mode; B = birdById(id); mode = m; const p = perks(); B = b0; mode = m0; return p; }, fx = newFx();   // new mechanics: their numbers, their zeroing in both fair modes, their per-run state
         return eq(SK.raijin, {cd:16,n:3,f:{cd:18,n:1}}) && SK.aegis.sh === 0 && SK.pleiad.sh === 0 && SK.specter.cd === 10 && !/shield|실드|シールド|护盾/.test(['ko','en','ja','zh'].map(l => I18N[l].sd_aegis + I18N[l].sd_pleiad).join('')) && eq(['endless','daily','versus'].map(m => [pk('tempest', m).gust, pk('tempest', m).gustLock]), [[1,6],[0,0],[0,0]]) && pk('volt', 'endless').gust === 0 && fx.gustLock === 0
