@@ -500,7 +500,7 @@ const BIRDS = [
     giantEvery:20 },
   { id:'solaris', name:'SOLARIS', rarity:4, col:[45,100,62],  wingCol:[18,100,60],  speed:1.08, flap:490, grav:1550, maxFall:740, dash:1.20, r:13.5, window:18, bonus:1, nose:18, h:13, span:32, stats:[4,4,3,4],
     shieldStart:1, feverMul:3, comboGuard:true, coinMul:2, xpMul:2, gemMul:2 },
-  { id:'aurora',  name:'AURORA',  rarity:4, col:[160,90,58],  wingCol:[280,90,72],  speed:1.04, flap:470, grav:1420, maxFall:680, dash:1.10, r:13,   window:20, bonus:1, nose:17, h:12, span:34, stats:[3,3,4,3], comboKeep:.5, veil:3 },
+  { id:'aurora',  name:'AURORA',  rarity:4, col:[160,90,58],  wingCol:[280,90,72],  speed:1.04, flap:470, grav:1420, maxFall:680, dash:1.10, r:13,   window:20, bonus:1, nose:17, h:12, span:34, stats:[3,3,4,3], comboKeep:.5, veil:3, veilStart:3 },
   { id:'tempest', name:'TEMPEST', rarity:4, col:[215,75,52],  wingCol:[185,100,70], speed:1.15, flap:490, grav:1600, maxFall:760, dash:1.40, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,3,2,5], dashPts:2, dashRefund:.3, gust:.33, gustLock:4 },
   { id:'pleiad',  name:'PLEIAD',  rarity:4, col:[232,65,62],  wingCol:[50,100,72],  speed:1.00, flap:480, grav:1500, maxFall:700, dash:1.10, r:13.5, window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3], shieldStart:2, shieldMax:2, shieldRegen:60, shieldBurst:true },
   { id:'pulsar',  name:'PULSAR',  rarity:4, col:[320,100,62], wingCol:[180,100,66], speed:1.06, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:19, bonus:2, nose:19, h:12, span:28, stats:[4,3,3,3], perfCharge:.08, feverAt:8, ping:.34 }
@@ -531,7 +531,7 @@ function perks(){
     feverMul: d ? 2 : (B.feverMul || 2), comboGuard: d ? false : !!B.comboGuard,
     bonus: d ? Math.min(1, B.bonus||0) : (B.bonus||0), comboKeep: d ? 0 : (B.comboKeep||0), dashRefund: d ? 0 : (B.dashRefund||0), shieldBurst: d ? false : !!B.shieldBurst, perfCharge: d ? .06 : (B.perfCharge||.06), gemMul: B.gemMul||1,
     gust: d ? 0 : (B.gust||0), gustLock: d ? 0 : (B.gustLock||0),   // TEMPEST gust reflex: the share of the dash meter that arms it (0 = no reflex) and the gates it stays locked for: stage mode only
-    veil: d ? 0 : (B.veil||0),   // AURORA veil: Perfects per thread of light (three threads make a veil): stage mode only
+    veil: d ? 0 : (B.veil||0), veilStart: d ? 0 : (B.veilStart||0),   // AURORA veil: Perfects per thread of light (three threads make a veil) and the threads a run starts with: stage mode only
     ping: d ? 0 : (B.ping||0),   // PULSAR echo: skill charge one echo costs: stage mode only
     inkSlip: d ? 0 : (B.inkSlip||0),   // KRAKEN ink cloak: scored gates before it can arm again after a save (0 = no cloak): stage mode only
     foresee: d ? 0 : (B.foresee||0)   // ORACLE premonition: the Perfect combo from which a gate hit is foreseen (0 = never): stage mode only
@@ -617,7 +617,7 @@ ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 �
  lbRetry:'기록을 올리지 못했어요. 곧 다시 시도합니다', lbRate:'전송이 너무 잦아요. 잠시 후 다시 올립니다', lbReject:'서버가 이 기록을 받지 않았어요', vsStranded:'상대가 들어오지 않았어요. 다시 찾는 중…',
  nCoin:'코인\u00a0{n}', nDia:'다이아몬드\u00a0{n}', nGem:'젬\u00a0{n}', diaP:'다이아몬드 +{n}', rwScore:'점수', rwField:'필드', rwLevel:'레벨업', rwClear:'첫 클리어', rwDaily:'오늘의 첫 판',
  fx_slip:'먹물 은신!', fx_fore:'예감!',
- r_aurora:'극광형', p_aurora:'콤보가 끊겨도 절반이 남는다. 퍼펙트 판정이 넓고 퍼펙트마다 +1점. 극광 장막: 퍼펙트 3번마다 빛의 실 1개(최대 3개). 실 3개가 차면 게이트 충돌 1번을 막고 다음 게이트 2개를 내 높이로 모은다.', fx_veil:'극광 장막!', sk_aurora:'극광 회랑', sd_aurora:'다음 게이트 {n}개가 내 높이로 모이고 멈추며 틈이 넓어진다',
+ r_aurora:'극광형', p_aurora:'콤보가 끊겨도 절반이 남는다. 퍼펙트 판정이 넓고 퍼펙트마다 +1점. 극광 장막: 퍼펙트 3번마다 빛의 실 1개(최대 3개). 실 3개가 차면 게이트 충돌 1번을 막고 다음 게이트 2개를 내 높이로 모은다. 스테이지는 실 3개가 찬 채로 시작한다.', fx_veil:'극광 장막!', sk_aurora:'극광 회랑', sd_aurora:'다음 게이트 {n}개가 내 높이로 모이고 멈추며 틈이 넓어진다',
  r_tempest:'폭풍형', p_tempest:'대시 관통 점수 2배. 대시로 게이트를 부수면 게이지 30% 환급(대시당 1회). 돌풍 반사: 게이지가 3분의 1 이상 차 있으면 게이트에 부딪혀도 죽지 않고 짧은 자동 대시가 나간다(게이지 전부 소모, 게이트 4개를 지나야 재무장).', fx_gust:'돌풍 반사!', sk_tempest:'태풍의 눈', sd_tempest:'게이지를 쓰지 않는 1.5배 길이 대시를 즉시 발동',
  r_pleiad:'성단형', p_pleiad:'실드 2개로 출발(최대 2개), 게이트 60개마다 1개 재충전. 실드가 깨지면 그 게이트도 부서진다.', sk_pleiad:'궤도 포격', sd_pleiad:'앞 게이트 {n}개를 차례로 부순다',
  r_pulsar:'맥동형', p_pulsar:'퍼펙트마다 +2점, 스킬이 더 빨리 찬다. 피버가 8콤보에서 시작된다. 공명 반향: 게이트 모서리를 얕게 스치면 스킬 충전 34%를 쓰고 튕겨 나온다.', fx_ping:'PING', sk_pulsar:'공명', sd_pulsar:'{n}초간 퍼펙트 점수 2배, 판정이 넓어진다'},
@@ -626,15 +626,17 @@ en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', 
  lbRetry:"Couldn't post your score. Retrying soon", lbRate:'Posting too fast. It will be sent in a moment', lbReject:'The server did not accept this score', vsStranded:"Opponent didn't show up. Searching again…",
  nCoin:'Coins\u00a0{n}', nDia:'Diamonds\u00a0{n}', nGem:'Gems\u00a0{n}', diaP:'DIAMOND +{n}', rwScore:'Score', rwField:'Field', rwLevel:'Level up', rwClear:'First clear', rwDaily:'Daily',
  fx_slip:'INK CLOAK!', fx_fore:'FORESEEN!',
- r_aurora:'Skyweaver', p_aurora:'A broken combo keeps half. Wide Perfect window, +1 on every Perfect. Aurora Veil: every 3 Perfects weave a thread of light (max 3). With all 3, the veil takes one gate hit for you and lines up the next 2 gates.', fx_veil:'AURORA VEIL!', sk_aurora:'Aurora Lane', sd_aurora:'The next {n} gates slide to your height, stop moving and widen',
+ r_aurora:'Skyweaver', p_aurora:'A broken combo keeps half. Wide Perfect window, +1 on every Perfect. Aurora Veil: every 3 Perfects weave a thread of light (max 3). With all 3, the veil takes one gate hit for you and lines up the next 2 gates. Every stage starts with all 3 threads woven.', fx_veil:'AURORA VEIL!', sk_aurora:'Aurora Lane', sd_aurora:'The next {n} gates slide to your height, stop moving and widen',
  r_tempest:'Stormbreaker', p_tempest:'Dash-through points x2. Smashing a gate with a dash refunds 30% meter (once per dash). Gust Reflex: with the meter at least a third full, hitting a gate fires a short automatic dash instead of a crash (spends the whole meter, re-arms after 4 gates).', fx_gust:'GUST REFLEX!', sk_tempest:'Eye of the Storm', sd_tempest:'Fires a free dash that lasts 1.5x longer',
  r_pleiad:'Star Guard', p_pleiad:'Starts with 2 shields (max 2), recharges 1 every 60 gates. A breaking shield also breaks that gate.', sk_pleiad:'Orbital Barrage', sd_pleiad:'Smashes the next {n} gates one by one',
  r_pulsar:'Resonator', p_pulsar:'+2 on every Perfect and faster skill charge. Fever starts at an 8 combo. Echo Ping: a shallow graze on a gate edge bounces you back for 34% skill charge.', fx_ping:'PING', sk_pulsar:'Resonance', sd_pulsar:'Perfects score double and the window widens for {n}s'},
 ja:{nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0{n}',
  fx_slip:'墨隠れ!', fx_fore:'予感!',
+ p_aurora:'コンボが途切れても半分残る。パーフェクト判定が広く、パーフェクトごとに+1点。オーロラヴェール:パーフェクト3回ごとに光の糸を1本紡ぐ(最大3本)。3本そろうとゲートへの衝突を1回防ぎ、次の2ゲートを自分の高さにそろえる。ステージは糸3本がそろった状態で始まる。', fx_veil:'オーロラヴェール!',
  p_tempest:'ダッシュ貫通スコア2倍。ダッシュでゲートを壊すとゲージが30%戻る(1回のダッシュにつき1度)。突風リフレックス:ゲージが3分の1以上あれば、ゲートにぶつかっても死なず短い自動ダッシュが出る(ゲージを全消費、ゲート4個通過で再装填)。', fx_gust:'突風リフレックス!'},
 zh:{nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
  fx_slip:'墨隐!', fx_fore:'预感!',
+ p_aurora:'连击中断时保留一半。完美判定更宽,每次完美+1分。极光帷幕:每完成3次完美织出1根光丝(最多3根)。集齐3根后可抵挡1次撞击关卡,并让后2个关卡对齐到自身高度。每关开局时3根光丝已织好。', fx_veil:'极光帷幕!',
  p_tempest:'冲刺穿越得分翻倍。用冲刺撞碎关卡返还30%能量(每次冲刺1次)。疾风反射:能量达到三分之一以上时,撞上关卡不会死亡,而是自动发动一次短冲刺(耗尽全部能量,再通过4个关卡后重新就绪)。', fx_gust:'疾风反射!'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
@@ -805,7 +807,7 @@ const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:
   laneN:0, laneY:0, strikeN:0, strikeT:0, stormDash:false, dashHit:false, resoT:0, resoMul:1,
   castT:0, castMax:0, sigT:0, sigK:'', perfT:0,   // unit fx timers (s): cast sky event and its length, passive moment and its kind, perfect flourish
   gustLock:0,   // TEMPEST: scored gates left before the gust reflex can arm again
-  threads:0, threadP:0,   // AURORA: threads of light woven (0..3) and Perfects toward the next one
+  threads:0, threadP:0,   // AURORA: threads of light woven (0..3; reset() starts a run at PK.veilStart) and Perfects toward the next one
   pingT:0,   // PULSAR: seconds before the next echo can fire
   inkLock:0 });   // KRAKEN: scored gates left before the ink cloak can arm again
 let FX = newFx(); const TMAX = {};
@@ -816,7 +818,7 @@ function reset(){
   gates = []; orbs = []; parts = []; pops = []; trail = [];
   score = 0; gatesPassed = 0; combo = 0; maxCombo = 0; perfects = 0;
   bird.r = B.r;
-  PK = perks(); FX = newFx();
+  PK = perks(); FX = newFx(); FX.threads = PK.veilStart;   // AURORA starts a stage with its veil woven (0 for every other unit and in fair modes); a continue does not weave it again
   skillCharge = .35; skillWasReady = false; boostT = lowGravT = autoT = cloneT = rushT = foreT = freezeT = potionT = godT = hurtT = 0; danger = 0; contUsed = false;
   bounceLeft = PK.bounce; rewindLeft = PK.rewind; perfCount = 0; phaseT = 0; giantT = 0; inkT = 0; guardUsed = false; travel = 0; hist = []; bolts = [];
   speed = 190; dashMeter = PK.dashFull ? 1 : 0; dashT = 0; invuln = 0; shields = PK.shieldStart; reviveLeft = PK.revive; orbsGot = 0; magnetT = 0; slowT = 0;
@@ -3449,7 +3451,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       dia: () => eq([0,9,10,24,25,39,40,49].map(diaClear), [0,0,1,1,2,2,3,3].map(i => DIA_CLEAR[i])) && [DIA_LEVEL, DIA_DAILY, ...DIA_CLEAR].every(n => Number.isInteger(n) && n > 0),
       mech: () => { const pk = (id, m) => { const b0 = B, m0 = mode; B = birdById(id); mode = m; const p = perks(); B = b0; mode = m0; return p; }, fx = newFx();   // new mechanics: their numbers, their zeroing in both fair modes, their per-run state
         return eq(SK.raijin, {cd:16,n:3,f:{cd:18,n:1}}) && SK.aegis.sh === 0 && SK.pleiad.sh === 0 && SK.specter.cd === 10 && !/shield|실드|シールド|护盾/.test(['ko','en','ja','zh'].map(l => I18N[l].sd_aegis + I18N[l].sd_pleiad).join('')) && eq(['endless','daily','versus'].map(m => [pk('tempest', m).gust, pk('tempest', m).gustLock]), [[.33,4],[0,0],[0,0]]) && pk('volt', 'endless').gust === 0 && fx.gustLock === 0
-          && eq(['endless','daily','versus'].map(m => pk('aurora', m).veil), [3,0,0]) && pk('volt', 'endless').veil === 0 && fx.threads === 0 && fx.threadP === 0 && ['ko','en'].every(l => I18N[l].fx_veil && I18N[l].p_aurora.includes(' 3')) && I18N.zh.fx_veil === I18N.en.fx_veil
+          && eq(['endless','daily','versus'].map(m => [pk('aurora', m).veil, pk('aurora', m).veilStart]), [[3,3],[0,0],[0,0]]) && pk('volt', 'endless').veil === 0 && pk('volt', 'endless').veilStart === 0 && fx.threads === 0 && fx.threadP === 0 && ['ko','en','ja','zh'].every(l => I18N[l].fx_veil && (I18N[l].p_aurora.match(/3/g) || []).length === 4 && (l === 'en' || (I18N[l].fx_veil !== I18N.en.fx_veil && I18N[l].p_aurora !== I18N.en.p_aurora)))
           && eq(['endless','daily','versus'].map(m => pk('pulsar', m).ping), [.34,0,0]) && pk('volt', 'endless').ping === 0 && fx.pingT === 0 && ['ko','en'].every(l => I18N[l].fx_ping && I18N[l].p_pulsar.includes('34%'))
           && ['ko','en','ja','zh'].every(l => I18N[l].fx_gust && I18N[l].p_tempest.includes('4') && I18N[l].p_tempest.includes('30%') && !I18N[l].p_tempest.includes('6') && (l === 'en' || (I18N[l].fx_gust !== I18N.en.fx_gust && I18N[l].p_tempest !== I18N.en.p_tempest)))
           && eq(['endless','daily','versus'].map(m => pk('kraken', m).inkSlip), [10,0,0]) && pk('volt', 'endless').inkSlip === 0 && fx.inkLock === 0 && ['ko','en','ja','zh'].every(l => I18N[l].fx_slip !== 'fx_slip' && I18N[l].p_kraken.includes('10') && (l === 'en' || I18N[l].fx_slip !== I18N.en.fx_slip))
