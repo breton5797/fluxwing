@@ -487,7 +487,7 @@ const BIRDS = [
   { id:'buzz',    name:'BUZZ',    rarity:1, col:[46,100,55],  wingCol:[200,60,92],  speed:1.02, flap:420, grav:1250, maxFall:600, dash:1.05, r:12,   window:17, bonus:0, nose:16, h:12, span:24, stats:[3,2,4,3],
     powerChance:2, powerDur:1.5 },
   { id:'kraken',  name:'KRAKEN',  rarity:3, col:[285,65,55],  wingCol:[320,80,65],  speed:0.96, flap:500, grav:1550, maxFall:700, dash:1.00, r:14,   window:16, bonus:0, nose:16, h:13, span:26, stats:[2,4,3,3],
-    inkEvery:10 },
+    inkEvery:10, inkSlip:10 },
   { id:'specter', name:'SPECTER', rarity:3, col:[185,60,92],  wingCol:[185,100,70], speed:1.04, flap:440, grav:1300, maxFall:620, dash:1.10, r:12.5, window:17, bonus:0, nose:16, h:13, span:26, stats:[4,3,4,3],
     phaseEvery:12 },
   { id:'oracle',  name:'ORACLE',  rarity:3, col:[170,70,42],  wingCol:[55,100,65],  speed:1.00, flap:460, grav:1450, maxFall:690, dash:1.00, r:13,   window:16, bonus:0, nose:15, h:14, span:30, stats:[3,3,4,3],
@@ -532,7 +532,8 @@ function perks(){
     bonus: d ? Math.min(1, B.bonus||0) : (B.bonus||0), comboKeep: d ? 0 : (B.comboKeep||0), dashRefund: d ? 0 : (B.dashRefund||0), shieldBurst: d ? false : !!B.shieldBurst, perfCharge: d ? .06 : (B.perfCharge||.06), gemMul: B.gemMul||1,
     gust: d ? 0 : (B.gust||0), gustLock: d ? 0 : (B.gustLock||0),   // TEMPEST gust reflex and the gates it stays locked for: stage mode only
     veil: d ? 0 : (B.veil||0),   // AURORA veil: Perfects per thread of light (three threads make a veil): stage mode only
-    ping: d ? 0 : (B.ping||0)   // PULSAR echo: skill charge one echo costs: stage mode only
+    ping: d ? 0 : (B.ping||0),   // PULSAR echo: skill charge one echo costs: stage mode only
+    inkSlip: d ? 0 : (B.inkSlip||0)   // KRAKEN ink cloak: scored gates before it can arm again after a save (0 = no cloak): stage mode only
   };
 }
 const I18N_C = {
@@ -568,16 +569,16 @@ const NEW_U = ['pixel','neko','buzz','kraken','specter','oracle','raijin','chron
 const I18N_E_KEYS = [...NEW_U.map(u => 'r_' + u), ...NEW_U.map(u => 'p_' + u), 'fx_ink','fx_phase','fx_bolt','fx_rewind','fx_giant','fx_bounce','fx_guard','r_ultra'];
 const I18N_E = {
 ko:['레트로형','아홉목숨형','행운형','심해형','유령형','예지형','뇌신형','시간형','파괴형','태양신형',
- '코인 2배. 오브 50개를 모을 때마다 실드 +1(최대 2개).','바닥에 닿아도 죽지 않고 고양이처럼 튀어 오른다.','파워업이 2배 자주 나오고 효과가 1.5배 오래간다.','게이트 10개마다 먹물을 뿜어 4초간 모든 게이트 틈이 넓어진다.','게이트 12개마다 1.6초간 유령이 되어 벽을 통과한다.','다음 게이트 3개를 잇는 최적 경로가 보이고 퍼펙트 판정이 넓다.','퍼펙트 3번마다 번개가 앞 게이트를 박살 낸다.','죽는 순간 1.2초 전으로 시간을 되감는다. 한 판에 2번.','게이트 20개마다 3초간 거대화해 게이트를 부수며 돌진한다.','실드 1개로 출발. 코인·경험치·젬 드롭 2배. 피버 점수 3배, 피버 중 실수 1번은 콤보를 지켜준다.',
+ '코인 2배. 오브 50개를 모을 때마다 실드 +1(최대 2개).','바닥에 닿아도 죽지 않고 고양이처럼 튀어 오른다.','파워업이 2배 자주 나오고 효과가 1.5배 오래간다.','게이트 10개마다 먹물을 뿜어 4초간 모든 게이트 틈이 넓어진다. 먹물 은신: 먹물이 퍼져 있는 동안 게이트에 부딪혀도 죽지 않고 그 게이트가 녹아내린다(먹물 소모, 게이트 10개를 지나야 재무장).','게이트 12개마다 1.6초간 유령이 되어 벽을 통과한다.','다음 게이트 3개를 잇는 최적 경로가 보이고 퍼펙트 판정이 넓다.','퍼펙트 3번마다 번개가 앞 게이트를 박살 낸다.','죽는 순간 1.2초 전으로 시간을 되감는다. 한 판에 2번.','게이트 20개마다 3초간 거대화해 게이트를 부수며 돌진한다.','실드 1개로 출발. 코인·경험치·젬 드롭 2배. 피버 점수 3배, 피버 중 실수 1번은 콤보를 지켜준다.',
  '먹물!','유령화!','번개!','되감기!','거대화!','냥!','콤보 보호!','울트라'],
 en:['Retro','Nine Lives','Lucky','Abyssal','Phantom','Seer','Storm God','Timekeeper','Wrecker','Sun God',
- '2x coins. Every 50 orbs grants a shield (max 2).','Touching the floor never kills. It bounces back up like a cat.','Power-ups appear twice as often and last 1.5x longer.','Every 10 gates it sprays ink: all gaps widen for 4 seconds.','Every 12 gates it turns into a ghost for 1.6s and passes through walls.','Shows the best path through the next 3 gates. Wider Perfect window.','Every 3 Perfects, lightning smashes the gate ahead.','On death, rewinds time by 1.2 seconds. Twice per run.','Every 20 gates it goes giant for 3s and smashes through gates.','Starts with a shield. 2x coins, XP and gem drops. Fever scores x3, and one miss during Fever keeps your combo.',
+ '2x coins. Every 50 orbs grants a shield (max 2).','Touching the floor never kills. It bounces back up like a cat.','Power-ups appear twice as often and last 1.5x longer.','Every 10 gates it sprays ink: all gaps widen for 4 seconds. Ink Cloak: while ink is out, hitting a gate dissolves it instead of killing you (uses up the ink, re-arms after 10 gates).','Every 12 gates it turns into a ghost for 1.6s and passes through walls.','Shows the best path through the next 3 gates. Wider Perfect window.','Every 3 Perfects, lightning smashes the gate ahead.','On death, rewinds time by 1.2 seconds. Twice per run.','Every 20 gates it goes giant for 3s and smashes through gates.','Starts with a shield. 2x coins, XP and gem drops. Fever scores x3, and one miss during Fever keeps your combo.',
  'INK!','PHASE!','THUNDER!','REWIND!','GIANT!','NYA!','COMBO SAVED!','Ultra'],
 ja:['レトロ型','九つの命型','幸運型','深海型','幽霊型','予知型','雷神型','時間型','破壊型','太陽神型',
- 'コイン2倍。オーブ50個ごとにシールド+1(最大2)。','床に触れても死なず、猫のように跳ね返る。','パワーアップの出現が2倍、効果時間が1.5倍。','ゲート10個ごとに墨を噴き、4秒間すべての隙間が広がる。','ゲート12個ごとに1.6秒間幽霊になり壁をすり抜ける。','次の3ゲートを通る最適ルートが見え、パーフェクト判定が広い。','パーフェクト3回ごとに雷が前方のゲートを粉砕する。','死んだ瞬間、1.2秒前に時間を巻き戻す。1プレイ2回。','ゲート20個ごとに3秒間巨大化し、ゲートを壊して突進する。','シールド1枚で出発。コイン・経験値・ジェムドロップ2倍。フィーバー得点3倍、フィーバー中のミス1回はコンボを守る。',
+ 'コイン2倍。オーブ50個ごとにシールド+1(最大2)。','床に触れても死なず、猫のように跳ね返る。','パワーアップの出現が2倍、効果時間が1.5倍。','ゲート10個ごとに墨を噴き、4秒間すべての隙間が広がる。墨隠れ:墨が出ている間はゲートにぶつかっても死なず、そのゲートが溶ける(墨を使い切る、ゲート10個通過で再装填)。','ゲート12個ごとに1.6秒間幽霊になり壁をすり抜ける。','次の3ゲートを通る最適ルートが見え、パーフェクト判定が広い。','パーフェクト3回ごとに雷が前方のゲートを粉砕する。','死んだ瞬間、1.2秒前に時間を巻き戻す。1プレイ2回。','ゲート20個ごとに3秒間巨大化し、ゲートを壊して突進する。','シールド1枚で出発。コイン・経験値・ジェムドロップ2倍。フィーバー得点3倍、フィーバー中のミス1回はコンボを守る。',
  '墨!','幽体化!','落雷!','巻き戻し!','巨大化!','ニャッ!','コンボ保護!','ウルトラ'],
 zh:['复古型','九命型','幸运型','深海型','幽灵型','预知型','雷神型','时间型','破坏型','太阳神型',
- '金币2倍。每收集50个能量球获得1层护盾(最多2层)。','碰到地面不会死亡,会像猫一样弹起。','道具出现频率2倍,效果持续1.5倍。','每通过10个关卡喷出墨汁,4秒内所有缝隙变宽。','每通过12个关卡化身幽灵1.6秒,穿墙而过。','显示穿过后3个关卡的最佳路线,完美判定更宽。','每完成3次完美,闪电击碎前方关卡。','死亡瞬间将时间倒回1.2秒。每局2次。','每通过20个关卡巨大化3秒,撞碎关卡前进。','开局自带1层护盾。金币、经验、宝石掉落2倍。狂热得分3倍,狂热中失误1次不中断连击。',
+ '金币2倍。每收集50个能量球获得1层护盾(最多2层)。','碰到地面不会死亡,会像猫一样弹起。','道具出现频率2倍,效果持续1.5倍。','每通过10个关卡喷出墨汁,4秒内所有缝隙变宽。墨隐:墨汁存在期间撞上关卡不会死亡,该关卡会被溶解(耗尽墨汁,再通过10个关卡后重新就绪)。','每通过12个关卡化身幽灵1.6秒,穿墙而过。','显示穿过后3个关卡的最佳路线,完美判定更宽。','每完成3次完美,闪电击碎前方关卡。','死亡瞬间将时间倒回1.2秒。每局2次。','每通过20个关卡巨大化3秒,撞碎关卡前进。','开局自带1层护盾。金币、经验、宝石掉落2倍。狂热得分3倍,狂热中失误1次不中断连击。',
  '墨汁!','幽灵化!','雷击!','时间倒流!','巨大化!','喵!','连击保护!','究极']
 };
 I18N_E_KEYS.forEach((k,i) => { for (const l in I18N) I18N[l][k] = (I18N_E[l] || I18N_E.en)[i]; });
@@ -608,12 +609,13 @@ ja:[['オーバードライブ','{n}秒間パーフェクト判定が大きく�
 zh:[['超速驱动','{n}秒内完美判定大幅放宽'],['闪现','瞬移穿过前方关卡,并耗尽冲刺能量'],['滑翔','{n}秒内重力减弱'],['钢铁之躯','无敌{n}秒,随后身体变重、短暂减速'],['麻薯泡泡','{n}秒内自动沿关卡中央飞行'],['钢铁屏障','无敌{n}秒'],['不死','{n}秒内不会死亡'],['影分身','{n}秒内分身替你承受1次碰撞'],['金币冲刺','{n}秒内金币2倍+强力磁铁'],['猫之感知','时间减慢{n}秒'],['蜂群召唤','在前方召唤{n}个道具(不含无敌冲刺)'],['墨汁爆发','{n}秒内所有缝隙变宽'],['灵体化','{n}秒内穿墙'],['预知','{n}秒内轻松完美+显示路线'],['雷霆','闪电击碎前方{n}个关卡'],['时间停止','世界静止{n}秒'],['泰坦降临','巨大化{n}秒撞碎关卡'],['超新星','立即进入狂热+无敌{n}秒']]
 };
 SK_IDS.forEach((id,i) => { for (const l in I18N){ const tx = (SK_TXT[l] || SK_TXT.en)[i]; I18N[l]['sk_' + id] = tx[0]; I18N[l]['sd_' + id] = tx[1]; } });
-// Key-based additions (ko/en; other languages fall back to en, except the three cost labels at the end). The index arrays above keep their length and order.
+// Key-based additions (ko/en, with ja/zh for the cost labels and the newer unit texts; anything a language lacks falls back to en). The index arrays above keep their length and order.
 const I18N_N = {
 ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 틈', tierRule2:'더 좁은 틈 · 0.5초 안개', tierRule3:'가장 좁은 틈 · 2초 안개 · 2초 안에 탭',
  idleRule:'2초 안에 탭!', idleStall:'엔진 정지!', heavyP:'무거움', gemP:'젬 +1', gemHint:'젬은 스테이지 플레이 중 1% 확률로 나와요 · {n}/{m}',
  lbRetry:'기록을 올리지 못했어요. 곧 다시 시도합니다', lbRate:'전송이 너무 잦아요. 잠시 후 다시 올립니다', lbReject:'서버가 이 기록을 받지 않았어요', vsStranded:'상대가 들어오지 않았어요. 다시 찾는 중…',
  nCoin:'코인\u00a0{n}', nDia:'다이아몬드\u00a0{n}', nGem:'젬\u00a0{n}', diaP:'다이아몬드 +{n}', rwScore:'점수', rwField:'필드', rwLevel:'레벨업', rwClear:'첫 클리어', rwDaily:'오늘의 첫 판',
+ fx_slip:'먹물 은신!',
  r_aurora:'극광형', p_aurora:'콤보가 끊겨도 절반이 남는다. 퍼펙트 판정이 넓고 퍼펙트마다 +1점. 극광 장막: 퍼펙트 3번마다 빛의 실 1개(최대 3개). 실 3개가 차면 게이트 충돌 1번을 막고 다음 게이트 2개를 내 높이로 모은다.', fx_veil:'극광 장막!', sk_aurora:'극광 회랑', sd_aurora:'다음 게이트 {n}개가 내 높이로 모이고 멈추며 틈이 넓어진다',
  r_tempest:'폭풍형', p_tempest:'대시 관통 점수 2배. 대시로 게이트를 부수면 게이지 30% 환급(대시당 1회). 돌풍 반사: 게이지가 가득 차 있으면 게이트에 부딪혀도 죽지 않고 짧은 자동 대시가 나간다(게이지 소모, 게이트 6개를 지나야 재무장).', fx_gust:'돌풍 반사!', sk_tempest:'태풍의 눈', sd_tempest:'게이지를 쓰지 않는 1.5배 길이 대시를 즉시 발동',
  r_pleiad:'성단형', p_pleiad:'실드 2개로 출발(최대 2개), 게이트 60개마다 1개 재충전. 실드가 깨지면 그 게이트도 부서진다.', sk_pleiad:'궤도 포격', sd_pleiad:'앞 게이트 {n}개를 차례로 부순다',
@@ -622,12 +624,15 @@ en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', 
  idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/{m}',
  lbRetry:"Couldn't post your score. Retrying soon", lbRate:'Posting too fast. It will be sent in a moment', lbReject:'The server did not accept this score', vsStranded:"Opponent didn't show up. Searching again…",
  nCoin:'Coins\u00a0{n}', nDia:'Diamonds\u00a0{n}', nGem:'Gems\u00a0{n}', diaP:'DIAMOND +{n}', rwScore:'Score', rwField:'Field', rwLevel:'Level up', rwClear:'First clear', rwDaily:'Daily',
+ fx_slip:'INK CLOAK!',
  r_aurora:'Skyweaver', p_aurora:'A broken combo keeps half. Wide Perfect window, +1 on every Perfect. Aurora Veil: every 3 Perfects weave a thread of light (max 3). With all 3, the veil takes one gate hit for you and lines up the next 2 gates.', fx_veil:'AURORA VEIL!', sk_aurora:'Aurora Lane', sd_aurora:'The next {n} gates slide to your height, stop moving and widen',
  r_tempest:'Stormbreaker', p_tempest:'Dash-through points x2. Smashing a gate with a dash refunds 30% meter (once per dash). Gust Reflex: with a full meter, hitting a gate fires a short automatic dash instead of a crash (spends the meter, re-arms after 6 gates).', fx_gust:'GUST REFLEX!', sk_tempest:'Eye of the Storm', sd_tempest:'Fires a free dash that lasts 1.5x longer',
  r_pleiad:'Star Guard', p_pleiad:'Starts with 2 shields (max 2), recharges 1 every 60 gates. A breaking shield also breaks that gate.', sk_pleiad:'Orbital Barrage', sd_pleiad:'Smashes the next {n} gates one by one',
  r_pulsar:'Resonator', p_pulsar:'+2 on every Perfect and faster skill charge. Fever starts at an 8 combo. Echo Ping: a shallow graze on a gate edge bounces you back for 34% skill charge.', fx_ping:'PING', sk_pulsar:'Resonance', sd_pulsar:'Perfects score double and the window widens for {n}s'},
-ja:{nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0{n}'},
-zh:{nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}'}
+ja:{nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0{n}',
+ fx_slip:'墨隠れ!'},
+zh:{nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
+ fx_slip:'墨隐!'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
 const birdById = id => BIRDS.find(b => b.id === id);
@@ -798,7 +803,8 @@ const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:
   castT:0, castMax:0, sigT:0, sigK:'', perfT:0,   // unit fx timers (s): cast sky event and its length, passive moment and its kind, perfect flourish
   gustLock:0,   // TEMPEST: scored gates left before the gust reflex can arm again
   threads:0, threadP:0,   // AURORA: threads of light woven (0..3) and Perfects toward the next one
-  pingT:0 });   // PULSAR: seconds before the next echo can fire
+  pingT:0,   // PULSAR: seconds before the next echo can fire
+  inkLock:0 });   // KRAKEN: scored gates left before the ink cloak can arm again
 let FX = newFx(); const TMAX = {};
 
 function reset(){
@@ -1475,6 +1481,9 @@ function update(rdt){
           if (invuln > 0 || godT > 0 || freezeT > 0){ if (godT > 0) sigFx(B.id, 'block', g); }
           else if (cloneT > 0){ cloneHit(); }
           else if (shields > 0){ breakShield(); if (PK.shieldBurst){ g.broken = true; g.flash = 1; shards(g.x + g.w/2, bird.y, [50,100,72], 24); sigFx(B.id, 'burst', g); } }
+          else if (PK.inkSlip && inkT > 0 && FX.inkLock === 0){   // KRAKEN ink cloak: while ink is out and the cloak is not locked, a fatal gate hit dissolves the gate instead. The ink is spent on the spot, the cloak locks for PK.inkSlip scored gates (the dissolved gate does not count), and the combo is lost
+            inkT = 0; FX.inkLock = PK.inkSlip; g.broken = g.slip = true; g.flash = 1; invuln = .6; combo = 0; tier = 0;
+            hitstop = Math.max(hitstop, .12); banner(t('fx_slip'), [285,80,70], 1, false); haptic('shatter'); sigFx(B.id, 'slip', g); }
           else if (PK.gust && dashMeter >= 1 && FX.gustLock === 0 && dashT <= 0){   // TEMPEST gust reflex: a full, unlocked meter turns a fatal gate hit into a short dash. The meter is spent with no refund (stormDash), the gate scores 1, and a dashed gate feeds no meter
             dashMeter = 0; dashT = .55 * .6; bird.vy = 0; FX.stormDash = true; FX.gustLock = PK.gustLock; invuln = .8; g.dashed = g.gust = true; g.flash = 1; combo = 0; tier = 0;
             hitstop = Math.max(hitstop, .12); banner(t('fx_gust'), [185,100,70], 1, false); haptic('shatter'); sigFx(B.id, 'gust', g); }
@@ -1490,7 +1499,7 @@ function update(rdt){
       }
     }
     if (!g.scored && bird.x - bird.r > g.x + g.w){
-      g.scored = true; gatesPassed++; sigFx(B.id, 'pass', g); FX.gustLock = Math.max(0, FX.gustLock - 1);
+      g.scored = true; gatesPassed++; sigFx(B.id, 'pass', g); FX.gustLock = Math.max(0, FX.gustLock - 1); if (!g.slip) FX.inkLock = Math.max(0, FX.inkLock - 1);
       if (mode === 'endless' && !FX.clearDone && gatesPassed >= stGoal(curStage)){
         FX.clearDone = true; const first = !stg.clr[curStage]; stg.clr[curStage] = 1; stg.open = Math.max(stg.open, Math.min(ST_N-1, curStage+1));
         if (first){ FX.clearCoin = (100 + 10*(curStage+1))*INCOME_X; FX.clearDia = diaClear(curStage); W.coins += FX.clearCoin; W.dia += FX.clearDia; saveW(); }
@@ -2256,7 +2265,7 @@ function drawBird(){
    perfect(g)       Perfect pass, after SFX.perfect.   death()  final death, replaces the 46 shared particles (the red ring stays)
    sig(kind, g)     passive moments: 'pass' every scored gate · 'guard' combo guard · 'regen' shield regen · 'burst' shield-burst gate · 'rebirth' revive spent · 'rewind' before the rewind is applied (hist still full)
                     · 'clone' the clone took the hit · 'smash' giant form broke gate g · 'dashEnd' · 'block' a wall met the invincible bird at gate g (every frame of it) · 'thru' inside gate g's wall while ghosting (every frame of it)
-                    · 'crash' a dash broke gate g · 'refund' part of the dash came back · 'keep' a miss cut the combo but some of it stayed.  'gust' TEMPEST's reflex dash fired at gate g · 'thread' AURORA wove a thread · 'veil' its veil took the hit at gate g · 'ping' PULSAR's echo bounced it off gate g's edge.
+                    · 'crash' a dash broke gate g · 'refund' part of the dash came back · 'keep' a miss cut the combo but some of it stayed.  'gust' TEMPEST's reflex dash fired at gate g · 'thread' AURORA wove a thread · 'veil' its veil took the hit at gate g · 'ping' PULSAR's echo bounced it off gate g's edge · 'slip' KRAKEN's ink cloak dissolved gate g.
                     Legendary rows time their cast shape with FX.castT themselves (their tier has no sky event)
    idle(dt)         update, play only: the unit's standing particles; keep it ≤ 20 a second. Every legendary-and-up unit has one (an empty one for a unit without particles)
    trail()          render: replaces the shared trail.   strike(x, y)  strikeNext: the unit's ray and sound.   feverHue: fixed hue for the fever border */
@@ -2482,7 +2491,8 @@ const UNIT_FX = {
   kraken: {
     tint:0, ringCol:[[285,70,50],[320,80,65]],   // no edge tint: the ink vignette is the screen-wide part
     opt(o){ o.spread = inkT > 0 ? 1.6 : 1; },
-    back(){   // Perfect: one tentacle whips out to the gate edge it grazed (.15s)
+    back(){   // ink cloak armed (ink out, not locked): a dark bubble with a bright rim round the body. Perfect: one tentacle whips out to the gate edge it grazed (.15s)
+      if (state === 'play' && PK.inkSlip && inkT > 0 && FX.inkLock === 0){ ctx.fillStyle = 'hsla(285,70%,14%,.5)'; ctx.strokeStyle = 'hsla(320,90%,72%,.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, bird.r*1.9, 0, 6.283); ctx.fill(); ctx.stroke(); }
       if (FX.perfT <= 0) return; let g; for (const q of gates) if (q.scored) g = q; if (!g) return;
       const cy = gY(g), gp = gGap(g), tx = g.x + g.w - bird.x, ty = (bird.y < cy ? cy - gp/2 : cy + gp/2) - bird.y;
       ctx.strokeStyle = hsl(B.wingCol, Math.min(1, FX.perfT/.08)); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-6,0); ctx.quadraticCurveTo(tx*.4 - 14, ty*1.1, tx, ty); ctx.stroke();
@@ -2499,7 +2509,9 @@ const UNIT_FX = {
     },
     snd(){ tone(140,.5,'sine',.22,-90); noise(.5,.22); },
     perfect(g){ FX.perfT = .15; for (let i=0;i<4;i++) part(g.x + g.w, bird.y + (Math.random()-.5)*20, (Math.random()-.5)*80, 20 + Math.random()*60, .6, [285,60,30], 3); tone(300,.06,'sine',.05,-180); },
-    sig(kind){ if (kind === 'pass' && PK.inkEvery && gatesPassed % PK.inkEvery === 0){ FX.sigT = .5; FX.sigK = 'ink'; } },   // the passive ink starts on this gate
+    sig(kind, g){ if (kind === 'pass' && PK.inkEvery && gatesPassed % PK.inkEvery === 0){ FX.sigT = .5; FX.sigK = 'ink'; }   // the passive ink starts on this gate
+      else if (kind === 'slip'){ const x = g ? g.x + g.w/2 : bird.x + 30; ring(bird.x, bird.y, 170, [285,70,45], .6, 7); ring(x, bird.y, 90, [320,80,65], .4, 4); tone(140,.35,'sine',.2,-90); noise(.3,.2);   // the cloak's look (the rule is in update's collision branch): the ink bursts and the gate melts into it
+        for (let i=0;i<34;i++){ const a = Math.random()*6.28, sp = 60 + Math.random()*220; part(x, bird.y, Math.cos(a)*sp, Math.sin(a)*sp, .7 + Math.random()*.4, i < 26 ? [285,60,24 + Math.random()*14] : [320,80,65], i < 26 ? 4 + Math.random()*4 : 2.5); } } },
     death(){ ring(bird.x, bird.y, 150, [285,70,40], .7, 6);   // an ink cloud, slow
       for (let i=0;i<38;i++){ const a = Math.random()*6.28, sp = 60 + Math.random()*140; part(bird.x, bird.y, Math.cos(a)*sp, Math.sin(a)*sp - 40, 1 + Math.random()*.5, i < 30 ? [285,60,24 + Math.random()*14] : [320,80,65], i < 30 ? 4 + Math.random()*4 : 2.5); } },
     idle(dt){ if (emit(8, dt)) part(bird.x - 14 - Math.random()*24, bird.y + (Math.random()-.5)*20, -30, 10 + Math.random()*30, .6, [285,60,30], 3); },   // ink drops, falling
@@ -3398,7 +3410,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots
   TIER_FX, UNIT_ART, UNIT_FX, unitTier, cast(){ skillCharge = 1; useSkill(); }, kill(){ die(); }, sig(k){ sigFx(B.id, k, gates.find(g => !g.scored)); }, dbg: {render, drawBird, drawShape, skyEvent},   // QA only: fire a cast / death / passive moment, count draws
-  get timers(){ return {godT, potionT, slowT, invuln, dashMeter, lowGravT}; },   // QA only: timers a player reads off the screen (lowGravT: the bot's flight model follows NIMBUS's glide)
+  get timers(){ return {godT, potionT, slowT, invuln, dashMeter, lowGravT, inkT}; },   // QA only: timers a player reads off the screen (lowGravT: the bot's flight model follows NIMBUS's glide; inkT: KRAKEN's ink cloak log)
   get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
   hold: false, step(dt, n){ for (let i = 0; i < (n || 1); i++) update(dt); },
   selfTest(){
@@ -3430,7 +3442,8 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
         return eq(SK.raijin, {cd:16,n:3,f:{cd:18,n:1}}) && SK.aegis.sh === 0 && SK.pleiad.sh === 0 && SK.specter.cd === 10 && !/shield|실드|シールド|护盾/.test(['ko','en','ja','zh'].map(l => I18N[l].sd_aegis + I18N[l].sd_pleiad).join('')) && eq(['endless','daily','versus'].map(m => [pk('tempest', m).gust, pk('tempest', m).gustLock]), [[1,6],[0,0],[0,0]]) && pk('volt', 'endless').gust === 0 && fx.gustLock === 0
           && eq(['endless','daily','versus'].map(m => pk('aurora', m).veil), [3,0,0]) && pk('volt', 'endless').veil === 0 && fx.threads === 0 && fx.threadP === 0 && ['ko','en'].every(l => I18N[l].fx_veil && I18N[l].p_aurora.includes(' 3')) && I18N.zh.fx_veil === I18N.en.fx_veil
           && eq(['endless','daily','versus'].map(m => pk('pulsar', m).ping), [.34,0,0]) && pk('volt', 'endless').ping === 0 && fx.pingT === 0 && ['ko','en'].every(l => I18N[l].fx_ping && I18N[l].p_pulsar.includes('34%'))
-          && ['ko','en'].every(l => I18N[l].fx_gust && I18N[l].p_tempest.includes('6')) && I18N.ja.fx_gust === I18N.en.fx_gust; }
+          && ['ko','en'].every(l => I18N[l].fx_gust && I18N[l].p_tempest.includes('6')) && I18N.ja.fx_gust === I18N.en.fx_gust
+          && eq(['endless','daily','versus'].map(m => pk('kraken', m).inkSlip), [10,0,0]) && pk('volt', 'endless').inkSlip === 0 && fx.inkLock === 0 && ['ko','en','ja','zh'].every(l => I18N[l].fx_slip !== 'fx_slip' && I18N[l].p_kraken.includes('10') && (l === 'en' || I18N[l].fx_slip !== I18N.en.fx_slip)); }
     };
     for (const k in checks){ let ok = false; try { ok = checks[k](); } catch(e){} if (!ok) fails.push(k); }
     return fails;
