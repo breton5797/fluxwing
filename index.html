@@ -138,6 +138,19 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .bigcode{font:44px "Bungee",Impact,sans-serif;letter-spacing:.25em;color:var(--gold)}
 .vsstatus{font-size:13px;color:var(--dim);min-height:1.3em}
 .vsnote{font-size:11.5px;color:var(--dim);line-height:1.45}
+.vsmode{grid-template-columns:repeat(2,minmax(0,1fr))}
+.vsroster{font-size:12.5px;font-weight:600;color:var(--ink);min-height:1.3em;overflow-wrap:anywhere}
+#vsWait{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;justify-items:center}
+#vsWait[hidden]{display:none}
+.vsteams{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;text-align:left}
+.vsteams[hidden]{display:none}
+.vsteam{display:flex;flex-direction:column;gap:3px;padding:7px 9px;border-radius:10px;background:rgba(243,238,252,.05);border:1px solid var(--cool);min-width:0}
+.vsteam.foe{border:1px dashed var(--hot)}
+.vsteam b{font-size:12px;letter-spacing:.06em;color:var(--cool)}
+.vsteam.foe b{color:var(--hot)}
+.vsteam span{display:flex;justify-content:space-between;gap:6px;font-size:12px}
+.vsteam i{font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.vsteam em{font-style:normal;font-weight:700;font-variant-numeric:tabular-nums}
 .contcard{text-align:center;align-items:center}
 .cring{--p:1;width:84px;height:84px;border-radius:50%;background:conic-gradient(var(--hot) calc(var(--p)*1turn), rgba(243,238,252,.12) 0);display:grid;place-items:center}
 .cring span{width:70px;height:70px;border-radius:50%;background:#120c24;display:grid;place-items:center;font:28px "Bungee",Impact,sans-serif}
@@ -313,6 +326,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="rank" id="oRank"></div>
       <div class="newbest" id="oNew" data-i18n="newBest" hidden></div>
       <div class="place" id="oPlace"></div>
+      <div class="vsteams" id="oTeams" hidden></div>
       <div class="stats">
         <div class="stat"><span id="oBestLbl" data-i18n="best"></span><strong id="oBest">0</strong></div>
         <div class="stat"><span data-i18n="gates"></span><strong id="oGates">0</strong></div>
@@ -349,6 +363,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="lbhead"><h2 class="mtitle" data-i18n="vs"></h2><button class="ghost" id="vsClose" data-i18n="close"></button></div>
       <div class="tierbox"><span class="tierbadge" id="vsTier"></span><span id="vsRp"></span></div>
       <div id="vsMain" class="vsbtns">
+        <div class="tabs vsmode" role="tablist"><button class="tab" role="tab" id="vsM1" data-i18n="vsM1"></button><button class="tab" role="tab" id="vsM2" data-i18n="vsM2"></button></div>
         <button class="btn" id="vsAuto"><span data-i18n="autoMatch"></span></button>
         <button class="ghost" id="vsMake" data-i18n="makeRoom"></button>
         <div class="coderow"><input id="vsCodeIn" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="Code"><button class="ghost" id="vsJoin" data-i18n="join"></button></div>
@@ -357,9 +372,12 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div id="vsWait" hidden>
         <div class="bigcode" id="vsCode"></div>
         <div class="vsstatus" id="vsStatus"></div>
+        <div class="vsroster" id="vsRoster"></div>
+        <button class="ghost" id="vsFill" data-i18n="vsFillBtn" hidden></button>
         <button class="ghost" id="vsCancel" data-i18n="cancel"></button>
       </div>
       <div class="vsnote" data-i18n="vsRules"></div>
+      <div class="vsnote" id="vsNote2" data-i18n="vs2Rules" hidden></div>
       <div class="vsnote" data-i18n="seasonNote"></div>
     </div>
   </div>
@@ -591,16 +609,16 @@ I18N_D_KEYS.forEach((k,i) => { for (const l in I18N) I18N[l][k] = (I18N_D[l] || 
 
 const I18N_F_KEYS = ['start','stageSel','stage','locked','unlockHint','bestG','vs','autoMatch','makeRoom','joinRoom','aiMatch','searching','roomCode','waitingOpp','enterCode','join','cancel','aiFallback','youWin','youLose','drawR','rankPts','t0','t1','t2','t3','t4','forfeit','onlineNA','opp','watching','rematch','seasonNote','help','hControls','hScore','hMoney','hUnits','tut1','tut2','tut3','skillLbl','potionP','contTitle','contAd','contCoin','giveUp','adPlaying','confirmBuy','confirmUnlock','buy','danger','easy','normal','hard','expert','vsVs','shareCode','matchFound'];
 const I18N_F = {
-ko:['START','스테이지 선택','STAGE {n}','잠김','이전 스테이지를 클리어하면 열려요','최고 {n}점','2인 대전','자동 매치','방 만들기','코드로 참가','AI와 연습전','상대 찾는 중… {s}초','방 코드','상대를 기다리는 중…','4자리 코드','참가','취소','1분 동안 상대가 없어 AI와 연습전을 합니다','승리!','패배','무승부','랭크 점수','브론즈','실버','골드','다이아','마스터','상대가 나가서 승리했어요','온라인 대전에 연결할 수 없어요. AI와는 대전할 수 있어요.','상대','상대가 아직 날고 있어요…','다시 대전','한 달 시즌이 끝나면 랭크 상위 10명에게 한정 유닛을 드려요','도움말',
+ko:['START','스테이지 선택','STAGE {n}','잠김','이전 스테이지를 클리어하면 열려요','최고 {n}점','대전','자동 매치','방 만들기','코드로 참가','AI와 연습전','상대 찾는 중… {s}초','방 코드','상대를 기다리는 중…','4자리 코드','참가','취소','1분 동안 상대가 없어 AI와 연습전을 합니다','승리!','패배','무승부','랭크 점수','브론즈','실버','골드','다이아','마스터','상대가 나가서 승리했어요','온라인 대전에 연결할 수 없어요. AI와는 대전할 수 있어요.','상대','상대가 아직 날고 있어요…','다시 대전','한 달 시즌이 끝나면 랭크 상위 10명에게 한정 유닛을 드려요','도움말',
  '조작 — 화면 탭(스페이스)으로 날갯짓. 게이지가 차면 DASH(Shift)로 벽을 뚫고, SKILL(S)로 유닛 고유 스킬을 써요.','점수 — 게이트 통과 1점. 가장자리를 아슬아슬하게 스치면 PERFECT로 콤보 점수, 10콤보부터 피버 2배.','재화 — 유닛은 코인·다이아몬드·젬 세 가지를 모두 내고 사요. 코인은 스테이지에서 50점마다(난이도가 높을수록 더 많이) 받고 필드 오브로도 모아요. 다이아몬드는 레벨업·오늘의 챌린지 첫 판·스테이지 첫 클리어 보상이에요. 젬은 스테이지 플레이 중 1% 확률로 떨어져요.','유닛 — 기본·에픽·레전더리·미식·울트라 5등급. 모두 고유 스킬과 아우라가 있고, 오늘의 챌린지와 2인 대전에서는 능력이 공정하게 제한돼요.',
  '화면을 탭해서 날아오르세요','게이트 가장자리를 아슬아슬하게 스치면 PERFECT!','게이지가 차면 DASH, SKILL 버튼으로 고유 스킬!','스킬','무적 질주!','이어서 할까요?','광고 보고 이어하기','{n} 코인으로 이어하기','그만하기','광고 재생 중 (테스트 빌드)','{item} · {price}\n구매할까요?','{u}을(를) 해금할까요?\n{list}','구매','위험!','쉬움','일반','보통','어려움','VS','친구에게 이 코드를 알려주세요','상대를 찾았어요!'],
 en:['START','Select stage','STAGE {n}','Locked','Clear the previous stage to unlock','Best {n}','Versus','Quick match','Create room','Join with code','Practice vs AI','Finding an opponent… {s}s','Room code','Waiting for an opponent…','4-digit code','Join','Cancel','No opponent in 1 minute. Practice match vs the AI.','VICTORY!','DEFEAT','DRAW','Rank points','Bronze','Silver','Gold','Diamond','Master','Your opponent left. You win.','Online versus is unavailable here. You can still play the AI.','Rival','Your rival is still flying…','Rematch','Top 10 ranked players each monthly season get a limited unit','Help',
  'Controls — tap (Space) to flap. When the meter fills, DASH (Shift) breaks walls; SKILL (S) fires your unit’s own skill.','Score — 1 point per gate. Skim an edge for a PERFECT and combo points; Fever doubles points from a 10 combo.','Currencies — a unit costs coins, diamonds and gems together. Coins: paid for every 50 score in stage play (more on harder tiers), plus field orbs. Diamonds: level-ups, your first Daily run of the day and first stage clears. Gems: a 1% drop chance during stage play.','Units — Common, Epic, Legendary, Mythic, Ultra. Every unit has a skill and an aura; Daily Challenge and Versus cap abilities for fairness.',
  'Tap the screen to fly up','Skim a gate edge for a PERFECT!','Meter full? DASH. Then fire your SKILL!','Skill','UNSTOPPABLE!','Continue?','Watch an ad to continue','Continue for {n} coins','Give up','Ad playing (test build)','{item} · {price}\nBuy now?','Unlock {u}?\n{list}','Buy','DANGER!','Easy','Normal','Hard','Expert','VS','Share this code with your friend','Opponent found!'],
-ja:['START','ステージ選択','STAGE {n}','ロック中','前のステージをクリアすると解放','ベスト {n}','2人対戦','オートマッチ','ルーム作成','コードで参加','AIと練習試合','対戦相手を検索中… {s}秒','ルームコード','相手を待っています…','4桁のコード','参加','キャンセル','1分間相手がいないためAIと練習試合をします','勝利!','敗北','引き分け','ランクポイント','ブロンズ','シルバー','ゴールド','ダイヤ','マスター','相手が退出したため勝利','オンライン対戦に接続できません。AI対戦は可能です。','相手','相手はまだ飛んでいます…','再戦','月間シーズン終了時、ランク上位10名に限定ユニット','ヘルプ',
+ja:['START','ステージ選択','STAGE {n}','ロック中','前のステージをクリアすると解放','ベスト {n}','対戦','オートマッチ','ルーム作成','コードで参加','AIと練習試合','対戦相手を検索中… {s}秒','ルームコード','相手を待っています…','4桁のコード','参加','キャンセル','1分間相手がいないためAIと練習試合をします','勝利!','敗北','引き分け','ランクポイント','ブロンズ','シルバー','ゴールド','ダイヤ','マスター','相手が退出したため勝利','オンライン対戦に接続できません。AI対戦は可能です。','相手','相手はまだ飛んでいます…','再戦','月間シーズン終了時、ランク上位10名に限定ユニット','ヘルプ',
  '操作 — タップ(スペース)で羽ばたく。ゲージが溜まったらDASH(Shift)で壁を突破、SKILL(S)で固有スキル。','スコア — ゲート通過で1点。ふちをかすめるとPERFECTでコンボ得点、10コンボからフィーバー2倍。','通貨 — ユニットの購入にはコイン・ダイヤ・ジェムの3つすべてが必要。コインはステージで50点ごとにもらえ(難しいほど多い)、フィールドのオーブでも集まる。ダイヤはレベルアップ・デイリー初回・ステージ初クリアの報酬。ジェムはステージプレイ中に1%の確率でドロップ。','ユニット — ノーマル〜ウルトラの5等級。全ユニットに固有スキルとオーラ。デイリーと対戦では能力を公平に制限。',
  '画面をタップして飛び上がろう','ゲートのふちをかすめるとPERFECT!','ゲージが溜まったらDASH、SKILLで固有スキル!','スキル','無敵ダッシュ!','続けますか?','広告を見て続ける','{n}コインで続ける','やめる','広告再生中(テストビルド)','{item} · {price}\n購入しますか?','{u}を解放しますか?\n{list}','購入','危険!','やさしい','ふつう','むずかしい','最上級','VS','このコードを友だちに伝えてね','相手が見つかりました!'],
-zh:['START','选择关卡','STAGE {n}','未解锁','通关上一关后解锁','最高 {n}','双人对战','自动匹配','创建房间','输入代码加入','与AI练习','正在寻找对手… {s}秒','房间代码','等待对手…','4位代码','加入','取消','1分钟内没有对手,改为与AI练习','胜利!','失败','平局','段位分','青铜','白银','黄金','钻石','大师','对手已离开,你获胜','无法连接在线对战,可以与AI对战。','对手','对手还在飞…','再战','每月赛季结束时,段位前10名获得限定机体','帮助',
+zh:['START','选择关卡','STAGE {n}','未解锁','通关上一关后解锁','最高 {n}','对战','自动匹配','创建房间','输入代码加入','与AI练习','正在寻找对手… {s}秒','房间代码','等待对手…','4位代码','加入','取消','1分钟内没有对手,改为与AI练习','胜利!','失败','平局','段位分','青铜','白银','黄金','钻石','大师','对手已离开,你获胜','无法连接在线对战,可以与AI对战。','对手','对手还在飞…','再战','每月赛季结束时,段位前10名获得限定机体','帮助',
  '操作 — 点击(空格)振翅。能量满后DASH(Shift)冲破墙壁,SKILL(S)释放专属技能。','得分 — 通过关卡得1分。擦边通过为PERFECT并累积连击,10连击起狂热2倍。','货币 — 购买机体需要同时支付金币、钻石和宝石。金币:关卡中每得50分发放一次(难度越高越多),也可拾取场上的能量球。钻石:升级、每日挑战当天首局、关卡首通的奖励。宝石:在关卡中以1%概率掉落。','机体 — 普通到究极5个等级,全部拥有专属技能和光环。每日挑战与对战会公平限制能力。',
  '点击屏幕向上飞','擦过关卡边缘即可PERFECT!','能量满了就DASH,再用SKILL释放技能!','技能','无敌冲刺!','要继续吗?','看广告继续','用{n}金币继续','放弃','广告播放中(测试版本)','{item} · {price}\n确定购买吗?','解锁{u}吗?\n{list}','购买','危险!','简单','普通','困难','极难','VS','把这个代码告诉朋友','找到对手了!']
 };
@@ -621,6 +639,7 @@ ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 �
  lbRetry:'기록을 올리지 못했어요. 곧 다시 시도합니다', lbRate:'전송이 너무 잦아요. 잠시 후 다시 올립니다', lbReject:'서버가 이 기록을 받지 않았어요', vsStranded:'상대가 들어오지 않았어요. 다시 찾는 중…',
  tabVs:'대전', vsRules:'승리 +50 RP · 패배 −45 RP · AI전은 연습(RP 변동 없음)', vsPractice:'연습전 · RP 변동 없음', vsPend:'집계 중', vsNoRank:'랭크에 반영되지 않은 판이에요', vsCap:'미반영 · 같은 상대와는 하루 5판까지',
  vsMyRank:'내 순위 {n}위 · {rp} RP · {w}승 {l}패', vsNoRow:'랭크전을 한 판 마치면 순위가 생겨요',
+ vsM1:'1v1', vsM2:'2v2', searching2:'2v2 플레이어 찾는 중… {s}초 · {n}/4', vsIn:'2v2 · {n}/4 참가', vsFillBtn:'빈 자리는 AI로 시작 (연습전)', vsAiFill:'빈 자리는 AI가 채워요 · 연습전(RP 변동 없음)', vs2Rules:'2v2 · 두 사람 점수의 합이 높은 팀이 이겨요 · 팀은 자동 배정 · AI가 한 자리라도 끼면 연습전', vsUs:'우리', vsThem:'상대', vsMate:'팀', vsPracTag:'연습',
  nCoin:'코인\u00a0{n}', nDia:'다이아몬드\u00a0{n}', nGem:'젬\u00a0{n}', diaP:'다이아몬드 +{n}', rwScore:'점수', rwField:'필드', rwLevel:'레벨업', rwClear:'첫 클리어', rwDaily:'오늘의 첫 판',
  fx_slip:'먹물 은신!', fx_fore:'예감!',
  r_aurora:'극광형', p_aurora:'콤보가 끊겨도 절반이 남는다. 퍼펙트 판정이 넓고 퍼펙트마다 +1점. 극광 장막: 퍼펙트 3번마다 빛의 실 1개(최대 3개). 실 3개가 차면 게이트 충돌 1번을 막고 다음 게이트 2개를 내 높이로 모은다. 스테이지는 실 3개가 찬 채로 시작한다.', fx_veil:'극광 장막!', sk_aurora:'극광 회랑', sd_aurora:'다음 게이트 {n}개가 내 높이로 모이고 멈추며 틈이 넓어진다',
@@ -632,6 +651,7 @@ en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', 
  lbRetry:"Couldn't post your score. Retrying soon", lbRate:'Posting too fast. It will be sent in a moment', lbReject:'The server did not accept this score', vsStranded:"Opponent didn't show up. Searching again…",
  tabVs:'Versus', vsRules:'Win +50 RP · Loss −45 RP · AI matches are practice (no RP)', vsPractice:'Practice · no RP change', vsPend:'pending', vsNoRank:'This match was not ranked', vsCap:'Not ranked · 5 a day per rival',
  vsMyRank:'Your rank #{n} · {rp} RP · {w}W {l}L', vsNoRow:'Finish one ranked match to get a rank',
+ vsM1:'1v1', vsM2:'2v2', searching2:'Finding 2v2 players… {s}s · {n}/4', vsIn:'2v2 · {n}/4 in', vsFillBtn:'Start with AI in the empty seats (practice)', vsAiFill:'AI fills the empty seats · practice (no RP)', vs2Rules:'2v2 · the team with the higher sum of both scores wins · teams are assigned · any AI seat makes it practice', vsUs:'US', vsThem:'THEM', vsMate:'TEAM', vsPracTag:'PRACTICE',
  nCoin:'Coins\u00a0{n}', nDia:'Diamonds\u00a0{n}', nGem:'Gems\u00a0{n}', diaP:'DIAMOND +{n}', rwScore:'Score', rwField:'Field', rwLevel:'Level up', rwClear:'First clear', rwDaily:'Daily',
  fx_slip:'INK CLOAK!', fx_fore:'FORESEEN!',
  r_aurora:'Skyweaver', p_aurora:'A broken combo keeps half. Wide Perfect window, +1 on every Perfect. Aurora Veil: every 3 Perfects weave a thread of light (max 3). With all 3, the veil takes one gate hit for you and lines up the next 2 gates. Every stage starts with all 3 threads woven.', fx_veil:'AURORA VEIL!', sk_aurora:'Aurora Lane', sd_aurora:'The next {n} gates slide to your height, stop moving and widen',
@@ -642,6 +662,7 @@ ja:{nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0
  fx_slip:'墨隠れ!', fx_fore:'予感!',
  tabVs:'対戦', vsRules:'勝利 +50 RP · 敗北 −45 RP · AI戦は練習(RP変動なし)', vsPractice:'練習試合 · RP変動なし', vsPend:'集計中', vsNoRank:'ランクに反映されない試合です', vsCap:'対象外 · 同じ相手とは1日5回まで',
  vsMyRank:'あなたの順位 {n}位 · {rp} RP · {w}勝 {l}敗', vsNoRow:'ランク戦を1試合終えると順位がつきます',
+ searching2:'2v2のプレイヤーを検索中… {s}秒 · {n}/4', vsIn:'2v2 · {n}/4 参加', vsFillBtn:'空席をAIで埋めて開始(練習)', vsAiFill:'空席はAIが入ります · 練習試合(RP変動なし)', vs2Rules:'2v2 · 2人のスコア合計が高いチームの勝ち · チームは自動で決まる · AIが1席でも入ると練習試合', vsUs:'味方', vsThem:'相手', vsMate:'味方', vsPracTag:'練習',
  p_aurora:'コンボが途切れても半分残る。パーフェクト判定が広く、パーフェクトごとに+1点。オーロラヴェール:パーフェクト3回ごとに光の糸を1本紡ぐ(最大3本)。3本そろうとゲートへの衝突を1回防ぎ、次の2ゲートを自分の高さにそろえる。ステージは糸3本がそろった状態で始まる。', fx_veil:'オーロラヴェール!',
  p_tempest:'ダッシュ貫通スコア2倍。ダッシュでゲートを壊すとゲージが30%戻る(1回のダッシュにつき1度)。突風リフレックス:ゲージが3分の1以上あれば、ゲートにぶつかっても死なず短い自動ダッシュが出る(ゲージを全消費、ゲート4個通過で再装填)。', fx_gust:'突風リフレックス!',
  p_pulsar:'パーフェクトごとに+2点、スキルが早く溜まる。フィーバーが8コンボで始まる。エコーピン:ゲートのふちを浅くかすめると、スキルチャージ34%を使って弾き返される。スキルチャージが満タンなら、もっと深い衝突でもそのゲートを砕いて生き残る(チャージを全消費)。', fx_ping:'PING', fx_break:'共鳴破砕!'},
@@ -649,6 +670,7 @@ zh:{nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
  fx_slip:'墨隐!', fx_fore:'预感!',
  tabVs:'对战', vsRules:'胜利 +50 RP · 失败 −45 RP · AI对战为练习(RP不变)', vsPractice:'练习赛 · RP不变', vsPend:'结算中', vsNoRank:'本局未计入段位', vsCap:'未计入 · 同一对手每天最多5局',
  vsMyRank:'我的排名 第{n}名 · {rp} RP · {w}胜 {l}负', vsNoRow:'完成一局排位赛后即可上榜',
+ searching2:'正在寻找2v2玩家… {s}秒 · {n}/4', vsIn:'2v2 · 已加入 {n}/4', vsFillBtn:'空位由AI补上并开始(练习)', vsAiFill:'空位由AI补上 · 练习赛(RP不变)', vs2Rules:'2v2 · 两人得分之和更高的队伍获胜 · 队伍自动分配 · 只要有AI上场即为练习赛', vsUs:'我方', vsThem:'对方', vsMate:'队友', vsPracTag:'练习',
  p_aurora:'连击中断时保留一半。完美判定更宽,每次完美+1分。极光帷幕:每完成3次完美织出1根光丝(最多3根)。集齐3根后可抵挡1次撞击关卡,并让后2个关卡对齐到自身高度。每关开局时3根光丝已织好。', fx_veil:'极光帷幕!',
  p_tempest:'冲刺穿越得分翻倍。用冲刺撞碎关卡返还30%能量(每次冲刺1次)。疾风反射:能量达到三分之一以上时,撞上关卡不会死亡,而是自动发动一次短冲刺(耗尽全部能量,再通过4个关卡后重新就绪)。', fx_gust:'疾风反射!',
  p_pulsar:'每次完美+2分,技能充能更快。连击8次即进入狂热。共鸣回响:浅擦关卡边缘时,消耗34%技能充能将你弹回。技能充能全满时,更深的撞击也会震碎该关卡而不致死亡(耗尽全部充能)。', fx_ping:'PING', fx_break:'共振破碎!'}
@@ -1353,7 +1375,7 @@ function showOver(){
   $('oGates').textContent = gatesPassed; $('oPerf').textContent = perfects; $('oCombo').textContent = maxCombo;
   const rank = score >= 150 ? 'S' : score >= 80 ? 'A' : score >= 35 ? 'B' : 'C';
   $('oRank').textContent = t('rank') + ' ' + rank;
-  $('oPlace').textContent = ''; $('oTitle').textContent = t('over'); $('oTitle').style.color = '';
+  $('oPlace').textContent = ''; $('oTeams').hidden = true; $('oTitle').textContent = t('over'); $('oTitle').style.color = '';
   $('over').hidden = false; vsFillOver(); if (mode === 'versus') vsResolve();
   if (mode !== 'versus') submitScore(score, gatesPassed, mode, runDay);
   // rewards
@@ -2839,6 +2861,7 @@ function drawHUD(){
     ctx.font = `700 10px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = beat ? 'hsl(48,100%,65%)' : 'rgba(243,238,252,.7)';
     ctx.fillText(beat ? t('newBest') : `BEST ${runBestRef}`, LW/2, by + 17);
   }
+  if (vsHudOn()) drawVsHud();
   // HP hearts (1 life + each shield), phoenix heart for a revive
   { const total = 1 + shields, hx0 = 18, hy = 26;
     const heart = (x, y, s, fill, a) => { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.globalAlpha = a; ctx.fillStyle = fill; ctx.beginPath(); ctx.moveTo(0, 4); ctx.bezierCurveTo(-9, -3, -5, -11, 0, -5); ctx.bezierCurveTo(5, -11, 9, -3, 0, 4); ctx.fill(); ctx.restore(); };
@@ -2863,7 +2886,7 @@ function drawHUD(){
   if (magnetT > 0) ind(t('magnetP'), magnetT, TMAX.magnet, [48,100,58]);
   if (slowT > 0) ind(t('slowP'), slowT, TMAX.slow, [280,100,68]);
   if (FX.heavyT > 0) ind(t('heavyP'), FX.heavyT, TMAX.heavy, [145,30,55]);
-  { const pw = 84, ph = 18, gp = 6, per = Math.max(1, Math.min(4, Math.floor((LW - 16 + gp)/(pw + gp)))), y0 = runBestRef > 0 && mode !== 'versus' ? 150 : 124;
+  { const pw = 84, ph = 18, gp = 6, per = Math.max(1, Math.min(4, Math.floor((LW - 16 + gp)/(pw + gp)))), y0 = (runBestRef > 0 && mode !== 'versus') || vsHudOn() ? 150 : 124;
     ctx.font = `700 10.5px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; if (pills.length) pillBot = y0 + Math.ceil(pills.length/per)*(ph + 4) - 4;
     pills.forEach(([label, k, c], i) => {
       const row = Math.floor(i/per), n = Math.min(per, pills.length - row*per), x = LW/2 - (n*(pw + gp) - gp)/2 + (i % per)*(pw + gp), y = y0 + row*(ph + 4);
@@ -3175,7 +3198,7 @@ $('helpBtn').addEventListener('click', e => { e.stopPropagation(); SFX.click(); 
 $('helpClose').addEventListener('click', e => { e.stopPropagation(); $('helpScr').hidden = true; });
 $('helpScr').addEventListener('click', e => { if (e.target === $('helpScr')) $('helpScr').hidden = true; });
 
-/* ---------- 2-player versus: same seeded course, rival shown as a ghost ---------- */
+/* ---------- versus, 1v1 or 2v2: same seeded course, the other players shown as ghosts ---------- */
 // Rank points are held by the server (supabase/schema.sql): win +50, loss -45, never below 0, one value for 1v1 and 2v2. Matches against the AI
 // are practice and never move them. rp is only the cache of the last server answer, shown while offline (fw27_rp2: the old fw27_rp is not read).
 const TIERS = [0, 400, 1000, 2000, 3600], TIER_COL = [[25,60,55],[210,15,78],[45,100,58],[190,100,65],[290,100,72]], RP_WIN = 50, RP_LOSS = 45;
@@ -3201,7 +3224,7 @@ function netInit(){
   return p;
 }
 const sanitizeId = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 14) || 'x';
-const NET_VER = 'v4-';   // versus rooms are per protocol / balance version: old builds never meet new ones (v3: pick handshake in the lobby, addressed "go"; v4: players publish their id for the server-held ranking)
+const NET_VER = 'v5-';   // versus rooms are per protocol / balance version: old builds never meet new ones (v3: pick handshake in the lobby, addressed "go"; v4: players publish their id for the server-held ranking; v5: 2v2 — its own lobby m-lobby-2v2, quick rooms m-<host>-<seed>, code rooms 5000-9999)
 // State sends are throttled: at most one per NET_TX ms per channel (the newest state wins), so a player stays near 5 messages/s
 // whatever the caller does. Supabase Realtime counts every message sent and delivered against the project's messages-per-second quota.
 const NET_TX = 180, NET_HB = 2000, VS_SEND = 200;
@@ -3275,11 +3298,19 @@ async function netJoin(name){
   throw new Error('no-net');
 }
 
-const vs = {phase: 'idle', lobby: null, room: null, seed: 0, host: false, myId: '', oppId: '', opp: null, ai: null, waitT: 0, timer: 0,
-  lastSend: 0, oppY: 300, oppVis: 300, oppScore: 0, oppAlive: true, oppBird: 'volt', oppNick: '', myFinal: null, result: '', oppFinal: null,
-  tok: 0, pick: '', pickAt: 0, want: '', skip: new Set(), strT: 0, oppRef: null, oppFrom: 300, oppT0: 0, oppDur: VS_SEND, oppRx: 0, oppUid: '', rk: null};
-function vsShow(main){ $('vsMain').hidden = !main; $('vsWait').hidden = main; }
-function openVs(){ renderVsBadge(); vsShow(true); $('vsScr').hidden = false; lbOpen = true; netInit().then(vsSync); }
+// vs.sz: team size of the match being made or played (1 = 1v1, 2 = 2v2); vs.md: the size chosen in the panel (remembered). vs.pl: the other players
+// of the match (1 in 1v1, 3 in 2v2), each {id, uid, tm (0 = my team, 1 = the other), nick, bird, sc, al, fin, g, ai, …ghost glide}.
+// vs.ai: number of AI seats (any AI = practice, no RP).
+const vs = {phase: 'idle', lobby: null, room: null, seed: 0, host: false, myId: myPeer, oppId: '', opp: null, ai: null, waitT: 0, timer: 0,
+  lastSend: 0, myFinal: null, result: '', tok: 0, pick: '', pickAt: 0, want: '', skip: new Set(), strT: 0, rk: null,
+  md: store.get('fw27_vsmode', 1) === 2 ? 2 : 1, sz: 1, pl: [], qr: null, off: 0, offSig: '', offAt: 0, ro: null, ak: 0, akH: '', akAt: 0, ex: 0, cn: 1, sc0: -1, seen: new Set()};
+const vsRival = o => Object.assign({id: '', uid: '', tm: 1, nick: '', bird: 'volt', sc: 0, al: true, fin: null, g: 0, ai: null, gone: false, dx: 34, y: 300, vis: 300, from: 300, t0: 0, dur: VS_SEND, rx: 0, ref: null}, o);
+function vsShow(main){ $('vsMain').hidden = !main; $('vsWait').hidden = main; if (main){ $('vsRoster').textContent = ''; $('vsFill').hidden = true; } }
+function vsSetMode(n){
+  vs.md = n === 2 ? 2 : 1; store.set('fw27_vsmode', vs.md);
+  $('vsM1').setAttribute('aria-selected', vs.md === 1); $('vsM2').setAttribute('aria-selected', vs.md === 2); $('vsNote2').hidden = vs.md !== 2;
+}
+function openVs(){ renderVsBadge(); vsSetMode(vs.md); vsShow(true); $('vsScr').hidden = false; lbOpen = true; netInit().then(vsSync); }
 function closeVsScr(){ $('vsScr').hidden = true; lbOpen = false; }
 function vsLeave(){
   clearInterval(vs.timer); vs.timer = 0; clearTimeout(vs.strT); vs.strT = 0;
@@ -3287,18 +3318,22 @@ function vsLeave(){
   if (vs.room){ vs.room.leave(); vs.room = null; }
 }
 // tok: every reset invalidates whatever join is still in flight, so a cancelled search can never leave a ghost in the lobby or a room
-function vsReset(){ vsLeave(); vs.tok++; Object.assign(vs, {phase: 'idle', seed: 0, host: false, oppId: '', opp: null, ai: null, myFinal: null, result: '', oppFinal: null, oppAlive: true, oppScore: 0, pick: '', want: '', oppRef: null}); }
+function vsReset(){ vsLeave(); vs.tok++; Object.assign(vs, {phase: 'idle', seed: 0, host: false, oppId: '', opp: null, ai: null, myFinal: null, result: '', pick: '', want: '', pl: [], qr: null, off: 0, offSig: '', ro: null, ak: 0, akH: '', ex: 0, cn: 1}); }
 // Quick match. keep/skip carry the remaining search time and the peers already given up on when a stranded player goes back to searching.
-async function vsAuto(keep, skip){
+// 1v1 and 2v2 seekers wait in two different lobbies, so the two kinds can never be matched with each other.
+async function vsAuto(keep, skip, sz){
   await netInit(); if (netKind === 'none'){ toast(t('onlineNA')); return; }
-  vsReset(); const tok = vs.tok; vs.phase = 'search'; vsShow(false); $('vsCode').textContent = ''; vs.waitT = keep > 0 ? keep : 60; vs.skip = skip || new Set();
-  $('vsStatus').textContent = t('searching', {s: vs.waitT});
-  let lb; try { lb = await netJoin('fw-lobby'); } catch(e){ if (tok === vs.tok){ toast(t('onlineNA')); vsShow(true); vs.phase = 'idle'; } return; }
+  vsReset(); const tok = vs.tok, duo = (vs.sz = sz || vs.md) === 2; vs.phase = 'search'; vsShow(false); $('vsCode').textContent = ''; vs.waitT = keep > 0 ? keep : 60; vs.skip = skip || new Set();
+  $('vsStatus').textContent = duo ? t('searching2', {s: vs.waitT, n: 1}) : t('searching', {s: vs.waitT});
+  let lb; try { lb = await netJoin(duo ? 'm-lobby-2v2' : 'fw-lobby'); } catch(e){ if (tok === vs.tok){ toast(t('onlineNA')); vsShow(true); vs.phase = 'idle'; } return; }
   if (tok !== vs.tok){ lb.leave(); return; }
-  vs.lobby = lb; lb.set({wait: Date.now(), bird: B.id, rp, pick: ''});
-  lb.onChange(vsTryPair); vsTryPair();
+  vs.lobby = lb;
+  if (duo){ lb.set({wait: Date.now(), bird: B.id, rp, u: sb && uid ? uid : ''}); lb.onChange(vsTryQuad); vsTryQuad(); }
+  else { lb.set({wait: Date.now(), bird: B.id, rp, pick: ''}); lb.onChange(vsTryPair); vsTryPair(); }
   vs.timer = setInterval(() => {
-    if (vs.phase !== 'search') return; vs.waitT--; $('vsStatus').textContent = t('searching', {s: vs.waitT});
+    if (vs.phase !== 'search') return; vs.waitT--;
+    if (duo) return vsQuadTick();
+    $('vsStatus').textContent = t('searching', {s: vs.waitT});
     if (vs.waitT <= 0){ toast(t('aiFallback')); vsStartAi(); return; }
     if (vs.pick && Date.now() - vs.pickAt > 4000){ vs.skip.add(vs.pick); vsTryPair(); }   // the peer we picked never answered: look past it
   }, 1000);
@@ -3320,32 +3355,119 @@ function vsTryPair(){
   setTimeout(() => lb.leave(), 1500);   // stay visible for a moment so the partner (and everyone else) sees the pick before we vanish
   vsEnterRoom(name, '');
 }
-async function vsMake(){ await netInit(); if (netKind === 'none'){ toast(t('onlineNA')); return; } const code = String(1000 + Math.floor(Math.random()*9000)); vsReset(); vsEnterRoom('c-' + code, code); }
+/* 2v2 assembly: the host gathers the four. Used in the 2v2 lobby (quick match) and in a 2v2 code room, on that channel's shared state.
+   Everyone orders the candidates the same way (lobby: wait, id; room: id). Whoever is FIRST in its own view is the host and publishes an
+   offer {go: seed, ro: roster of {id, u}, lv}; a player named in an offer answers {ak: seed}; the host, once all the named players have
+   answered that very seed, publishes {on: seed} and leaves with them. Invariants:
+   - One room per player. An answer is binding: while my answered offer stands I neither answer another offer nor make one, and I go only on
+     the {on} of the seed I answered. The host goes only after seeing every answer and never withdraws after {on}, so a host cannot leave with
+     a player who is leaving with someone else, and nobody leaves on an offer that was not complete.
+   - No deadlock. Two players can both believe they are the host only until the later one sees the earlier one as a candidate: it is then no
+     longer first, withdraws (its answerers are freed by the withdrawal) and answers like anyone else. A roster change is a new seed, so an
+     old answer never completes a new roster. In the lobby an offer not completed within 4 s drops the silent players (skip) and an answer
+     not honoured within 6 s is given up, so a frozen tab holds nobody; in a code room the players simply wait for each other.
+   - Same for every viewer. The roster is the host's and travels with the seed: all four seat themselves from that one list (vsTeams).
+   - Nobody else. Players who have gone ({on}) or are bound to another host's standing offer are not candidates: a fifth player is named in
+     no offer, so it can neither start nor be started and keeps waiting.
+   - A member who never arrives: the quick-match room starts only when the host sees every human of the roster in it; otherwise everyone
+     goes back to the lobby after 8 s with the time they have left (vsRequeue), exactly as in 1v1.
+   Returns the match {h, seed, ro, lv} when it is made, else null. n: humans the host may take now (0: not enough yet; fewer than four:
+   AIs take the other seats, practice). */
+const vsRoOf = s => Array.isArray(s.ro) && s.ro.length > 0 && s.ro.length <= 4 && s.ro.every(r => r && typeof r.id === 'string' && typeof r.u === 'string') && new Set(s.ro.map(r => r.id)).size === s.ro.length ? s.ro : [];
+function vsCands(ps, ok){   // free players of a channel, me included: present, not gone, not given up on, not bound to somebody else's standing offer
+  return ps.filter(p => p.me || (p.st && ok(p) && !p.st.on && !vs.skip.has(p.id) && !(p.st.ak && ps.some(h => !h.me && h.id !== p.id && h.st && h.st.go === p.st.ak))));
+}
+function vsAssemble(ch, ps, me, C, n, lobby){
+  const S = p => p.st || {}, named = s => vsRoOf(s).some(r => r.id === me.id), free = () => { vs.ak = 0; vs.akH = ''; ch.set({ak: 0}); };
+  if (vs.ak){
+    const h = ps.find(p => p.id === vs.akH), hs = h ? S(h) : {};
+    if (h && hs.on === vs.ak && named(hs)){ ch.set({on: vs.ak}); return {h: h.id, seed: hs.on >>> 0, ro: vsRoOf(hs), lv: clampI(hs.lv, 0, 4)}; }
+    if (h && hs.go === vs.ak && !hs.on && named(hs)){ if (!lobby || Date.now() - vs.akAt < 6000) return null; vs.skip.add(h.id); }
+    free();
+  }
+  if (n > 0 && C[0] === me){
+    const R = C.slice(0, n), ro = R.map(p => ({id: p.id, u: VS_UID.test(S(p).u) ? S(p).u : ''})), sig = ro.map(r => r.id + ':' + r.u).join('|');
+    if (sig !== vs.offSig){ vs.off = (Math.random()*4294967296) >>> 0 || 7; vs.offSig = sig; vs.offAt = Date.now(); vs.ro = ro; ch.set({go: vs.off, ro, lv: tierOf(rp), on: 0, ak: 0}); return null; }
+    if (!R.every(p => p.me || S(p).ak === vs.off)) return null;
+    ch.set({on: vs.off}); return {h: me.id, seed: vs.off, ro: vs.ro, lv: tierOf(rp)};
+  }
+  if (vs.off){ vs.off = 0; vs.offSig = ''; ch.set({go: 0, ro: null}); }
+  const h = C.find(p => !p.me && S(p).go && named(S(p)));
+  if (h){ vs.ak = S(h).go; vs.akH = h.id; vs.akAt = Date.now(); ch.set({ak: vs.ak}); }
+  return null;
+}
+// 2v2 lobby. Four free players: the host takes the first four. Fewer, and somebody's search time is up ({ex}): everyone waiting goes together
+// and AIs take the empty seats (practice).
+function vsTryQuad(){
+  if (vs.phase !== 'search' || !vs.lobby) return;
+  const ps = vs.lobby.peers(), me = ps.find(p => p.me); if (!me) return; vs.myId = me.id;
+  const C = vsCands(ps, p => p.st.wait).sort((a, b) => ((a.st.wait || 0) - (b.st.wait || 0)) || (a.id < b.id ? -1 : 1)); vs.cn = C.length;
+  $('vsStatus').textContent = t('searching2', {s: Math.max(0, vs.waitT), n: Math.min(4, C.length)});
+  const m = vsAssemble(vs.lobby, ps, me, C, C.length >= 4 ? 4 : C.length > 1 && C.some(p => p.st.ex) ? C.length : 0, true); if (!m) return;
+  const lb = vs.lobby; clearInterval(vs.timer); vs.timer = 0; vs.lobby = null; vs.qr = m; vs.seed = m.seed; vs.off = vs.ak = 0; vs.offSig = ''; vs.seen = new Set();
+  setTimeout(() => lb.leave(), 1500);   // stay visible for a moment so the three others see the {on} before we vanish
+  vsEnterRoom('m-' + sanitizeId(m.h) + '-' + m.seed.toString(36), '');
+}
+function vsQuadTick(){   // once a second while searching for a 2v2
+  if (vs.waitT <= 0 && !vs.ex){ vs.ex = 1; vs.lobby.set({ex: 1}); }
+  if (vs.off && Date.now() - vs.offAt > 4000){ const ps = vs.lobby.peers(); for (const r of vs.ro || []){ const p = ps.find(q => q.id === r.id); if (p && !p.me && (p.st || {}).ak !== vs.off) vs.skip.add(r.id); } }
+  vsTryQuad();
+  // time is up: alone → AIs at once; with others → the host's offer takes us within a moment; whatever goes wrong, never wait past 12 s
+  if (vs.phase === 'search' && vs.waitT <= 0 && (vs.cn < 2 || (vs.waitT <= -6 && !vs.ak) || vs.waitT <= -12)){ toast(t('aiFallback')); vsStartAi(2); }
+}
+// Code rooms: the code carries the size (5000-9999 = 2v2), so whoever joins by code lands in the kind of room that was created.
+const vsCodeSz = code => Number(code) >= 5000 ? 2 : 1;
+async function vsMake(){ await netInit(); if (netKind === 'none'){ toast(t('onlineNA')); return; } const code = String(vs.md === 2 ? 5000 + Math.floor(Math.random()*5000) : 1000 + Math.floor(Math.random()*4000)); vsReset(); vs.sz = vs.md; vsEnterRoom('c-' + code, code); }
 async function vsJoinCode(){
   const code = ($('vsCodeIn').value || '').replace(/\D/g, '').slice(0, 4); if (code.length !== 4){ $('vsCodeIn').focus(); return; }
-  await netInit(); if (netKind === 'none'){ toast(t('onlineNA')); return; } vsReset(); vsEnterRoom('c-' + code, code);
+  await netInit(); if (netKind === 'none'){ toast(t('onlineNA')); return; } vsReset(); vs.sz = vsCodeSz(code); vsEnterRoom('c-' + code, code);
 }
 async function vsEnterRoom(name, code){
-  const tok = vs.tok;
-  vs.phase = 'room'; vsShow(false); $('vsCode').textContent = code; $('vsStatus').textContent = code ? t('shareCode') + ' · ' + t('waitingOpp') : t('matchFound');
+  const tok = vs.tok, duo = vs.sz === 2;
+  vs.phase = 'room'; vsShow(false); $('vsCode').textContent = code; $('vsStatus').textContent = code ? t('shareCode') + ' · ' + (duo ? t('vsIn', {n: 1}) : t('waitingOpp')) : t('matchFound');
   let rm; try { rm = await netJoin(name); } catch(e){ if (tok !== vs.tok) return; if (!code) return vsRequeue(); toast(t('onlineNA')); vsShow(true); vs.phase = 'idle'; return; }
   if (tok !== vs.tok){ rm.leave(); return; }
   vs.room = rm; rm.set({nick, bird: B.id, rp, ready: 1, al: 1, u: sb && uid ? uid : ''});   // u: the ranking identity the rival registers the match against
   rm.onChange(vsOnRoom); vsOnRoom();
-  // quick match only: the partner never arrived (it paired elsewhere, closed the tab, lost the network)
-  if (!code) vs.strT = setTimeout(() => { if (tok === vs.tok && vs.phase === 'room') vsRequeue(); }, 8000);
+  // quick match only: the partner never arrived (it paired elsewhere, closed the tab, lost the network). 2v2: a member waits a little longer
+  // than the host while the host is in the room, so the host's "go" cannot cross a member's giving up.
+  let more = duo; if (!code) vs.strT = setTimeout(function giveUp(){
+    if (tok !== vs.tok || vs.phase !== 'room') return;
+    if (more && vs.qr && vs.qr.h !== vs.myId && rm.peers().some(p => p.id === vs.qr.h)){ more = false; vs.strT = setTimeout(giveUp, 6000); return; }
+    vsRequeue();
+  }, 8000);
 }
 // Stranded in an empty quick-match room: back to searching with the time that is left, or the AI when there is none.
 function vsRequeue(){
-  const left = vs.waitT, skip = vs.skip; if (vs.want) skip.add(vs.want);
-  if (left <= 5){ toast(t('aiFallback')); vsReset(); vsStartAi(); return; }
-  toast(t('vsStranded')); vsAuto(left, skip);
+  const left = vs.waitT, skip = vs.skip, sz = vs.sz; if (vs.want) skip.add(vs.want);
+  if (sz === 2 && vs.qr){ for (const r of vs.qr.ro) if (r.id !== vs.myId && !vs.seen.has(r.id)) skip.add(r.id); }   // only the members who never came in
+  if (left <= 5){ toast(t('aiFallback')); vsReset(); vsStartAi(sz); return; }
+  toast(t('vsStranded')); vsAuto(left, skip, sz);
+}
+// 2v2 room, before the start. Quick match: the roster was made in the lobby, the room only waits until its host sees every human of it.
+// Code room: the same assembly as in the lobby runs here; anyone may ask for AIs in the empty seats once two players are in ({fl}).
+function vsRoom2(ps, me, others){
+  let m = null;
+  if (vs.qr){
+    const q = vs.qr, h = others.find(p => p.id === q.h); for (const p of others) vs.seen.add(p.id);
+    if (q.h === me.id){ if (q.ro.every(r => r.id === me.id || others.some(p => p.id === r.id && p.st && p.st.ready))){ vs.room.set({on: q.seed}); m = q; } }
+    else if (h && h.st && h.st.on === q.seed){ vs.room.set({on: q.seed}); m = q; }
+  } else {
+    const C = vsCands(ps, p => p.st.ready).sort((a, b) => a.id < b.id ? -1 : 1), k = Math.min(4, C.length);
+    $('vsStatus').textContent = t('shareCode') + ' · ' + t('vsIn', {n: k});
+    $('vsRoster').textContent = C.slice(0, 4).map(p => cleanNick((p.st || {}).nick || '') || t('opp')).join(' · ');
+    $('vsFill').hidden = k < 2 || k > 3; $('vsFill').disabled = !!me.st.fl;
+    m = vsAssemble(vs.room, ps, me, C, k === 4 ? 4 : k > 1 && C.some(p => p.st.fl) ? k : 0, false);
+  }
+  if (!m || !m.ro.some(r => r.id === me.id)) return;
+  vs.qr = m; vs.seed = m.seed; vsCountdown();
 }
 function vsOnRoom(){
   if (!vs.room) return;
   const ps = vs.room.peers(), me = ps.find(p => p.me), others = ps.filter(p => !p.me);
   if (me) vs.myId = me.id;
   if (vs.phase === 'room'){
+    if (vs.sz === 2){ if (me) vsRoom2(ps, me, others); return; }
     // "go" is addressed (vs = the opponent's id): a third player walking into a room that is already playing can neither start nor be started
     const eng = p => (p.st && p.st.vs) || '';
     const o = others.find(p => p.st && p.st.go && eng(p) === vs.myId) || others.find(p => p.st && p.st.ready && !eng(p));   // ready: its state has arrived
@@ -3356,23 +3478,59 @@ function vsOnRoom(){
     return;
   }
   if (vs.phase === 'play' || vs.phase === 'done'){
-    const o = others.find(p => p.id === vs.oppId);
-    // Rival gone: a forfeit win only if they were still flying. If they had already died, their final score stands and ours is compared to it
-    // (otherwise a trailing player could pause until the dead leader gives up waiting, and collect the win).
-    if (!o){ if (vs.phase === 'play' && !vs.result){ const b = vs.oppFinal || 0; if (vs.oppAlive) vsFinish('win', true); else vsFinish(score > b ? 'win' : score < b ? 'lose' : 'draw', false); } return; }
-    const st = o.st || {};
-    // Each new state message is one sample: the ghost glides from where it is drawn now to the new height over one send interval
-    if (st !== vs.oppRef && typeof st.y === 'number' && st.y !== vs.oppY){ const now = performance.now(); vs.oppRef = st; vs.oppDur = Math.max(80, Math.min(400, vs.oppRx ? now - vs.oppRx : VS_SEND)); vs.oppRx = vs.oppT0 = now; vs.oppFrom = vs.oppVis; vs.oppY = st.y; }
-    vs.oppScore = st.sc | 0; vs.oppBird = st.b || st.bird || 'volt'; vs.oppNick = cleanNick(st.n || st.nick || '');
-    if (st.al === 0 && vs.oppAlive){ vs.oppAlive = false; vs.oppFinal = vs.oppScore; vsBurst(); }
-    vsResolve();
+    for (const p of vs.pl){
+      if (p.ai || p.gone) continue;
+      const o = others.find(q => q.id === p.id);
+      if (!o){
+        if (vs.phase !== 'play' || vs.result) continue;
+        // 1v1, rival gone: a forfeit win only if they were still flying. If they had already died, their final score stands and ours is compared to it
+        // (otherwise a trailing player could pause until the dead leader gives up waiting, and collect the win).
+        if (vs.sz === 1){ const b = p.fin || 0; if (p.al) vsFinish('win', true); else vsFinish(score > b ? 'win' : score < b ? 'lose' : 'draw', false); return; }
+        // 2v2, a player gone: no forfeit. They count as dead with the last score seen, which stays in their team's sum; the match goes on.
+        p.gone = true; if (p.al){ p.al = false; p.fin = p.sc; vsBurst(p); }
+        continue;
+      }
+      const st = o.st || {};
+      // Each new state message is one sample: the ghost glides from where it is drawn now to the new height over one send interval
+      if (st !== p.ref && typeof st.y === 'number' && st.y !== p.y){ const now = performance.now(); p.ref = st; p.dur = Math.max(80, Math.min(400, p.rx ? now - p.rx : VS_SEND)); p.rx = p.t0 = now; p.from = p.vis; p.y = st.y; }
+      p.bird = st.b || st.bird || 'volt'; p.nick = cleanNick(st.n || st.nick || '');
+      if (p.al){ p.sc = st.sc | 0; p.g = st.g | 0; if (st.al === 0){ p.al = false; p.fin = p.sc; vsBurst(p); } }   // a dead player's score is final: later messages cannot move it
+    }
+    if (vs.phase === 'done'){ if (vs.sz === 2) vsFillOver(); } else vsResolve();
   }
+}
+/* Teams of a 2v2: nobody picks. The four seats are ordered by key (the player's ranking id; without one, the room id; AI seats last) and the
+   seed says which of the other three joins the first seat — the same answer for all four, a different split from match to match. The team
+   holding the smallest key is team 0, which is also vsMatchId's (and the server's) team 0. Returns the team (0 / 1) of each seat. */
+function vsTeams(keys, seed){
+  const ix = keys.map((k, i) => i).sort((a, b) => keys[a] < keys[b] ? -1 : keys[a] > keys[b] ? 1 : a - b), k = 1 + (seed >>> 0) % 3;
+  return keys.map((x, i) => i === ix[0] || i === ix[k] ? 0 : 1);
+}
+// The AI: its whole run follows from the match seed and its seat, so every client of a match with AI seats sees the same AI score.
+function vsAiNew(k, lv){
+  const r = mulberry32((vs.seed ^ Math.imul(k + 1, 0x9E3779B1)) >>> 0), bird = BIRDS[Math.floor(r()*4)].id;
+  return {alive: true, score: 0, gates: 0, combo: 0, deathGate: 7 + Math.floor(r()*16) + lv*5, perf: .18 + lv*.06, off: 0, seen: 0, r, k, bird};
+}
+// Seats of a 2v2 from the roster (humans, in the host's order) plus AIs for the seats it leaves empty.
+function vsSeat(ro, lv){
+  const n = 4 - ro.length, keys = ro.map(r => VS_UID.test(r.u) ? r.u : r.id); for (let i = 0; i < n; i++) keys.push('~' + i);
+  const tm = vsTeams(keys, vs.seed), mi = Math.max(0, ro.findIndex(r => r.id === vs.myId)), ps = vs.room ? vs.room.peers() : []; let foe = 0;
+  vs.ai = n || null;
+  vs.pl = keys.map((k, i) => {
+    if (i === mi) return null;
+    const team = tm[i] ^ tm[mi], dx = team ? 36 + 32*foe++ : -32;
+    if (i >= ro.length){ const ai = vsAiNew(i - ro.length, lv); return vsRival({tm: team, dx, ai, nick: 'AI ' + (i - ro.length + 1), bird: ai.bird}); }
+    const o = ps.find(p => p.id === ro[i].id), st = (o && o.st) || {};
+    return vsRival({id: ro[i].id, uid: VS_UID.test(ro[i].u) ? ro[i].u : '', tm: team, dx, nick: cleanNick(st.nick || ''), bird: st.bird || 'volt'});
+  }).filter(Boolean);
 }
 function vsCountdown(){
   vs.phase = 'count'; closeVsScr();
-  const o = vs.room && vs.room.peers().find(p => p.id === vs.oppId);
-  vs.oppUid = '';
-  if (o && o.st){ vs.oppBird = o.st.bird || 'volt'; vs.oppNick = cleanNick(o.st.nick || ''); vs.oppUid = VS_UID.test(o.st.u) ? o.st.u : ''; }   // taken once, when the pairing is made
+  if (vs.sz === 2){ vsSeat(vs.qr.ro, vs.qr.lv); if (vs.ai) toast(t('vsAiFill')); }
+  else {
+    const o = vs.room && vs.room.peers().find(p => p.id === vs.oppId), st = (o && o.st) || {};
+    vs.pl = [vsRival({id: vs.oppId, bird: st.bird || 'volt', nick: cleanNick(st.nick || ''), uid: VS_UID.test(st.u) ? st.u : ''})];   // taken once, when the pairing is made
+  }
   let n = 3; banner('3', [0,100,62], .9); tone(520,.12,'square',.08);
   const it = setInterval(() => { n--; if (n > 0){ banner(String(n), [0,100,62], .9); tone(520,.12,'square',.08); } else { clearInterval(it); vsBegin(); } }, 900);
 }
@@ -3391,8 +3549,8 @@ function vsMatchId(seed, mine, theirs){   // mine / theirs: player ids of my tea
 // rk: this match on the server. why: '' = ranked so far, 'off' = not ranked (offline, refused, failed), 'cap' = daily limit against this rival, 'void' = reports contradicted;
 // delta: the RP the server applied (null until it has).
 function vsRankStart(mine, theirs){
-  vs.rk = null; if (vs.ai) return;   // practice
-  const m = sb && uid ? vsMatchId(vs.seed, mine || [uid], theirs || [vs.oppUid]) : null;
+  vs.rk = null; if (vs.ai) return;   // practice: any AI seat
+  const m = sb && uid ? vsMatchId(vs.seed, mine || [uid, ...vs.pl.filter(p => !p.tm).map(p => p.uid)], theirs || vs.pl.filter(p => p.tm).map(p => p.uid)) : null;   // a player without an id: not ranked, no call
   const rk = vs.rk = {id: m ? m.id : '', why: m ? '' : 'off', delta: null, res: '', t0: 0, p: null};
   if (!m) return;
   rk.p = vsRpc('versus_start', {p_match: m.id, p_mode: m.mode, p_team: m.team, p_nick: nick, p_cc: CC, p_bird: B.id}).then(r => {
@@ -3427,56 +3585,74 @@ function vsRpNote(ai, rk, res){
 function vsBegin(){
   if (!isOwned(B)){ B = BIRDS[0]; renderHangar(); }
   vsRankStart();
-  vs.phase = 'play'; vs.oppAlive = true; vs.oppScore = 0; vs.myFinal = null; vs.oppFinal = null; vs.result = ''; vs.oppY = vs.oppVis = vs.oppFrom = 300; vs.oppRef = null; vs.oppRx = 0;
+  vs.phase = 'play'; vs.myFinal = null; vs.result = ''; vs.sc0 = -1;
   startGame('versus');
 }
-function vsStartAi(){
+// Practice against the AI alone: one AI rival (1v1), or an AI teammate and two AI opponents (2v2).
+function vsStartAi(sz){
   vsLeave(); closeVsScr();
-  const ti = tierOf(rp);
-  vs.ai = {alive: true, score: 0, gates: 0, combo: 0, deathGate: 7 + Math.floor(Math.random()*16) + ti*5, perf: .18 + ti*.06, off: 0, seen: 0};
-  vs.seed = (Math.random()*4294967296) >>> 0 || 9; vs.oppBird = BIRDS[Math.floor(Math.random()*4)].id; vs.oppNick = 'AI';
+  const ti = tierOf(rp); vs.sz = sz === 2 ? 2 : 1; vs.qr = null; vs.myId = myPeer;
+  vs.seed = (Math.random()*4294967296) >>> 0 || 9;
+  if (vs.sz === 2) vsSeat([{id: vs.myId, u: ''}], ti);
+  else { const ai = vsAiNew(0, ti); vs.ai = 1; vs.pl = [vsRival({ai, bird: ai.bird, nick: 'AI'})]; }
   vs.phase = 'count'; let n = 3; banner('3', [0,100,62], .9);
   const it = setInterval(() => { n--; if (n > 0) banner(String(n), [0,100,62], .9); else { clearInterval(it); vsBegin(); } }, 900);
 }
-function aiGate(){ const a = vs.ai; a.gates++; if (Math.random() < a.perf){ a.combo++; a.score += 1 + a.combo; } else { a.combo = 0; a.score += 1; } if (a.gates >= a.deathGate) a.alive = false; }
-function vsTick(dt){
-  if (mode !== 'versus' || vs.phase !== 'play') return;
-  if (vs.ai){
-    const a = vs.ai;
-    if (a.alive){
-      while (a.seen < gatesPassed && a.alive){ a.seen++; aiGate(); }
-      const ng = gates.find(q => !q.scored && q.x + q.w > bird.x - 20);
-      a.off += (Math.sin(T*1.3)*18 - a.off)*Math.min(1, dt);
-      vs.oppY += ((ng ? gY(ng) : 300) + a.off - vs.oppY) * Math.min(1, dt*3.2);
-      vs.oppScore = a.score;
-      if (!a.alive){ vs.oppAlive = false; vs.oppFinal = a.score; vsBurst(); }
-    }
-    vsResolve();
-    vs.oppVis += (vs.oppY - vs.oppVis) * Math.min(1, dt*12);
-  } else {
-    const now = performance.now();
-    if (vs.room && now - vs.lastSend >= VS_SEND && state === 'play'){ vs.lastSend = now; vs.room.set({y: Math.round(bird.y), sc: score, al: 1, g: gatesPassed, b: B.id, n: nick}); }
-    vs.oppVis = vs.oppFrom + (vs.oppY - vs.oppFrom) * Math.min(1, (now - vs.oppT0) / vs.oppDur);   // 5 samples a second, drawn as one continuous glide
+function aiGate(a){ a.gates++; if (a.r() < a.perf){ a.combo++; a.score += 1 + a.combo; } else { a.combo = 0; a.score += 1; } if (a.gates >= a.deathGate) a.alive = false; }
+// AIs pass a gate when the furthest human has passed it; once no human is flying, or the result is in (end), they play their run out at once,
+// so every screen of the match ends on the same AI score.
+function vsAiRun(end){
+  if (!vs.ai) return;
+  let to = Infinity;
+  if (!end && (vs.myFinal === null || vs.pl.some(p => !p.ai && p.al))){ to = gatesPassed; for (const p of vs.pl) if (!p.ai && p.g > to) to = p.g; }
+  for (const p of vs.pl){
+    const a = p.ai; if (!a || !a.alive) continue;
+    while (a.seen < to && a.alive){ a.seen++; aiGate(a); }
+    p.sc = a.score; if (!a.alive){ p.al = false; p.fin = a.score; if (to !== Infinity) vsBurst(p); }
   }
 }
-function vsBurst(){ for (let i=0;i<24;i++){ const a = Math.random()*6.28, s = 60 + Math.random()*200; part(bird.x, vs.oppVis, Math.cos(a)*s, Math.sin(a)*s, .7, [0,100,62], 3); } pop(t('opp') + ' ✕', bird.x, vs.oppVis - 30, [0,100,70], true); }
+function vsTick(dt){
+  if (mode !== 'versus' || vs.phase !== 'play') return;
+  const now = performance.now();
+  if (vs.room && now - vs.lastSend >= VS_SEND && state === 'play'){ vs.lastSend = now; vs.room.set({y: Math.round(bird.y), sc: score, al: 1, g: gatesPassed, b: B.id, n: nick}); }
+  let gy = 300; if (vs.ai){ const ng = gates.find(q => !q.scored && q.x + q.w > bird.x - 20); if (ng) gy = gY(ng); }
+  for (const p of vs.pl){
+    const a = p.ai;
+    if (!a) p.vis = p.from + (p.y - p.from) * Math.min(1, (now - p.t0) / p.dur);   // 5 samples a second, drawn as one continuous glide
+    else { if (a.alive){ a.off += (Math.sin(T*1.3 + a.k*2.1)*18 - a.off)*Math.min(1, dt); p.y += (gy + a.off - p.y) * Math.min(1, dt*3.2); } p.vis += (p.y - p.vis) * Math.min(1, dt*12); }
+  }
+  if (vs.ai || score !== vs.sc0){ vs.sc0 = score; vsResolve(); }
+}
+function vsBurst(p){ const x = bird.x + p.dx; for (let i=0;i<24;i++){ const a = Math.random()*6.28, s = 60 + Math.random()*200; part(x, p.vis, Math.cos(a)*s, Math.sin(a)*s, .7, p.tm ? [0,100,62] : [190,100,62], 3); } pop((vs.sz === 2 ? (p.nick || t('opp')).slice(0, 8) : t('opp')) + ' ✕', x, p.vis - 30, p.tm ? [0,100,70] : [190,100,72], true); }
 function vsOnMyDeath(){
   if (mode !== 'versus') return;
   vs.myFinal = score;
   if (vs.room) vs.room.set({al: 0, sc: score});
-  if (vs.ai && vs.ai.alive){ while (vs.ai.alive) aiGate(); vs.oppAlive = false; vs.oppFinal = vs.ai.score; vs.oppScore = vs.ai.score; }
   vsResolve();
 }
+/* The result, from the scores alone. mine / theirs: [{sc, al}] of each team (a dead or gone player keeps the score it had). A team's score is
+   the sum of its players. Everybody dead: the higher sum wins, equal is a draw. Before that the result is given as soon as it is certain: a
+   team with nobody left flying has lost once the other team's sum is above its own (scores only grow). '' = still open. Every client reaches
+   the same answer whatever order it saw the deaths in, because an early answer is always the one the final sums would give. */
+function vsOutcome(mine, theirs){
+  const sum = a => a.reduce((n, p) => n + (p.sc | 0), 0), dead = a => a.every(p => !p.al), a = sum(mine), b = sum(theirs);
+  if (dead(mine) && dead(theirs)) return a > b ? 'win' : a < b ? 'lose' : 'draw';
+  return dead(theirs) && a > b ? 'win' : dead(mine) && b > a ? 'lose' : '';
+}
+function vsSides(){   // [my team, the other team], me first
+  const v = p => ({sc: p.al ? p.sc : p.fin ?? p.sc, al: p.al, nick: p.nick, ai: !!p.ai});
+  return [[{sc: vs.myFinal ?? score, al: vs.myFinal === null, me: true}, ...vs.pl.filter(p => !p.tm).map(v)], vs.pl.filter(p => p.tm).map(v)];
+}
+const vsSum = a => a.reduce((n, p) => n + p.sc, 0);
 function vsResolve(){
   if (vs.result || mode !== 'versus') return;
-  const meAlive = vs.myFinal === null;
-  if (meAlive && !vs.oppAlive && score > (vs.oppFinal || 0)) return vsFinish('win', false);
-  if (!meAlive && vs.oppAlive && vs.oppScore > vs.myFinal) return vsFinish('lose', false);
-  if (!meAlive && !vs.oppAlive){ const a = vs.myFinal, b = vs.oppFinal || 0; return vsFinish(a > b ? 'win' : a < b ? 'lose' : 'draw', false); }
-  if (!meAlive && state === 'over') $('oPlace').textContent = t('watching') + `  ${vs.myFinal} : ${vs.oppScore}`;
+  vsAiRun();
+  const [a, b] = vsSides(), r = vsOutcome(a, b);
+  if (r) return vsFinish(r, false);
+  if (vs.myFinal !== null && state === 'over'){ $('oPlace').textContent = t('watching') + `  ${vsSum(a)} : ${vsSum(b)}`; if (vs.sz === 2) vsFillOver(); }   // my run is over: watching until the result is certain
 }
 function vsFinish(res, forfeit){
-  vs.result = res; vs.phase = 'done';
+  vs.result = res; vs.phase = 'done'; vsAiRun(true);
   if (!vs.ai) vsRankReport(res);   // the server moves the RP (and only for a human match: against the AI it is practice)
   if (res === 'win'){ banner(forfeit ? t('forfeit') : t('youWin'), [48,100,62], 1.6); SFX.fanfare(); haptic('newBest'); confetti(bird.x, bird.y, 60); }
   else if (res === 'lose'){ banner(t('youLose'), [0,100,62], 1.4); }
@@ -3487,32 +3663,65 @@ function vsFinish(res, forfeit){
 function vsFillOver(){
   if (mode !== 'versus') return;
   const ttl = $('oTitle'); if (!ttl) return;
+  const [a, b] = vsSides(), duo = vs.sz === 2;
   if (vs.result){
     ttl.textContent = vs.result === 'win' ? t('youWin') : vs.result === 'lose' ? t('youLose') : t('drawR');
     ttl.style.color = vs.result === 'win' ? 'var(--gold)' : vs.result === 'lose' ? 'var(--hot)' : 'var(--ink)';
-    $('oPlace').textContent = `${vs.myFinal ?? score} : ${vs.oppFinal ?? vs.oppScore}  ·  ${vsRpNote(!!vs.ai, vs.rk, vs.result)}`;
+    $('oPlace').textContent = `${vsSum(a)} : ${vsSum(b)}  ·  ${vsRpNote(!!vs.ai, vs.rk, vs.result)}`;
   } else { ttl.textContent = t('vsVs'); ttl.style.color = 'var(--cool)'; }
-  $('oMode').textContent = `${B.name} ${t('vsVs')} ${(vs.oppNick || t('opp'))} · ${(birdById(vs.oppBird) || BIRDS[0]).name}`;
+  const o = vs.pl[0] || {};
+  $('oMode').textContent = duo ? `2v2 · ${B.name}` : `${B.name} ${t('vsVs')} ${(o.nick || t('opp'))} · ${(birdById(o.bird) || BIRDS[0]).name}`;
+  const box = $('oTeams'); box.hidden = !duo; if (!duo) return;
+  // 2v2: both teams, each player's own score (✕ = out). Rebuilt only when something in it changed.
+  const sig = JSON.stringify([a, b, lang]); if (box.dataset.sig === sig) return; box.dataset.sig = sig; box.textContent = '';
+  [[a, 'vsUs'], [b, 'vsThem']].forEach(([team, key], k) => {
+    const col = document.createElement('div'); col.className = 'vsteam' + (k ? ' foe' : '');
+    const hd = document.createElement('b'); hd.textContent = `${t(key)} ${vsSum(team)}`; col.appendChild(hd);
+    for (const p of team){ const row = document.createElement('span'), nm = document.createElement('i'), sc = document.createElement('em'); nm.textContent = (p.me ? t('you') + ' · ' + nick : p.nick || t('opp')) + (p.al ? '' : ' ✕'); sc.textContent = p.sc; row.append(nm, sc); col.appendChild(row); }
+    box.appendChild(col);
+  });
 }
+// Ghosts of the other players (lite bodies, no shadowBlur). 1v1: the rival, a red ring. 2v2: the teammate behind me in a solid double ring with
+// the team tag, the two opponents ahead in dashed rings — told apart by ring style, side and label, not by colour alone.
 function drawRival(){
-  if (mode !== 'versus' || !(vs.phase === 'play' || vs.phase === 'done') || !vs.oppAlive) return;
-  const d = birdById(vs.oppBird) || BIRDS[0], x = bird.x + 34, y = vs.oppVis;
-  ctx.save(); ctx.globalAlpha = .55; ctx.translate(x, y);
-  ctx.strokeStyle = 'hsla(0,100%,62%,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0,0,d.r*1.7,0,6.28); ctx.stroke();
-  drawShape(ctx, d, (Math.sin(T*12)+1)/2, [0,100,62], OL); ctx.restore();
-  ctx.save(); ctx.font = `700 11px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = 'hsla(0,100%,72%,.95)';
-  ctx.fillText(`${vs.oppNick || t('opp')} · ${vs.oppScore}`, x, y - d.r*2 - 6); ctx.restore();
+  if (mode !== 'versus' || !(vs.phase === 'play' || vs.phase === 'done')) return;
+  const duo = vs.sz === 2; let seen = false, k = 0;
+  for (const p of vs.pl){
+    const up = !duo || !p.tm || k++ === 1; if (!p.al) continue; seen = true;
+    const d = birdById(p.bird) || BIRDS[0], x = bird.x + p.dx, y = p.vis, hue = p.tm ? 0 : 190;
+    ctx.save(); ctx.globalAlpha = .55; ctx.translate(x, y);
+    ctx.strokeStyle = `hsla(${hue},100%,62%,.8)`; ctx.lineWidth = 2;
+    if (duo && p.tm) ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.arc(0,0,d.r*1.7,0,6.28); ctx.stroke();
+    if (duo && !p.tm){ ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0,0,d.r*1.7 + 4,0,6.28); ctx.stroke(); }
+    drawShape(ctx, d, (Math.sin(T*12)+1)/2, [hue,100,62], OL); ctx.restore();
+    ctx.save(); ctx.font = `700 11px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = `hsla(${hue},100%,72%,.95)`;
+    ctx.fillText(duo ? `${p.tm ? '' : t('vsMate') + ' '}${(p.nick || t('opp')).slice(0, 8)} · ${p.sc}` : `${p.nick || t('opp')} · ${p.sc}`, x, up ? y - d.r*2 - 6 : y + d.r*2 + 14); ctx.restore();
+  }
+  if (!seen) return;
   ctx.save(); ctx.font = `700 11px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = 'hsla(200,100%,72%,.95)';
   ctx.fillText(t('you'), bird.x, bird.y + bird.r*2.4 + 8); ctx.restore();
+}
+// 2v2 HUD: my team's sum against the other's, in the slot the best-score tracker uses in the other modes.
+const vsHudOn = () => mode === 'versus' && vs.sz === 2 && vs.phase === 'play';
+function drawVsHud(){
+  const [a, b] = vsSides(), y = combo > 1 ? 124 : 112, mid = vs.ai ? t('vsPracTag') : ':', g = vs.ai ? 30 : 8, w = vs.ai ? 216 : 168;   // an AI seat: the header says practice
+  ctx.fillStyle = 'rgba(7,5,15,.55)'; roundRect(LW/2 - w/2, y, w, 20, 10); ctx.fill();
+  ctx.font = `700 12px "Chakra Petch", ${SYS}`; ctx.textAlign = 'right'; ctx.fillStyle = 'hsl(190,100%,72%)'; ctx.fillText(`${t('vsUs')} ${vsSum(a)}`, LW/2 - g, y + 14);
+  ctx.textAlign = 'left'; ctx.fillStyle = 'hsl(0,100%,74%)'; ctx.fillText(`${vsSum(b)} ${t('vsThem')}`, LW/2 + g, y + 14);
+  ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(243,238,252,.8)'; if (vs.ai) ctx.font = `700 9px "Chakra Petch", ${SYS}`; ctx.fillText(mid, LW/2, y + 14);
 }
 $('vsBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); SFX.click(); openVs(); });
 $('vsClose').addEventListener('click', e => { e.stopPropagation(); vsReset(); closeVsScr(); });
 $('vsScr').addEventListener('click', e => { if (e.target === $('vsScr') && vs.phase === 'idle') closeVsScr(); });
+$('vsM1').addEventListener('click', e => { e.stopPropagation(); vsSetMode(1); });
+$('vsM2').addEventListener('click', e => { e.stopPropagation(); vsSetMode(2); });
 $('vsAuto').addEventListener('click', e => { e.stopPropagation(); audioInit(); vsAuto(); });
 $('vsMake').addEventListener('click', e => { e.stopPropagation(); audioInit(); vsMake(); });
 $('vsJoin').addEventListener('click', e => { e.stopPropagation(); audioInit(); vsJoinCode(); });
 $('vsCodeIn').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); vsJoinCode(); } });
-$('vsAi').addEventListener('click', e => { e.stopPropagation(); audioInit(); vsReset(); vsStartAi(); });
+$('vsAi').addEventListener('click', e => { e.stopPropagation(); audioInit(); vsReset(); vsStartAi(vs.md); });
+$('vsFill').addEventListener('click', e => { e.stopPropagation(); if (vs.room && vs.phase === 'room'){ vs.room.set({fl: 1}); vsOnRoom(); } });
 $('vsCancel').addEventListener('click', e => { e.stopPropagation(); vsReset(); vsShow(true); });
 renderVsBadge();
 
@@ -3525,7 +3734,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
+if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots
@@ -3572,7 +3781,18 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
           && eq(vsMatchId(4294967295, [b], [a]), {id: '1z141z3.' + a + '.' + b, team: 1, mode: '1v1'}) && eq(vsMatchId(7, [a], [b]), {id: '7.' + a + '.' + b, team: 0, mode: '1v1'})
           && eq(vsMatchId(36, [d, b], [c, a]), {id: '10.' + a + '+' + c + '.' + b + '+' + d, team: 1, mode: '2v2'}) && vsMatchId(1, [a], [a]) === null && vsMatchId(1, [a], ['x']) === null && vsMatchId(1, [a], [b, c]) === null && vsMatchId(1, [a], ['']) === null
           && prac && ['ko','en','ja','zh'].every(l => { const l0 = lang; lang = l; const p = vsRpNote(true, null, 'win'), n = vsRpNote(false, null, 'win'), w = vsRpNote(false, {why:'', delta:null}, 'win'), s = vsRpNote(false, {why:'', delta:-30}, 'lose'); lang = l0;
-            return p === I18N[l].vsPractice && !/\d/.test(p) && n === I18N[l].vsNoRank && w.startsWith('+50 RP') && w.includes(I18N[l].vsPend) && s.startsWith('-30 RP (') && (l === 'en' || ['tabVs','vsRules','vsPractice','vsPend','vsNoRank','vsCap','vsMyRank','vsNoRow'].every(k => I18N[l][k] !== I18N.en[k])) && /50/.test(I18N[l].vsRules) && /45/.test(I18N[l].vsRules) && I18N[l].aiMatch !== I18N[l].vs; }); }
+            return p === I18N[l].vsPractice && !/\d/.test(p) && n === I18N[l].vsNoRank && w.startsWith('+50 RP') && w.includes(I18N[l].vsPend) && s.startsWith('-30 RP (') && (l === 'en' || ['tabVs','vsRules','vsPractice','vsPend','vsNoRank','vsCap','vsMyRank','vsNoRow'].every(k => I18N[l][k] !== I18N.en[k])) && /50/.test(I18N[l].vsRules) && /45/.test(I18N[l].vsRules) && I18N[l].aiMatch !== I18N[l].vs; }); },
+      vs2: () => { const u = ['00000000-0000-4000-8000-00000000000a','00000000-0000-4000-8000-00000000000b','00000000-0000-4000-8000-00000000000c','00000000-0000-4000-8000-00000000000d'], [a, b, c, d] = u, P = (sc, al) => ({sc, al: !!al});   // 2v2: team rule, team-sum result, practice detection
+        const sv = [vs.seed, vs.ai, vs.pl, vs.myId, vs.room, vs.rk], seat = (ro, seed) => { vs.seed = seed; vs.room = null; vs.myId = ro[0].id; vsSeat(ro, 0); if (vs.ai) vsRankStart(); else vs.rk = 0; return [vs.ai, vs.pl.map(p => p.tm).join(''), vs.pl.filter(p => p.ai).length, vs.rk === null]; };
+        const s1 = seat([{id: 'p1', u: ''}], 5), s3 = seat([{id: 'p1', u: a}, {id: 'p2', u: b}, {id: 'p3', u: c}], 3), s4 = seat([{id: 'p1', u: c}, {id: 'p2', u: a}, {id: 'p3', u: d}, {id: 'p4', u: b}], 4), mid = vsMatchId(4, [c, ...vs.pl.filter(p => !p.tm).map(p => p.uid)], vs.pl.filter(p => p.tm).map(p => p.uid));
+        [vs.seed, vs.ai, vs.pl, vs.myId, vs.room, vs.rk] = sv;
+        return eq([0,1,2,3,4,5].map(sd => vsTeams([c, a, d, b], sd).join('')), ['1010','0011','1001','1010','0011','1001']) && eq(vsTeams([d, c, b, a], 7), vsTeams([d, c, b, a], 7)) && eq(vsTeams(['p9', a, '~0', '~1'], 0), [0,0,1,1]) && eq(vsTeams(['x', 'x', 'x', 'x'], 1), [0,1,0,1])
+          && [0,1,2].every(sd => { const k = [c, a, d, b], tm = vsTeams(k, sd), m = vsMatchId(sd, k.filter((x, i) => tm[i] === tm[0]), k.filter((x, i) => tm[i] !== tm[0])); return tm.filter(x => !x).length === 2 && tm[1] === 0 && m && m.mode === '2v2' && m.team === tm[0]; })
+          && eq([vsOutcome([P(10), P(5)], [P(9), P(5)]), vsOutcome([P(10), P(5)], [P(9), P(6)]), vsOutcome([P(3), P(4)], [P(20), P(0)]), vsOutcome([P(30), P(0)], [P(14), P(15, 1)]), vsOutcome([P(30), P(0)], [P(14), P(17, 1)]), vsOutcome([P(8, 1), P(0)], [P(4), P(3)]), vsOutcome([P(7, 1), P(0)], [P(4), P(3)]), vsOutcome([P(9, 1), P(9, 1)], [P(0, 1), P(0, 1)])], ['win','draw','lose','','lose','win','',''])
+          && eq([vsOutcome([P(5, 1)], [P(4)]), vsOutcome([P(4, 1)], [P(4)]), vsOutcome([P(3)], [P(4, 1)]), vsOutcome([P(4)], [P(4)]), vsOutcome([P(4)], [P(9, 1)])], ['win','','lose','draw','lose'])
+          && eq(s1, [3, '110', 3, true]) && s3[0] === 1 && s3[2] === 1 && s3[3] === true && eq(s4, [null, '011', 0, false]) && mid && mid.id === '4.' + a + '+' + c + '.' + b + '+' + d && mid.team === 0
+          && eq([vsCodeSz('1000'), vsCodeSz('4999'), vsCodeSz('5000'), vsCodeSz('9999'), vsCodeSz('0042')], [1,1,2,2,1])
+          && ['ko','en','ja','zh'].every(l => ['searching2','vsIn','vsFillBtn','vsAiFill','vs2Rules','vsUs','vsThem','vsMate','vsPracTag'].every(k => I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && I18N[l].vsM1 === '1v1' && I18N[l].vsM2 === '2v2' && I18N[l].searching2.includes('{n}') && I18N[l].vsIn.includes('{n}')); }
     };
     for (const k in checks){ let ok = false; try { ok = checks[k](); } catch(e){} if (!ok) fails.push(k); }
     return fails;
