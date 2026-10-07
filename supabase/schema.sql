@@ -307,9 +307,10 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 --
 -- SEASONS. A season is one calendar month in Korea time (Asia/Seoul) and has the id YYYYMM of that month
 -- (202610); it changes at 00:00 KST on the 1st. private.fw_vs_season holds, in its single row, the id of the
--- season that fw_versus currently describes. There is no cron: every one of the four functions starts with
--- private.fw_vs_tick(), and the first call whose clock is in a later month than that row does the rollover,
--- inside its own transaction, before anything else:
+-- season that fw_versus currently describes. There is no cron: every one of the four functions calls
+-- private.fw_vs_tick() as soon as its arguments have been checked (a call with bad arguments is refused before
+-- it, so it can never make the server do a rollover), and the first call whose clock is in a later month than
+-- that row does the rollover, inside its own transaction, before it reads or writes anything else:
 --   1. every fw_versus row with at least one ranked match (wins + losses + draws > 0) is copied to
 --      public.fw_vs_standing under the season that ended, with its tier and, for players with at least
 --      min_matches ranked matches, its rank: rp desc, wins desc, earlier updated_at, player_id — a total
@@ -330,8 +331,39 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 -- Rewards are decided here, from the archived row, by private.fw_vs_reward(): a tier reward for every ranked
 -- player and the limited unit for ranks 1..top_n (numbers: private.fw_vs_season_cfg()). versus_claim marks the
 -- row claimed and returns the reward; a second call returns the same answer with "already": true.
--- The rollover is one insert and one update over the whole of fw_versus inside one player's call: fine for
--- tens of thousands of rows; beyond that move it to a scheduled job (the 8 s statement timeout of the API role).
+-- If the state row is ever set back by hand to a season that already has standings, the rollover keeps that
+-- archive as it is and writes nothing to it (the numbers then in fw_versus are reset without being archived).
+--
+-- SCALE LIMIT OF THE ROLLOVER. It is one insert and one update over every played fw_versus row, inside a single
+-- player's request, under the statement timeout of the API role (8 s for "authenticated" on Supabase). If it
+-- cannot finish in that time the call fails and everything is rolled back, the state row stays on the old month,
+-- and EVERY versus call (start, report, me, claim) tries the same rollover again and fails the same way: the
+-- ranking is down until an operator rolls over by hand. Fine for tens of thousands of players; this becomes a
+-- concern at around 10^5 players with a ranked match in one season. The remedy then is to take the rollover out
+-- of the players' requests: a scheduled job (pg_cron, shortly after 00:00 KST on the 1st, running the block
+-- below) or a batched rollover.
+-- Manual recovery, as a superuser (SQL editor / psql as postgres). It does what fw_vs_tick() does, without the
+-- timeout; every statement is a no-op when the state row already names the current month, so it is safe to run
+-- twice or after a player's call got through:
+--   begin;
+--   set local statement_timeout = 0;
+--   select pg_advisory_xact_lock(hashtextextended('fw_vs_season', 0));   -- the season lock, exclusive: waits for the calls in flight
+--   insert into public.fw_vs_standing (season, player_id, rank, rp, tier, wins, losses, draws, matches, nick, cc, bird)
+--   select x.season, x.player_id,
+--          case when x.ok then (row_number() over (partition by x.ok order by x.rp desc, x.wins desc, x.updated_at, x.player_id))::integer end,
+--          x.rp, private.fw_vs_tier(x.rp), x.wins, x.losses, x.draws, x.n, x.nick, x.cc, x.bird
+--   from (select s.season, v.player_id, v.rp, v.wins, v.losses, v.draws, v.updated_at, v.nick, v.cc, v.bird,
+--                v.wins + v.losses + v.draws as n,
+--                v.wins + v.losses + v.draws >= (select c.min_matches from private.fw_vs_season_cfg() c) as ok
+--         from public.fw_versus v cross join private.fw_vs_season s
+--         where v.wins + v.losses + v.draws > 0 and s.season < private.fw_vs_season_of(now())
+--           and not exists (select 1 from public.fw_vs_standing t where t.season = s.season)) x;
+--   update public.fw_versus set rp = 0, wins = 0, losses = 0, draws = 0
+--   where (rp <> 0 or wins <> 0 or losses <> 0 or draws <> 0)
+--     and (select s.season from private.fw_vs_season s) < private.fw_vs_season_of(now());
+--   update private.fw_vs_season set prev = season, season = private.fw_vs_season_of(now()), rolled_at = now()
+--   where one and season < private.fw_vs_season_of(now());
+--   commit;
 --
 -- What the rewards change, and what a modified client can do with them:
 --   - Collusion now pays in currency and in a unit, not only in a number on a board: two accounts trading wins
@@ -583,8 +615,9 @@ language sql stable set search_path = '' as $$
   from public.fw_vs_standing t where t.season = p_season and t.player_id = p_uid;
 $$;
 
--- The season gate: the first thing every entry point does. Takes the season lock (lock order 0) and, when the month
--- has changed, does the rollover described in the section header. Returns the id of the running season.
+-- The season gate: what every entry point does right after checking its arguments, before it touches any row. Takes
+-- the season lock (lock order 0) and, when the month has changed, does the rollover described in the section header.
+-- Returns the id of the running season.
 create or replace function private.fw_vs_tick() returns integer
 language plpgsql set search_path = '' as $$
 declare
@@ -607,15 +640,21 @@ begin
   end if;
   if v_cur >= v_now then return v_cur; end if;   -- another call did it while this one waited
 
-  select c.min_matches into v_min from private.fw_vs_season_cfg() c;
-  insert into public.fw_vs_standing (season, player_id, rank, rp, tier, wins, losses, draws, matches, nick, cc, bird)
-  select v_cur, x.player_id,
-         case when x.ok then (row_number() over (partition by x.ok order by x.rp desc, x.wins desc, x.updated_at, x.player_id))::integer end,
-         x.rp, private.fw_vs_tier(x.rp), x.wins, x.losses, x.draws, x.n, x.nick, x.cc, x.bird
-  from (select v.player_id, v.rp, v.wins, v.losses, v.draws, v.updated_at, v.nick, v.cc, v.bird,
-               v.wins + v.losses + v.draws as n, v.wins + v.losses + v.draws >= v_min as ok
-        from public.fw_versus v where v.wins + v.losses + v.draws > 0) x
-  on conflict (season, player_id) do nothing;   -- cannot happen while the state row is right; if it was set back by hand, the first archive stands
+  -- Archive, unless this season already has standings. That cannot be while the state row is right; it is the case
+  -- when the row was set back by hand to a season archived before. Then the first archive stands untouched and the
+  -- numbers now in fw_versus are only reset: ranking them again would start at rank 1 a second time and break the
+  -- unique (season, rank) index on every call ("on conflict (season, player_id)" does not cover that index), which
+  -- would stop the rollover, and with it every versus call, for good.
+  if not exists (select 1 from public.fw_vs_standing t where t.season = v_cur) then
+    select c.min_matches into v_min from private.fw_vs_season_cfg() c;
+    insert into public.fw_vs_standing (season, player_id, rank, rp, tier, wins, losses, draws, matches, nick, cc, bird)
+    select v_cur, x.player_id,
+           case when x.ok then (row_number() over (partition by x.ok order by x.rp desc, x.wins desc, x.updated_at, x.player_id))::integer end,
+           x.rp, private.fw_vs_tier(x.rp), x.wins, x.losses, x.draws, x.n, x.nick, x.cc, x.bird
+    from (select v.player_id, v.rp, v.wins, v.losses, v.draws, v.updated_at, v.nick, v.cc, v.bird,
+                 v.wins + v.losses + v.draws as n, v.wins + v.losses + v.draws >= v_min as ok
+          from public.fw_versus v where v.wins + v.losses + v.draws > 0) x;
+  end if;
   update public.fw_versus set rp = 0, wins = 0, losses = 0, draws = 0 where rp <> 0 or wins <> 0 or losses <> 0 or draws <> 0;
   update private.fw_vs_season set season = v_now, prev = v_cur, rolled_at = now() where one;   -- "where": the API roles run with pg_safeupdate, which refuses an UPDATE without one
   return v_now;
@@ -765,10 +804,8 @@ begin
   if v_uid is null then
     raise exception 'fw_auth: sign-in required' using errcode = '28000';
   end if;
-  perform private.fw_vs_tick();   -- lock order 0: the season lock (and the rollover, when the month has changed)
-  -- the caps below are read-then-insert: one start at a time per player, or parallel calls would each see the count before the others' rows
-  perform pg_advisory_xact_lock(hashtextextended(v_uid::text, 1));
-  select * into c from private.fw_vs_cfg();
+  -- Everything that depends only on the arguments and the caller's id is checked BEFORE the season gate: these checks
+  -- read no table and take no lock, so a call refused here can never do (and then roll back) a rollover.
   if p_match is null or char_length(p_match) > 160   -- length first: nothing longer reaches the regular expressions
      or p_mode is null or p_mode not in ('1v1', '2v2') or p_team is null or p_team not in (0, 1)
      or p_bird is null or not (p_bird = any (private.fw_units()))
@@ -786,6 +823,13 @@ begin
   if v_team <> p_team then
     raise exception 'fw_bad_input: wrong team for this match id' using errcode = '22023';
   end if;
+
+  -- What follows needs the database (the match's mode and join window, the caps), so it can only come after the gate:
+  -- a well-formed call that is refused below may still have paid for a rollover that its error rolls back. Accepted.
+  perform private.fw_vs_tick();   -- lock order 0: the season lock (and the rollover, when the month has changed)
+  -- the caps below are read-then-insert: one start at a time per player, or parallel calls would each see the count before the others' rows
+  perform pg_advisory_xact_lock(hashtextextended(v_uid::text, 1));   -- lock order a: after the season lock, as before
+  select * into c from private.fw_vs_cfg();
 
   -- the match: created by its first registration. Its row is locked before anything else of the ranking (lock order b);
   -- a call refused further down raises, which takes the row back out.
@@ -927,10 +971,12 @@ begin
   if v_uid is null then
     raise exception 'fw_auth: sign-in required' using errcode = '28000';
   end if;
-  v_season := private.fw_vs_tick();   -- lock order 0
-  if p_season is null or p_season < 200001 or p_season > 999912 then
+  if p_season is null or p_season < 200001 or p_season > 999912 then   -- before the season gate: a call refused here does no rollover
     raise exception 'fw_bad_input: bad season' using errcode = '22023';
   end if;
+  -- The checks below need the database (which season is running, the caller's archived row) and so come after the gate:
+  -- a well-formed claim that is refused may still have paid for a rollover that its error rolls back. Accepted.
+  v_season := private.fw_vs_tick();   -- lock order 0
   if p_season >= v_season then
     raise exception 'fw_vs_season_open: this season has not ended' using errcode = 'P0001';
   end if;
