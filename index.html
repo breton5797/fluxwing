@@ -154,9 +154,16 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .contcard{text-align:center;align-items:center}
 .cring{--p:1;width:84px;height:84px;border-radius:50%;background:conic-gradient(var(--hot) calc(var(--p)*1turn), rgba(243,238,252,.12) 0);display:grid;place-items:center}
 .cring span{width:70px;height:70px;border-radius:50%;background:#120c24;display:grid;place-items:center;font:28px "Bungee",Impact,sans-serif}
-.contcard .ghost,.confcard .ghost{width:100%;padding:12px;font-size:14px;display:inline-flex;justify-content:center;align-items:center;gap:6px}
-.contcard .ghost.primary,.confcard .ghost.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.contcard .ghost,.confcard .ghost,.seacard .ghost{width:100%;padding:12px;font-size:14px;display:inline-flex;justify-content:center;align-items:center;gap:6px}
+.contcard .ghost.primary,.confcard .ghost.primary,.seacard .ghost.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 #confScr{z-index:8}
+#seaScr{z-index:7}
+.seacard{text-align:center;align-items:center}
+.seacard .ghost[disabled]{opacity:.5;cursor:default}
+.searw{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;min-height:1.3em}
+.searw .wpill{font-size:13px}
+.searw .unit{border-color:var(--gold);color:var(--gold);font-weight:700;letter-spacing:.04em}
+.vsseason{font:700 12px var(--body);letter-spacing:.06em;color:var(--gold);font-variant-numeric:tabular-nums}
 #contScr,#vsScr,#stageScr,#helpScr{z-index:6}
 .confcard{text-align:center;white-space:pre-line;font-size:16px;line-height:1.5}
 .confbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -362,6 +369,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     <div class="card vscard">
       <div class="lbhead"><h2 class="mtitle" data-i18n="vs"></h2><button class="ghost" id="vsClose" data-i18n="close"></button></div>
       <div class="tierbox"><span class="tierbadge" id="vsTier"></span><span id="vsRp"></span></div>
+      <div class="vsseason" id="vsSeason"></div>
       <div id="vsMain" class="vsbtns">
         <div class="tabs vsmode" role="tablist"><button class="tab" role="tab" id="vsM1" data-i18n="vsM1"></button><button class="tab" role="tab" id="vsM2" data-i18n="vsM2"></button></div>
         <button class="btn" id="vsAuto"><span data-i18n="autoMatch"></span></button>
@@ -379,6 +387,17 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="vsnote" data-i18n="vsRules"></div>
       <div class="vsnote" id="vsNote2" data-i18n="vs2Rules" hidden></div>
       <div class="vsnote" data-i18n="seasonNote"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="seaScr" hidden>
+    <div class="card seacard">
+      <div class="over-title" id="seaTitle" style="color:var(--gold)"></div>
+      <div class="tierbox"><span class="tierbadge" id="seaTier"></span><span id="seaRank"></span></div>
+      <div class="vsstatus" id="seaStat"></div>
+      <div class="searw" id="seaRw"></div>
+      <div class="vsnote" id="seaMsg"></div>
+      <button class="ghost primary" id="seaBtn"></button>
     </div>
   </div>
 
@@ -419,6 +438,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
         <button class="tab" role="tab" id="tabAll" data-tab="all" data-i18n="tabAll"></button>
         <button class="tab" role="tab" id="tabVs" data-tab="vs" data-i18n="tabVs"></button>
       </div>
+      <div class="tabs vsmode" id="lbSea" role="tablist" hidden><button class="tab" role="tab" id="lbSeaNow" data-tab="vs" data-past="0" data-i18n="seaNow"></button><button class="tab" role="tab" id="lbSeaLast" data-tab="vs" data-past="1" data-i18n="seaLast"></button></div>
       <div class="dayline" id="lbDay"></div>
       <ol class="lblist" id="lbList"></ol>
       <div class="lbstatus" id="lbStatus"></div>
@@ -609,16 +629,16 @@ I18N_D_KEYS.forEach((k,i) => { for (const l in I18N) I18N[l][k] = (I18N_D[l] || 
 
 const I18N_F_KEYS = ['start','stageSel','stage','locked','unlockHint','bestG','vs','autoMatch','makeRoom','joinRoom','aiMatch','searching','roomCode','waitingOpp','enterCode','join','cancel','aiFallback','youWin','youLose','drawR','rankPts','t0','t1','t2','t3','t4','forfeit','onlineNA','opp','watching','rematch','seasonNote','help','hControls','hScore','hMoney','hUnits','tut1','tut2','tut3','skillLbl','potionP','contTitle','contAd','contCoin','giveUp','adPlaying','confirmBuy','confirmUnlock','buy','danger','easy','normal','hard','expert','vsVs','shareCode','matchFound'];
 const I18N_F = {
-ko:['START','스테이지 선택','STAGE {n}','잠김','이전 스테이지를 클리어하면 열려요','최고 {n}점','대전','자동 매치','방 만들기','코드로 참가','AI와 연습전','상대 찾는 중… {s}초','방 코드','상대를 기다리는 중…','4자리 코드','참가','취소','1분 동안 상대가 없어 AI와 연습전을 합니다','승리!','패배','무승부','랭크 점수','브론즈','실버','골드','다이아','마스터','상대가 나가서 승리했어요','온라인 대전에 연결할 수 없어요. AI와는 대전할 수 있어요.','상대','상대가 아직 날고 있어요…','다시 대전','한 달 시즌이 끝나면 랭크 상위 10명에게 한정 유닛을 드려요','도움말',
+ko:['START','스테이지 선택','STAGE {n}','잠김','이전 스테이지를 클리어하면 열려요','최고 {n}점','대전','자동 매치','방 만들기','코드로 참가','AI와 연습전','상대 찾는 중… {s}초','방 코드','상대를 기다리는 중…','4자리 코드','참가','취소','1분 동안 상대가 없어 AI와 연습전을 합니다','승리!','패배','무승부','랭크 점수','브론즈','실버','골드','다이아','마스터','상대가 나가서 승리했어요','온라인 대전에 연결할 수 없어요. AI와는 대전할 수 있어요.','상대','상대가 아직 날고 있어요…','다시 대전','한 달 시즌 · 랭크전 10판 이상이면 티어 보상, 상위 10명에게는 한정 유닛 MONARCH','도움말',
  '조작 — 화면 탭(스페이스)으로 날갯짓. 게이지가 차면 DASH(Shift)로 벽을 뚫고, SKILL(S)로 유닛 고유 스킬을 써요.','점수 — 게이트 통과 1점. 가장자리를 아슬아슬하게 스치면 PERFECT로 콤보 점수, 10콤보부터 피버 2배.','재화 — 유닛은 코인·다이아몬드·젬 세 가지를 모두 내고 사요. 코인은 스테이지에서 50점마다(난이도가 높을수록 더 많이) 받고 필드 오브로도 모아요. 다이아몬드는 레벨업·오늘의 챌린지 첫 판·스테이지 첫 클리어 보상이에요. 젬은 스테이지 플레이 중 1% 확률로 떨어져요.','유닛 — 기본·에픽·레전더리·미식·울트라 5등급. 모두 고유 스킬과 아우라가 있고, 오늘의 챌린지와 2인 대전에서는 능력이 공정하게 제한돼요.',
  '화면을 탭해서 날아오르세요','게이트 가장자리를 아슬아슬하게 스치면 PERFECT!','게이지가 차면 DASH, SKILL 버튼으로 고유 스킬!','스킬','무적 질주!','이어서 할까요?','광고 보고 이어하기','{n} 코인으로 이어하기','그만하기','광고 재생 중 (테스트 빌드)','{item} · {price}\n구매할까요?','{u}을(를) 해금할까요?\n{list}','구매','위험!','쉬움','일반','보통','어려움','VS','친구에게 이 코드를 알려주세요','상대를 찾았어요!'],
-en:['START','Select stage','STAGE {n}','Locked','Clear the previous stage to unlock','Best {n}','Versus','Quick match','Create room','Join with code','Practice vs AI','Finding an opponent… {s}s','Room code','Waiting for an opponent…','4-digit code','Join','Cancel','No opponent in 1 minute. Practice match vs the AI.','VICTORY!','DEFEAT','DRAW','Rank points','Bronze','Silver','Gold','Diamond','Master','Your opponent left. You win.','Online versus is unavailable here. You can still play the AI.','Rival','Your rival is still flying…','Rematch','Top 10 ranked players each monthly season get a limited unit','Help',
+en:['START','Select stage','STAGE {n}','Locked','Clear the previous stage to unlock','Best {n}','Versus','Quick match','Create room','Join with code','Practice vs AI','Finding an opponent… {s}s','Room code','Waiting for an opponent…','4-digit code','Join','Cancel','No opponent in 1 minute. Practice match vs the AI.','VICTORY!','DEFEAT','DRAW','Rank points','Bronze','Silver','Gold','Diamond','Master','Your opponent left. You win.','Online versus is unavailable here. You can still play the AI.','Rival','Your rival is still flying…','Rematch','Monthly seasons · tier rewards for 10+ ranked matches · the top 10 get the limited unit MONARCH','Help',
  'Controls — tap (Space) to flap. When the meter fills, DASH (Shift) breaks walls; SKILL (S) fires your unit’s own skill.','Score — 1 point per gate. Skim an edge for a PERFECT and combo points; Fever doubles points from a 10 combo.','Currencies — a unit costs coins, diamonds and gems together. Coins: paid for every 50 score in stage play (more on harder tiers), plus field orbs. Diamonds: level-ups, your first Daily run of the day and first stage clears. Gems: a 1% drop chance during stage play.','Units — Common, Epic, Legendary, Mythic, Ultra. Every unit has a skill and an aura; Daily Challenge and Versus cap abilities for fairness.',
  'Tap the screen to fly up','Skim a gate edge for a PERFECT!','Meter full? DASH. Then fire your SKILL!','Skill','UNSTOPPABLE!','Continue?','Watch an ad to continue','Continue for {n} coins','Give up','Ad playing (test build)','{item} · {price}\nBuy now?','Unlock {u}?\n{list}','Buy','DANGER!','Easy','Normal','Hard','Expert','VS','Share this code with your friend','Opponent found!'],
-ja:['START','ステージ選択','STAGE {n}','ロック中','前のステージをクリアすると解放','ベスト {n}','対戦','オートマッチ','ルーム作成','コードで参加','AIと練習試合','対戦相手を検索中… {s}秒','ルームコード','相手を待っています…','4桁のコード','参加','キャンセル','1分間相手がいないためAIと練習試合をします','勝利!','敗北','引き分け','ランクポイント','ブロンズ','シルバー','ゴールド','ダイヤ','マスター','相手が退出したため勝利','オンライン対戦に接続できません。AI対戦は可能です。','相手','相手はまだ飛んでいます…','再戦','月間シーズン終了時、ランク上位10名に限定ユニット','ヘルプ',
+ja:['START','ステージ選択','STAGE {n}','ロック中','前のステージをクリアすると解放','ベスト {n}','対戦','オートマッチ','ルーム作成','コードで参加','AIと練習試合','対戦相手を検索中… {s}秒','ルームコード','相手を待っています…','4桁のコード','参加','キャンセル','1分間相手がいないためAIと練習試合をします','勝利!','敗北','引き分け','ランクポイント','ブロンズ','シルバー','ゴールド','ダイヤ','マスター','相手が退出したため勝利','オンライン対戦に接続できません。AI対戦は可能です。','相手','相手はまだ飛んでいます…','再戦','月間シーズン · ランク戦10試合以上でティア報酬、上位10名に限定ユニットMONARCH','ヘルプ',
  '操作 — タップ(スペース)で羽ばたく。ゲージが溜まったらDASH(Shift)で壁を突破、SKILL(S)で固有スキル。','スコア — ゲート通過で1点。ふちをかすめるとPERFECTでコンボ得点、10コンボからフィーバー2倍。','通貨 — ユニットの購入にはコイン・ダイヤ・ジェムの3つすべてが必要。コインはステージで50点ごとにもらえ(難しいほど多い)、フィールドのオーブでも集まる。ダイヤはレベルアップ・デイリー初回・ステージ初クリアの報酬。ジェムはステージプレイ中に1%の確率でドロップ。','ユニット — ノーマル〜ウルトラの5等級。全ユニットに固有スキルとオーラ。デイリーと対戦では能力を公平に制限。',
  '画面をタップして飛び上がろう','ゲートのふちをかすめるとPERFECT!','ゲージが溜まったらDASH、SKILLで固有スキル!','スキル','無敵ダッシュ!','続けますか?','広告を見て続ける','{n}コインで続ける','やめる','広告再生中(テストビルド)','{item} · {price}\n購入しますか?','{u}を解放しますか?\n{list}','購入','危険!','やさしい','ふつう','むずかしい','最上級','VS','このコードを友だちに伝えてね','相手が見つかりました!'],
-zh:['START','选择关卡','STAGE {n}','未解锁','通关上一关后解锁','最高 {n}','对战','自动匹配','创建房间','输入代码加入','与AI练习','正在寻找对手… {s}秒','房间代码','等待对手…','4位代码','加入','取消','1分钟内没有对手,改为与AI练习','胜利!','失败','平局','段位分','青铜','白银','黄金','钻石','大师','对手已离开,你获胜','无法连接在线对战,可以与AI对战。','对手','对手还在飞…','再战','每月赛季结束时,段位前10名获得限定机体','帮助',
+zh:['START','选择关卡','STAGE {n}','未解锁','通关上一关后解锁','最高 {n}','对战','自动匹配','创建房间','输入代码加入','与AI练习','正在寻找对手… {s}秒','房间代码','等待对手…','4位代码','加入','取消','1分钟内没有对手,改为与AI练习','胜利!','失败','平局','段位分','青铜','白银','黄金','钻石','大师','对手已离开,你获胜','无法连接在线对战,可以与AI对战。','对手','对手还在飞…','再战','每月赛季 · 完成10局以上排位赛可得段位奖励,前10名获得限定机体MONARCH','帮助',
  '操作 — 点击(空格)振翅。能量满后DASH(Shift)冲破墙壁,SKILL(S)释放专属技能。','得分 — 通过关卡得1分。擦边通过为PERFECT并累积连击,10连击起狂热2倍。','货币 — 购买机体需要同时支付金币、钻石和宝石。金币:关卡中每得50分发放一次(难度越高越多),也可拾取场上的能量球。钻石:升级、每日挑战当天首局、关卡首通的奖励。宝石:在关卡中以1%概率掉落。','机体 — 普通到究极5个等级,全部拥有专属技能和光环。每日挑战与对战会公平限制能力。',
  '点击屏幕向上飞','擦过关卡边缘即可PERFECT!','能量满了就DASH,再用SKILL释放技能!','技能','无敌冲刺!','要继续吗?','看广告继续','用{n}金币继续','放弃','广告播放中(测试版本)','{item} · {price}\n确定购买吗?','解锁{u}吗?\n{list}','购买','危险!','简单','普通','困难','极难','VS','把这个代码告诉朋友','找到对手了!']
 };
@@ -632,13 +652,16 @@ ja:[['オーバードライブ','{n}秒間パーフェクト判定が大きく�
 zh:[['超速驱动','{n}秒内完美判定大幅放宽'],['闪现','瞬移穿过前方关卡,并耗尽冲刺能量'],['滑翔','{n}秒内重力减弱'],['钢铁之躯','无敌{n}秒,随后身体变重、短暂减速'],['麻薯泡泡','{n}秒内自动沿关卡中央飞行'],['钢铁屏障','无敌{n}秒'],['不死','{n}秒内不会死亡'],['影分身','{n}秒内分身替你承受1次碰撞'],['金币冲刺','{n}秒内金币2倍+强力磁铁'],['猫之感知','时间减慢{n}秒'],['蜂群召唤','在前方召唤{n}个道具(不含无敌冲刺)'],['墨汁爆发','{n}秒内所有缝隙变宽'],['灵体化','{n}秒内穿墙'],['预知','{n}秒内轻松完美+显示路线'],['雷霆','闪电击碎前方{n}个关卡'],['时间停止','世界静止{n}秒'],['泰坦降临','巨大化{n}秒撞碎关卡'],['超新星','立即进入狂热+无敌{n}秒']]
 };
 SK_IDS.forEach((id,i) => { for (const l in I18N){ const tx = (SK_TXT[l] || SK_TXT.en)[i]; I18N[l]['sk_' + id] = tx[0]; I18N[l]['sd_' + id] = tx[1]; } });
-// Key-based additions (ko/en, with ja/zh for the cost labels, the newer unit texts and the versus ranking; anything a language lacks falls back to en). The index arrays above keep their length and order.
+// Key-based additions (ko/en, with ja/zh for the cost labels, the newer unit texts, the versus ranking and its seasons; anything a language lacks falls back to en). The index arrays above keep their length and order.
 const I18N_N = {
 ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 틈', tierRule2:'더 좁은 틈 · 0.5초 안개', tierRule3:'가장 좁은 틈 · 2초 안개 · 2초 안에 탭',
  idleRule:'2초 안에 탭!', idleStall:'엔진 정지!', heavyP:'무거움', gemP:'젬 +1', gemHint:'젬은 스테이지 플레이 중 1% 확률로 나와요 · {n}/{m}',
  lbRetry:'기록을 올리지 못했어요. 곧 다시 시도합니다', lbRate:'전송이 너무 잦아요. 잠시 후 다시 올립니다', lbReject:'서버가 이 기록을 받지 않았어요', vsStranded:'상대가 들어오지 않았어요. 다시 찾는 중…',
  tabVs:'대전', vsRules:'승리 +50 RP · 패배 −45 RP · AI전은 연습(RP 변동 없음)', vsPractice:'연습전 · RP 변동 없음', vsPend:'집계 중', vsNoRank:'랭크에 반영되지 않은 판이에요', vsCap:'미반영 · 같은 상대와는 하루 5판까지',
  vsMyRank:'내 순위 {n}위 · {rp} RP · {w}승 {l}패', vsNoRow:'랭크전을 한 판 마치면 순위가 생겨요',
+ seaLine:'시즌 {m} · {t} 남음', seaD:'{n}일', seaH:'{n}시간', seaTitle:'시즌 {m} 결과', seaRank:'최종 {n}위', seaUnranked:'순위 없음 · 랭크전 {n}판 미만이라 보상이 없어요', seaStat:'{rp} RP · {w}승 {l}패',
+ seaClaim:'보상 받기', seaOk:'확인', seaGot:'보상을 받았어요!', seaUnit:'한정 유닛 {u}', seaDup:'{u} 이미 보유 → 젬 +{n}', seaFail:'서버에 연결하지 못했어요. 다시 시도해 주세요', seaGone:'지금은 받을 수 없는 보상이에요',
+ seaNow:'이번 시즌', seaLast:'지난 시즌', seaFirst:'첫 시즌이 진행 중이에요. 시즌이 끝나면 최종 순위가 여기에 나와요', seaNone:'지난 시즌에는 순위에 오른 플레이어가 없어요', seaMine:'내 결과 {n}위 · {rp} RP · {w}승 {l}패', seaMineU:'내 결과 순위 없음 · {rp} RP · {w}승 {l}패',
  vsM1:'1v1', vsM2:'2v2', searching2:'2v2 플레이어 찾는 중… {s}초 · {n}/4', vsIn:'2v2 · {n}/4 참가', vsFillBtn:'빈 자리는 AI로 시작 (연습전)', vsAiFill:'빈 자리는 AI가 채워요 · 연습전(RP 변동 없음)', vs2Rules:'2v2 · 두 사람 점수의 합이 높은 팀이 이겨요 · 팀은 자동 배정 · AI가 한 자리라도 끼면 연습전', vsUs:'우리', vsThem:'상대', vsMate:'팀', vsPracTag:'연습',
  nCoin:'코인\u00a0{n}', nDia:'다이아몬드\u00a0{n}', nGem:'젬\u00a0{n}', diaP:'다이아몬드 +{n}', rwScore:'점수', rwField:'필드', rwLevel:'레벨업', rwClear:'첫 클리어', rwDaily:'오늘의 첫 판',
  fx_slip:'먹물 은신!', fx_fore:'예감!',
@@ -651,6 +674,9 @@ en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', 
  lbRetry:"Couldn't post your score. Retrying soon", lbRate:'Posting too fast. It will be sent in a moment', lbReject:'The server did not accept this score', vsStranded:"Opponent didn't show up. Searching again…",
  tabVs:'Versus', vsRules:'Win +50 RP · Loss −45 RP · AI matches are practice (no RP)', vsPractice:'Practice · no RP change', vsPend:'pending', vsNoRank:'This match was not ranked', vsCap:'Not ranked · 5 a day per rival',
  vsMyRank:'Your rank #{n} · {rp} RP · {w}W {l}L', vsNoRow:'Finish one ranked match to get a rank',
+ seaLine:'Season {m} · ends in {t}', seaD:'{n} d', seaH:'{n} h', seaTitle:'SEASON {m} RESULT', seaRank:'Final rank #{n}', seaUnranked:'Unranked: fewer than {n} ranked matches. No reward.', seaStat:'{rp} RP · {w}W {l}L',
+ seaClaim:'CLAIM', seaOk:'OK', seaGot:'Reward claimed!', seaUnit:'Limited unit {u}', seaDup:'{u} already owned → +{n} gems', seaFail:"Couldn't reach the server. Try again.", seaGone:'This reward cannot be claimed right now',
+ seaNow:'This season', seaLast:'Last season', seaFirst:'The first season is in progress. Its final standings will appear here.', seaNone:'Nobody was ranked last season', seaMine:'Your result #{n} · {rp} RP · {w}W {l}L', seaMineU:'Your result: unranked · {rp} RP · {w}W {l}L',
  vsM1:'1v1', vsM2:'2v2', searching2:'Finding 2v2 players… {s}s · {n}/4', vsIn:'2v2 · {n}/4 in', vsFillBtn:'Start with AI in the empty seats (practice)', vsAiFill:'AI fills the empty seats · practice (no RP)', vs2Rules:'2v2 · the team with the higher sum of both scores wins · teams are assigned · any AI seat makes it practice', vsUs:'US', vsThem:'THEM', vsMate:'TEAM', vsPracTag:'PRACTICE',
  nCoin:'Coins\u00a0{n}', nDia:'Diamonds\u00a0{n}', nGem:'Gems\u00a0{n}', diaP:'DIAMOND +{n}', rwScore:'Score', rwField:'Field', rwLevel:'Level up', rwClear:'First clear', rwDaily:'Daily',
  fx_slip:'INK CLOAK!', fx_fore:'FORESEEN!',
@@ -662,6 +688,9 @@ ja:{nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0
  fx_slip:'墨隠れ!', fx_fore:'予感!',
  tabVs:'対戦', vsRules:'勝利 +50 RP · 敗北 −45 RP · AI戦は練習(RP変動なし)', vsPractice:'練習試合 · RP変動なし', vsPend:'集計中', vsNoRank:'ランクに反映されない試合です', vsCap:'対象外 · 同じ相手とは1日5回まで',
  vsMyRank:'あなたの順位 {n}位 · {rp} RP · {w}勝 {l}敗', vsNoRow:'ランク戦を1試合終えると順位がつきます',
+ seaLine:'シーズン{m} · 残り{t}', seaD:'{n}日', seaH:'{n}時間', seaTitle:'シーズン{m} 結果', seaRank:'最終順位 {n}位', seaUnranked:'ランク外 · ランク戦{n}試合未満のため報酬はありません', seaStat:'{rp} RP · {w}勝 {l}敗',
+ seaClaim:'報酬を受け取る', seaOk:'OK', seaGot:'報酬を受け取りました!', seaUnit:'限定ユニット {u}', seaDup:'{u}は所持済み → ジェム+{n}', seaFail:'サーバーに接続できません。もう一度お試しください', seaGone:'この報酬は今は受け取れません',
+ seaNow:'今シーズン', seaLast:'前シーズン', seaFirst:'最初のシーズンが進行中です。終了すると最終順位がここに表示されます', seaNone:'前シーズンはランクインしたプレイヤーがいません', seaMine:'あなたの結果 {n}位 · {rp} RP · {w}勝 {l}敗', seaMineU:'あなたの結果 ランク外 · {rp} RP · {w}勝 {l}敗',
  searching2:'2v2のプレイヤーを検索中… {s}秒 · {n}/4', vsIn:'2v2 · {n}/4 参加', vsFillBtn:'空席をAIで埋めて開始(練習)', vsAiFill:'空席はAIが入ります · 練習試合(RP変動なし)', vs2Rules:'2v2 · 2人のスコア合計が高いチームの勝ち · チームは自動で決まる · AIが1席でも入ると練習試合', vsUs:'味方', vsThem:'相手', vsMate:'味方', vsPracTag:'練習',
  p_aurora:'コンボが途切れても半分残る。パーフェクト判定が広く、パーフェクトごとに+1点。オーロラヴェール:パーフェクト3回ごとに光の糸を1本紡ぐ(最大3本)。3本そろうとゲートへの衝突を1回防ぎ、次の2ゲートを自分の高さにそろえる。ステージは糸3本がそろった状態で始まる。', fx_veil:'オーロラヴェール!',
  p_tempest:'ダッシュ貫通スコア2倍。ダッシュでゲートを壊すとゲージが30%戻る(1回のダッシュにつき1度)。突風リフレックス:ゲージが3分の1以上あれば、ゲートにぶつかっても死なず短い自動ダッシュが出る(ゲージを全消費、ゲート4個通過で再装填)。', fx_gust:'突風リフレックス!',
@@ -670,6 +699,9 @@ zh:{nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
  fx_slip:'墨隐!', fx_fore:'预感!',
  tabVs:'对战', vsRules:'胜利 +50 RP · 失败 −45 RP · AI对战为练习(RP不变)', vsPractice:'练习赛 · RP不变', vsPend:'结算中', vsNoRank:'本局未计入段位', vsCap:'未计入 · 同一对手每天最多5局',
  vsMyRank:'我的排名 第{n}名 · {rp} RP · {w}胜 {l}负', vsNoRow:'完成一局排位赛后即可上榜',
+ seaLine:'第{m}赛季 · 剩余{t}', seaD:'{n}天', seaH:'{n}小时', seaTitle:'第{m}赛季结果', seaRank:'最终排名 第{n}名', seaUnranked:'未上榜 · 排位赛不足{n}局,没有奖励', seaStat:'{rp} RP · {w}胜 {l}负',
+ seaClaim:'领取奖励', seaOk:'确定', seaGot:'奖励已领取!', seaUnit:'限定机体 {u}', seaDup:'已拥有{u} → 宝石+{n}', seaFail:'无法连接服务器,请重试', seaGone:'该奖励暂时无法领取',
+ seaNow:'本赛季', seaLast:'上赛季', seaFirst:'首个赛季进行中,结束后将在此显示最终排名', seaNone:'上赛季没有玩家上榜', seaMine:'我的结果 第{n}名 · {rp} RP · {w}胜 {l}负', seaMineU:'我的结果 未上榜 · {rp} RP · {w}胜 {l}负',
  searching2:'正在寻找2v2玩家… {s}秒 · {n}/4', vsIn:'2v2 · 已加入 {n}/4', vsFillBtn:'空位由AI补上并开始(练习)', vsAiFill:'空位由AI补上 · 练习赛(RP不变)', vs2Rules:'2v2 · 两人得分之和更高的队伍获胜 · 队伍自动分配 · 只要有AI上场即为练习赛', vsUs:'我方', vsThem:'对方', vsMate:'队友', vsPracTag:'练习',
  p_aurora:'连击中断时保留一半。完美判定更宽,每次完美+1分。极光帷幕:每完成3次完美织出1根光丝(最多3根)。集齐3根后可抵挡1次撞击关卡,并让后2个关卡对齐到自身高度。每关开局时3根光丝已织好。', fx_veil:'极光帷幕!',
  p_tempest:'冲刺穿越得分翻倍。用冲刺撞碎关卡返还30%能量(每次冲刺1次)。疾风反射:能量达到三分之一以上时,撞上关卡不会死亡,而是自动发动一次短冲刺(耗尽全部能量,再通过4个关卡后重新就绪)。', fx_gust:'疾风反射!',
@@ -1122,7 +1154,7 @@ addEventListener('keydown', e => {
   if (e.repeat) return;
   const tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' && (e.code === 'Space' || e.code === 'Enter')) return;
-  if (lbOpen){ if (e.code === 'Escape'){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else closeLB(); } return; }
+  if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else closeLB(); } return; }
   if (state === 'menu' && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')){ e.preventDefault(); pickBird(BIRDS.indexOf(B) + (e.code === 'ArrowRight' ? 1 : -1)); return; }
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){ e.preventDefault(); if (state==='paused') togglePause(); else flap(); }
   else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyD' || e.code === 'KeyE'){ e.preventDefault(); dash(); }
@@ -1166,7 +1198,7 @@ function startGame(m){
 function toMenu(){
   if (typeof hideTip === 'function') hideTip(); if (mode === 'versus') vsReset();
   state = 'menu'; mode = 'endless'; reset(); state = 'menu'; $('stageScr').hidden = true;
-  $('over').hidden = true; $('menu').hidden = false; $('wallet').hidden = false; updateDaily(); renderHangar(); renderWallet();
+  $('over').hidden = true; $('menu').hidden = false; $('wallet').hidden = false; updateDaily(); renderHangar(); renderWallet(); seaCheck();
 }
 
 /* ---------- unit skills ---------- */
@@ -2956,22 +2988,29 @@ async function refreshBoards(){
   } catch(e){}
 }
 /* Versus ranking (server-held RP: supabase/schema.sql). vsSync() reads the player's own row through versus_me(), which also lets the server
-   settle their timed-out matches; the board is the top 100 by RP. All of it fails quietly: offline, the RP cached on the device is shown. */
-const VS_COLS = 'player_id,nick,cc,bird,rp,wins,losses,draws';
-let vsMe = null, vsBoard = [], vsBoardOk = false, vsRank = 0;
+   settle their timed-out matches and roll the season over; the board is the top 100 by RP among the players with a match in the running season
+   (after a rollover every row is back at 0). Last season: its top 10 and the player's own archived row (fw_vs_standing; the server's policy shows
+   nothing else), fetched once per season. All of it fails quietly: offline, the RP cached on the device is shown. */
+const VS_COLS = 'player_id,nick,cc,bird,rp,wins,losses,draws', ST_COLS = 'season,player_id,rank,rp,tier,wins,losses,draws,nick,cc,bird';
+let vsMe = null, vsMeUid = null, vsBoard = [], vsBoardOk = false, vsRank = 0, lbPast = false, vsPast = {s: 0, u: '', top: [], me: null};
 const vsRpc = async (fn, a) => { try { return await sb.rpc(fn, a); } catch(e){ return {error: e || {}}; } };
 async function vsSync(){
   if (!sb) return null;
   const c = sb; let r = await vsRpc('versus_me');
   if (r.error && sbAuthErr(r) && await sbReauth()) r = await vsRpc('versus_me');
   if (r.error || !r.data || sb !== c) return null;
-  vsMe = r.data; setRp(vsMe.rp); return vsMe;
+  vsMe = r.data; vsMeUid = uid; setRp(vsMe.rp); seaCheck(); return vsMe;
 }
 async function refreshVsBoard(){
   if (!sb) return;
   try {
-    const c = sb, [b, m] = await Promise.all([c.from('fw_versus').select(VS_COLS).order('rp',{ascending:false}).order('player_id',{ascending:true}).limit(100), vsSync()]);
+    const c = sb, [b, m] = await Promise.all([c.from('fw_versus').select(VS_COLS).or('wins.gt.0,losses.gt.0,draws.gt.0').order('rp',{ascending:false}).order('player_id',{ascending:true}).limit(100), vsSync()]);
     if (sb !== c) return;
+    if (lbPast && m && m.prev && !(vsPast.s === m.prev && vsPast.u === uid)){   // an ended season never changes: one fetch per season and player
+      const s = m.prev, u = uid, q = () => c.from('fw_vs_standing').select(ST_COLS).eq('season', s), [tp, ow] = await Promise.all([q().lte('rank', 10).order('rank',{ascending:true}), q().eq('player_id', u).maybeSingle()]);
+      if (sb !== c) return;
+      if (!tp.error && tp.data && !ow.error) vsPast = {s, u, top: tp.data, me: ow.data || null};
+    }
     if (!b.error && b.data) vsBoard = b.data;
     vsBoardOk = true; vsRank = 0;
     if (m && m.ranked){   // own rank = players with more RP + 1 (ties share a rank): read off the list, or counted when outside the top 100
@@ -3100,11 +3139,19 @@ function renderLB(){
   $('tabDaily').setAttribute('aria-selected', lbTab === 'daily');
   $('tabAll').setAttribute('aria-selected', lbTab === 'all');
   $('tabVs').setAttribute('aria-selected', vsT);
+  const past = vsT && lbPast, prev = sb && vsBoardOk && vsMe ? vsMe.prev | 0 : 0, pOk = prev > 0 && vsPast.s === prev && vsPast.u === uid, pMe = pOk ? vsPast.me : null;   // last season: prev 0 = none has ended yet
+  $('lbSea').hidden = !vsT; $('lbSeaNow').setAttribute('aria-selected', !lbPast); $('lbSeaLast').setAttribute('aria-selected', lbPast);
   $('lbDay').textContent = lbTab === 'daily' ? t('dayLine', {d: fmtDay(dayKey()), t: fmtLeft(msToNextDay())})
+    : past ? (pMe ? t(pMe.rank ? 'seaMine' : 'seaMineU', {n: pMe.rank, rp: pMe.rp | 0, w: pMe.wins | 0, l: pMe.losses | 0}) : '')
     : vsT && sb && vsBoardOk ? (vsMe && vsMe.ranked && vsRank ? t('vsMyRank', {n: vsRank, rp: vsMe.rp, w: vsMe.wins, l: vsMe.losses}) : t('vsNoRow')) : '';
   list.textContent = '';
-  let rows = [];
-  if (vsT){   // versus ranking: the server's top 100 by RP; without the server, the RP cached on this device
+  let rows = [], note = '';
+  if (past){   // last season: the archived top 10, then the player's own row when it is not among them (rk: the archived rank, '–' = unranked)
+    if (pOk){ const row = r => ({id:r.player_id, nick:r.nick, cc:r.cc, sc:r.rp, wl:`${r.wins | 0}–${r.losses | 0}`, rk: r.rank || '–', ti: clampI(r.tier, 0, 4), bird: r.bird});
+      rows = vsPast.top.map(row); if (pMe && !rows.some(r => r.id === pMe.player_id)) rows.push(row(pMe)); if (!rows.length) note = t('seaNone'); }
+    else note = !sb ? ' ' : vsBoardOk && vsMe && !prev ? t('seaFirst') : t('loading');   // offline: only the notice below the list
+  }
+  else if (vsT){   // versus ranking: the server's top 100 by RP; without the server, the RP cached on this device
     if (sb) rows = vsBoard.map(r => ({id:r.player_id, nick:r.nick, cc:r.cc, sc:r.rp, wl:`${r.wins | 0}–${r.losses | 0}`}));
     else if (lbState !== 'loading' && rp > 0) rows = [{id:'local', nick, cc:CC, sc:rp}];
   }
@@ -3113,16 +3160,17 @@ function renderLB(){
     const sc = lbTab === 'daily' ? dailyBestLocal(dayKey()) : best;
     if (sc > 0) rows = [{id:'local', nick, cc:CC, sc, bird:B.id}];
   }
-  if (lbState === 'loading' || (vsT && sb && !vsBoardOk)){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('loading'); list.appendChild(li); }
+  if (note){ if (note.trim()){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = note; list.appendChild(li); } }
+  else if (lbState === 'loading' || (vsT && sb && !vsBoardOk)){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('loading'); list.appendChild(li); }
   else if (!rows.length){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('empty'); list.appendChild(li); }
   rows.forEach((r, i) => {
     const li = document.createElement('li');
     const me = r.id === uid || r.id === 'local';
-    li.className = 'lbrow' + (i < 3 ? ' top' : '') + (me ? ' me' : '');
-    const n = document.createElement('span'); n.className = 'n'; n.textContent = vsT ? rows.findIndex(x => x.sc === r.sc) + 1 : i + 1;   // versus: equal RP, equal rank
+    li.className = 'lbrow' + (i < 3 && !(r.rk > 3 || r.rk === '–') ? ' top' : '') + (me ? ' me' : '');
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = r.rk || (vsT ? rows.findIndex(x => x.sc === r.sc) + 1 : i + 1);   // versus: equal RP, equal rank; last season: the archived rank
     const f = document.createElement('span'); f.textContent = flag(r.cc);
     const nm = document.createElement('span'); nm.className = 'nm';
-    if (vsT){ const ti = tierOf(Number(r.sc) || 0), tb = document.createElement('i'); tb.className = 'tb'; tb.textContent = t('t' + ti); tb.style.background = hsl(TIER_COL[ti]); nm.appendChild(tb); }
+    if (vsT){ const ti = r.ti != null ? r.ti : tierOf(Number(r.sc) || 0), tb = document.createElement('i'); tb.className = 'tb'; tb.textContent = t('t' + ti); tb.style.background = hsl(TIER_COL[ti]); nm.appendChild(tb); }
     const bd = birdById(r.bird); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
     nm.appendChild(document.createTextNode(cleanNick(r.nick || '') || '—'));
     if (me){ const tg = document.createElement('span'); tg.className = 'me-tag'; tg.textContent = t('you'); nm.appendChild(tg); }
@@ -3151,7 +3199,7 @@ $('lbBtn').addEventListener('click', e => { e.stopPropagation(); openLB('daily')
 $('oLbBtn').addEventListener('click', e => { e.stopPropagation(); openLB(mode === 'daily' ? 'daily' : mode === 'versus' ? 'vs' : 'all'); });
 $('lbClose').addEventListener('click', closeLB);
 $('lbScr').addEventListener('click', e => { if (e.target === $('lbScr')) closeLB(); });
-document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { lbTab = b.dataset.tab; renderLB(); if (lbTab === 'vs') refreshVsBoard(); }));
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { lbTab = b.dataset.tab; if (b.dataset.past) lbPast = b.dataset.past === '1'; renderLB(); if (lbTab === 'vs') refreshVsBoard(); }));
 $('nickForm').addEventListener('submit', e => {
   e.preventDefault();
   const v = cleanNick($('nickIn').value);
@@ -3209,7 +3257,95 @@ function setRp(v){ rp = clampI(v, 0, 1e9); store.set('fw27_rp2', rp); renderVsBa
 function renderVsBadge(){
   const ti = tierOf(rp), b = $('vsTier'); b.textContent = t('t' + ti); b.style.background = hsl(TIER_COL[ti]);
   $('vsRp').textContent = `${rp} RP`; $('vsSub').textContent = `${t('t' + ti)} · ${rp} RP`;
+  const se = seaNow(); $('vsSeason').textContent = t('seaLine', {m: se.id % 100, t: seaLeft(se.end - Date.now())});
 }
+/* Seasons (server: supabase/schema.sql, SEASONS). A season is one calendar month in Korea time (UTC+9, no daylight saving), id YYYYMM; the
+   server rolls over by itself and versus_me() says which season runs, when it ends and which past results of this player are not claimed yet.
+   Offline the season line is computed here from the same rule. The reward (diamonds, gems, a unit id) is the server's and is treated as data:
+   whatever id it names goes into "owned", whether or not BIRDS knows it yet; a unit already owned becomes rw.unit_gems gems instead.
+   Claim bookkeeping (fw27_vsclaim): g = "<season>:<player id>" keys already granted (or, for an unranked notice, seen) on this device,
+   p = results a claim was sent for and not granted yet. The server marks a result claimed on the first call and answers every later
+   one with already: true, so what decides a grant is this device's record, never that flag:
+     - the request never arrived: the server still lists the result; the next claim answers already: false -> granted, recorded;
+     - the server claimed it but its answer was lost (also: the page was closed right then): the server no longer lists it, so the dialog
+       comes back from p; the retry answers already: true, the key is not in g -> granted once, recorded;
+     - the answer arrived: wallet and record are saved in the same tick (wallet first), so later taps, reloads and retries find the key
+       in g and grant nothing.
+   The wallet and the owned units live on the device, like purchases: none of this stops someone from editing local storage. */
+const KST = 9 * 3600e3, seaOf = ms => { const d = new Date(ms + KST); return d.getUTCFullYear() * 100 + d.getUTCMonth() + 1; };
+const seaEnd = s => Date.UTC(Math.floor(s / 100), s % 100, 1) - KST;   // 00:00 KST on the 1st of the next month
+const seaLeft = ms => ms >= 864e5 ? t('seaD', {n: Math.floor(ms / 864e5)}) : t('seaH', {n: Math.max(1, Math.floor(ms / 36e5))});   // days; under one day, hours
+function seaNow(){   // the server's season while its end is still ahead, else this device's clock
+  const e = sb && vsMe ? Date.parse(vsMe.season_end) : 0, id = e > Date.now() ? vsMe.season | 0 : 0;
+  if (id > 200000) return {id, end: e};
+  const s = seaOf(Date.now()); return {id: s, end: seaEnd(s)};
+}
+const unitName = id => (birdById(id) || {name: String(id).toUpperCase()}).name;   // a reward unit may be newer than this build's BIRDS
+// One result as the server sent it -> checked numbers (null = unusable). reward: null for an unranked result.
+function seaNorm(r){
+  if (!r || typeof r !== 'object' || !Number.isInteger(r.season) || r.season < 200001 || r.season > 999912) return null;
+  const w = r.reward && typeof r.reward === 'object' && Number.isInteger(r.rank) && r.rank > 0 ? r.reward : null;
+  return {season: r.season, rank: w ? r.rank : 0, tier: clampI(r.tier, 0, 4), rp: clampI(r.rp, 0, 1e9), wins: clampI(r.wins, 0, 1e6), losses: clampI(r.losses, 0, 1e6),
+    reward: w && {dia: clampI(w.dia, 0, 1e6), gems: clampI(w.gems, 0, 1e4), unit: typeof w.unit === 'string' && /^[a-z]{1,12}$/.test(w.unit) ? w.unit : '', unit_gems: clampI(w.unit_gems, 0, 1e4)}};
+}
+const seaGive = (w, has) => ({dia: w.dia, gems: w.gems + (w.unit && has ? w.unit_gems : 0), unit: w.unit && !has ? w.unit : '', dup: !!(w.unit && has)});   // what a reward adds on this device
+const seaKey = (s, id) => s + ':' + id;
+function seaRec(){ const o = store.get('fw27_vsclaim', null) || {}; return {g: Array.isArray(o.g) ? o.g.filter(k => typeof k === 'string').slice(-24) : [], p: o.p && typeof o.p === 'object' && !Array.isArray(o.p) ? o.p : {}}; }
+// What is waiting for this player: pending claims of this device and the server's unclaimed results, one per season, oldest first, minus what the record has.
+function seaQ(rec, id, results){
+  const m = new Map();
+  for (const k in rec.p) if (k.endsWith(':' + id)){ const r = seaNorm(rec.p[k]); if (r && r.reward) m.set(r.season, r); }
+  (Array.isArray(results) ? results : []).forEach(x => { const r = seaNorm(x); if (r) m.set(r.season, r); });
+  return [...m.values()].filter(r => !rec.g.includes(seaKey(r.season, id))).sort((a, b) => a.season - b.season);
+}
+function seaMark(rec, key){ const p = Object.assign({}, rec.p); delete p[key]; return {g: [...rec.g.filter(k => k !== key), key].slice(-24), p}; }
+function seaPend(rec, key, r){ const p = Object.assign({}, rec.p, {[key]: r}), ks = Object.keys(p); ks.slice(0, Math.max(0, ks.length - 6)).forEach(k => { delete p[k]; }); return {g: rec.g, p}; }
+let seaCur = null, seaBusy = false, seaDone = false;
+// Shown in the menu only (never over a run, a countdown or a search), one season at a time: called after every versus_me and on the way back to the menu.
+function seaCheck(){
+  if (!sb || !uid || vsMeUid !== uid || state !== 'menu' || vs.phase !== 'idle' || !$('seaScr').hidden || !$('confScr').hidden) return;
+  const q = seaQ(seaRec(), uid, vsMe && vsMe.results); if (q.length) seaOpen(q[0]);
+}
+function seaPills(g){
+  const box = $('seaRw'); box.textContent = '';
+  const pill = (ic, txt, cls) => { const p = document.createElement('span'); p.className = 'wpill' + (cls ? ' ' + cls : ''); if (ic){ const i = document.createElement('i'); i.className = 'ic ' + ic; p.appendChild(i); } p.appendChild(document.createTextNode(txt)); box.appendChild(p); };
+  if (g.dia) pill('dia', '+' + g.dia.toLocaleString()); if (g.gems) pill('gem', '+' + g.gems.toLocaleString()); if (g.unit) pill('', t('seaUnit', {u: unitName(g.unit)}), 'unit');
+}
+function seaOpen(r){
+  seaCur = r; seaBusy = false; seaDone = false;
+  $('seaTitle').textContent = t('seaTitle', {m: r.season % 100});
+  const b = $('seaTier'); b.textContent = t('t' + r.tier); b.style.background = hsl(TIER_COL[r.tier]);
+  $('seaRank').textContent = r.reward ? t('seaRank', {n: r.rank}) : ''; $('seaStat').textContent = t('seaStat', {rp: r.rp, w: r.wins, l: r.losses});
+  $('seaMsg').textContent = r.reward ? '' : t('seaUnranked', {n: (vsMe && vsMe.need) | 0 || 10});
+  $('seaRw').hidden = !r.reward; if (r.reward) seaPills({dia: r.reward.dia, gems: r.reward.gems, unit: r.reward.unit});
+  $('seaBtn').textContent = t(r.reward ? 'seaClaim' : 'seaOk'); $('seaBtn').disabled = false;
+  $('seaScr').hidden = false; lbOpen = true; SFX.click();
+}
+function seaClose(){ seaCur = null; $('seaScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('vsScr').hidden; seaCheck(); }   // the next season waiting, if any
+$('seaBtn').addEventListener('click', async e => {
+  e.stopPropagation(); audioInit();
+  const r = seaCur; if (!r || seaBusy) return;   // seaBusy: a second tap while the claim is on its way
+  const u0 = uid, key = seaKey(r.season, u0), drop = () => store.set('fw27_vsclaim', seaMark(seaRec(), key));
+  if (seaDone || !r.reward){ if (!r.reward) drop(); seaClose(); return; }   // after the grant, or an unranked notice (remembered as seen): just close
+  seaBusy = true; $('seaBtn').disabled = true; $('seaMsg').textContent = '';
+  store.set('fw27_vsclaim', seaPend(seaRec(), key, r));
+  let a = sb ? await vsRpc('versus_claim', {p_season: r.season}) : {error: {}};
+  if (a.error && sb && sbAuthErr(a)) await sbReauth();   // the session is gone: a new player, who has no result to claim
+  seaBusy = false; $('seaBtn').disabled = false;
+  if (seaCur !== r) return;
+  const d = a.error ? null : seaNorm(a.data);
+  if (!d || d.season !== r.season || !d.reward){
+    if (uid !== u0 || /fw_vs_(unranked|no_result|season_open)|fw_bad_input/.test(String(a.error && a.error.message)) || (!a.error && a.data)){ drop(); toast(t('seaGone')); seaClose(); }   // the server will never give this one: stop asking
+    else $('seaMsg').textContent = t('seaFail');   // offline or a lost answer: the dialog stays, the next tap asks again
+    return;
+  }
+  if (seaRec().g.includes(key)){ seaClose(); return; }   // granted here before
+  const g = seaGive(d.reward, owned.has(d.reward.unit));
+  W.dia += g.dia; W.gems += g.gems; if (g.unit) owned.add(g.unit);
+  saveW(); drop();
+  seaDone = true; seaPills(g); $('seaMsg').textContent = t('seaGot') + (g.dup ? ' ' + t('seaDup', {u: unitName(d.reward.unit), n: d.reward.unit_gems}) : '');
+  $('seaBtn').textContent = t('seaOk'); SFX.fanfare(); haptic('newBest'); renderWallet(); renderHangar();
+});
 // Network: artifact room (claude.ai) → Supabase realtime (web build) → BroadcastChannel (#localtest only)
 let netKind = 'none', roomApi = null, netReady = null;
 const myPeer = 'p' + Math.random().toString(36).slice(2, 12);
@@ -3734,7 +3870,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
+if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots
@@ -3792,7 +3928,22 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
           && eq([vsOutcome([P(5, 1)], [P(4)]), vsOutcome([P(4, 1)], [P(4)]), vsOutcome([P(3)], [P(4, 1)]), vsOutcome([P(4)], [P(4)]), vsOutcome([P(4)], [P(9, 1)])], ['win','','lose','draw','lose'])
           && eq(s1, [3, '110', 3, true]) && s3[0] === 1 && s3[2] === 1 && s3[3] === true && eq(s4, [null, '011', 0, false]) && mid && mid.id === '4.' + a + '+' + c + '.' + b + '+' + d && mid.team === 0
           && eq([vsCodeSz('1000'), vsCodeSz('4999'), vsCodeSz('5000'), vsCodeSz('9999'), vsCodeSz('0042')], [1,1,2,2,1])
-          && ['ko','en','ja','zh'].every(l => ['searching2','vsIn','vsFillBtn','vsAiFill','vs2Rules','vsUs','vsThem','vsMate','vsPracTag'].every(k => I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && I18N[l].vsM1 === '1v1' && I18N[l].vsM2 === '2v2' && I18N[l].searching2.includes('{n}') && I18N[l].vsIn.includes('{n}')); }
+          && ['ko','en','ja','zh'].every(l => ['searching2','vsIn','vsFillBtn','vsAiFill','vs2Rules','vsUs','vsThem','vsMate','vsPracTag'].every(k => I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && I18N[l].vsM1 === '1v1' && I18N[l].vsM2 === '2v2' && I18N[l].searching2.includes('{n}') && I18N[l].vsIn.includes('{n}')); },
+      season: () => { const U = Date.UTC, a = '00000000-0000-4000-8000-00000000000a', b = '00000000-0000-4000-8000-00000000000b';   // seasons: KST month ids and ends, the reward a claim adds, the claim record
+        const R = (s, rank, tier, dia, gems, unit) => ({season: s, rank, tier, rp: 1, wins: 1, losses: 0, draws: 0, matches: 1, reward: rank ? {dia, gems, unit: unit || null, unit_gems: 30} : null});
+        const tbl = [[1000,0],[2500,3],[5000,8],[9000,15],[15000,30]], give = (i, top, has) => seaGive(seaNorm(R(202610, top ? 1 : 11, i, tbl[i][0], tbl[i][1], top && 'monarch')).reward, has);
+        const r0 = {g: [], p: {}}, r1 = seaPend(r0, seaKey(202609, a), R(202609, 3, 3, 9000, 15, 'monarch')), r2 = seaMark(r1, seaKey(202609, a)), q = (rec, id, res) => seaQ(rec, id, res).map(x => x.season + (x.reward ? '' : 'u')).join();
+        return eq([U(2026,9,31,14,59,59), U(2026,9,31,15), U(2026,11,31,14,59,59), U(2026,11,31,15), U(2026,1,28,15), U(2026,9,8)].map(seaOf), [202610,202611,202612,202701,202603,202610])   // 2026-10-31 15:00 UTC is already November in Korea
+          && eq([202610,202612,202602].map(seaEnd), [U(2026,9,31,15), U(2026,11,31,15), U(2026,1,28,15)]) && [202610,202612,202701].every(s => seaOf(seaEnd(s) - 1) === s && seaOf(seaEnd(s)) === (s % 100 === 12 ? s + 89 : s + 1))
+          && eq([23 * 864e5 + 5, 864e5, 864e5 - 1, 36e5 + 1, 5].map(seaLeft), [t('seaD', {n: 23}), t('seaD', {n: 1}), t('seaH', {n: 23}), t('seaH', {n: 1}), t('seaH', {n: 1})])
+          && tbl.every((x, i) => eq(give(i, false, false), {dia: x[0], gems: x[1], unit: '', dup: false}) && eq(give(i, true, false), {dia: x[0], gems: x[1], unit: 'monarch', dup: false}) && eq(give(i, true, true), {dia: x[0], gems: x[1] + 30, unit: '', dup: true}))
+          && seaNorm(R(202610, 0, 1)).reward === null && seaNorm({season: 'x'}) === null && seaNorm(null) === null && eq(seaNorm({season: 202610, rank: 2, tier: 9, rp: -5, wins: 'x', losses: 2.7, reward: {dia: -1, gems: 1e9, unit: '<b>', unit_gems: 'q'}}), {season: 202610, rank: 2, tier: 4, rp: 0, wins: 0, losses: 2, reward: {dia: 0, gems: 1e4, unit: '', unit_gems: 0}})
+          && q(r0, a, [R(202610, 5, 2, 5000, 8, 'monarch'), R(202609, 0, 0)]) === '202609u,202610' && q(r1, a, []) === '202609' && q(r1, b, []) === '' && q(r1, a, [R(202609, 3, 3, 9000, 15, 'monarch'), R(202610, 1, 4, 15000, 30, 'monarch')]) === '202609,202610'   // pending and listed: once
+          && q(r2, a, [R(202609, 3, 3, 9000, 15, 'monarch')]) === '' && eq(r2, {g: [seaKey(202609, a)], p: {}}) && eq(seaMark(r2, seaKey(202609, a)), r2) && q(r2, b, [R(202609, 3, 3, 9000, 15, 'monarch')]) === '202609'   // granted: never again for that player
+          && Object.keys(Array.from({length: 9}, (x, i) => i).reduce((rec, i) => seaPend(rec, seaKey(202601 + i, a), R(202601 + i, 1, 0, 1, 0)), r0).p).length === 6 && Array.from({length: 30}, (x, i) => i).reduce((rec, i) => seaMark(rec, 'k' + i), r0).g.length === 24
+          && Object.keys(I18N_F).every(l => I18N_F[l].length === I18N_F_KEYS.length) && ['ko','en','ja','zh'].every(l => /MONARCH/.test(I18N[l].seasonNote) && /10/.test(I18N[l].seasonNote)
+            && ['seaLine','seaD','seaH','seaTitle','seaRank','seaUnranked','seaStat','seaClaim','seaGot','seaUnit','seaDup','seaFail','seaGone','seaNow','seaLast','seaFirst','seaNone','seaMine','seaMineU'].every(k => I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && I18N[l].seaOk
+            && I18N[l].seaLine.includes('{m}') && I18N[l].seaLine.includes('{t}') && I18N[l].seaUnranked.includes('{n}') && I18N[l].seaDup.includes('{u}') && I18N[l].seaDup.includes('{n}')); }
     };
     for (const k in checks){ let ok = false; try { ok = checks[k](); } catch(e){} if (!ok) fails.push(k); }
     return fails;
