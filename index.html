@@ -1126,7 +1126,7 @@ function toMenu(){
 const SK = {
  volt:{cd:16,dur:3,f:{cd:18,dur:2}}, blitz:{cd:16,n:1,f:{cd:18}}, nimbus:{cd:16,dur:2.5,f:{cd:18,dur:2}}, titan:{cd:16,dur:1,heavy:2.5,f:{cd:18}},
  mochi:{cd:16,dur:2,f:{cd:18,dur:1.5}}, pixel:{cd:16,dur:5,f:{cd:18,dur:3}}, neko:{cd:16,dur:3,f:{cd:18,dur:2}}, buzz:{cd:16,n:2,f:{cd:18,n:1}},
- aegis:{cd:34,dur:3,sh:0,f:{cd:18,dur:1,sh:0}}, kraken:{cd:10,dur:5,f:{cd:18,dur:2}}, specter:{cd:13,dur:4,f:{cd:18,dur:1.2}}, oracle:{cd:18,dur:6,f:{cd:18,dur:3}},
+ aegis:{cd:34,dur:3,sh:0,f:{cd:18,dur:1,sh:0}}, kraken:{cd:10,dur:5,f:{cd:18,dur:2}}, specter:{cd:10,dur:4,f:{cd:18,dur:1.2}}, oracle:{cd:18,dur:6,f:{cd:18,dur:3}},
  phoenix:{cd:20,dur:4,f:{cd:18,dur:1}}, zero:{cd:11,dur:8,f:{cd:18,dur:4}}, raijin:{cd:16,n:3,f:{cd:18,n:1}}, chrono:{cd:20,dur:3,f:{cd:18,dur:1.2}}, goliath:{cd:13,dur:5,f:{cd:18,dur:1.5}},
  solaris:{cd:22,dur:4.5,fever:1,f:{cd:18,dur:1,fever:0}}, aurora:{cd:9,n:6,gap:40,f:{cd:18,n:1,gap:0}}, tempest:{cd:22,len:1.5,f:{cd:18,len:1}},
  pleiad:{cd:40,n:2,sh:0,f:{cd:18,n:1,sh:0}}, pulsar:{cd:22,dur:4,mul:2,f:{cd:18,dur:2,mul:1}}
@@ -3426,7 +3426,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       coinTbl: () => eq(ST_SCOIN, [30,40,55,67]) && eq(ST_ORBP, [.3,.4,.5,.67]) && eq([0,49,50,99,100,275].map(s => scoreCoins(s, 0)), [0,0,30,30,60,150]) && eq([1,2,3].map(tr => scoreCoins(120, tr)), [80,110,134]),
       dia: () => eq([0,9,10,24,25,39,40,49].map(diaClear), [0,0,1,1,2,2,3,3].map(i => DIA_CLEAR[i])) && [DIA_LEVEL, DIA_DAILY, ...DIA_CLEAR].every(n => Number.isInteger(n) && n > 0),
       mech: () => { const pk = (id, m) => { const b0 = B, m0 = mode; B = birdById(id); mode = m; const p = perks(); B = b0; mode = m0; return p; }, fx = newFx();   // new mechanics: their numbers, their zeroing in both fair modes, their per-run state
-        return eq(SK.raijin, {cd:16,n:3,f:{cd:18,n:1}}) && SK.aegis.sh === 0 && SK.pleiad.sh === 0 && !/shield|실드|シールド|护盾/.test(['ko','en','ja','zh'].map(l => I18N[l].sd_aegis + I18N[l].sd_pleiad).join('')) && eq(['endless','daily','versus'].map(m => [pk('tempest', m).gust, pk('tempest', m).gustLock]), [[1,6],[0,0],[0,0]]) && pk('volt', 'endless').gust === 0 && fx.gustLock === 0
+        return eq(SK.raijin, {cd:16,n:3,f:{cd:18,n:1}}) && SK.aegis.sh === 0 && SK.pleiad.sh === 0 && SK.specter.cd === 10 && !/shield|실드|シールド|护盾/.test(['ko','en','ja','zh'].map(l => I18N[l].sd_aegis + I18N[l].sd_pleiad).join('')) && eq(['endless','daily','versus'].map(m => [pk('tempest', m).gust, pk('tempest', m).gustLock]), [[1,6],[0,0],[0,0]]) && pk('volt', 'endless').gust === 0 && fx.gustLock === 0
           && eq(['endless','daily','versus'].map(m => pk('aurora', m).veil), [3,0,0]) && pk('volt', 'endless').veil === 0 && fx.threads === 0 && fx.threadP === 0 && ['ko','en'].every(l => I18N[l].fx_veil && I18N[l].p_aurora.includes(' 3')) && I18N.zh.fx_veil === I18N.en.fx_veil
           && eq(['endless','daily','versus'].map(m => pk('pulsar', m).ping), [.34,0,0]) && pk('volt', 'endless').ping === 0 && fx.pingT === 0 && ['ko','en'].every(l => I18N[l].fx_ping && I18N[l].p_pulsar.includes('34%'))
           && ['ko','en'].every(l => I18N[l].fx_gust && I18N[l].p_tempest.includes('6')) && I18N.ja.fx_gust === I18N.en.fx_gust; }
