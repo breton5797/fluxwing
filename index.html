@@ -1142,9 +1142,9 @@ const TIER_FX = {
 function strikeNext(){
   const tg = gates.find(q => !q.scored && !q.broken && q.x > bird.x + 40); if (!tg) return false;
   tg.broken = true; tg.flash = 1; const ty = gY(tg), tx = tg.x + tg.w/2, f = ufx(B.id, 'strike');
-  flash = Math.max(flash, .6); shake = Math.max(shake, 12); haptic('shatter');
+  { const fxv = TIER_FX[unitTier(B)]; flash = Math.max(flash, Math.min(.6, fxv.flash)); shake = Math.max(shake, Math.min(12, fxv.shake)); } haptic('shatter');   // a strike never outdoes its unit's own cast (RAIJIN .55 / 10)
   if (f) f(tx, ty);   // the unit's own strike look and sound; what happens to the gate is the lines above
-  else { bolts.push({x: tx, y: ty, life:.45, seed: Math.random()*1000}); shards(tx, ty, [55,100,70], 30); ring(tx, ty, 140, [205,100,70], .5, 6);
+  else { bolts.push({x: tx, y: ty, g: tg, life:.45, seed: Math.random()*1000, w: FX.strikeN > 0 ? 4 : 3}); shards(tx, ty, [55,100,70], 30); ring(tx, ty, 140, [205,100,70], .5, 6);   // g: the bolt stays on its gate while the world scrolls; w: skill bolts 4 wide, the passive one 3
     if (B.id === 'raijin') banner(t('fx_bolt'), [205,100,65], .9, false);
     noise(.4, .3); tone(90, .4, 'sawtooth', .2, -40); }
   return true;
@@ -1249,11 +1249,11 @@ function die(){
     reviveLeft--; FX.idleT = 0; FX.idleWarn = false; invuln = 2.2; bird.vy = -B.flap * 1.1; bird.y = Math.min(Math.max(bird.y, 120), GROUND - 120);
     combo = 0; tier = 0; hitstop = .18; shake = 16; flash = .8; cam.z = Math.max(cam.z, 1.12);
     shards(bird.x, bird.y, [25,100,60], 40); ring(bird.x, bird.y, LW*1.1, [25,100,60], .9, 12); ring(bird.x, bird.y, 160, [45,100,65], .6, 6);
-    banner(t('rebirth'), [25,100,60], 1.4); SFX.fever(); haptic('fever');
+    banner(t('rebirth'), [25,100,60], 1.4); SFX.fever(); haptic('fever'); sigFx(B.id, 'rebirth');
     return;
   }
   if (rewindLeft > 0 && hist.length){
-    rewindLeft--; FX.idleT = 0; FX.idleWarn = false; const e = hist[0], dx = travel - e.d;
+    rewindLeft--; FX.idleT = 0; FX.idleWarn = false; const e = hist[0], dx = travel - e.d; sigFx(B.id, 'rewind');
     for (const g of gates) g.x += dx;
     for (const o of orbs) if (!o.gate) o.x += dx;
     travel = e.d; bird.y = e.y; bird.vy = Math.min(e.vy, 0) - 120; invuln = 1.1; trail = []; hist = [];
@@ -1405,7 +1405,7 @@ function update(rdt){
   if (state !== 'play') return;
 
   if (dashT > 0){ dashT -= dt; ghostT -= dt; if (ghostT <= 0){ ghostT = .035; ghosts.push({x:bird.x, y:bird.y, rot:bird.rot, life:.32}); }
-    if (dashT <= 0){ if (PK.dashRefund && FX.dashHit && !FX.stormDash) dashMeter = Math.min(1, dashMeter + PK.dashRefund); FX.dashHit = false; FX.stormDash = false; } }
+    if (dashT <= 0){ if (PK.dashRefund && FX.dashHit && !FX.stormDash) dashMeter = Math.min(1, dashMeter + PK.dashRefund); FX.dashHit = false; FX.stormDash = false; sigFx(B.id, 'dashEnd'); } }
   if (invuln > 0) invuln -= dt;
   if (boostT > 0) boostT -= dt; if (lowGravT > 0) lowGravT -= dt; if (autoT > 0) autoT -= dt; if (cloneT > 0) cloneT -= dt;
   if (rushT > 0) rushT -= dt; if (foreT > 0) foreT -= dt; if (potionT > 0) potionT -= dt; if (godT > 0) godT -= dt; if (freezeT > 0) freezeT -= rdt;
@@ -1461,7 +1461,7 @@ function update(rdt){
     const overX = bird.x + bird.r > g.x && bird.x - bird.r < g.x + g.w;
     if (overX){
       if (g.broken || phaseT > 0){ g.dashed = true; }
-      else if (dashT > 0 || giantT > 0){ if (!g.dashed){ g.dashed = true; g.flash = 1; if (dashT > 0) FX.dashHit = true; shards(g.x + g.w/2, bird.y, g.type === 'move' ? pal.b : g.type === 'pulse' ? pal.a : pal.gate, 28); ring(g.x + g.w/2, bird.y, 130, B.wingCol, .4, 5); shake = Math.max(shake, 10); haptic('shatter'); SFX.shatter(); } }
+      else if (dashT > 0 || giantT > 0){ if (!g.dashed){ g.dashed = true; g.flash = 1; if (dashT > 0) FX.dashHit = true; shards(g.x + g.w/2, bird.y, g.type === 'move' ? pal.b : g.type === 'pulse' ? pal.a : pal.gate, 28); ring(g.x + g.w/2, bird.y, 130, B.wingCol, .4, 5); shake = Math.max(shake, 10); haptic('shatter'); SFX.shatter(); if (giantT > 0) sigFx(B.id, 'smash', g); } }
       else {
         const hr = bird.r * .82;   // slightly forgiving hitbox
         g.minClear = Math.min(g.minClear, (bird.y - hr) - top, bot - (bird.y + hr));
@@ -1564,7 +1564,7 @@ function update(rdt){
 }
 function cloneHit(){
   cloneT = 0; invuln = 1; hurtT = .35; shards(bird.x - 26, bird.y, [270,40,30], 24); ring(bird.x, bird.y, 140, B.uiCol || B.col, .5, 6);
-  pop(t('sk_zero'), bird.x, bird.y - 34, B.uiCol || B.col, true); haptic('shieldBreak'); SFX.shield(); shake = 10;
+  pop(t('sk_zero'), bird.x, bird.y - 34, B.uiCol || B.col, true); haptic('shieldBreak'); SFX.shield(); shake = 10; sigFx(B.id, 'clone');
 }
 function breakShield(){
   hurtT = .45;
@@ -1623,9 +1623,10 @@ function render(){
       for (let j=0;j<2;j++){ const m = j ? .35 : 1; ctx.fillStyle = j ? '#fff' : 'hsl(50,100%,70%)'; ctx.beginPath(); ctx.moveTo(bo.x0 + nx*m, bo.y0 + ny*m); ctx.lineTo(bo.x + nx*m, bo.y + ny*m); ctx.lineTo(bo.x - nx*m, bo.y - ny*m); ctx.lineTo(bo.x0 - nx*m, bo.y0 - ny*m); ctx.fill(); }
       ctx.translate(bo.x, bo.y); ctx.fillStyle = 'hsl(50,100%,82%)'; star4(ctx, R, R, R*.16); ctx.fill(); ctx.restore(); continue;
     }
-    ctx.save(); ctx.globalAlpha = Math.min(1, bo.life*3); ctx.strokeStyle = '#fff'; ctx.shadowColor = 'hsl(205,100%,65%)'; ctx.shadowBlur = 24; ctx.lineWidth = 4;
-    ctx.beginPath(); let yy = -10, xx = bo.x; ctx.moveTo(xx, yy); let k = 0;
-    while (yy < bo.y){ yy += 28; k++; xx = bo.x + Math.sin(bo.seed + k*2.7 + T*40) * 18; ctx.lineTo(xx, Math.min(yy, bo.y)); }
+    ctx.save(); ctx.globalAlpha = Math.min(1, bo.life*3); ctx.strokeStyle = '#fff'; ctx.shadowColor = 'hsl(205,100%,65%)'; ctx.shadowBlur = 24; ctx.lineWidth = bo.w || 4;
+    ctx.beginPath(); const bx0 = bo.g ? bo.g.x + bo.g.w/2 : bo.x; let yy = -10, xx = bx0; ctx.moveTo(xx, yy); let k = 0;
+    while (yy < bo.y){ yy += 28; k++; xx = bx0 + Math.sin(bo.seed + k*2.7 + T*40) * 18; ctx.lineTo(xx, Math.min(yy, bo.y)); }
+    for (let j=0;j<2;j++){ const kk = Math.max(1, Math.round((bo.y + 10)*(j ? .7 : .4)/28)), bx = bx0 + Math.sin(bo.seed + kk*2.7 + T*40) * 18, by = Math.min(-10 + kk*28, bo.y), sd = j ? -1 : 1; ctx.moveTo(bx, by); ctx.lineTo(bx + sd*16, by + 10); ctx.lineTo(bx + sd*14, by + 28); }   // two 30px side branches at 40% and 70% of the height, same path
     ctx.stroke(); ctx.lineWidth = 1.5; ctx.strokeStyle = 'hsl(205,100%,80%)'; ctx.stroke(); ctx.restore();
   }
 
@@ -1694,9 +1695,9 @@ function render(){
     if (FX.fogT > 0){ const fi = hard ? .25 : .1; ctx.fillStyle = `rgba(205,214,235,${(hard ? .42 : .28) * (RM ? 1 : Math.max(0, Math.min(1, (FX.fogDur - FX.fogT)/fi, FX.fogT/fi)))})`; ctx.fillRect(0,0,LW,LH); }
   }
   if (inkT > 0){ const vg2 = ctx.createRadialGradient(LW/2,LH/2,LH*.25,LW/2,LH/2,LH*.8); vg2.addColorStop(0,'rgba(0,0,0,0)'); vg2.addColorStop(1, `hsla(285,70%,18%,${Math.min(.55, inkT*.3)})`); ctx.fillStyle = vg2; ctx.fillRect(0,0,LW,LH); }
-  if (freezeT > 0){ ctx.fillStyle = `hsla(200,80%,70%,${Math.min(.22, freezeT*.15)})`; ctx.fillRect(0,0,LW,LH); ctx.strokeStyle = 'hsla(200,100%,85%,.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(bird.x, bird.y, 60, -1.57, -1.57 + 6.283*(freezeT/TMAX.freeze)); ctx.stroke(); }
+  if (freezeT > 0){ ctx.fillStyle = `hsla(200,80%,70%,${Math.min(.22, freezeT*.15)})`; ctx.fillRect(0,0,LW,LH); }   // the countdown dial is CHRONO's own (UNIT_FX.chrono.back)
   if (hurtT > 0){ const vh = ctx.createRadialGradient(LW/2,LH/2,LH*.2,LW/2,LH/2,LH*.75); vh.addColorStop(0,'rgba(0,0,0,0)'); vh.addColorStop(1, `rgba(255,30,60,${hurtT})`); ctx.fillStyle = vh; ctx.fillRect(0,0,LW,LH); }
-  if (giantT > 0 && !RM){ ctx.fillStyle = `hsla(25,100%,55%,${.08 + .05*Math.sin(T*20)})`; ctx.fillRect(0,0,LW,LH); }
+  if (giantT > 0){ ctx.fillStyle = `hsla(25,100%,55%,${.08 + (RM ? 0 : .05*Math.sin(T*6))})`; ctx.fillRect(0,0,LW,LH); }   // slow pulse (was 3Hz); a steady tint with reduced motion
   if (slowT > 0 || dashT > 0){
     const vg = ctx.createRadialGradient(LW/2,LH/2,LH*.3,LW/2,LH/2,LH*.75);
     vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1, dashT>0 ? hsl(pal.b,.35) : 'hsla(280,100%,60%,.3)');
@@ -1853,17 +1854,6 @@ function drawSpecter(c, d, w, glow){
   c.beginPath(); c.ellipse(9,3,2.2,1.6,0,0,6.28); c.fill();
   c.restore();
 }
-function drawMecha(c, d, w, glow){
-  const k = d.r/13; c.save(); c.scale(k,k);
-  const fl = RM ? 1 : Math.sin(T*30); c.fillStyle = hsl([25,100,62 + fl*7], .9); c.beginPath(); c.moveTo(-13,-4); c.lineTo(-24 - fl*4,0); c.lineTo(-13,4); c.fill();   // time-based flicker (was per-frame random); steady with reduced motion
-  if (glow){ c.shadowColor = hsl(d.wingCol); c.shadowBlur = 16; }
-  c.fillStyle = hsl(d.col,1,-6); c.fillRect(-13,-11,26,22); c.shadowBlur = 0;
-  c.fillStyle = hsl(d.col,1,10); c.fillRect(-13,-11,26,5); c.fillStyle = hsl(d.wingCol); c.fillRect(-13,5,26,3);
-  c.fillStyle = '#0b1220'; c.fillRect(3,-6,12,6); c.fillStyle = hsl([190,100,60]); c.shadowColor = 'hsl(190,100%,60%)'; c.shadowBlur = 10; c.fillRect(5,-4.5,9,2.2); c.shadowBlur = 0;
-  c.save(); c.translate(-6,-11); c.rotate(-.4 - w*.5); c.fillStyle = hsl(d.col,1,4); c.fillRect(-12,-3,14,5); c.fillStyle = hsl(d.wingCol); c.fillRect(-12,-3,4,5); c.restore();
-  c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1; c.strokeRect(-13,-11,26,22); c.beginPath(); c.moveTo(-4,-6); c.lineTo(-4,11); c.stroke();
-  c.restore();
-}
 // Shared helpers for unit art. O0 / OL: the default and the lite body options; hash1: index hash for effect placement (effects never call rng()); star4: four-point star path, tips a (front) / a2 (back) on x and ±b on y, waist q
 const O0 = {lite:false, pose:0, vy:0}, OL = {lite:true, pose:0, vy:0};
 const hash1 = n => { const v = Math.sin(n*127.1 + 311.7)*43758.5453; return v - Math.floor(v); };
@@ -1937,6 +1927,125 @@ const UNIT_ART = {
       c.fillStyle = hsl(o.hot ? [50,100,88] : [55,100,65]); c.beginPath(); c.arc(ix, iy, 6.5*(o.iris || 1), 0, 6.28); c.fill(); pupil(ix, iy); c.restore();
     } else { c.strokeStyle = hsl([170,65,26]); c.lineWidth = 1.2; c.beginPath(); c.moveTo(-11,0); c.quadraticCurveTo(0,3,11,0); c.stroke(); }
     c.restore();
+  },
+  // PHOENIX — teardrop body under two raised wings (an open V), three long tail plumes with ember tips, a three-plume crest. o.spent: the rebirth is used up — one grey plume left. o.hot: 0..1 ember tips flare. o.glowC: body glow override. 12 draws
+  phoenix(c, d, w, glow, o){
+    const k = d.r/13; c.save(); c.scale(k,k);
+    if (o.lite){   // body with the three tail prongs as one shape + one raised wing + eye
+      c.fillStyle = hsl(d.col); c.beginPath(); c.moveTo(19,0); c.quadraticCurveTo(6,-12,-10,-9); c.lineTo(-36,-13); c.lineTo(-17,-3); c.lineTo(-43,0); c.lineTo(-17,3); c.lineTo(-31,11); c.lineTo(-10,9); c.quadraticCurveTo(6,12,19,0); c.fill();
+      c.fillStyle = hsl(d.wingCol); c.beginPath(); c.moveTo(4,-3); c.lineTo(11,-27); c.lineTo(-3,-9); c.lineTo(-22,-27); c.lineTo(-9,-2); c.fill();
+      c.fillStyle = hsl([50,100,88]); c.fillRect(6,-5,5,3); c.restore(); return;
+    }
+    const lift = Math.max(-1, Math.min(1, -o.vy/720)), ww = w + (1 - w)*o.pose, wy = -10 - ww*16, hot = o.hot || 0, sp = .2 + .21*o.pose, tips = [];
+    for (let i = o.spent ? 1 : 0; i < (o.spent ? 2 : 3); i++){   // tail plumes 28 / 34 / 22 long, swaying; the hangar pose fans them ±12° wider
+      const L = [28,34,22][i], a = (i - 1)*sp, f = Math.sin(T*6 + i)*3, tx = -9 - L*Math.cos(a), ty = L*Math.sin(a)*1.3 + f + lift*6, by = (i - 1)*2.5; tips.push(tx, ty);
+      c.fillStyle = o.spent ? hsl([14,60,45], .9) : hsl([20 + i*14,100,58 + i*4], .9); c.beginPath(); c.moveTo(-8, by - 2.5); c.quadraticCurveTo(-9 - L*.5, ty*.5 - 6 + f*.4, tx, ty); c.quadraticCurveTo(-9 - L*.55, ty*.5 + 4, -8, by + 2.5); c.fill(); }
+    c.fillStyle = o.spent ? hsl([14,60,60]) : hsl([48,100,70 + 18*hot + (RM ? 4 : 8*Math.sin(T*18))]); c.beginPath(); for (let i=0;i<tips.length;i+=2){ c.moveTo(tips[i] + 2.2, tips[i+1]); c.arc(tips[i], tips[i+1], 2.2 + 1.4*hot, 0, 6.28); } c.fill();
+    c.fillStyle = hsl([34,100,50]); c.beginPath(); c.moveTo(9,-4); c.quadraticCurveTo(15, wy*.6 - 4, 11, wy*1.15 - 4); c.quadraticCurveTo(2, wy*.5 - 4, -2,-5); c.fill();   // far wing: the forward arm of the V
+    { const gc = o.glowC || glow; if (gc){ c.shadowColor = hsl(gc); c.shadowBlur = 22; } }
+    const bg = c.createLinearGradient(-14,-12,14,12); bg.addColorStop(0, hsl(d.col,1,20)); bg.addColorStop(1, hsl(d.col,1,-12));
+    c.fillStyle = bg; c.beginPath(); c.moveTo(d.nose,0); c.quadraticCurveTo(6,-d.h,-10,-d.h*.77); c.quadraticCurveTo(-18,0,-10,d.h*.77); c.quadraticCurveTo(6,d.h,d.nose,0); c.fill(); c.shadowBlur = 0;
+    c.fillStyle = hsl([48,100,70]); c.beginPath();   // crest: three plumes swept back at -120° / -140° / -160°
+    for (let i=0;i<3;i++){ const a = -2.094 - i*.349, L = 9 - i*2, bx = 3 - i*2.5, by = -9.5 + i*.6, px = Math.sin(a)*1.3, py = Math.cos(a)*1.3; c.moveTo(bx - px, by + py); c.lineTo(bx + Math.cos(a)*L, by + Math.sin(a)*L); c.lineTo(bx + px, by - py); } c.fill();
+    for (let i=0;i<3;i++){ c.fillStyle = hsl([30 + i*10,100,58 + i*4]); c.beginPath(); c.moveTo(-2,0); c.quadraticCurveTo(-9, wy + i*3, -19 - i*3.5, wy - 5 + i*5); c.quadraticCurveTo(-9,4,-2,5); c.fill(); }   // near wing, three layers: the backward arm
+    c.fillStyle = hsl([50,100,88]); c.beginPath(); c.ellipse(8,-3,4.4,2.8,.2,0,6.28); c.fill();
+    c.fillStyle = '#0b0718'; c.beginPath(); c.arc(9.5,-3,1.7,0,6.28); c.fill();
+    c.restore();
+  },
+  // ZERO — a lying dagger: four-corner needle and two tail fins, no wings, the flattest of all. The magenta rim is what keeps the dark body readable on every zone. Visor slit, one scarf ribbon; the body never bobs.
+  // o.dash: stretched and all magenta; o.shade: the shadow clone (black, rim o.rim wide, 0 = no rim). 5 draws (+1 in the hangar pose)
+  zero(c, d, w, glow, o){
+    const k = d.r/13, mg = d.wingCol; c.save(); c.scale(k,k);
+    const blade = () => { c.beginPath(); c.moveTo(22,0); c.lineTo(2,-5.5); c.lineTo(-14,0); c.lineTo(2,5.5); c.closePath(); for (let s=-1;s<2;s+=2){ c.moveTo(-8,s*2); c.lineTo(-19,s*9); c.lineTo(-13,s*.6); c.closePath(); } };
+    const visor = () => { c.fillStyle = hsl(mg); c.beginPath(); c.moveTo(1,-4.2); c.lineTo(15,-1.5); c.lineTo(14,-.3); c.lineTo(1,-2.2); c.fill(); };
+    if (o.lite){ const rw = o.rim == null ? 1.2 : o.rim;   // needle + rim + visor
+      c.fillStyle = o.shade ? '#05020a' : hsl(d.col); blade(); c.fill(); if (rw){ c.strokeStyle = hsl(mg, .9); c.lineWidth = rw; c.stroke(); } visor(); c.restore(); return; }
+    const lift = Math.max(-1, Math.min(1, -o.vy/720));
+    if (o.pose) c.rotate(-.52*o.pose);   // hangar: the point comes up 30°
+    if (o.dash) c.scale(1.5,.6);
+    c.strokeStyle = hsl(mg, .9); c.lineWidth = 2.4; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); c.moveTo(-5,-3);
+    for (let i=1;i<=6;i++) c.lineTo(-5 - i*6, -3 + Math.sin(T*14 + i)*2.5*(i/6 + .3) - i*1.1 + lift*5*i/6); c.stroke();
+    if (glow){ c.shadowColor = hsl(glow); c.shadowBlur = 22; }
+    if (o.dash) c.fillStyle = hsl(mg); else { const g = c.createLinearGradient(0,-6,0,6); g.addColorStop(0, hsl(d.col,1,12)); g.addColorStop(1, hsl(d.col,1,-10)); c.fillStyle = g; }
+    blade(); c.fill(); c.shadowBlur = 0;
+    c.strokeStyle = hsl(mg, .9); c.lineWidth = 1.2; c.lineJoin = 'miter'; c.stroke();
+    c.strokeStyle = hsl([268,40,48], .8); c.lineWidth = .8; c.beginPath(); c.moveTo(20,0); c.lineTo(-12,0); c.stroke();
+    c.shadowColor = hsl(mg); c.shadowBlur = 10; visor(); c.shadowBlur = 0;
+    if (o.pose > .05){ c.translate(14,-3); c.fillStyle = `rgba(255,255,255,${o.pose})`; star4(c, 7*o.pose, 7*o.pose, 1.2*o.pose); c.fill(); }
+    c.restore();
+  },
+  // RAIJIN — angular six-corner body, a lightning-bolt wing (the only jagged outline), twin horns, a ring of drums on the back. o.nd: drum count (3), o.lit: how many are lit, o.arc: spark between the horn tips. 11 draws (+1 with the horn spark)
+  raijin(c, d, w, glow, o){
+    const k = d.r/13; c.save(); c.scale(k,k);
+    const hex = () => { c.beginPath(); c.moveTo(22,0); c.lineTo(6,-10); c.lineTo(-12,-7); c.lineTo(-16,0); c.lineTo(-12,7); c.lineTo(6,10); c.closePath(); };
+    const wing = () => { c.fillStyle = hsl(d.wingCol); c.beginPath(); c.moveTo(-2,-3); c.lineTo(-14,-17 - w*8); c.lineTo(-10,-9); c.lineTo(-27,-22 - w*10); c.lineTo(-20,-7); c.lineTo(-6,1); c.fill(); };
+    const horns = () => { c.fillStyle = hsl([55,100,70]); c.beginPath(); c.moveTo(2,-9); c.quadraticCurveTo(-2,-21,-10,-20); c.quadraticCurveTo(-3,-15,-1,-8); c.moveTo(8,-8.5); c.quadraticCurveTo(7,-19,0,-21); c.quadraticCurveTo(5,-14,4,-9); c.fill(); };
+    if (o.lite){ wing(); c.fillStyle = hsl(d.col); hex(); c.fill(); horns(); c.restore(); return; }   // body + wing + horns, no drums
+    const nd = o.nd || 3, lit = o.pose ? Math.min(nd, Math.floor(o.pose*(nd + 1))) : o.lit || 0, tk = RM ? 0 : Math.floor(T*8);
+    const drum = (i0, i1) => { c.beginPath(); for (let i=i0;i<i1;i++){ const a = (160 + i*80/Math.max(1, nd - 1))*.01745, x = Math.cos(a)*19, y = Math.sin(a)*19; c.moveTo(x + 2.8, y); c.arc(x, y, 2.8, 0, 6.28); } };
+    wing();
+    if (glow){ c.shadowColor = hsl(glow); c.shadowBlur = 22; }
+    const g = c.createLinearGradient(-14,-10,14,10); g.addColorStop(0, hsl(d.col,1,16)); g.addColorStop(1, hsl(d.col,1,-14)); c.fillStyle = g; hex(); c.fill(); c.shadowBlur = 0;
+    c.fillStyle = hsl(d.col, .9, 26); c.beginPath(); c.moveTo(22,0); c.lineTo(6,-10); c.lineTo(-12,-7); c.lineTo(-1,-3); c.fill();   // top facet
+    horns();
+    c.fillStyle = '#fff'; c.beginPath(); c.moveTo(4,-6); c.lineTo(13,-3); c.lineTo(12,-.6); c.lineTo(5,-2); c.fill(); c.fillStyle = '#0b0718'; c.fillRect(8.6,-4.4,2,2.6);
+    c.strokeStyle = hsl([205,100,70], .7); c.lineWidth = 1.6; c.beginPath(); c.arc(0,0,19,2.618,4.363); c.stroke();   // drum ring, 150° → 250° round the back
+    c.fillStyle = hsl([205,70,22]); drum(lit, nd); c.fill(); if (lit){ c.fillStyle = hsl([55,100,74]); drum(0, lit); c.fill(); }
+    c.strokeStyle = hsl(d.wingCol); c.lineWidth = 1; drum(0, nd); c.stroke();
+    c.strokeStyle = 'hsla(205,100%,85%,.9)'; c.lineWidth = 1.2; c.beginPath();   // two sparks that jump 8 times a second (time-based, never per-frame random); they drift slowly with reduced motion
+    for (let i=0;i<2;i++){ const a = (RM ? T*1.5 : tk*2.399) % 6.283 + i*2.6, r0 = 13 + hash1(tk + i*7)*4; c.moveTo(Math.cos(a)*r0, Math.sin(a)*r0); c.lineTo(Math.cos(a+.3)*(r0+6), Math.sin(a+.3)*(r0+6)); c.lineTo(Math.cos(a+.1)*(r0+11), Math.sin(a+.1)*(r0+11)); } c.stroke();
+    if (o.pose > .05 || o.arc){ c.strokeStyle = '#fff'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(-10,-20); for (let j=1;j<4;j++) c.lineTo(-10 + j*2.5, -20.2 - j*.25 + (hash1(tk + j*3) - .5)*5); c.lineTo(0,-21); c.stroke(); }   // four-segment spark between the horn tips
+    c.restore();
+  },
+  // CHRONO — a cog disc with a pendulum hanging below: round and tall, no wings. Eight teeth turn slowly, the second hand steps four times a second, a wind-up key at the back turns with the flap, a small beak shows the heading.
+  // o.stop: time is stopped (pendulum held at full swing); o.rew: 1 → 0 hands spinning back two turns; o.kick: 0..1 one extra tick; o.left: rewinds left, dots beside the bob. 10 draws (+1 with the dots)
+  chrono(c, d, w, glow, o){
+    const k = d.r/13, br = [36,70,52], lt = [40,85,65], ink = [25,60,12]; c.save(); c.scale(k,k);
+    const teeth = rot => { c.beginPath(); for (let i=0;i<8;i++){ const a = rot + i*.7854, cs = Math.cos(a), sn = Math.sin(a); c.moveTo(cs*10 - sn*1.7, sn*10 + cs*1.7); c.lineTo(cs*14.5 - sn*1.7, sn*14.5 + cs*1.7); c.lineTo(cs*14.5 + sn*1.7, sn*14.5 - cs*1.7); c.lineTo(cs*10 + sn*1.7, sn*10 - cs*1.7); } };
+    if (o.lite){   // cog + face + one hand
+      c.fillStyle = hsl(br); teeth(.39); c.moveTo(11,0); c.arc(0,0,11,0,6.28); c.fill();
+      c.fillStyle = hsl([44,70,90]); c.beginPath(); c.arc(0,0,8,0,6.28); c.fill();
+      c.strokeStyle = hsl(ink); c.lineWidth = 1.6; c.beginPath(); c.moveTo(0,0); c.lineTo(3.5,-5.5); c.stroke(); c.restore(); return;
+    }
+    const lift = Math.max(-1, Math.min(1, -o.vy/720)), sw = o.stop ? .5 : Math.sin(T*3.2)*(.5 + .5*o.pose) + lift*.4, ky = .8 + 3.2*Math.abs(Math.cos(w*3.1416));
+    const hand = (a, L) => { const q = (a % 6.283)*(1 - o.pose) - 1.571*o.pose; c.moveTo(0,0); c.lineTo(Math.cos(q)*L, Math.sin(q)*L); };   // the hangar pose gathers both hands at twelve
+    c.strokeStyle = hsl(lt); c.lineWidth = 1.5; c.beginPath(); c.moveTo(-10,0); c.lineTo(-16,0); c.moveTo(-16,-ky); c.ellipse(-18.5,-ky,2.5,ky,0,0,6.28); c.moveTo(-16,ky); c.ellipse(-18.5,ky,2.5,ky,0,0,6.28); c.stroke();   // wind-up key, seen turning
+    c.save(); c.translate(0,10); c.rotate(sw);
+    c.strokeStyle = hsl(br,1,-10); c.lineWidth = 1.6; c.beginPath(); c.moveTo(0,0); c.lineTo(0,12); c.stroke();
+    c.fillStyle = hsl(lt); c.beginPath(); c.arc(0,14,3.2,0,6.28); c.fill();
+    if (o.left){ c.fillStyle = hsl([44,70,90]); c.beginPath(); for (let i=0;i<o.left;i++){ c.moveTo(7.3 + i*3.6, 14); c.arc(6 + i*3.6, 14, 1.3, 0, 6.28); } c.fill(); }
+    c.restore();
+    c.fillStyle = hsl(lt); teeth(T*.5); c.fill();
+    if (glow){ c.shadowColor = hsl(glow); c.shadowBlur = 22; }
+    const g = c.createRadialGradient(-3,-3,1,0,0,11); g.addColorStop(0, hsl(br,1,16)); g.addColorStop(.6, hsl(br)); g.addColorStop(1, hsl(br,1,-14));
+    c.fillStyle = g; c.beginPath(); c.arc(0,0,11,0,6.28); c.fill(); c.shadowBlur = 0;
+    c.fillStyle = hsl([25,100,58]); c.beginPath(); c.moveTo(10,-3); c.lineTo(19,.5); c.lineTo(10,4); c.fill();
+    c.fillStyle = hsl([44,70,90]); c.beginPath(); c.arc(0,0,8,0,6.28); c.fill();
+    c.strokeStyle = hsl(ink, .55); c.lineWidth = 1; c.beginPath(); for (let i=0;i<4;i++){ const a = i*1.571; c.moveTo(Math.cos(a)*6, Math.sin(a)*6); c.lineTo(Math.cos(a)*7.6, Math.sin(a)*7.6); } c.stroke();
+    c.strokeStyle = hsl(ink); c.lineWidth = 1.3; c.lineCap = 'round'; c.beginPath(); hand((RM ? Math.floor(T) : Math.floor(T*4))*.5236 + (o.kick || 0)*.5236 + (o.rew || 0)*12.566, 6.6); hand(T*.4 + 2 + (o.rew || 0)*12.566, 4.4); c.stroke();
+    c.restore();
+  },
+  // GOLIATH — the only right-angled one: a steel box with a big fist out front, a shoulder plate and two exhaust stacks; the arm pumps with the flap like a piston.
+  // o.warn: the fist's hazard band flashes at 2Hz (giant form comes with the next gate); o.punch: 0..1 fist thrown forward. 12 draws
+  goliath(c, d, w, glow, o){
+    const k = d.r/13, dk = [220,18,34]; c.save(); c.scale(k,k);
+    if (o.lite){ c.fillStyle = hsl(d.col,1,-6); c.fillRect(-13,-11,26,22); c.fillStyle = hsl(d.col,1,8); c.fillRect(10,-6,12,14); c.fillStyle = hsl([190,100,60]); c.fillRect(-.5,-8.2,8,2.4); c.restore(); return; }   // box + fist + visor
+    const px = w*4 + 6*Math.max(o.pose, o.punch || 0), fl = RM ? 1 : Math.sin(T*30), wn = o.warn && (RM || Math.floor(T*4) % 2 === 0);
+    const fist = () => { const x = 10 + px; c.moveTo(x + 3,-6); c.arcTo(x + 12,-6,x + 12,8,3); c.arcTo(x + 12,8,x,8,3); c.arcTo(x,8,x,-6,3); c.arcTo(x,-6,x + 12,-6,3); c.closePath(); };
+    c.fillStyle = hsl([25,100,62 + fl*7], .9); c.beginPath(); c.moveTo(-13,-4); c.lineTo(-24 - fl*4,0); c.lineTo(-13,4); c.fill();   // thruster flame: time-based flicker, steady with reduced motion
+    c.fillStyle = hsl(dk); c.beginPath(); c.rect(-11.5,-22,3,6); c.rect(-7,-22,3,6); c.fill();   // exhaust stacks
+    if (glow){ c.shadowColor = hsl(d.wingCol); c.shadowBlur = 16; }
+    c.fillStyle = hsl(d.col,1,-6); c.fillRect(-13,-11,26,22); c.shadowBlur = 0;
+    c.fillStyle = hsl(d.col,1,10); c.fillRect(-13,-11,26,3.5); c.fillStyle = hsl(d.wingCol); c.fillRect(-13,6,26,3.5);
+    c.fillStyle = hsl([48,100,58]); c.beginPath(); for (let i=0;i<5;i++){ const x = -12 + i*5.4; c.moveTo(x,9.5); c.lineTo(x + 2,6); c.lineTo(x + 4,6); c.lineTo(x + 2,9.5); } c.fill();   // hazard stripes
+    c.fillStyle = '#0b1220'; c.fillRect(-2,-7,12.5,5.6);
+    c.fillStyle = hsl([190,100,60]); c.shadowColor = 'hsl(190,100%,60%)'; c.shadowBlur = 10; c.fillRect(1.2 + (Math.cos(T*1.6) > 0 ? 3 : -3)*Math.sin(o.pose*3.1416), -5.4, 7, 2.3); c.shadowBlur = 0;   // visor; it sweeps left and right in the hangar pose
+    c.fillStyle = hsl(d.col,1,12); c.beginPath(); c.moveTo(-13,-11); c.lineTo(-2,-11); c.lineTo(-4,-17); c.lineTo(-11,-17); c.fill();   // shoulder plate
+    c.fillStyle = hsl(dk); c.fillRect(-6,-.5,17 + px,5);   // piston arm
+    c.fillStyle = hsl(d.col,1,10); c.beginPath(); fist(); c.fill();
+    c.fillStyle = hsl(wn ? [48,100,72] : d.wingCol); c.fillRect(10.4 + px, -5.4, o.warn && RM ? 5 : 2.6, 12.8);
+    c.strokeStyle = 'rgba(0,0,0,.4)'; c.lineWidth = 1; c.beginPath(); c.rect(-13,-11,26,22); fist(); for (let j=1;j<4;j++){ c.moveTo(16.5 + px, -6 + j*3.5); c.lineTo(22 + px, -6 + j*3.5); } c.moveTo(-5,-7.5); c.lineTo(-5,6); c.stroke();
+    c.restore();
   }
 };
 function drawShape(c, d, w, glow, o){
@@ -1947,19 +2056,11 @@ function drawShape(c, d, w, glow, o){
   if (d.id === 'buzz') return drawBuzz(c, d, w, glow);
   if (d.id === 'kraken') return drawKraken(c, d, w, glow);
   if (d.id === 'specter') return drawSpecter(c, d, w, glow);
-  if (d.id === 'goliath') return drawMecha(c, d, w, glow);
   const k = d.r/13, wy = -4 - w*14;
   c.save(); c.scale(k,k);
-  if (d.id === 'zero'){
-    c.strokeStyle = hsl(d.wingCol, .9); c.lineWidth = 2.4; c.lineCap = 'round'; c.beginPath(); c.moveTo(-8,-2);
-    for (let i=1;i<=5;i++) c.lineTo(-8 - i*6, -2 + Math.sin(T*14 + i)*2.5 + i*.8); c.stroke();
-  }
   if (d.id === 'aurora'){ c.lineWidth = 2; c.lineCap = 'round'; for (let j=0;j<3;j++){ c.strokeStyle = hsl([[150,190,280][j],100,70], .85); c.beginPath(); c.moveTo(-8,-4 + j*4); for (let i=1;i<=5;i++) c.lineTo(-8 - i*6, -4 + j*4 + Math.sin(T*10 + i + j)*2.5); c.stroke(); } }
   if (d.id === 'tempest'){ c.strokeStyle = hsl(d.wingCol, .8); c.lineWidth = 2; c.lineCap = 'round'; for (let j=0;j<2;j++){ const a = T*6 + j*Math.PI; c.beginPath(); c.arc(0,0,18,a,a + 2.2); c.stroke(); } }
   if (d.id === 'pulsar'){ const pr = T*30 % 16; c.strokeStyle = hsl(d.wingCol, 1 - pr/16); c.lineWidth = 2; c.beginPath(); c.arc(0,0,12 + pr,0,6.28); c.stroke(); }
-  if (d.id === 'phoenix'){
-    for (let i=0;i<3;i++){ const f = Math.sin(T*18 + i*2)*2; c.fillStyle = hsl([20 + i*14,100,58 + i*6], .85); c.beginPath(); c.moveTo(-9,-2 + i*2); c.quadraticCurveTo(-20 - i*3, -8 + i*5 + f, -28 - i*2, -3 + i*4 + f); c.quadraticCurveTo(-18, 2 + i*2, -9, 3); c.fill(); }
-  }
   if (glow){ c.shadowColor = hsl(glow); c.shadowBlur = 22; }
   c.fillStyle = hsl(d.wingCol,.95);
   c.beginPath(); c.moveTo(-4,-2); c.quadraticCurveTo(-d.span*.7, wy-4, -d.span, wy); c.quadraticCurveTo(-d.span*.55, 2, -4, 4); c.fill();
@@ -1970,21 +2071,11 @@ function drawShape(c, d, w, glow, o){
   c.beginPath(); c.moveTo(d.nose,0); c.quadraticCurveTo(6,-d.h,-10,-d.h*.77); c.quadraticCurveTo(-18,0,-10,d.h*.77); c.quadraticCurveTo(6,d.h,d.nose,0); c.fill();
   c.shadowBlur = 0;
   if (d.id === 'titan'){ c.strokeStyle = hsl(d.col,.9,30); c.lineWidth = 2; c.beginPath(); c.moveTo(-6,-d.h*.6); c.quadraticCurveTo(-1,0,-6,d.h*.6); c.stroke(); }
-  if (d.id === 'raijin'){
-    c.fillStyle = hsl([55,100,70]); c.beginPath(); c.moveTo(2,-d.h+1); c.quadraticCurveTo(-2,-d.h-10,-10,-d.h-9); c.quadraticCurveTo(-3,-d.h-4,-1,-d.h+2); c.fill();
-    c.beginPath(); c.moveTo(7,-d.h+2); c.quadraticCurveTo(6,-d.h-8,0,-d.h-10); c.quadraticCurveTo(4,-d.h-3,4,-d.h+2); c.fill();
-    c.strokeStyle = 'hsla(205,100%,85%,.9)'; c.lineWidth = 1.2; for (let i=0;i<2;i++){ const tk = RM ? 0 : Math.floor(T*8), a = (RM ? T*1.5 : tk*2.399) % 6.283 + i*2.6, r0 = 12 + hash1(tk + i*7)*4; c.beginPath();   /* jumps 8 times a second (was every frame); drifts slowly with reduced motion */ c.moveTo(Math.cos(a)*r0, Math.sin(a)*r0); c.lineTo(Math.cos(a+.3)*(r0+6), Math.sin(a+.3)*(r0+6)); c.lineTo(Math.cos(a+.1)*(r0+11), Math.sin(a+.1)*(r0+11)); c.stroke(); }
-  }
-  if (d.id === 'chrono'){
-    c.fillStyle = '#fbf3df'; c.beginPath(); c.arc(-2,1,6.5,0,6.28); c.fill(); c.strokeStyle = hsl(d.wingCol); c.lineWidth = 1.4; c.stroke();
-    c.strokeStyle = '#2a1a08'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(-2,1); c.lineTo(-2 + Math.cos(T*3)*4.5, 1 + Math.sin(T*3)*4.5); c.moveTo(-2,1); c.lineTo(-2 + Math.cos(T*.4)*3, 1 + Math.sin(T*.4)*3); c.stroke();
-  }
   if (d.id === 'aegis'){
     c.strokeStyle = hsl([45,100,80]); c.lineWidth = 1.6; c.beginPath(); c.moveTo(-6,-d.h*.7); c.quadraticCurveTo(0,0,-6,d.h*.7); c.stroke();
     c.fillStyle = hsl([44,100,70]); c.beginPath(); c.moveTo(-2,-d.h); c.lineTo(4,-d.h-7); c.lineTo(6,-d.h+1); c.fill();
   }
   if (d.id === 'aegis'){ c.fillStyle = '#1a1206'; c.fillRect(2,-5,11,4); c.fillStyle = hsl([0,100,60]); c.shadowColor = 'hsl(0,100%,60%)'; c.shadowBlur = 8; c.fillRect(4,-4,8,1.8); c.shadowBlur = 0; }
-  else if (d.id === 'zero'){ c.fillStyle = hsl(d.wingCol); c.shadowColor = hsl(d.wingCol); c.shadowBlur = 10; c.beginPath(); c.moveTo(1,-4); c.lineTo(15,-3); c.lineTo(13,-1); c.lineTo(1,-2); c.fill(); c.shadowBlur = 0; }
   else { c.fillStyle = '#fff'; c.beginPath(); c.ellipse(6,-3,5,3.2,.2,0,6.28); c.fill();
   c.fillStyle = '#0b0718'; c.beginPath(); c.arc(7.5,-3,1.8,0,6.28); c.fill(); }
   c.fillStyle = hsl(d.wingCol);
@@ -1992,8 +2083,6 @@ function drawShape(c, d, w, glow, o){
   if (d.id === 'aegis'){
     c.save(); c.translate(-fs*.55, wy*.6 + 3); c.fillStyle = hsl(d.wingCol); c.strokeStyle = hsl([45,100,62]); c.lineWidth = 1.5;
     c.beginPath(); c.moveTo(-7,-6); c.lineTo(7,-6); c.lineTo(6,2); c.quadraticCurveTo(0,9,0,9); c.quadraticCurveTo(0,9,-6,2); c.closePath(); c.fill(); c.stroke(); c.restore();
-  } else if (d.id === 'phoenix'){
-    for (let i=0;i<3;i++){ c.fillStyle = hsl([30 + i*10,100,58 + i*4]); c.beginPath(); c.moveTo(-2,0); c.quadraticCurveTo(-fs*.5, wy + 2 + i*3, -fs - i*3, wy + 4 + i*4); c.quadraticCurveTo(-8, 5, -2, 5); c.fill(); }
   } else { c.beginPath(); c.moveTo(-2,0); c.quadraticCurveTo(-fs*.6, wy+6, -fs, wy+8); c.quadraticCurveTo(-8, 6, -2, 5); c.fill(); }
   c.restore();
 }
@@ -2017,7 +2106,6 @@ function drawBird(){
   const skA = godT > 0 || boostT > 0 || lowGravT > 0 || autoT > 0 || rushT > 0 || foreT > 0 || freezeT > 0;
   if (skA && !U.active){ ctx.strokeStyle = hsl(godT > 0 ? [45,100,62] : (B.uiCol || B.col), .6 + .3*Math.sin(T*14)); ctx.lineWidth = 3; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(0,0,bird.r*2.1 + Math.sin(T*10)*3,0,6.28); ctx.stroke(); ctx.shadowBlur = 0; }
   if (potionT > 0){ for (let i=0;i<10;i++){ const a = T*4 + i*.628; ctx.fillStyle = `hsla(${(i*36 + T*300)%360},100%,65%,.8)`; ctx.beginPath(); ctx.arc(Math.cos(a)*bird.r*2, Math.sin(a)*bird.r*2, 2.2, 0, 6.28); ctx.fill(); } }
-  if (cloneT > 0){ ctx.save(); ctx.globalAlpha = .45 + .1*Math.sin(T*12); ctx.translate(-30, Math.sin(T*5)*8); ctx.rotate(bird.rot); drawShape(ctx, B, bird.wing, [288,100,66]); ctx.restore(); }
   if (U.shields) U.shields(vs); else for (let k = 0; k < shields; k++){
     const R = (bird.r + 10 + k*6) * vs, hue = B.id === 'aegis' ? 45 : U.shieldHue || 190;
     ctx.save(); ctx.rotate(T*1.4*(k % 2 ? -1 : 1) + k*.5); ctx.shadowColor = `hsl(${hue},100%,60%)`; ctx.shadowBlur = 18;
@@ -2044,7 +2132,8 @@ function drawBird(){
    marks()          render, after the gates, play only: judgment marks, nothing decorative
    cast() snd()     useSkill, after the shared rings and particles; snd replaces SFX.skill.  ringCol: [a, b] recolours them.  shake: caps the tier's cast shake
    perfect(g)       Perfect pass, after SFX.perfect.   death()  final death, replaces the 46 shared particles (the red ring stays)
-   sig(kind, g)     passive moments: 'pass' every scored gate · 'guard' combo guard · 'regen' shield regen · 'burst' shield-burst gate
+   sig(kind, g)     passive moments: 'pass' every scored gate · 'guard' combo guard · 'regen' shield regen · 'burst' shield-burst gate · 'rebirth' revive spent · 'rewind' before the rewind is applied (hist still full)
+                    · 'clone' the clone took the hit · 'smash' giant form broke gate g · 'dashEnd'.  Legendary rows time their cast shape with FX.castT themselves (their tier has no sky event)
    idle(dt)         update, play only: the unit's standing particles (replaces the shared tier sparkle); keep it ≤ 20 a second
    trail()          render: replaces the shared trail.   strike(x, y)  strikeNext: the unit's ray and sound.   feverHue: fixed hue for the fever border */
 const ufx = (id, k) => (UNIT_FX[id] || O0)[k];
@@ -2145,6 +2234,100 @@ const UNIT_FX = {
         for (let j=1;j<=8;j++){ for (let q=0;q<4;q++){ v = Math.min(v + gr/64, mf); y += v/64; } ctx.rect(bird.x + speed*j/16 - 1.5, y - 1.5, 3, 3); } ctx.fill(); }
       ctx.restore();
     }
+  },
+  phoenix: {
+    active:true, ringCol:[[14,100,60],[48,100,70]],
+    opt(o){ o.spent = state !== 'menu' && PK.revive > 0 && reviveLeft <= 0; o.hot = Math.min(1, FX.perfT/.2); if (godT > 0) o.glowC = [48,100,75]; },   // the tail is the life counter: three plumes = a rebirth in hand
+    back(){   // cast: two fan wings opening to 4 r for .35s · skill on: a flame cocoon at 2.1 r, thinning out in the last .8s
+      const R = bird.r;
+      if (FX.castT > 0){ const q = FX.castT/FX.castMax, rr = R*4*(RM ? 1 : Math.min(1, (1 - q)*4)); ctx.fillStyle = `hsla(32,100%,62%,${.5*Math.min(1, q*3)})`; ctx.beginPath();
+        for (let s=-1;s<2;s+=2){ const a = -1.571 + s*.95; ctx.moveTo(0,0); ctx.arc(0,0,rr,a - .5,a + .5); ctx.closePath(); } ctx.fill(); }
+      if (godT > 0){ const n = godT < .8 ? 3 : 6, r0 = R*2.1; ctx.fillStyle = 'hsla(48,100%,70%,.1)'; ctx.beginPath(); ctx.arc(0,0,r0,0,6.28); ctx.fill();
+        ctx.fillStyle = 'hsla(38,100%,60%,.65)'; ctx.beginPath();
+        for (let i=0;i<n;i++){ const a = i*6.283/n - T*.9, fl = 9 + (RM ? 3 : 5*Math.sin(T*9 + i*1.7)), cs = Math.cos(a), sn = Math.sin(a); ctx.moveTo(Math.cos(a - .3)*r0, Math.sin(a - .3)*r0); ctx.quadraticCurveTo(Math.cos(a - .1)*(r0 + fl), Math.sin(a - .1)*(r0 + fl), Math.cos(a - .75)*(r0 + fl*1.5), Math.sin(a - .75)*(r0 + fl*1.5)); ctx.quadraticCurveTo(cs*(r0 + 2), sn*(r0 + 2), Math.cos(a + .3)*r0, Math.sin(a + .3)*r0); } ctx.fill(); }   // curling tongues, not straight rays (those are SOLARIS's)
+    },
+    sky(){   // rebirth: a 60px pillar of fire at the bird, fading upward (.4s). Not a sky event — this is the one hook that still draws while the reborn bird blinks
+      if (FX.sigK !== 'rebirth' || FX.sigT <= 0) return; const y = bird.y, g = ctx.createLinearGradient(0, y + 24, 0, y - 150); g.addColorStop(0, `hsla(30,100%,60%,${RM ? .35 : .5*Math.min(1, FX.sigT/.2)})`); g.addColorStop(1, 'hsla(45,100%,65%,0)');
+      ctx.fillStyle = g; ctx.fillRect(bird.x - 30, y - 150, 60, 174); },
+    cast(){ FX.castT = FX.castMax = .35; },
+    snd(){ SFX.skill(); tone(880,.25,'triangle',.1,660); },
+    perfect(){ FX.perfT = .2; for (let i=0;i<5;i++) part(bird.x - 24 + Math.random()*18, bird.y + (Math.random()-.5)*16, (Math.random()-.5)*60, -90 - Math.random()*80, .5, [15 + Math.random()*35,100,60], 2.5); },
+    sig(kind){ if (kind !== 'rebirth') return; FX.sigT = .4; FX.sigK = 'rebirth';   // grey ash falls, then the pillar
+      for (let i=0;i<24;i++) part(bird.x + (Math.random()-.5)*56, bird.y + (Math.random()-.5)*36, (Math.random()-.5)*70, 20 + Math.random()*90, .7 + Math.random()*.4, [20,10,40], 3);
+      tone(196,.5,'sawtooth',.14,588); noise(.5,.25); },
+    death(){ ring(bird.x, bird.y, 160, [20,30,50], .6, 5); shards(bird.x, bird.y, [20,8,45], 30); },   // ash, not sparks
+    idle(dt){ if (emit(18, dt)) part(bird.x - 22 - Math.random()*14, bird.y + (Math.random()-.5)*14, -90 - Math.random()*120, -30 - Math.random()*60, .5, [15 + Math.random()*35,100,60], 2.5); },
+    trail(){ const n = trail.length, m = dashT > 0 ? 1.75 : 1; ctx.lineCap = 'round';   // vermilion at the tail → gold at the bird, 1.2× the shared width
+      for (let i=1;i<n;i++){ const a = i/n; ctx.strokeStyle = hsl([14 + 34*a,100,60], a*.75); ctx.lineWidth = a*9.6*m; ctx.beginPath(); ctx.moveTo(trail[i-1].x, trail[i-1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke(); } }
+  },
+  zero: {
+    ringCol:[[268,60,45],[288,100,66]],
+    opt(o){ o.dash = dashT > 0; },
+    back(){   // cast: a dark disc (the blackout that stands in for the white flash, kept to 160px) and one slash through the bird · skill on: the clone trails the bird's own path .13s late
+      if (FX.castT > 0){ const q = FX.castT/FX.castMax;
+        if (!RM && FX.castMax - FX.castT < .12){ const g = ctx.createRadialGradient(0,0,20,0,0,160); g.addColorStop(0, 'rgba(0,0,0,.35)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0,0,160,0,6.28); ctx.fill(); }
+        ctx.save(); ctx.rotate(-.349); ctx.fillStyle = `hsla(288,100%,75%,${Math.min(1, q*2)})`; ctx.beginPath(); ctx.moveTo(-80,0); ctx.lineTo(0,-1.5*q); ctx.lineTo(80,0); ctx.lineTo(0,1.5*q); ctx.fill(); ctx.restore(); }
+      if (cloneT > 0){ const p = trail[trail.length - 8], end = cloneT < 1.5;   // last 1.5s: the rim blinks at 3Hz (reduced motion: it thins instead)
+        ctx.save(); ctx.globalAlpha = .85; ctx.translate(-30, p ? p.y - bird.y : 0); ctx.rotate(bird.rot); drawShape(ctx, B, 0, null, {lite:true, pose:0, vy:0, shade:true, rim: !end ? 1.2 : RM ? .6 : Math.floor(T*6) % 2 ? 0 : 1.2}); ctx.restore(); }
+    },
+    cast(){ FX.castT = FX.castMax = .25; flash = 0; },
+    snd(){ tone(1400,.08,'square',.06,-900); noise(.12,.12); },
+    perfect(g){ const cy = gY(g), gp = gGap(g), ey = bird.y < cy ? cy - gp/2 : cy + gp/2; for (let i=0;i<14;i++) part(g.x + g.w - 20 + i*3, ey, 0, 0, .15, [288,100,75], 2); },   // a 40px cut along the gate's edge
+    sig(kind){ if (kind === 'clone'){ for (let i=0;i<18;i++){ const q = (i >> 1)*5.25; part(bird.x - 47 + q, bird.y + (i & 1 ? 21 - q : q - 21), 0, 0, .2, [288,100,75], 2.5); } tone(240,.18,'sawtooth',.12,-160); }   // an X of two 60px cuts where the clone stood (particles: the bird itself blinks after the hit)
+      else if (kind === 'dashEnd') ring(bird.x, bird.y, 60, [288,100,66], .3, 3); },   // dash over: the blade is sheathed
+    death(){ ring(bird.x, bird.y, 90, [268,60,45], .5, 4); shards(bird.x, bird.y, [268,40,42], 12);   // the quietest death: one upright line, twelve pieces
+      for (let i=0;i<16;i++) part(bird.x, bird.y - 30 + i*4, 0, -20, .3, [288,100,75], 2); },
+    idle(dt){ if (!RM && Math.floor(T*2) !== Math.floor((T - dt)*2)) ghosts.push({x:bird.x - 10, y:bird.y, rot:bird.rot, life:.18});   // an afterimage twice a second; the body itself never moves
+      if (emit(12, dt)) part(bird.x - 14, bird.y + (Math.random()-.5)*8, -60 - Math.random()*60, (Math.random()-.5)*30, .4, [288,100,66], 1.6); },
+    trail(){ const n = trail.length; ctx.lineCap = 'round'; ctx.lineWidth = dashT > 0 ? 5 : 3;   // a thin line
+      for (let i=1;i<n;i++){ ctx.strokeStyle = hsl([288,100,66], i/n*.7); ctx.beginPath(); ctx.moveTo(trail[i-1].x, trail[i-1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke(); } }
+  },
+  raijin: {
+    ringCol:[[205,100,65],[55,100,70]],
+    opt(o){ const n = PK.boltEvery; o.nd = n || 3; o.arc = FX.sigK === 'drum' && FX.sigT > 0; o.lit = state === 'menu' || !n ? 0 : o.arc ? n : perfCount % n; },   // the drums are the passive's counter: one per Perfect, all lit = the bolt falls
+    perfect(){ const n = PK.boltEvery; for (let i=0;i<4;i++){ const a = Math.random()*6.283; part(bird.x, bird.y, Math.cos(a)*140, Math.sin(a)*140, .25, [55,100,75], 1.8); }
+      if (!n) return; const i = (perfCount + n - 1) % n, a = (160 + i*80/Math.max(1, n - 1))*.01745 + bird.rot, R = 19*bird.r/13;
+      ring(bird.x + Math.cos(a)*R, bird.y + Math.sin(a)*R, 30, [55,100,70], .3, 3); tone(110 + 40*i, .12, 'sine', .22, -30); if (i === n - 1){ FX.sigT = .35; FX.sigK = 'drum'; } },
+    death(){ for (let j=0;j<3;j++){ const a = j*2.094 + .5, cs = Math.cos(a), sn = Math.sin(a); for (let i=1;i<=8;i++){ const z = i % 2 ? 5 : -5; part(bird.x + cs*i*7 - sn*z, bird.y + sn*i*7 + cs*z, cs*50, sn*50, .35, [205,100,85], 2.5); } }   // three short bolts leaving the body
+      for (let i=0;i<30;i++){ const a = Math.random()*6.28, sp = 80 + Math.random()*320; part(bird.x, bird.y, Math.cos(a)*sp, Math.sin(a)*sp, .5 + Math.random()*.4, [55,100,72], 2); } },
+    idle(dt){ if (emit(10, dt)){ const a = Math.random()*6.283, sp = 60 + Math.random()*80; part(bird.x + Math.cos(a)*10, bird.y + Math.sin(a)*10, Math.cos(a)*sp, Math.sin(a)*sp, .25, [55,100,75], 1.6); } },
+    trail(){ const n = trail.length, zz = p => p.y + (Math.floor((p.x + travel)/9) & 1 ? 3 : -3); ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';   // zigzag, ±3px by world position so it does not flicker
+      for (let i=1;i<n;i++){ const a = i/n; ctx.strokeStyle = hsl([205,100,65], a*.75); ctx.lineWidth = a*(dashT > 0 ? 10 : 6); ctx.beginPath(); ctx.moveTo(trail[i-1].x, zz(trail[i-1])); ctx.lineTo(trail[i].x, zz(trail[i])); ctx.stroke(); } }
+  },
+  chrono: {
+    active:true, shake:6,
+    opt(o){ o.stop = freezeT > 0; o.rew = FX.sigK === 'rewind' ? FX.sigT/.4 : 0; o.kick = Math.min(1, FX.perfT/.2); o.left = state === 'menu' ? 0 : rewindLeft; },
+    back(){   // a faint tick ring once a second · time stop: a 120px dial round the bird, twelve marks, one hand running out with the skill
+      const f = T % 1;
+      if (freezeT <= 0 && f < .25){ ctx.strokeStyle = `hsla(40,90%,62%,${.3*(1 - f*4)})`; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0,0,bird.r + 3 + f*40,0,6.28); ctx.stroke(); }
+      if (freezeT > 0){ const a = -1.571 + 6.283*freezeT/TMAX.freeze; ctx.strokeStyle = 'hsla(200,100%,85%,.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0,0,120,0,6.28); ctx.stroke();
+        ctx.beginPath(); for (let i=0;i<12;i++){ const q = i*.5236, r0 = i % 3 ? 111 : 104; ctx.moveTo(Math.cos(q)*r0, Math.sin(q)*r0); ctx.lineTo(Math.cos(q)*120, Math.sin(q)*120); } ctx.stroke();
+        ctx.strokeStyle = 'hsla(44,90%,80%,.8)'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(Math.cos(a)*34, Math.sin(a)*34); ctx.lineTo(Math.cos(a)*100, Math.sin(a)*100); ctx.stroke(); }
+    },
+    snd(){ tone(2000,.05,'square',.05); tone(2000,.05,'square',.05,0,.12); tone(220,.8,'sine',.12,-110); },   // tick, tick, then the low hum of stopped time
+    perfect(){ FX.perfT = .2; ring(bird.x, bird.y, 20, [40,90,62], .3, 2); tone(1200,.03,'square',.05); },
+    sig(kind){ if (kind !== 'rewind') return; FX.sigT = .4; FX.sigK = 'rewind';   // afterimages back along the recorded path, from where it died to where it resumes (called before the rewind moves anything)
+      const e = hist[0], n = RM ? 4 : 8, m = hist.length - 1; for (let i=0;i<n;i++){ const h = hist[Math.round(i/(n-1)*m)]; ghosts.push({x: bird.x + (h.d - e.d), y: h.y, rot:0, life:.4 - .32*i/(n-1)}); } },
+    death(){ for (let i=0;i<8;i++){ const a = i*.7854 + .3; parts.push({x:bird.x, y:bird.y, vx:Math.cos(a)*230, vy:Math.sin(a)*230 - 70, life:.9, max:.9, col:[40,85,65], size:6, rot:a, vr:9, rect:true}); }   // the eight teeth fly off, the face rolls away
+      parts.push({x:bird.x, y:bird.y, vx:150, vy:-140, life:1.2, max:1.2, col:[44,70,90], size:15, rot:0, vr:11, rect:true});
+      for (let i=0;i<12;i++){ const a = Math.random()*6.28, sp = 60 + Math.random()*240; part(bird.x, bird.y, Math.cos(a)*sp, Math.sin(a)*sp, .7 + Math.random()*.4, [36,70,52], 2 + Math.random()*2); } },
+    idle(){},   // no standing particles: the tidy one
+    trail(){ ctx.fillStyle = hsl([40,90,62], .7); ctx.beginPath(); for (let i = trail.length - 3; i > 0; i -= 3){ const p = trail[i]; ctx.moveTo(p.x + 2, p.y); ctx.arc(p.x, p.y, 2, 0, 6.28); } ctx.fill(); }   // a dot on every third point instead of a line
+  },
+  goliath: {
+    ringCol:[[25,100,58],[220,15,72]],
+    opt(o){ const n = PK.giantEvery; o.warn = state !== 'menu' && n > 0 && giantT <= 0 && gatesPassed % n === n - 1; o.punch = FX.sigK === 'smash' ? FX.sigT/.2 : 0; },
+    cast(){ for (let i=0;i<24;i++){ const s = i % 2 ? 1 : -1; part(bird.x + s*Math.random()*30, GROUND - 3, s*(60 + Math.random()*170), -40 - Math.random()*120, .6 + Math.random()*.3, [30,20,62], 3); } },   // the ground under it throws dust both ways
+    snd(){ tone(70,.6,'sawtooth',.22,40); noise(.5,.2); },
+    perfect(){ const k = bird.r/13; for (let i=0;i<4;i++) part(bird.x + 22*k, bird.y + (Math.random()-.5)*12, 80 + Math.random()*120, (Math.random()-.5)*180, .3, [48,100,65], 2); tone(180,.05,'square',.08); },   // sparks off the knuckles
+    sig(kind, g){ if (kind !== 'smash') return; FX.sigT = .2; FX.sigK = 'smash'; const x = g.x + g.w/2;   // three 40px impact rays and the fist thrown out
+      for (let j=-1;j<2;j++){ const cs = Math.cos(j*.75), sn = Math.sin(j*.75); for (let i=1;i<=6;i++) part(x + cs*i*6.5, bird.y + sn*i*6.5, cs*70, sn*70, .2, [48,100,72], 2.5); }
+      tone(80,.2,'square',.2,-30); },
+    death(){ for (let i=0;i<6;i++){ const a = i*1.047 + .5; parts.push({x:bird.x, y:bird.y, vx:Math.cos(a)*210, vy:Math.sin(a)*210 - 80, life:1.1, max:1.1, col: i % 2 ? [220,15,58] : [220,18,34], size:12, rot:a, vr:6, rect:true}); }   // six steel plates and smoke
+      for (let i=0;i<16;i++) part(bird.x + (Math.random()-.5)*34, bird.y + (Math.random()-.5)*24, (Math.random()-.5)*70, -70 - Math.random()*90, 1 + Math.random()*.4, [220,8,46], 4 + Math.random()*3); },
+    idle(dt){ if (emit(6, dt)){ const k = bird.r/13; part(bird.x - (Math.random() < .5 ? 10 : 5.5)*k, bird.y - 22*k, -30 - Math.random()*20, -70 - Math.random()*40, .5, [220,10,70], 3); } },   // steam from the stacks
+    trail(){ const n = trail.length; ctx.lineCap = 'butt'; ctx.lineWidth = 4;   // two parallel tracks
+      for (let i=1;i<n;i++){ ctx.strokeStyle = hsl([25,100,55], i/n*.65); ctx.beginPath(); for (let s=-4;s<5;s+=8){ ctx.moveTo(trail[i-1].x, trail[i-1].y + s); ctx.lineTo(trail[i].x, trail[i].y + s); } ctx.stroke(); } }
   }
 };
 function unitBack(d){ const f = ufx(d.id, 'back'); if (f) f(); }
@@ -2947,7 +3130,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       tierFx: () => { const L = ['epic','legendary','mythic','ultra'].map(k => TIER_FX[k]), up = (k, f) => L.every((v, i) => !i || (f ? v[k] >= L[i-1][k] : v[k] > L[i-1][k])), rad = v => v.rings[0] <= 2 ? v.rings[0]*LW : v.rings[0];
         return ['flash','shake','parts'].every(k => up(k)) && ['z','stop','sky','ban'].every(k => up(k, 1)) && L.every((v, i) => !i || (rad(v) > rad(L[i-1]) && v.rings.length >= L[i-1].rings.length)) && TIER_FX.ultra.shake < 18
           && eq([TIER_FX.common, TIER_FX.epic].map(v => [v.rings, v.flash, v.shake, v.z, v.stop, v.parts, v.sky, v.ban, v.big]), [[[180,110],.2,3,1.07,0,0,0,1,false],[[240,110],.3,5,1.07,0,0,0,1,false]]); },
-      unitFx: () => Object.keys(UNIT_ART).concat(Object.keys(UNIT_FX)).every(id => birdById(id)) && Object.values(UNIT_ART).every(f => typeof f === 'function') && ['solaris','pleiad','oracle'].every(id => UNIT_ART[id] && UNIT_FX[id])
+      unitFx: () => Object.keys(UNIT_ART).concat(Object.keys(UNIT_FX)).every(id => birdById(id)) && Object.values(UNIT_ART).every(f => typeof f === 'function') && ['solaris','pleiad','oracle','phoenix','zero','raijin','chrono','goliath'].every(id => UNIT_ART[id] && UNIT_FX[id])
         && eq(['castT','castMax','sigT','sigK','perfT'].map(k => newFx()[k]), [0,0,0,'',0]) && [O0, OL].every(o => o.pose === 0 && o.vy === 0) && OL.lite && !O0.lite,
       i18n: () => Object.keys(I18N).every(l => BIRDS.every(b => ['r_','p_','sk_','sd_'].every(p => typeof I18N[l][p + b.id] === 'string' && I18N[l][p + b.id]))),
       i18nIdx: () => I18N.ja.p_pixel.startsWith('コイン2倍'),
