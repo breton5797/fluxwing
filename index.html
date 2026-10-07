@@ -1168,7 +1168,7 @@ function useSkill(){
   fxv.rings.forEach((v, i, a) => { if (!cut || i < Math.ceil(a.length/2)) ring(bird.x, bird.y, v <= 2 ? v*LW : v, rc[i % 2], i ? .45 : .6, i ? (i === a.length-1 ? 4 : 6) : fxv.w); });
   for (let i = 0, n = fxv.parts >> (cut ? 1 : 0); i < n; i++){ const a = i/n*6.283 + Math.random()*.3, s = 120 + Math.random()*260; part(bird.x, bird.y, Math.cos(a)*s, Math.sin(a)*s, .5 + Math.random()*.4, rc[i % 2], 2.5); }
   flash = Math.max(flash, fxv.flash); cam.z = Math.max(cam.z, fxv.z); shake = Math.max(shake, Math.min(fxv.shake, U.shake || 99)); haptic('fever');
-  { const st = fairMode() || RM ? Math.min(.04, fxv.stop) : fxv.stop; if (st) hitstop = Math.max(hitstop, st); }   // cast hitstop: the one timing effect of a cast; capped at .04 in fair modes and with reduced motion
+  { const st = fairMode() ? 0 : RM ? Math.min(.04, fxv.stop) : fxv.stop; if (st) hitstop = Math.max(hitstop, st); }   // cast hitstop: the one timing effect of a cast; none in fair modes (daily and versus timing is the same for every unit), capped at .04 with reduced motion
   FX.castT = FX.castMax = fxv.sky; castFx(id);
   banner(t('sk_' + id), c, fxv.ban, fxv.big);
   switch (id){
