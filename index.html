@@ -154,9 +154,16 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .contcard{text-align:center;align-items:center}
 .cring{--p:1;width:84px;height:84px;border-radius:50%;background:conic-gradient(var(--hot) calc(var(--p)*1turn), rgba(243,238,252,.12) 0);display:grid;place-items:center}
 .cring span{width:70px;height:70px;border-radius:50%;background:#120c24;display:grid;place-items:center;font:28px "Bungee",Impact,sans-serif}
-.contcard .ghost,.confcard .ghost{width:100%;padding:12px;font-size:14px;display:inline-flex;justify-content:center;align-items:center;gap:6px}
-.contcard .ghost.primary,.confcard .ghost.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.contcard .ghost,.confcard .ghost,.seacard .ghost{width:100%;padding:12px;font-size:14px;display:inline-flex;justify-content:center;align-items:center;gap:6px}
+.contcard .ghost.primary,.confcard .ghost.primary,.seacard .ghost.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 #confScr{z-index:8}
+#seaScr{z-index:7}
+.seacard{text-align:center;align-items:center}
+.seacard .ghost[disabled]{opacity:.5;cursor:default}
+.searw{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;min-height:1.3em}
+.searw .wpill{font-size:13px}
+.searw .unit{border-color:var(--gold);color:var(--gold);font-weight:700;letter-spacing:.04em}
+.vsseason{font:700 12px var(--body);letter-spacing:.06em;color:var(--gold);font-variant-numeric:tabular-nums}
 #contScr,#vsScr,#stageScr,#helpScr{z-index:6}
 .confcard{text-align:center;white-space:pre-line;font-size:16px;line-height:1.5}
 .confbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -224,6 +231,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 .hg-lock .cost{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .hg-lock .cost.short{color:var(--hot)}
 .hg-lock .note{width:100%;font-size:12px;color:var(--dim)}
+.hg-lock .note.season{font-size:13px;font-weight:700;color:var(--gold)}
 .hangar.premium{border-color:rgba(255,210,90,.45);box-shadow:0 0 24px rgba(255,210,90,.12)}
 .shopcard{max-height:100%;min-height:0;text-align:left}
 .shop-list{display:flex;flex-direction:column;gap:10px;overflow-y:auto;touch-action:pan-y;min-height:0}
@@ -362,6 +370,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     <div class="card vscard">
       <div class="lbhead"><h2 class="mtitle" data-i18n="vs"></h2><button class="ghost" id="vsClose" data-i18n="close"></button></div>
       <div class="tierbox"><span class="tierbadge" id="vsTier"></span><span id="vsRp"></span></div>
+      <div class="vsseason" id="vsSeason"></div>
       <div id="vsMain" class="vsbtns">
         <div class="tabs vsmode" role="tablist"><button class="tab" role="tab" id="vsM1" data-i18n="vsM1"></button><button class="tab" role="tab" id="vsM2" data-i18n="vsM2"></button></div>
         <button class="btn" id="vsAuto"><span data-i18n="autoMatch"></span></button>
@@ -379,6 +388,17 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="vsnote" data-i18n="vsRules"></div>
       <div class="vsnote" id="vsNote2" data-i18n="vs2Rules" hidden></div>
       <div class="vsnote" data-i18n="seasonNote"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="seaScr" hidden>
+    <div class="card seacard">
+      <div class="over-title" id="seaTitle" style="color:var(--gold)"></div>
+      <div class="tierbox"><span class="tierbadge" id="seaTier"></span><span id="seaRank"></span></div>
+      <div class="vsstatus" id="seaStat"></div>
+      <div class="searw" id="seaRw"></div>
+      <div class="vsnote" id="seaMsg"></div>
+      <button class="ghost primary" id="seaBtn"></button>
     </div>
   </div>
 
@@ -419,6 +439,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
         <button class="tab" role="tab" id="tabAll" data-tab="all" data-i18n="tabAll"></button>
         <button class="tab" role="tab" id="tabVs" data-tab="vs" data-i18n="tabVs"></button>
       </div>
+      <div class="tabs vsmode" id="lbSea" role="tablist" hidden><button class="tab" role="tab" id="lbSeaNow" data-tab="vs" data-past="0" data-i18n="seaNow"></button><button class="tab" role="tab" id="lbSeaLast" data-tab="vs" data-past="1" data-i18n="seaLast"></button></div>
       <div class="dayline" id="lbDay"></div>
       <ol class="lblist" id="lbList"></ol>
       <div class="lbstatus" id="lbStatus"></div>
@@ -525,13 +546,16 @@ const BIRDS = [
   { id:'aurora',  name:'AURORA',  rarity:4, col:[160,90,58],  wingCol:[280,90,72],  speed:1.04, flap:470, grav:1420, maxFall:680, dash:1.10, r:13,   window:20, bonus:1, nose:17, h:12, span:34, stats:[3,3,4,3], comboKeep:.5, veil:3, veilStart:3 },
   { id:'tempest', name:'TEMPEST', rarity:4, col:[215,75,52],  wingCol:[185,100,70], speed:1.15, flap:490, grav:1600, maxFall:760, dash:1.40, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,3,2,5], dashPts:2, dashRefund:.3, gust:.33, gustLock:4 },
   { id:'pleiad',  name:'PLEIAD',  rarity:4, col:[232,65,62],  wingCol:[50,100,72],  speed:1.00, flap:480, grav:1500, maxFall:700, dash:1.10, r:13.5, window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3], shieldStart:2, shieldMax:2, shieldRegen:60, shieldBurst:true },
-  { id:'pulsar',  name:'PULSAR',  rarity:4, col:[320,100,62], wingCol:[180,100,66], speed:1.06, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:19, bonus:2, nose:19, h:12, span:28, stats:[4,3,3,3], perfCharge:.08, feverAt:8, ping:.34, pingFull:1 }
+  { id:'pulsar',  name:'PULSAR',  rarity:4, col:[320,100,62], wingCol:[180,100,66], speed:1.06, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:19, bonus:2, nose:19, h:12, span:28, stats:[4,3,3,3], perfCharge:.08, feverAt:8, ping:.34, pingFull:1 },
+  // ---- season reward: never sold, never the free trial (season). Legendary rank for power, cast scale and hangar order; its own label and badge colour ----
+  { id:'monarch', name:'MONARCH', rarity:2, season:true, col:[48,70,93], wingCol:[46,100,58], uiCol:[46,100,60], speed:1.00, flap:480, grav:1500, maxFall:720, dash:1.10, r:13.5, window:17, bonus:0, nose:19, h:13, span:32, stats:[3,3,3,3], shieldStart:1, shieldRegen:25 }
 ];
 BIRDS.sort((a, b) => (a.rarity || 0) - (b.rarity || 0));   // stable: basics first, then by rarity rank: common 0 < epic 1 < legendary 2 < mythic 3 < ultra 4
 const RARITY_COL = [[0,0,70],[280,90,68],[45,100,58],[350,90,64],[300,100,74]];
 const RARITY_KEY = ['r_common','r_epic','r_legendary','r_mythic','r_ultra'];
+const SEASON_COL = [222,90,66], rarCol = b => b.season ? SEASON_COL : RARITY_COL[b.rarity || 0], rarKey = b => b.season ? 'r_season' : RARITY_KEY[b.rarity || 0];   // what the hangar shows: the season unit keeps its legendary rank but carries its own label and colour
 // Unit prices by rarity rank. All three currencies are required together (coins + diamonds + gems), never as alternatives.
-const PRICE = [null, {coin:40000, dia:10000, gem:15}, {coin:90000, dia:22000, gem:25}, {coin:100000, dia:33000, gem:40}, {coin:150000, dia:40000, gem:100}]; const priceOf = b => PRICE[b.rarity || 0];
+const PRICE = [null, {coin:40000, dia:10000, gem:15}, {coin:90000, dia:22000, gem:25}, {coin:100000, dia:33000, gem:40}, {coin:150000, dia:40000, gem:100}]; const priceOf = b => b.season ? null : PRICE[b.rarity || 0];   // null = not for sale
 const CUR = [['coin','coins'],['dia','dia'],['gem','gems']];   // price field (= icon class) → wallet field
 // Effective perks: Daily Challenge runs in fair mode (see design doc)
 function perks(){
@@ -609,16 +633,16 @@ I18N_D_KEYS.forEach((k,i) => { for (const l in I18N) I18N[l][k] = (I18N_D[l] || 
 
 const I18N_F_KEYS = ['start','stageSel','stage','locked','unlockHint','bestG','vs','autoMatch','makeRoom','joinRoom','aiMatch','searching','roomCode','waitingOpp','enterCode','join','cancel','aiFallback','youWin','youLose','drawR','rankPts','t0','t1','t2','t3','t4','forfeit','onlineNA','opp','watching','rematch','seasonNote','help','hControls','hScore','hMoney','hUnits','tut1','tut2','tut3','skillLbl','potionP','contTitle','contAd','contCoin','giveUp','adPlaying','confirmBuy','confirmUnlock','buy','danger','easy','normal','hard','expert','vsVs','shareCode','matchFound'];
 const I18N_F = {
-ko:['START','스테이지 선택','STAGE {n}','잠김','이전 스테이지를 클리어하면 열려요','최고 {n}점','대전','자동 매치','방 만들기','코드로 참가','AI와 연습전','상대 찾는 중… {s}초','방 코드','상대를 기다리는 중…','4자리 코드','참가','취소','1분 동안 상대가 없어 AI와 연습전을 합니다','승리!','패배','무승부','랭크 점수','브론즈','실버','골드','다이아','마스터','상대가 나가서 승리했어요','온라인 대전에 연결할 수 없어요. AI와는 대전할 수 있어요.','상대','상대가 아직 날고 있어요…','다시 대전','한 달 시즌이 끝나면 랭크 상위 10명에게 한정 유닛을 드려요','도움말',
+ko:['START','스테이지 선택','STAGE {n}','잠김','이전 스테이지를 클리어하면 열려요','최고 {n}점','대전','자동 매치','방 만들기','코드로 참가','AI와 연습전','상대 찾는 중… {s}초','방 코드','상대를 기다리는 중…','4자리 코드','참가','취소','1분 동안 상대가 없어 AI와 연습전을 합니다','승리!','패배','무승부','랭크 점수','브론즈','실버','골드','다이아','마스터','상대가 나가서 승리했어요','온라인 대전에 연결할 수 없어요. AI와는 대전할 수 있어요.','상대','상대가 아직 날고 있어요…','다시 대전','한 달 시즌 · 랭크전 10판 이상이면 티어 보상, 상위 10명에게는 한정 유닛 MONARCH','도움말',
  '조작 — 화면 탭(스페이스)으로 날갯짓. 게이지가 차면 DASH(Shift)로 벽을 뚫고, SKILL(S)로 유닛 고유 스킬을 써요.','점수 — 게이트 통과 1점. 가장자리를 아슬아슬하게 스치면 PERFECT로 콤보 점수, 10콤보부터 피버 2배.','재화 — 유닛은 코인·다이아몬드·젬 세 가지를 모두 내고 사요. 코인은 스테이지에서 50점마다(난이도가 높을수록 더 많이) 받고 필드 오브로도 모아요. 다이아몬드는 레벨업·오늘의 챌린지 첫 판·스테이지 첫 클리어 보상이에요. 젬은 스테이지 플레이 중 1% 확률로 떨어져요.','유닛 — 기본·에픽·레전더리·미식·울트라 5등급. 모두 고유 스킬과 아우라가 있고, 오늘의 챌린지와 2인 대전에서는 능력이 공정하게 제한돼요.',
  '화면을 탭해서 날아오르세요','게이트 가장자리를 아슬아슬하게 스치면 PERFECT!','게이지가 차면 DASH, SKILL 버튼으로 고유 스킬!','스킬','무적 질주!','이어서 할까요?','광고 보고 이어하기','{n} 코인으로 이어하기','그만하기','광고 재생 중 (테스트 빌드)','{item} · {price}\n구매할까요?','{u}을(를) 해금할까요?\n{list}','구매','위험!','쉬움','일반','보통','어려움','VS','친구에게 이 코드를 알려주세요','상대를 찾았어요!'],
-en:['START','Select stage','STAGE {n}','Locked','Clear the previous stage to unlock','Best {n}','Versus','Quick match','Create room','Join with code','Practice vs AI','Finding an opponent… {s}s','Room code','Waiting for an opponent…','4-digit code','Join','Cancel','No opponent in 1 minute. Practice match vs the AI.','VICTORY!','DEFEAT','DRAW','Rank points','Bronze','Silver','Gold','Diamond','Master','Your opponent left. You win.','Online versus is unavailable here. You can still play the AI.','Rival','Your rival is still flying…','Rematch','Top 10 ranked players each monthly season get a limited unit','Help',
+en:['START','Select stage','STAGE {n}','Locked','Clear the previous stage to unlock','Best {n}','Versus','Quick match','Create room','Join with code','Practice vs AI','Finding an opponent… {s}s','Room code','Waiting for an opponent…','4-digit code','Join','Cancel','No opponent in 1 minute. Practice match vs the AI.','VICTORY!','DEFEAT','DRAW','Rank points','Bronze','Silver','Gold','Diamond','Master','Your opponent left. You win.','Online versus is unavailable here. You can still play the AI.','Rival','Your rival is still flying…','Rematch','Monthly seasons · tier rewards for 10+ ranked matches · the top 10 get the limited unit MONARCH','Help',
  'Controls — tap (Space) to flap. When the meter fills, DASH (Shift) breaks walls; SKILL (S) fires your unit’s own skill.','Score — 1 point per gate. Skim an edge for a PERFECT and combo points; Fever doubles points from a 10 combo.','Currencies — a unit costs coins, diamonds and gems together. Coins: paid for every 50 score in stage play (more on harder tiers), plus field orbs. Diamonds: level-ups, your first Daily run of the day and first stage clears. Gems: a 1% drop chance during stage play.','Units — Common, Epic, Legendary, Mythic, Ultra. Every unit has a skill and an aura; Daily Challenge and Versus cap abilities for fairness.',
  'Tap the screen to fly up','Skim a gate edge for a PERFECT!','Meter full? DASH. Then fire your SKILL!','Skill','UNSTOPPABLE!','Continue?','Watch an ad to continue','Continue for {n} coins','Give up','Ad playing (test build)','{item} · {price}\nBuy now?','Unlock {u}?\n{list}','Buy','DANGER!','Easy','Normal','Hard','Expert','VS','Share this code with your friend','Opponent found!'],
-ja:['START','ステージ選択','STAGE {n}','ロック中','前のステージをクリアすると解放','ベスト {n}','対戦','オートマッチ','ルーム作成','コードで参加','AIと練習試合','対戦相手を検索中… {s}秒','ルームコード','相手を待っています…','4桁のコード','参加','キャンセル','1分間相手がいないためAIと練習試合をします','勝利!','敗北','引き分け','ランクポイント','ブロンズ','シルバー','ゴールド','ダイヤ','マスター','相手が退出したため勝利','オンライン対戦に接続できません。AI対戦は可能です。','相手','相手はまだ飛んでいます…','再戦','月間シーズン終了時、ランク上位10名に限定ユニット','ヘルプ',
+ja:['START','ステージ選択','STAGE {n}','ロック中','前のステージをクリアすると解放','ベスト {n}','対戦','オートマッチ','ルーム作成','コードで参加','AIと練習試合','対戦相手を検索中… {s}秒','ルームコード','相手を待っています…','4桁のコード','参加','キャンセル','1分間相手がいないためAIと練習試合をします','勝利!','敗北','引き分け','ランクポイント','ブロンズ','シルバー','ゴールド','ダイヤ','マスター','相手が退出したため勝利','オンライン対戦に接続できません。AI対戦は可能です。','相手','相手はまだ飛んでいます…','再戦','月間シーズン · ランク戦10試合以上でティア報酬、上位10名に限定ユニットMONARCH','ヘルプ',
  '操作 — タップ(スペース)で羽ばたく。ゲージが溜まったらDASH(Shift)で壁を突破、SKILL(S)で固有スキル。','スコア — ゲート通過で1点。ふちをかすめるとPERFECTでコンボ得点、10コンボからフィーバー2倍。','通貨 — ユニットの購入にはコイン・ダイヤ・ジェムの3つすべてが必要。コインはステージで50点ごとにもらえ(難しいほど多い)、フィールドのオーブでも集まる。ダイヤはレベルアップ・デイリー初回・ステージ初クリアの報酬。ジェムはステージプレイ中に1%の確率でドロップ。','ユニット — ノーマル〜ウルトラの5等級。全ユニットに固有スキルとオーラ。デイリーと対戦では能力を公平に制限。',
  '画面をタップして飛び上がろう','ゲートのふちをかすめるとPERFECT!','ゲージが溜まったらDASH、SKILLで固有スキル!','スキル','無敵ダッシュ!','続けますか?','広告を見て続ける','{n}コインで続ける','やめる','広告再生中(テストビルド)','{item} · {price}\n購入しますか?','{u}を解放しますか?\n{list}','購入','危険!','やさしい','ふつう','むずかしい','最上級','VS','このコードを友だちに伝えてね','相手が見つかりました!'],
-zh:['START','选择关卡','STAGE {n}','未解锁','通关上一关后解锁','最高 {n}','对战','自动匹配','创建房间','输入代码加入','与AI练习','正在寻找对手… {s}秒','房间代码','等待对手…','4位代码','加入','取消','1分钟内没有对手,改为与AI练习','胜利!','失败','平局','段位分','青铜','白银','黄金','钻石','大师','对手已离开,你获胜','无法连接在线对战,可以与AI对战。','对手','对手还在飞…','再战','每月赛季结束时,段位前10名获得限定机体','帮助',
+zh:['START','选择关卡','STAGE {n}','未解锁','通关上一关后解锁','最高 {n}','对战','自动匹配','创建房间','输入代码加入','与AI练习','正在寻找对手… {s}秒','房间代码','等待对手…','4位代码','加入','取消','1分钟内没有对手,改为与AI练习','胜利!','失败','平局','段位分','青铜','白银','黄金','钻石','大师','对手已离开,你获胜','无法连接在线对战,可以与AI对战。','对手','对手还在飞…','再战','每月赛季 · 完成10局以上排位赛可得段位奖励,前10名获得限定机体MONARCH','帮助',
  '操作 — 点击(空格)振翅。能量满后DASH(Shift)冲破墙壁,SKILL(S)释放专属技能。','得分 — 通过关卡得1分。擦边通过为PERFECT并累积连击,10连击起狂热2倍。','货币 — 购买机体需要同时支付金币、钻石和宝石。金币:关卡中每得50分发放一次(难度越高越多),也可拾取场上的能量球。钻石:升级、每日挑战当天首局、关卡首通的奖励。宝石:在关卡中以1%概率掉落。','机体 — 普通到究极5个等级,全部拥有专属技能和光环。每日挑战与对战会公平限制能力。',
  '点击屏幕向上飞','擦过关卡边缘即可PERFECT!','能量满了就DASH,再用SKILL释放技能!','技能','无敌冲刺!','要继续吗?','看广告继续','用{n}金币继续','放弃','广告播放中(测试版本)','{item} · {price}\n确定购买吗?','解锁{u}吗?\n{list}','购买','危险!','简单','普通','困难','极难','VS','把这个代码告诉朋友','找到对手了!']
 };
@@ -632,48 +656,64 @@ ja:[['オーバードライブ','{n}秒間パーフェクト判定が大きく�
 zh:[['超速驱动','{n}秒内完美判定大幅放宽'],['闪现','瞬移穿过前方关卡,并耗尽冲刺能量'],['滑翔','{n}秒内重力减弱'],['钢铁之躯','无敌{n}秒,随后身体变重、短暂减速'],['麻薯泡泡','{n}秒内自动沿关卡中央飞行'],['钢铁屏障','无敌{n}秒'],['不死','{n}秒内不会死亡'],['影分身','{n}秒内分身替你承受1次碰撞'],['金币冲刺','{n}秒内金币2倍+强力磁铁'],['猫之感知','时间减慢{n}秒'],['蜂群召唤','在前方召唤{n}个道具(不含无敌冲刺)'],['墨汁爆发','{n}秒内所有缝隙变宽'],['灵体化','{n}秒内穿墙'],['预知','{n}秒内轻松完美+显示路线'],['雷霆','闪电击碎前方{n}个关卡'],['时间停止','世界静止{n}秒'],['泰坦降临','巨大化{n}秒撞碎关卡'],['超新星','立即进入狂热+无敌{n}秒']]
 };
 SK_IDS.forEach((id,i) => { for (const l in I18N){ const tx = (SK_TXT[l] || SK_TXT.en)[i]; I18N[l]['sk_' + id] = tx[0]; I18N[l]['sd_' + id] = tx[1]; } });
-// Key-based additions (ko/en, with ja/zh for the cost labels, the newer unit texts and the versus ranking; anything a language lacks falls back to en). The index arrays above keep their length and order.
+// Key-based additions (ko/en, with ja/zh for the cost labels, the newer unit texts, the versus ranking, its seasons and the season unit; anything a language lacks falls back to en). The index arrays above keep their length and order.
 const I18N_N = {
 ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 틈', tierRule2:'더 좁은 틈 · 0.5초 안개', tierRule3:'가장 좁은 틈 · 2초 안개 · 2초 안에 탭',
  idleRule:'2초 안에 탭!', idleStall:'엔진 정지!', heavyP:'무거움', gemP:'젬 +1', gemHint:'젬은 스테이지 플레이 중 1% 확률로 나와요 · {n}/{m}',
  lbRetry:'기록을 올리지 못했어요. 곧 다시 시도합니다', lbRate:'전송이 너무 잦아요. 잠시 후 다시 올립니다', lbReject:'서버가 이 기록을 받지 않았어요', vsStranded:'상대가 들어오지 않았어요. 다시 찾는 중…',
  tabVs:'대전', vsRules:'승리 +50 RP · 패배 −45 RP · AI전은 연습(RP 변동 없음)', vsPractice:'연습전 · RP 변동 없음', vsPend:'집계 중', vsNoRank:'랭크에 반영되지 않은 판이에요', vsCap:'미반영 · 같은 상대와는 하루 5판까지',
  vsMyRank:'내 순위 {n}위 · {rp} RP · {w}승 {l}패', vsNoRow:'랭크전을 한 판 마치면 순위가 생겨요',
+ seaLine:'시즌 {m} · {t} 남음', seaD:'{n}일', seaH:'{n}시간', seaTitle:'시즌 {m} 결과', seaRank:'최종 {n}위', seaUnranked:'순위 없음 · 랭크전 {n}판 미만이라 보상이 없어요', seaStat:'{rp} RP · {w}승 {l}패',
+ seaClaim:'보상 받기', seaOk:'확인', seaGot:'보상을 받았어요!', seaUnit:'한정 유닛 {u}', seaDup:'{u} 이미 보유 → 젬 +{n}', seaFail:'서버에 연결하지 못했어요. 다시 시도해 주세요', seaGone:'지금은 받을 수 없는 보상이에요',
+ seaNow:'이번 시즌', seaLast:'지난 시즌', seaFirst:'첫 시즌이 진행 중이에요. 시즌이 끝나면 최종 순위가 여기에 나와요', seaNone:'지난 시즌에는 순위에 오른 플레이어가 없어요', seaMine:'내 결과 {n}위 · {rp} RP · {w}승 {l}패', seaMineU:'내 결과 순위 없음 · {rp} RP · {w}승 {l}패',
  vsM1:'1v1', vsM2:'2v2', searching2:'2v2 플레이어 찾는 중… {s}초 · {n}/4', vsIn:'2v2 · {n}/4 참가', vsFillBtn:'빈 자리는 AI로 시작 (연습전)', vsAiFill:'빈 자리는 AI가 채워요 · 연습전(RP 변동 없음)', vs2Rules:'2v2 · 두 사람 점수의 합이 높은 팀이 이겨요 · 팀은 자동 배정 · AI가 한 자리라도 끼면 연습전', vsUs:'우리', vsThem:'상대', vsMate:'팀', vsPracTag:'연습',
  nCoin:'코인\u00a0{n}', nDia:'다이아몬드\u00a0{n}', nGem:'젬\u00a0{n}', diaP:'다이아몬드 +{n}', rwScore:'점수', rwField:'필드', rwLevel:'레벨업', rwClear:'첫 클리어', rwDaily:'오늘의 첫 판',
  fx_slip:'먹물 은신!', fx_fore:'예감!',
  r_aurora:'극광형', p_aurora:'콤보가 끊겨도 절반이 남는다. 퍼펙트 판정이 넓고 퍼펙트마다 +1점. 극광 장막: 퍼펙트 3번마다 빛의 실 1개(최대 3개). 실 3개가 차면 게이트 충돌 1번을 막고 다음 게이트 2개를 내 높이로 모은다. 스테이지는 실 3개가 찬 채로 시작한다.', fx_veil:'극광 장막!', sk_aurora:'극광 회랑', sd_aurora:'다음 게이트 {n}개가 내 높이로 모이고 멈추며 틈이 넓어진다',
  r_tempest:'폭풍형', p_tempest:'대시 관통 점수 2배. 대시로 게이트를 부수면 게이지 30% 환급(대시당 1회). 돌풍 반사: 게이지가 3분의 1 이상 차 있으면 게이트에 부딪혀도 죽지 않고 짧은 자동 대시가 나간다(게이지 전부 소모, 게이트 4개를 지나야 재무장).', fx_gust:'돌풍 반사!', sk_tempest:'태풍의 눈', sd_tempest:'게이지를 쓰지 않는 1.5배 길이 대시를 즉시 발동',
  r_pleiad:'성단형', p_pleiad:'실드 2개로 출발(최대 2개), 게이트 60개마다 1개 재충전. 실드가 깨지면 그 게이트도 부서진다.', sk_pleiad:'궤도 포격', sd_pleiad:'앞 게이트 {n}개를 차례로 부순다',
- r_pulsar:'맥동형', p_pulsar:'퍼펙트마다 +2점, 스킬이 더 빨리 찬다. 피버가 8콤보에서 시작된다. 공명 반향: 게이트 모서리를 얕게 스치면 스킬 충전 34%를 쓰고 튕겨 나온다. 스킬 충전이 가득 차 있으면 더 깊은 충돌도 그 게이트를 깨뜨리고 살아남는다(충전 전부 소모).', fx_break:'공명 파쇄!', fx_ping:'PING', sk_pulsar:'공명', sd_pulsar:'{n}초간 퍼펙트 점수 2배, 판정이 넓어진다'},
+ r_pulsar:'맥동형', p_pulsar:'퍼펙트마다 +2점, 스킬이 더 빨리 찬다. 피버가 8콤보에서 시작된다. 공명 반향: 게이트 모서리를 얕게 스치면 스킬 충전 34%를 쓰고 튕겨 나온다. 스킬 충전이 가득 차 있으면 더 깊은 충돌도 그 게이트를 깨뜨리고 살아남는다(충전 전부 소모).', fx_break:'공명 파쇄!', fx_ping:'PING', sk_pulsar:'공명', sd_pulsar:'{n}초간 퍼펙트 점수 2배, 판정이 넓어진다',
+ r_season:'시즌 한정', seaOnly:'시즌 보상 · 대전 시즌 상위 10명', r_monarch:'군주형', p_monarch:'근위대: 실드 1개로 출발(최대 1개). 게이트 25개마다 실드를 되찾는다.', sk_monarch:'대관식', sd_monarch:'{n}초간 무적, 4초간 퍼펙트 판정이 넓어진다'},
 en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', tierRule2:'Narrower gaps · 0.5s haze', tierRule3:'Narrowest gaps · 2s haze · tap within 2s',
  idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/{m}',
  lbRetry:"Couldn't post your score. Retrying soon", lbRate:'Posting too fast. It will be sent in a moment', lbReject:'The server did not accept this score', vsStranded:"Opponent didn't show up. Searching again…",
  tabVs:'Versus', vsRules:'Win +50 RP · Loss −45 RP · AI matches are practice (no RP)', vsPractice:'Practice · no RP change', vsPend:'pending', vsNoRank:'This match was not ranked', vsCap:'Not ranked · 5 a day per rival',
  vsMyRank:'Your rank #{n} · {rp} RP · {w}W {l}L', vsNoRow:'Finish one ranked match to get a rank',
+ seaLine:'Season {m} · ends in {t}', seaD:'{n} d', seaH:'{n} h', seaTitle:'SEASON {m} RESULT', seaRank:'Final rank #{n}', seaUnranked:'Unranked: fewer than {n} ranked matches. No reward.', seaStat:'{rp} RP · {w}W {l}L',
+ seaClaim:'CLAIM', seaOk:'OK', seaGot:'Reward claimed!', seaUnit:'Limited unit {u}', seaDup:'{u} already owned → +{n} gems', seaFail:"Couldn't reach the server. Try again.", seaGone:'This reward cannot be claimed right now',
+ seaNow:'This season', seaLast:'Last season', seaFirst:'The first season is in progress. Its final standings will appear here.', seaNone:'Nobody was ranked last season', seaMine:'Your result #{n} · {rp} RP · {w}W {l}L', seaMineU:'Your result: unranked · {rp} RP · {w}W {l}L',
  vsM1:'1v1', vsM2:'2v2', searching2:'Finding 2v2 players… {s}s · {n}/4', vsIn:'2v2 · {n}/4 in', vsFillBtn:'Start with AI in the empty seats (practice)', vsAiFill:'AI fills the empty seats · practice (no RP)', vs2Rules:'2v2 · the team with the higher sum of both scores wins · teams are assigned · any AI seat makes it practice', vsUs:'US', vsThem:'THEM', vsMate:'TEAM', vsPracTag:'PRACTICE',
  nCoin:'Coins\u00a0{n}', nDia:'Diamonds\u00a0{n}', nGem:'Gems\u00a0{n}', diaP:'DIAMOND +{n}', rwScore:'Score', rwField:'Field', rwLevel:'Level up', rwClear:'First clear', rwDaily:'Daily',
  fx_slip:'INK CLOAK!', fx_fore:'FORESEEN!',
  r_aurora:'Skyweaver', p_aurora:'A broken combo keeps half. Wide Perfect window, +1 on every Perfect. Aurora Veil: every 3 Perfects weave a thread of light (max 3). With all 3, the veil takes one gate hit for you and lines up the next 2 gates. Every stage starts with all 3 threads woven.', fx_veil:'AURORA VEIL!', sk_aurora:'Aurora Lane', sd_aurora:'The next {n} gates slide to your height, stop moving and widen',
  r_tempest:'Stormbreaker', p_tempest:'Dash-through points x2. Smashing a gate with a dash refunds 30% meter (once per dash). Gust Reflex: with the meter at least a third full, hitting a gate fires a short automatic dash instead of a crash (spends the whole meter, re-arms after 4 gates).', fx_gust:'GUST REFLEX!', sk_tempest:'Eye of the Storm', sd_tempest:'Fires a free dash that lasts 1.5x longer',
  r_pleiad:'Star Guard', p_pleiad:'Starts with 2 shields (max 2), recharges 1 every 60 gates. A breaking shield also breaks that gate.', sk_pleiad:'Orbital Barrage', sd_pleiad:'Smashes the next {n} gates one by one',
- r_pulsar:'Resonator', p_pulsar:'+2 on every Perfect and faster skill charge. Fever starts at an 8 combo. Echo Ping: a shallow graze on a gate edge bounces you back for 34% skill charge. With a full skill charge, a deeper hit shatters the gate instead of killing you (uses all of it).', fx_break:'RESONANT BREAK!', fx_ping:'PING', sk_pulsar:'Resonance', sd_pulsar:'Perfects score double and the window widens for {n}s'},
+ r_pulsar:'Resonator', p_pulsar:'+2 on every Perfect and faster skill charge. Fever starts at an 8 combo. Echo Ping: a shallow graze on a gate edge bounces you back for 34% skill charge. With a full skill charge, a deeper hit shatters the gate instead of killing you (uses all of it).', fx_break:'RESONANT BREAK!', fx_ping:'PING', sk_pulsar:'Resonance', sd_pulsar:'Perfects score double and the window widens for {n}s',
+ r_season:'Season', seaOnly:'Season reward · top 10 of a versus season', r_monarch:'Sovereign', p_monarch:'Royal Guard: starts with 1 shield (max 1) and wins it back every 25 gates.', sk_monarch:'Coronation', sd_monarch:'Invincible for {n}s, and the Perfect window stays wide for 4s'},
 ja:{nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0{n}',
  fx_slip:'墨隠れ!', fx_fore:'予感!',
  tabVs:'対戦', vsRules:'勝利 +50 RP · 敗北 −45 RP · AI戦は練習(RP変動なし)', vsPractice:'練習試合 · RP変動なし', vsPend:'集計中', vsNoRank:'ランクに反映されない試合です', vsCap:'対象外 · 同じ相手とは1日5回まで',
  vsMyRank:'あなたの順位 {n}位 · {rp} RP · {w}勝 {l}敗', vsNoRow:'ランク戦を1試合終えると順位がつきます',
+ seaLine:'シーズン{m} · 残り{t}', seaD:'{n}日', seaH:'{n}時間', seaTitle:'シーズン{m} 結果', seaRank:'最終順位 {n}位', seaUnranked:'ランク外 · ランク戦{n}試合未満のため報酬はありません', seaStat:'{rp} RP · {w}勝 {l}敗',
+ seaClaim:'報酬を受け取る', seaOk:'OK', seaGot:'報酬を受け取りました!', seaUnit:'限定ユニット {u}', seaDup:'{u}は所持済み → ジェム+{n}', seaFail:'サーバーに接続できません。もう一度お試しください', seaGone:'この報酬は今は受け取れません',
+ seaNow:'今シーズン', seaLast:'前シーズン', seaFirst:'最初のシーズンが進行中です。終了すると最終順位がここに表示されます', seaNone:'前シーズンはランクインしたプレイヤーがいません', seaMine:'あなたの結果 {n}位 · {rp} RP · {w}勝 {l}敗', seaMineU:'あなたの結果 ランク外 · {rp} RP · {w}勝 {l}敗',
  searching2:'2v2のプレイヤーを検索中… {s}秒 · {n}/4', vsIn:'2v2 · {n}/4 参加', vsFillBtn:'空席をAIで埋めて開始(練習)', vsAiFill:'空席はAIが入ります · 練習試合(RP変動なし)', vs2Rules:'2v2 · 2人のスコア合計が高いチームの勝ち · チームは自動で決まる · AIが1席でも入ると練習試合', vsUs:'味方', vsThem:'相手', vsMate:'味方', vsPracTag:'練習',
  p_aurora:'コンボが途切れても半分残る。パーフェクト判定が広く、パーフェクトごとに+1点。オーロラヴェール:パーフェクト3回ごとに光の糸を1本紡ぐ(最大3本)。3本そろうとゲートへの衝突を1回防ぎ、次の2ゲートを自分の高さにそろえる。ステージは糸3本がそろった状態で始まる。', fx_veil:'オーロラヴェール!',
  p_tempest:'ダッシュ貫通スコア2倍。ダッシュでゲートを壊すとゲージが30%戻る(1回のダッシュにつき1度)。突風リフレックス:ゲージが3分の1以上あれば、ゲートにぶつかっても死なず短い自動ダッシュが出る(ゲージを全消費、ゲート4個通過で再装填)。', fx_gust:'突風リフレックス!',
- p_pulsar:'パーフェクトごとに+2点、スキルが早く溜まる。フィーバーが8コンボで始まる。エコーピン:ゲートのふちを浅くかすめると、スキルチャージ34%を使って弾き返される。スキルチャージが満タンなら、もっと深い衝突でもそのゲートを砕いて生き残る(チャージを全消費)。', fx_ping:'PING', fx_break:'共鳴破砕!'},
+ p_pulsar:'パーフェクトごとに+2点、スキルが早く溜まる。フィーバーが8コンボで始まる。エコーピン:ゲートのふちを浅くかすめると、スキルチャージ34%を使って弾き返される。スキルチャージが満タンなら、もっと深い衝突でもそのゲートを砕いて生き残る(チャージを全消費)。', fx_ping:'PING', fx_break:'共鳴破砕!',
+ r_season:'シーズン限定', seaOnly:'シーズン報酬 · 対戦シーズン上位10名', r_monarch:'君主型', p_monarch:'ロイヤルガード:シールド1枚で出発(最大1枚)。ゲート25個ごとにシールドを取り戻す。', sk_monarch:'戴冠式', sd_monarch:'{n}秒間無敵、4秒間パーフェクト判定が広がる'},
 zh:{nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
  fx_slip:'墨隐!', fx_fore:'预感!',
  tabVs:'对战', vsRules:'胜利 +50 RP · 失败 −45 RP · AI对战为练习(RP不变)', vsPractice:'练习赛 · RP不变', vsPend:'结算中', vsNoRank:'本局未计入段位', vsCap:'未计入 · 同一对手每天最多5局',
  vsMyRank:'我的排名 第{n}名 · {rp} RP · {w}胜 {l}负', vsNoRow:'完成一局排位赛后即可上榜',
+ seaLine:'第{m}赛季 · 剩余{t}', seaD:'{n}天', seaH:'{n}小时', seaTitle:'第{m}赛季结果', seaRank:'最终排名 第{n}名', seaUnranked:'未上榜 · 排位赛不足{n}局,没有奖励', seaStat:'{rp} RP · {w}胜 {l}负',
+ seaClaim:'领取奖励', seaOk:'确定', seaGot:'奖励已领取!', seaUnit:'限定机体 {u}', seaDup:'已拥有{u} → 宝石+{n}', seaFail:'无法连接服务器,请重试', seaGone:'该奖励暂时无法领取',
+ seaNow:'本赛季', seaLast:'上赛季', seaFirst:'首个赛季进行中,结束后将在此显示最终排名', seaNone:'上赛季没有玩家上榜', seaMine:'我的结果 第{n}名 · {rp} RP · {w}胜 {l}负', seaMineU:'我的结果 未上榜 · {rp} RP · {w}胜 {l}负',
  searching2:'正在寻找2v2玩家… {s}秒 · {n}/4', vsIn:'2v2 · 已加入 {n}/4', vsFillBtn:'空位由AI补上并开始(练习)', vsAiFill:'空位由AI补上 · 练习赛(RP不变)', vs2Rules:'2v2 · 两人得分之和更高的队伍获胜 · 队伍自动分配 · 只要有AI上场即为练习赛', vsUs:'我方', vsThem:'对方', vsMate:'队友', vsPracTag:'练习',
  p_aurora:'连击中断时保留一半。完美判定更宽,每次完美+1分。极光帷幕:每完成3次完美织出1根光丝(最多3根)。集齐3根后可抵挡1次撞击关卡,并让后2个关卡对齐到自身高度。每关开局时3根光丝已织好。', fx_veil:'极光帷幕!',
  p_tempest:'冲刺穿越得分翻倍。用冲刺撞碎关卡返还30%能量(每次冲刺1次)。疾风反射:能量达到三分之一以上时,撞上关卡不会死亡,而是自动发动一次短冲刺(耗尽全部能量,再通过4个关卡后重新就绪)。', fx_gust:'疾风反射!',
- p_pulsar:'每次完美+2分,技能充能更快。连击8次即进入狂热。共鸣回响:浅擦关卡边缘时,消耗34%技能充能将你弹回。技能充能全满时,更深的撞击也会震碎该关卡而不致死亡(耗尽全部充能)。', fx_ping:'PING', fx_break:'共振破碎!'}
+ p_pulsar:'每次完美+2分,技能充能更快。连击8次即进入狂热。共鸣回响:浅擦关卡边缘时,消耗34%技能充能将你弹回。技能充能全满时,更深的撞击也会震碎该关卡而不致死亡(耗尽全部充能)。', fx_ping:'PING', fx_break:'共振破碎!',
+ r_season:'赛季限定', seaOnly:'赛季奖励 · 对战赛季前10名', r_monarch:'君主型', p_monarch:'王室卫队:开局自带1层护盾(最多1层)。每通过25个关卡恢复护盾。', sk_monarch:'加冕', sd_monarch:'无敌{n}秒,4秒内完美判定放宽'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
 const birdById = id => BIRDS.find(b => b.id === id);
@@ -699,6 +739,7 @@ const diaClear = i => DIA_CLEAR[stTier(i)];
 const shortOf = p => CUR.map(([k, w]) => [k, Math.max(0, p[k] - W[w])]).filter(x => x[1] > 0);   // [price field, missing amount] for each currency the wallet cannot cover
 const saveW = () => { store.set('fw27_wallet2', W); store.set('fw27_owned', [...owned]); store.set('fw27_pass', hasPass); store.set('fw27_starter', starterBought); };
 const isOwned = b => !b.rarity || owned.has(b.id);
+if (B.season && !isOwned(B)) B = BIRDS[0];   // the season unit can be looked at unowned but never flown: a saved pick of it falls back to the first unit
 function grantXP(n){ let ups = 0; W.xp += n; while (W.xp >= XP_PER_LEVEL){ W.xp -= XP_PER_LEVEL; W.lvl++; W.coins += 50*INCOME_X; W.dia += DIA_LEVEL; if (W.lvl % 5 === 0) W.gems += 1; ups++; } return ups; }
 
 function detectLang(){
@@ -1122,7 +1163,7 @@ addEventListener('keydown', e => {
   if (e.repeat) return;
   const tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' && (e.code === 'Space' || e.code === 'Enter')) return;
-  if (lbOpen){ if (e.code === 'Escape'){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else closeLB(); } return; }
+  if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else closeLB(); } return; }
   if (state === 'menu' && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')){ e.preventDefault(); pickBird(BIRDS.indexOf(B) + (e.code === 'ArrowRight' ? 1 : -1)); return; }
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){ e.preventDefault(); if (state==='paused') togglePause(); else flap(); }
   else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyD' || e.code === 'KeyE'){ e.preventDefault(); dash(); }
@@ -1152,8 +1193,8 @@ function togglePause(){
 function startGame(m){
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   if (!isOwned(B)){
-    if (store.get('fw27_trial','') !== dayKey()){ store.set('fw27_trial', dayKey()); runTrial = true; }
-    else { if (state !== 'menu') toMenu(); toast(t('trialUsed')); renderHangar(); return; }
+    if (!B.season && store.get('fw27_trial','') !== dayKey()){ store.set('fw27_trial', dayKey()); runTrial = true; }
+    else { if (state !== 'menu') toMenu(); toast(t(B.season ? 'seaOnly' : 'trialUsed')); renderHangar(); return; }   // the season unit has no trial run
   } else runTrial = false;
   $('wallet').hidden = true; $('shopScr').hidden = true;
   mode = m; reset(); state = 'play';
@@ -1166,7 +1207,7 @@ function startGame(m){
 function toMenu(){
   if (typeof hideTip === 'function') hideTip(); if (mode === 'versus') vsReset();
   state = 'menu'; mode = 'endless'; reset(); state = 'menu'; $('stageScr').hidden = true;
-  $('over').hidden = true; $('menu').hidden = false; $('wallet').hidden = false; updateDaily(); renderHangar(); renderWallet();
+  $('over').hidden = true; $('menu').hidden = false; $('wallet').hidden = false; updateDaily(); renderHangar(); renderWallet(); seaCheck();
 }
 
 /* ---------- unit skills ---------- */
@@ -1177,7 +1218,8 @@ const SK = {
  aegis:{cd:34,dur:3,sh:0,f:{cd:18,dur:1,sh:0}}, kraken:{cd:10,dur:5,f:{cd:18,dur:2}}, specter:{cd:10,dur:4,f:{cd:18,dur:1.2}}, oracle:{cd:18,dur:6,f:{cd:18,dur:3}},
  phoenix:{cd:20,dur:4,f:{cd:18,dur:1}}, zero:{cd:11,dur:8,f:{cd:18,dur:4}}, raijin:{cd:16,n:3,f:{cd:18,n:1}}, chrono:{cd:20,dur:3,f:{cd:18,dur:1.2}}, goliath:{cd:13,dur:5,f:{cd:18,dur:1.5}},
  solaris:{cd:22,dur:4.5,fever:1,f:{cd:18,dur:1,fever:0}}, aurora:{cd:9,n:6,gap:40,f:{cd:18,n:1,gap:0}}, tempest:{cd:22,len:1.5,f:{cd:18,len:1}},
- pleiad:{cd:40,n:2,sh:0,f:{cd:18,n:1,sh:0}}, pulsar:{cd:22,dur:4,mul:2,f:{cd:18,dur:2,mul:1}}
+ pleiad:{cd:40,n:2,sh:0,f:{cd:18,n:1,sh:0}}, pulsar:{cd:22,dur:4,mul:2,f:{cd:18,dur:2,mul:1}},
+ monarch:{cd:26,dur:1,win:4,f:{cd:18,dur:1,win:0}}   // dur: seconds invincible; win: seconds of the wide Perfect window (VOLT's +10px), none in fair modes
 };
 const fairMode = () => mode === 'daily' || mode === 'versus';
 const skv = k => { const s = SK[B.id]; return fairMode() && s.f && s.f[k] != null ? s.f[k] : s[k]; };
@@ -1254,6 +1296,7 @@ function useSkill(){
     case 'tempest': dashT = Math.max(dashT, .55 * skv('len')); bird.vy = 0; FX.stormDash = true; SFX.dash(); break;
     case 'pleiad': FX.strikeN = skv('n'); FX.strikeT = 0; if (skv('sh')) shields = Math.min(PK.shieldMax, shields + 1); break;
     case 'pulsar': FX.resoT = TMAX.reso = skv('dur'); FX.resoMul = skv('mul'); break;
+    case 'monarch': setGod(skv('dur')); if (skv('win')) boostT = TMAX.boost = skv('win'); break;
   }
 }
 // Aura behind each unit. The glow scales with rank; the motif follows the tier's name: common glow → epic sparkles → legendary flames → mythic runes → ultra prism
@@ -1907,10 +1950,13 @@ function drawBuzz(c, d, w, glow){
   c.strokeStyle = '#1b1208'; c.lineWidth = 1; c.beginPath(); c.moveTo(11,-6); c.quadraticCurveTo(13,-12,17,-12); c.moveTo(9,-6); c.quadraticCurveTo(9,-13,12,-14); c.stroke();
   c.restore();
 }
-// Shared helpers for unit art. O0 / OL: the default and the lite body options; hash1: index hash for effect placement (effects never call rng()); star4: four-point star path, tips a (front) / a2 (back) on x and ±b on y, waist q
+// Shared helpers for unit art. O0 / OL: the default and the lite body options; hash1: index hash for effect placement (effects never call rng()); star4: four-point star path, tips a (front) / a2 (back) on x and ±b on y, waist q;
+// leaf: one pointed leaf ADDED to the current path, from (x, y) along angle a, L long, each side bulging by wd; crown3: MONARCH's three-point crown as a path, 12.4 wide and 11 tall, its base centred on the origin
 const O0 = {lite:false, pose:0, vy:0}, OL = {lite:true, pose:0, vy:0};
 const hash1 = n => { const v = Math.sin(n*127.1 + 311.7)*43758.5453; return v - Math.floor(v); };
 function star4(c, a, b, q, a2 = a){ c.beginPath(); c.moveTo(a,0); c.lineTo(q,-q); c.lineTo(0,-b); c.lineTo(-q,-q); c.lineTo(-a2,0); c.lineTo(-q,q); c.lineTo(0,b); c.lineTo(q,q); c.closePath(); }
+function leaf(c, x, y, a, L, wd){ const cs = Math.cos(a), sn = Math.sin(a), mx = x + cs*L*.5, my = y + sn*L*.5; c.moveTo(x, y); c.quadraticCurveTo(mx - sn*wd, my + cs*wd, x + cs*L, y + sn*L); c.quadraticCurveTo(mx + sn*wd, my - cs*wd, x, y); }
+function crown3(c){ c.beginPath(); c.moveTo(-5.2,.8); c.lineTo(-6.2,-8.5); c.lineTo(-2.8,-3.8); c.lineTo(0,-10.2); c.lineTo(2.8,-3.8); c.lineTo(6.2,-8.5); c.lineTo(5.2,.8); c.closePath(); }
 /* Unit bodies, one function per converted unit: UNIT_ART[id](c, d, w, glow, o).
    Same space as the shared body below: c.scale(d.r/13) first, then 13 units = the hitbox radius, +x forward, -y up.
    o.lite: the cheap body for the rival and the dash ghosts — at most 6 draws, no shadowBlur.  o.pose: 0..1 show-off pulse, hangar only.  o.vy: own bird's vertical speed (0 elsewhere).
@@ -2237,6 +2283,37 @@ const UNIT_ART = {
     c.restore();
     c.fillStyle = '#fff'; c.beginPath(); c.moveTo(3,-3.5); c.lineTo(9.5,0); c.lineTo(3,3.5); c.fill();
     c.restore();
+  },
+  // MONARCH — a plump, round-headed ivory bird under a three-point crown, sitting in the mouth of a half laurel wreath: two gold branches curve back from the shoulders, one over and one under (the only body framed by leaves; no tail, no rays). The wreath opens with the flap.
+  // o.reign: the skill is on — the crown lifts off the head; o.gild: 0..1 crown and leaf tips light up (Perfect, guard regained); o.guard: false = no shield in hand, the crown's gem goes dark. The hangar pose opens the wreath wide and raises the crown under a star. 11 draws (+1 in the pose)
+  monarch(c, d, w, glow, o){
+    const k = d.r/13, gd = d.wingCol; c.save(); c.scale(k,k);
+    const body = () => { c.beginPath(); c.ellipse(-2,2,12.5,9.5,-.18,0,6.28); c.moveTo(16,-4); c.arc(8.5,-4,7.5,0,6.28); };
+    // one branch (s = -1 over, 1 under) added to the current path: seven leaves along a curved spine — three pointing out, three smaller ones pointing in, one on the tip; op 0..1 opens it
+    const branch = (s, op) => { const cx = -16, cy = s*(16 + 8*op), ex = -31, ey = s*(9 + 10*op);
+      for (let i=1;i<=7;i++){ const u = i/7, v = 1 - u, a = Math.atan2(v*(cy - s*5) + u*(ey - cy), v*(cx + 3) + u*(ex - cx));
+        leaf(c, v*v*-3 + 2*v*u*cx + u*u*ex, v*v*s*5 + 2*v*u*cy + u*u*ey, i === 7 ? a : a + (i % 2 ? -s : s)*.6, i === 7 ? 8 : i % 2 ? 11 - i*.4 : 6.5, i % 2 ? 6 : 4); } };
+    if (o.lite){   // wreath + body + eye + crown
+      c.fillStyle = hsl(gd); c.beginPath(); branch(-1, .5); branch(1, .5); c.fill();
+      c.fillStyle = hsl(d.col); body(); c.fill(); c.fillStyle = '#1b1208'; c.fillRect(9.4,-6.4,2.8,2.8);
+      c.fillStyle = hsl([48,100,66]); c.translate(8,-10.6); c.rotate(-.2); c.scale(1.15,1.15); crown3(c); c.fill(); c.restore(); return; }
+    const op = Math.min(1.5, w + (1 - w)*o.pose + .5*o.pose), gl = o.gild || 0, up = 4*o.pose + (o.reign ? 3 : 0), cs = 1.15 + .2*o.pose + (o.reign ? .2 : 0);
+    const lg = c.createLinearGradient(-2,0,-34,0); lg.addColorStop(0, hsl(gd,1,-8)); lg.addColorStop(1, hsl(gd,1,18 + gl*16));
+    c.fillStyle = lg; c.beginPath(); branch(-1, op); branch(1, op); c.fill();
+    c.strokeStyle = hsl([38,90,42]); c.lineWidth = 1.2; c.lineCap = 'round'; c.beginPath(); for (let s=-1;s<2;s+=2){ c.moveTo(-3, s*5); c.quadraticCurveTo(-16, s*(16 + 8*op), -31, s*(9 + 10*op)); } c.stroke();
+    c.fillStyle = hsl([28,100,58]); c.beginPath(); c.moveTo(14.6,-6.4); c.lineTo(21.5,-3); c.lineTo(14.9,-.8); c.fill();
+    if (glow){ c.shadowColor = hsl(glow); c.shadowBlur = 22; }
+    const bg = c.createLinearGradient(-6,-12,4,12); bg.addColorStop(0, hsl(d.col,1,6)); bg.addColorStop(1, hsl([40,45,74]));
+    c.fillStyle = bg; body(); c.fill(); c.shadowBlur = 0;
+    c.fillStyle = hsl(gd); c.beginPath(); leaf(c, 3, 1.5, 2.75 + w*.5, 15, 8); c.fill();   // the folded wing: one big leaf on the flank, lifting with the flap
+    c.fillStyle = '#1b1208'; c.beginPath(); c.arc(10.8,-5,1.9,0,6.28); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.arc(11.4,-5.7,.7,0,6.28); c.fill();
+    c.translate(8, -10.6 - up); c.rotate(-.2); c.scale(cs,cs);
+    c.fillStyle = hsl([48,100,62 + gl*24]); crown3(c); c.fill();
+    c.fillStyle = hsl([36,95,42]); c.fillRect(-5.3,-1.6,10.6,2.4);
+    c.fillStyle = '#fff'; c.beginPath(); for (let i=-1;i<2;i++){ const x = i*6.2, y = i ? -8.5 : -10.2; c.moveTo(x + 1.5, y); c.arc(x, y, 1.5, 0, 6.28); } c.fill();
+    c.fillStyle = hsl(o.guard === false ? [222,35,30] : [222,100,68]); c.beginPath(); c.moveTo(0,-2.2); c.lineTo(1.5,-.4); c.lineTo(0,1.4); c.lineTo(-1.5,-.4); c.fill();
+    if (o.pose > .05){ c.translate(0,-17); c.fillStyle = `rgba(255,255,255,${o.pose})`; star4(c, 9*o.pose, 9*o.pose, 1.8*o.pose); c.fill(); }
+    c.restore();
   }
 };
 function drawShape(c, d, w, glow, o){
@@ -2324,6 +2401,7 @@ function fanBeams(n, a, hue){   // n light beams fanning out from the bird as ON
 }
 function sunFlare(n){ for (let i=0;i<n;i++){ const a = Math.random()*6.283, sp = 40 + Math.random()*50; part(bird.x + Math.cos(a)*bird.r, bird.y + Math.sin(a)*bird.r, Math.cos(a)*sp, Math.sin(a)*sp, .5, [35 + Math.random()*20,100,65], 2); } }   // SOLARIS prominences leaving the rim
 function windStreaks(n){ for (let i=0;i<n && parts.length < 400;i++) parts.push({x:bird.x - 8 - Math.random()*26, y:bird.y + (Math.random()-.5)*30, vx:-220 - Math.random()*80, vy:-20, life:.25, max:.25, col:[190,80,85], size:6, rot:0, vr:0, rect:true}); }   // TEMPEST wind: short flat streaks blown back
+const leafPart = (x, y, vx, vy, life, l) => { if (parts.length < 400) parts.push({x, y, vx, vy, life, max:life, col:[46,100,l], size:7, rot:Math.random()*6.28, vr:(Math.random()-.5)*10, rect:true}); };   // MONARCH: one gold leaf, tumbling as it falls
 const PLE7 = [[.12,.62],[.26,.36],[.41,.5],[.55,.26],[.67,.52],[.8,.32],[.91,.6]];   // PLEIAD's sky constellation, in units of screen width × the top third
 const UNIT_FX = {
   solaris: {
@@ -2679,6 +2757,38 @@ const UNIT_FX = {
     idle(dt){ if (emit(12, dt)){ const a = -.611 + (RM ? 0 : Math.sin(T*1.2)*.1745) + bird.rot, s = Math.random() < .5 ? 1 : -1, cs = Math.cos(a)*s, sn = Math.sin(a)*s, r = (10 + Math.random()*16)*bird.r/13; part(bird.x + cs*r, bird.y + sn*r, cs*120, sn*120, .3, [180,100,75], 1.5); } },   // motes leaving along the beam
     trail(){ const n = trail.length, ph = RM ? 0 : T*8; ctx.lineCap = 'round'; ctx.lineWidth = dashT > 0 ? 4 : 2.5;   // a waveform: every point pushed ±4px up and down, like a scope trace
       for (let i=1;i<n;i++){ ctx.strokeStyle = hsl([320,100,66], i/n*.8); ctx.beginPath(); ctx.moveTo(trail[i-1].x, trail[i-1].y + Math.sin((i-1)*1.2 - ph)*4); ctx.lineTo(trail[i].x, trail[i].y + Math.sin(i*1.2 - ph)*4); ctx.stroke(); } }
+  },
+  monarch: {
+    active:true, breakCol:[222,100,76], ringCol:[[46,100,60],[48,80,92]],
+    shields(vs){ if (shields <= 0) return; const R = (bird.r + 11)*vs;   // the Royal Guard: a thin blue ring with four gems turning on it, in the colour of the crown's gem (no hex plate, no shadowBlur)
+      ctx.strokeStyle = `hsla(222,100%,74%,${RM ? .7 : .55 + .2*Math.sin(T*8)})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0,0,R,0,6.28); ctx.stroke();
+      ctx.fillStyle = 'hsl(222,100%,80%)'; ctx.beginPath(); for (let i=0;i<4;i++){ const q = T*1.4 + i*1.571, x = Math.cos(q)*R, y = Math.sin(q)*R; ctx.moveTo(x, y - 3.4); ctx.lineTo(x + 2.5, y); ctx.lineTo(x, y + 3.4); ctx.lineTo(x - 2.5, y); } ctx.fill(); },
+    opt(o){ o.reign = godT > 0 || boostT > 0; o.gild = Math.max(Math.min(1, FX.perfT/.2), FX.sigK === 'regen' ? FX.sigT/.5 : 0); o.guard = state === 'menu' || shields > 0; },   // the crown's gem is the guard: lit = a shield in hand
+    back(){   // cast: a crown three times the bird's own comes down onto its head in .45s · skill on: a wreath of eight leaves at 2.3 r turning slowly — solid over a faint disc while invincible, thin for the rest of the wide Perfect window; its last .8s it blinks at 3Hz (reduced motion: it thins instead)
+      const R = bird.r, on = Math.max(godT, boostT);
+      if (FX.castT > 0){ const q = FX.castT/FX.castMax, e = RM ? 1 : 1 - q, s = (3.4 - 1.6*e)*R/13;
+        ctx.save(); ctx.translate(R*.6, -R*(1.5 + 4.6*(1 - e)*(1 - e))); ctx.rotate(-.2); ctx.scale(s, s);
+        ctx.fillStyle = `hsla(48,100%,68%,${.9*Math.min(1, q*3)})`; crown3(ctx); ctx.fill(); ctx.strokeStyle = `hsla(48,100%,92%,${Math.min(1, q*3)})`; ctx.lineWidth = 1.5/s; ctx.stroke(); ctx.restore(); }
+      if (on > 0){ const god = godT > 0, end = on < .8, r0 = R*2.3, rot = RM ? 0 : T*.7;
+        if (god){ ctx.fillStyle = 'hsla(48,100%,70%,.1)'; ctx.beginPath(); ctx.arc(0,0,r0,0,6.28); ctx.fill(); }
+        ctx.fillStyle = `hsla(48,100%,${god ? 72 : 62}%,${end && !RM && Math.floor(T*6) % 2 ? .2 : god ? .95 : .6})`; ctx.beginPath();
+        for (let i=0;i<8;i++){ const a = rot + i*.7854; leaf(ctx, Math.cos(a)*r0, Math.sin(a)*r0, a + 1.92, end && RM ? 9 : 14, god ? 8 : 5); } ctx.fill(); }
+    },
+    cast(){ FX.castT = FX.castMax = .45; for (let i = 0, n = RM ? 6 : 12; i < n; i++){ const a = i/n*6.283; leafPart(bird.x + Math.cos(a)*18, bird.y + Math.sin(a)*18, Math.cos(a)*150, Math.sin(a)*150 - 60, .7, 60 + (i % 3)*10); } },   // a round of leaves thrown outward
+    snd(){ tone(523,.12,'triangle',.12); tone(659,.12,'triangle',.12,0,.1); tone(784,.35,'triangle',.14,0,.2); tone(1047,.3,'sine',.06,0,.2); },   // a three-note fanfare
+    perfect(){ FX.perfT = .2; const k = bird.r/13; for (let s=-1;s<2;s+=2) leafPart(bird.x - 28*k, bird.y + s*12*k, -70 - Math.random()*40, s*40 - 50, .5, 72); tone(1568,.05,'triangle',.05); },   // the crown flashes; one leaf leaves each branch tip
+    sig(kind){ if (kind !== 'regen') return; FX.sigT = .5; FX.sigK = 'regen';   // the guard is back: the gem lights, six leaves close in on the bird
+      for (let i=0;i<6;i++){ const a = i*1.047 + .4; leafPart(bird.x + Math.cos(a)*46, bird.y + Math.sin(a)*46, -Math.cos(a)*110, -Math.sin(a)*110 - 40, .4, 70); } },
+    sky(){   // death: the crown is knocked off and tumbles back the way it came for .9s, from where the bird was hit (cam.fx / cam.fy). Not a sky event: like PHOENIX's pillar, the one hook that still draws while dying
+      if (FX.sigK !== 'crown' || FX.sigT <= 0) return; const e = .9 - FX.sigT, s = 1.6*bird.r/13;
+      ctx.save(); ctx.translate(cam.fx + 8 - 80*e, cam.fy - 16 - 190*e + 330*e*e); ctx.rotate(RM ? -.2 : -.2 - e*7); ctx.scale(s, s);
+      ctx.fillStyle = `hsla(48,100%,66%,${Math.min(1, FX.sigT*4)})`; crown3(ctx); ctx.fill(); ctx.restore(); },
+    death(){ FX.sigT = .9; FX.sigK = 'crown';   // the crown flies off (sky), the wreath comes apart in fourteen leaves
+      for (let i=0;i<14;i++){ const a = 1.9 + i*.19, sp = 90 + (i % 4)*45; leafPart(bird.x + Math.cos(a)*20, bird.y + Math.sin(a)*20, Math.cos(a)*sp - 40, Math.sin(a)*sp - 90, 1 + (i % 3)*.15, 56 + (i % 3)*10); }
+      ring(bird.x, bird.y, 150, [46,100,62], .6, 5); },
+    idle(dt){ if (emit(7, dt)){ const k = bird.r/13; leafPart(bird.x - (24 + Math.random()*8)*k, bird.y + (Math.random() < .5 ? -1 : 1)*(8 + Math.random()*8)*k, -50 - Math.random()*40, -55 - Math.random()*25, .6, 58 + Math.random()*20); } },   // a leaf lets go of the wreath now and then
+    trail(){ const n = trail.length, L = dashT > 0 ? 14 : 10; ctx.fillStyle = hsl([46,100,62], .8); ctx.beginPath();   // no line: a leaf every 16px of ground covered, each with its own tilt and offset (by world position, so none of them flickers), a little smaller toward the tail
+      for (let i=1;i<n;i++){ const p = trail[i], sl = Math.floor((p.x + bgOff)/16); if (sl !== Math.floor((trail[i-1].x + bgOff)/16)) leaf(ctx, p.x, p.y + (hash1(sl) - .5)*12, 3.14 + (hash1(sl + .5) - .5)*1.5, L*(.6 + .4*i/n), 3 + 3*i/n); } ctx.fill(); }
   }
 };
 function unitBack(d){ const f = ufx(d.id, 'back'); if (f) f(); }
@@ -2703,12 +2813,13 @@ const STAT_KEYS = ['stSpeed','stJump','stFloat','stDash'];
 function renderHangar(){
   const i = BIRDS.indexOf(B);
   $('hgCount').textContent = `${i+1} / ${BIRDS.length}`;
-  $('hgName').textContent = B.name; $('hgName').style.color = hsl(B.rarity ? RARITY_COL[B.rarity] : B.col, 1, 6);
+  $('hgName').textContent = B.name; $('hgName').style.color = hsl(B.rarity ? rarCol(B) : B.col, 1, 6);
   $('hgName').parentElement.classList.toggle('ultra', B.rarity === 4);
-  const rar = $('hgRar'); rar.hidden = !B.rarity; rar.classList.toggle('ultra', B.rarity === 4); if (B.rarity){ rar.textContent = t(RARITY_KEY[B.rarity]); rar.style.background = hsl(RARITY_COL[B.rarity]); }
+  const rar = $('hgRar'); rar.hidden = !B.rarity; rar.classList.toggle('ultra', B.rarity === 4); if (B.rarity){ rar.textContent = t(rarKey(B)); rar.style.background = hsl(rarCol(B)); }
   $('hangar').classList.toggle('premium', !!B.rarity);
   const lk = $('hgLock'); lk.textContent = '';
-  if (!isOwned(B)){
+  if (!isOwned(B) && B.season){ const n = document.createElement('div'); n.className = 'note season'; n.textContent = t('seaOnly'); lk.appendChild(n); }   // the season unit: one line where the trial, the price and Buy would be
+  else if (!isOwned(B)){
     const btn = (label, fn, cls, icon) => { const b = document.createElement('button'); b.className = 'ghost' + (cls ? ' ' + cls : ''); if (icon){ const i = document.createElement('i'); i.className = 'ic ' + icon; b.appendChild(i); } b.appendChild(document.createTextNode(label)); b.addEventListener('click', e => { e.stopPropagation(); audioInit(); fn(); }); lk.appendChild(b); };
     if (store.get('fw27_trial','') !== dayKey()) btn(t('trial'), () => startGame('endless'), 'primary');
     else { const n = document.createElement('div'); n.className = 'note'; n.textContent = t('trialUsed'); lk.appendChild(n); }
@@ -2733,7 +2844,7 @@ function renderHangar(){
   });
   const dots = $('hgDots'); dots.textContent = '';
   BIRDS.forEach((b, j) => {
-    const d = document.createElement('button'), c = j === i ? hsl(b.rarity ? RARITY_COL[b.rarity] : b.col) : (b.rarity ? hsl(RARITY_COL[b.rarity], .45) : '');
+    const d = document.createElement('button'), c = j === i ? hsl(b.rarity ? rarCol(b) : b.col) : (b.rarity ? hsl(rarCol(b), .45) : '');
     if (c) d.style.setProperty('--c', c); if (j && (b.rarity || 0) !== (BIRDS[j-1].rarity || 0)) d.className = 'grp';
     d.setAttribute('aria-label', b.name); d.setAttribute('aria-current', j === i);
     d.addEventListener('click', e => { e.stopPropagation(); pickBird(j); });
@@ -2774,7 +2885,7 @@ function drawHangarPreview(){
   const g = hctx.createRadialGradient(cx, hcv.height/2, 4, cx, hcv.height/2, 80);
   g.addColorStop(0, hsl(B.col,.28)); g.addColorStop(1, 'rgba(0,0,0,0)');
   hctx.fillStyle = g; hctx.fillRect(0,0,hcv.width,hcv.height);
-  if (B.rarity){ for (let i=0;i<8;i++){ const a = T*1.2 + i*.785, rr = 58 + Math.sin(T*3 + i)*6; hctx.fillStyle = hsl(RARITY_COL[B.rarity], .5 + .5*Math.sin(T*5 + i)); hctx.save(); hctx.translate(cx + Math.cos(a)*rr*1.5, hcv.height/2 + Math.sin(a)*rr*.6); hctx.rotate(.785); hctx.fillRect(-2.5,-2.5,5,5); hctx.restore(); } }
+  if (B.rarity){ for (let i=0;i<8;i++){ const a = T*1.2 + i*.785, rr = 58 + Math.sin(T*3 + i)*6; hctx.fillStyle = hsl(rarCol(B), .5 + .5*Math.sin(T*5 + i)); hctx.save(); hctx.translate(cx + Math.cos(a)*rr*1.5, hcv.height/2 + Math.sin(a)*rr*.6); hctx.rotate(.785); hctx.fillRect(-2.5,-2.5,5,5); hctx.restore(); } }
   if (!isOwned(B)) hctx.globalAlpha = .55;
   hctx.translate(cx + 10, cy); hctx.rotate(Math.sin(T*2.4)*.08); hctx.scale(2.6,2.6);
   drawAura(hctx, B, B.r, T);
@@ -2805,7 +2916,8 @@ const COST_KEY = {coin:'nCoin', dia:'nDia', gem:'nGem'};
 const costList = (p, sep, amt = k => p[k]) => CUR.filter(([k]) => amt(k) > 0).map(([k]) => t(COST_KEY[k], {n: amt(k).toLocaleString()})).join(sep);
 // A unit costs all three currencies at once: refuse and name every shortfall, or confirm and deduct all three together (re-checked inside the confirm)
 function unlockBird(b){
-  const p = priceOf(b), miss = Object.fromEntries(shortOf(p));
+  const p = priceOf(b); if (!p) return;   // no price: not for sale (the season unit)
+  const miss = Object.fromEntries(shortOf(p));
   if (shortOf(p).length) return toast(t('needMore') + ' · ' + costList(p, ' · ', k => miss[k] || 0));
   confirmDlg(t('confirmUnlock', {u:b.name, list: costList(p, ' + ')}), () => { if (isOwned(b) || shortOf(p).length) return; CUR.forEach(([k, w]) => { W[w] -= p[k]; }); owned.add(b.id); saveW(); celebrate(b); });
 }
@@ -2956,22 +3068,29 @@ async function refreshBoards(){
   } catch(e){}
 }
 /* Versus ranking (server-held RP: supabase/schema.sql). vsSync() reads the player's own row through versus_me(), which also lets the server
-   settle their timed-out matches; the board is the top 100 by RP. All of it fails quietly: offline, the RP cached on the device is shown. */
-const VS_COLS = 'player_id,nick,cc,bird,rp,wins,losses,draws';
-let vsMe = null, vsBoard = [], vsBoardOk = false, vsRank = 0;
+   settle their timed-out matches and roll the season over; the board is the top 100 by RP among the players with a match in the running season
+   (after a rollover every row is back at 0). Last season: its top 10 and the player's own archived row (fw_vs_standing; the server's policy shows
+   nothing else), fetched once per season. All of it fails quietly: offline, the RP cached on the device is shown. */
+const VS_COLS = 'player_id,nick,cc,bird,rp,wins,losses,draws', ST_COLS = 'season,player_id,rank,rp,tier,wins,losses,draws,nick,cc,bird';
+let vsMe = null, vsMeUid = null, vsBoard = [], vsBoardOk = false, vsRank = 0, lbPast = false, vsPast = {s: 0, u: '', top: [], me: null};
 const vsRpc = async (fn, a) => { try { return await sb.rpc(fn, a); } catch(e){ return {error: e || {}}; } };
 async function vsSync(){
   if (!sb) return null;
   const c = sb; let r = await vsRpc('versus_me');
   if (r.error && sbAuthErr(r) && await sbReauth()) r = await vsRpc('versus_me');
   if (r.error || !r.data || sb !== c) return null;
-  vsMe = r.data; setRp(vsMe.rp); return vsMe;
+  vsMe = r.data; vsMeUid = uid; setRp(vsMe.rp); seaCheck(); return vsMe;
 }
 async function refreshVsBoard(){
   if (!sb) return;
   try {
-    const c = sb, [b, m] = await Promise.all([c.from('fw_versus').select(VS_COLS).order('rp',{ascending:false}).order('player_id',{ascending:true}).limit(100), vsSync()]);
+    const c = sb, [b, m] = await Promise.all([c.from('fw_versus').select(VS_COLS).or('wins.gt.0,losses.gt.0,draws.gt.0').order('rp',{ascending:false}).order('player_id',{ascending:true}).limit(100), vsSync()]);
     if (sb !== c) return;
+    if (lbPast && m && m.prev && !(vsPast.s === m.prev && vsPast.u === uid)){   // an ended season never changes: one fetch per season and player
+      const s = m.prev, u = uid, q = () => c.from('fw_vs_standing').select(ST_COLS).eq('season', s), [tp, ow] = await Promise.all([q().lte('rank', 10).order('rank',{ascending:true}), q().eq('player_id', u).maybeSingle()]);
+      if (sb !== c) return;
+      if (!tp.error && tp.data && !ow.error) vsPast = {s, u, top: tp.data, me: ow.data || null};
+    }
     if (!b.error && b.data) vsBoard = b.data;
     vsBoardOk = true; vsRank = 0;
     if (m && m.ranked){   // own rank = players with more RP + 1 (ties share a rank): read off the list, or counted when outside the top 100
@@ -3100,11 +3219,19 @@ function renderLB(){
   $('tabDaily').setAttribute('aria-selected', lbTab === 'daily');
   $('tabAll').setAttribute('aria-selected', lbTab === 'all');
   $('tabVs').setAttribute('aria-selected', vsT);
+  const past = vsT && lbPast, prev = sb && vsBoardOk && vsMe ? vsMe.prev | 0 : 0, pOk = prev > 0 && vsPast.s === prev && vsPast.u === uid, pMe = pOk ? vsPast.me : null;   // last season: prev 0 = none has ended yet
+  $('lbSea').hidden = !vsT; $('lbSeaNow').setAttribute('aria-selected', !lbPast); $('lbSeaLast').setAttribute('aria-selected', lbPast);
   $('lbDay').textContent = lbTab === 'daily' ? t('dayLine', {d: fmtDay(dayKey()), t: fmtLeft(msToNextDay())})
+    : past ? (pMe ? t(pMe.rank ? 'seaMine' : 'seaMineU', {n: pMe.rank, rp: pMe.rp | 0, w: pMe.wins | 0, l: pMe.losses | 0}) : '')
     : vsT && sb && vsBoardOk ? (vsMe && vsMe.ranked && vsRank ? t('vsMyRank', {n: vsRank, rp: vsMe.rp, w: vsMe.wins, l: vsMe.losses}) : t('vsNoRow')) : '';
   list.textContent = '';
-  let rows = [];
-  if (vsT){   // versus ranking: the server's top 100 by RP; without the server, the RP cached on this device
+  let rows = [], note = '';
+  if (past){   // last season: the archived top 10, then the player's own row when it is not among them (rk: the archived rank, '–' = unranked)
+    if (pOk){ const row = r => ({id:r.player_id, nick:r.nick, cc:r.cc, sc:r.rp, wl:`${r.wins | 0}–${r.losses | 0}`, rk: r.rank || '–', ti: clampI(r.tier, 0, 4), bird: r.bird});
+      rows = vsPast.top.map(row); if (pMe && !rows.some(r => r.id === pMe.player_id)) rows.push(row(pMe)); if (!rows.length) note = t('seaNone'); }
+    else note = !sb ? ' ' : vsBoardOk && vsMe && !prev ? t('seaFirst') : t('loading');   // offline: only the notice below the list
+  }
+  else if (vsT){   // versus ranking: the server's top 100 by RP; without the server, the RP cached on this device
     if (sb) rows = vsBoard.map(r => ({id:r.player_id, nick:r.nick, cc:r.cc, sc:r.rp, wl:`${r.wins | 0}–${r.losses | 0}`}));
     else if (lbState !== 'loading' && rp > 0) rows = [{id:'local', nick, cc:CC, sc:rp}];
   }
@@ -3113,16 +3240,17 @@ function renderLB(){
     const sc = lbTab === 'daily' ? dailyBestLocal(dayKey()) : best;
     if (sc > 0) rows = [{id:'local', nick, cc:CC, sc, bird:B.id}];
   }
-  if (lbState === 'loading' || (vsT && sb && !vsBoardOk)){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('loading'); list.appendChild(li); }
+  if (note){ if (note.trim()){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = note; list.appendChild(li); } }
+  else if (lbState === 'loading' || (vsT && sb && !vsBoardOk)){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('loading'); list.appendChild(li); }
   else if (!rows.length){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('empty'); list.appendChild(li); }
   rows.forEach((r, i) => {
     const li = document.createElement('li');
     const me = r.id === uid || r.id === 'local';
-    li.className = 'lbrow' + (i < 3 ? ' top' : '') + (me ? ' me' : '');
-    const n = document.createElement('span'); n.className = 'n'; n.textContent = vsT ? rows.findIndex(x => x.sc === r.sc) + 1 : i + 1;   // versus: equal RP, equal rank
+    li.className = 'lbrow' + (i < 3 && !(r.rk > 3 || r.rk === '–') ? ' top' : '') + (me ? ' me' : '');
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = r.rk || (vsT ? rows.findIndex(x => x.sc === r.sc) + 1 : i + 1);   // versus: equal RP, equal rank; last season: the archived rank
     const f = document.createElement('span'); f.textContent = flag(r.cc);
     const nm = document.createElement('span'); nm.className = 'nm';
-    if (vsT){ const ti = tierOf(Number(r.sc) || 0), tb = document.createElement('i'); tb.className = 'tb'; tb.textContent = t('t' + ti); tb.style.background = hsl(TIER_COL[ti]); nm.appendChild(tb); }
+    if (vsT){ const ti = r.ti != null ? r.ti : tierOf(Number(r.sc) || 0), tb = document.createElement('i'); tb.className = 'tb'; tb.textContent = t('t' + ti); tb.style.background = hsl(TIER_COL[ti]); nm.appendChild(tb); }
     const bd = birdById(r.bird); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
     nm.appendChild(document.createTextNode(cleanNick(r.nick || '') || '—'));
     if (me){ const tg = document.createElement('span'); tg.className = 'me-tag'; tg.textContent = t('you'); nm.appendChild(tg); }
@@ -3151,7 +3279,7 @@ $('lbBtn').addEventListener('click', e => { e.stopPropagation(); openLB('daily')
 $('oLbBtn').addEventListener('click', e => { e.stopPropagation(); openLB(mode === 'daily' ? 'daily' : mode === 'versus' ? 'vs' : 'all'); });
 $('lbClose').addEventListener('click', closeLB);
 $('lbScr').addEventListener('click', e => { if (e.target === $('lbScr')) closeLB(); });
-document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { lbTab = b.dataset.tab; renderLB(); if (lbTab === 'vs') refreshVsBoard(); }));
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { lbTab = b.dataset.tab; if (b.dataset.past) lbPast = b.dataset.past === '1'; renderLB(); if (lbTab === 'vs') refreshVsBoard(); }));
 $('nickForm').addEventListener('submit', e => {
   e.preventDefault();
   const v = cleanNick($('nickIn').value);
@@ -3209,7 +3337,95 @@ function setRp(v){ rp = clampI(v, 0, 1e9); store.set('fw27_rp2', rp); renderVsBa
 function renderVsBadge(){
   const ti = tierOf(rp), b = $('vsTier'); b.textContent = t('t' + ti); b.style.background = hsl(TIER_COL[ti]);
   $('vsRp').textContent = `${rp} RP`; $('vsSub').textContent = `${t('t' + ti)} · ${rp} RP`;
+  const se = seaNow(); $('vsSeason').textContent = t('seaLine', {m: se.id % 100, t: seaLeft(se.end - Date.now())});
 }
+/* Seasons (server: supabase/schema.sql, SEASONS). A season is one calendar month in Korea time (UTC+9, no daylight saving), id YYYYMM; the
+   server rolls over by itself and versus_me() says which season runs, when it ends and which past results of this player are not claimed yet.
+   Offline the season line is computed here from the same rule. The reward (diamonds, gems, a unit id) is the server's and is treated as data:
+   whatever id it names goes into "owned", whether or not BIRDS knows it yet; a unit already owned becomes rw.unit_gems gems instead.
+   Claim bookkeeping (fw27_vsclaim): g = "<season>:<player id>" keys already granted (or, for an unranked notice, seen) on this device,
+   p = results a claim was sent for and not granted yet. The server marks a result claimed on the first call and answers every later
+   one with already: true, so what decides a grant is this device's record, never that flag:
+     - the request never arrived: the server still lists the result; the next claim answers already: false -> granted, recorded;
+     - the server claimed it but its answer was lost (also: the page was closed right then): the server no longer lists it, so the dialog
+       comes back from p; the retry answers already: true, the key is not in g -> granted once, recorded;
+     - the answer arrived: wallet and record are saved in the same tick (wallet first), so later taps, reloads and retries find the key
+       in g and grant nothing.
+   The wallet and the owned units live on the device, like purchases: none of this stops someone from editing local storage. */
+const KST = 9 * 3600e3, seaOf = ms => { const d = new Date(ms + KST); return d.getUTCFullYear() * 100 + d.getUTCMonth() + 1; };
+const seaEnd = s => Date.UTC(Math.floor(s / 100), s % 100, 1) - KST;   // 00:00 KST on the 1st of the next month
+const seaLeft = ms => ms >= 864e5 ? t('seaD', {n: Math.floor(ms / 864e5)}) : t('seaH', {n: Math.max(1, Math.floor(ms / 36e5))});   // days; under one day, hours
+function seaNow(){   // the server's season while its end is still ahead, else this device's clock
+  const e = sb && vsMe ? Date.parse(vsMe.season_end) : 0, id = e > Date.now() ? vsMe.season | 0 : 0;
+  if (id > 200000) return {id, end: e};
+  const s = seaOf(Date.now()); return {id: s, end: seaEnd(s)};
+}
+const unitName = id => (birdById(id) || {name: String(id).toUpperCase()}).name;   // a reward unit may be newer than this build's BIRDS
+// One result as the server sent it -> checked numbers (null = unusable). reward: null for an unranked result.
+function seaNorm(r){
+  if (!r || typeof r !== 'object' || !Number.isInteger(r.season) || r.season < 200001 || r.season > 999912) return null;
+  const w = r.reward && typeof r.reward === 'object' && Number.isInteger(r.rank) && r.rank > 0 ? r.reward : null;
+  return {season: r.season, rank: w ? r.rank : 0, tier: clampI(r.tier, 0, 4), rp: clampI(r.rp, 0, 1e9), wins: clampI(r.wins, 0, 1e6), losses: clampI(r.losses, 0, 1e6),
+    reward: w && {dia: clampI(w.dia, 0, 1e6), gems: clampI(w.gems, 0, 1e4), unit: typeof w.unit === 'string' && /^[a-z]{1,12}$/.test(w.unit) ? w.unit : '', unit_gems: clampI(w.unit_gems, 0, 1e4)}};
+}
+const seaGive = (w, has) => ({dia: w.dia, gems: w.gems + (w.unit && has ? w.unit_gems : 0), unit: w.unit && !has ? w.unit : '', dup: !!(w.unit && has)});   // what a reward adds on this device
+const seaKey = (s, id) => s + ':' + id;
+function seaRec(){ const o = store.get('fw27_vsclaim', null) || {}; return {g: Array.isArray(o.g) ? o.g.filter(k => typeof k === 'string').slice(-24) : [], p: o.p && typeof o.p === 'object' && !Array.isArray(o.p) ? o.p : {}}; }
+// What is waiting for this player: pending claims of this device and the server's unclaimed results, one per season, oldest first, minus what the record has.
+function seaQ(rec, id, results){
+  const m = new Map();
+  for (const k in rec.p) if (k.endsWith(':' + id)){ const r = seaNorm(rec.p[k]); if (r && r.reward) m.set(r.season, r); }
+  (Array.isArray(results) ? results : []).forEach(x => { const r = seaNorm(x); if (r) m.set(r.season, r); });
+  return [...m.values()].filter(r => !rec.g.includes(seaKey(r.season, id))).sort((a, b) => a.season - b.season);
+}
+function seaMark(rec, key){ const p = Object.assign({}, rec.p); delete p[key]; return {g: [...rec.g.filter(k => k !== key), key].slice(-24), p}; }
+function seaPend(rec, key, r){ const p = Object.assign({}, rec.p, {[key]: r}), ks = Object.keys(p); ks.slice(0, Math.max(0, ks.length - 6)).forEach(k => { delete p[k]; }); return {g: rec.g, p}; }
+let seaCur = null, seaBusy = false, seaDone = false;
+// Shown in the menu only (never over a run, a countdown or a search), one season at a time: called after every versus_me and on the way back to the menu.
+function seaCheck(){
+  if (!sb || !uid || vsMeUid !== uid || state !== 'menu' || vs.phase !== 'idle' || !$('seaScr').hidden || !$('confScr').hidden) return;
+  const q = seaQ(seaRec(), uid, vsMe && vsMe.results); if (q.length) seaOpen(q[0]);
+}
+function seaPills(g){
+  const box = $('seaRw'); box.textContent = '';
+  const pill = (ic, txt, cls) => { const p = document.createElement('span'); p.className = 'wpill' + (cls ? ' ' + cls : ''); if (ic){ const i = document.createElement('i'); i.className = 'ic ' + ic; p.appendChild(i); } p.appendChild(document.createTextNode(txt)); box.appendChild(p); };
+  if (g.dia) pill('dia', '+' + g.dia.toLocaleString()); if (g.gems) pill('gem', '+' + g.gems.toLocaleString()); if (g.unit) pill('', t('seaUnit', {u: unitName(g.unit)}), 'unit');
+}
+function seaOpen(r){
+  seaCur = r; seaBusy = false; seaDone = false;
+  $('seaTitle').textContent = t('seaTitle', {m: r.season % 100});
+  const b = $('seaTier'); b.textContent = t('t' + r.tier); b.style.background = hsl(TIER_COL[r.tier]);
+  $('seaRank').textContent = r.reward ? t('seaRank', {n: r.rank}) : ''; $('seaStat').textContent = t('seaStat', {rp: r.rp, w: r.wins, l: r.losses});
+  $('seaMsg').textContent = r.reward ? '' : t('seaUnranked', {n: (vsMe && vsMe.need) | 0 || 10});
+  $('seaRw').hidden = !r.reward; if (r.reward) seaPills({dia: r.reward.dia, gems: r.reward.gems, unit: r.reward.unit});
+  $('seaBtn').textContent = t(r.reward ? 'seaClaim' : 'seaOk'); $('seaBtn').disabled = false;
+  $('seaScr').hidden = false; lbOpen = true; SFX.click();
+}
+function seaClose(){ seaCur = null; $('seaScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('vsScr').hidden; seaCheck(); }   // the next season waiting, if any
+$('seaBtn').addEventListener('click', async e => {
+  e.stopPropagation(); audioInit();
+  const r = seaCur; if (!r || seaBusy) return;   // seaBusy: a second tap while the claim is on its way
+  const u0 = uid, key = seaKey(r.season, u0), drop = () => store.set('fw27_vsclaim', seaMark(seaRec(), key));
+  if (seaDone || !r.reward){ if (!r.reward) drop(); seaClose(); return; }   // after the grant, or an unranked notice (remembered as seen): just close
+  seaBusy = true; $('seaBtn').disabled = true; $('seaMsg').textContent = '';
+  store.set('fw27_vsclaim', seaPend(seaRec(), key, r));
+  let a = sb ? await vsRpc('versus_claim', {p_season: r.season}) : {error: {}};
+  if (a.error && sb && sbAuthErr(a)) await sbReauth();   // the session is gone: a new player, who has no result to claim
+  seaBusy = false; $('seaBtn').disabled = false;
+  if (seaCur !== r) return;
+  const d = a.error ? null : seaNorm(a.data);
+  if (!d || d.season !== r.season || !d.reward){
+    if (uid !== u0 || /fw_vs_(unranked|no_result|season_open)|fw_bad_input/.test(String(a.error && a.error.message)) || (!a.error && a.data)){ drop(); toast(t('seaGone')); seaClose(); }   // the server will never give this one: stop asking
+    else $('seaMsg').textContent = t('seaFail');   // offline or a lost answer: the dialog stays, the next tap asks again
+    return;
+  }
+  if (seaRec().g.includes(key)){ seaClose(); return; }   // granted here before
+  const g = seaGive(d.reward, owned.has(d.reward.unit));
+  W.dia += g.dia; W.gems += g.gems; if (g.unit) owned.add(g.unit);
+  saveW(); drop();
+  seaDone = true; seaPills(g); $('seaMsg').textContent = t('seaGot') + (g.dup ? ' ' + t('seaDup', {u: unitName(d.reward.unit), n: d.reward.unit_gems}) : '');
+  $('seaBtn').textContent = t('seaOk'); SFX.fanfare(); haptic('newBest'); renderWallet(); renderHangar();
+});
 // Network: artifact room (claude.ai) → Supabase realtime (web build) → BroadcastChannel (#localtest only)
 let netKind = 'none', roomApi = null, netReady = null;
 const myPeer = 'p' + Math.random().toString(36).slice(2, 12);
@@ -3734,7 +3950,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
+if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots
@@ -3750,20 +3966,20 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       curve: () => { for (let i = 1; i < ST_N; i++){ const b = stTier(i) !== stTier(i-1); if (stD0(i) < stD0(i-1) || stGoal(i) < stGoal(i-1) || stGap0(i) > stGap0(i-1) || (b && stGap0(i) > stGap0(i-1) - 12)) return false; }
         return [1,2,3].every(t => ST_MOVE[t] + ST_PULSE[t] >= ST_MOVE[t-1] + ST_PULSE[t-1]); },
       pow: () => eq([0,.19,.2,.59,.6,.79,.8,.99].map(powKind), ['shield','shield','magnet','magnet','slow','slow','potion','potion']),
-      sk22: () => BIRDS.length === 22 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
+      sk23: () => BIRDS.length === 23 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
       ultra5: () => BIRDS.filter(b => b.rarity === 4).length === 5,
       tiers: () => eq(['volt','mochi','zero','aegis','solaris'].map(id => unitTier(birdById(id))), ['common','epic','legendary','mythic','ultra']) && eq(Object.keys(TIER_FX), RARITY_KEY.map(k => k.slice(2))),
       tierFx: () => { const L = ['epic','legendary','mythic','ultra'].map(k => TIER_FX[k]), up = (k, f) => L.every((v, i) => !i || (f ? v[k] >= L[i-1][k] : v[k] > L[i-1][k])), rad = v => v.rings[0] <= 2 ? v.rings[0]*LW : v.rings[0];
         return ['flash','shake','parts'].every(k => up(k)) && ['z','stop','sky','ban'].every(k => up(k, 1)) && L.every((v, i) => !i || (rad(v) > rad(L[i-1]) && v.rings.length >= L[i-1].rings.length)) && TIER_FX.ultra.shake < 18
           && eq([TIER_FX.common, TIER_FX.epic].map(v => [v.rings, v.flash, v.shake, v.z, v.stop, v.parts, v.sky, v.ban, v.big]), [[[180,110],.2,3,1.07,0,0,0,1,false],[[240,110],.3,5,1.07,0,0,0,1,false]]); },
-      unitFx: () => Object.keys(UNIT_ART).concat(Object.keys(UNIT_FX)).every(id => birdById(id)) && Object.values(UNIT_ART).every(f => typeof f === 'function') && ['solaris','pleiad','oracle','phoenix','zero','raijin','chrono','goliath','aegis','kraken','specter','aurora','tempest','pulsar'].every(id => UNIT_ART[id] && UNIT_FX[id])
+      unitFx: () => Object.keys(UNIT_ART).concat(Object.keys(UNIT_FX)).every(id => birdById(id)) && Object.values(UNIT_ART).every(f => typeof f === 'function') && ['solaris','pleiad','oracle','phoenix','zero','raijin','chrono','goliath','aegis','kraken','specter','aurora','tempest','pulsar','monarch'].every(id => UNIT_ART[id] && UNIT_FX[id])
         && BIRDS.every(b => (b.rarity || 0) < 2 || (UNIT_ART[b.id] && typeof UNIT_FX[b.id].idle === 'function')) && eq(['castT','castMax','sigT','sigK','perfT'].map(k => newFx()[k]), [0,0,0,'',0]) && [O0, OL].every(o => o.pose === 0 && o.vy === 0) && OL.lite && !O0.lite,
       i18n: () => Object.keys(I18N).every(l => BIRDS.every(b => ['r_','p_','sk_','sd_'].every(p => typeof I18N[l][p + b.id] === 'string' && I18N[l][p + b.id]))),
       i18nIdx: () => I18N.ja.p_pixel.startsWith('コイン2倍'),
       price: () => eq(['volt','mochi','zero','aegis','solaris','pulsar'].map(id => priceOf(birdById(id))), [null,{coin:40000,dia:10000,gem:15},{coin:90000,dia:22000,gem:25},{coin:100000,dia:33000,gem:40},{coin:150000,dia:40000,gem:100},{coin:150000,dia:40000,gem:100}]),
-      price3: () => BIRDS.every(b => { const p = priceOf(b); return b.rarity ? CUR.every(([k]) => Number.isInteger(p[k]) && p[k] > 0) : p === null; }),
+      price3: () => BIRDS.every(b => { const p = priceOf(b); return b.rarity && !b.season ? CUR.every(([k]) => Number.isInteger(p[k]) && p[k] > 0) : p === null; }),
       rarity: () => { const ids = r => BIRDS.filter(b => b.rarity === r).map(b => b.id).sort();
-        return eq(RARITY_KEY, ['r_common','r_epic','r_legendary','r_mythic','r_ultra']) && eq(ids(2), ['chrono','goliath','phoenix','raijin','zero']) && eq(ids(3), ['aegis','kraken','oracle','specter'])
+        return eq(RARITY_KEY, ['r_common','r_epic','r_legendary','r_mythic','r_ultra']) && eq(ids(2), ['chrono','goliath','monarch','phoenix','raijin','zero']) && eq(ids(3), ['aegis','kraken','oracle','specter'])
           && BIRDS.every((b, i) => !i || (b.rarity || 0) >= (BIRDS[i-1].rarity || 0)) && [2,3,4].every(r => CUR.every(([k]) => PRICE[r][k] > PRICE[r-1][k])); },
       coinTbl: () => eq(ST_SCOIN, [30,40,55,67]) && eq(ST_ORBP, [.3,.4,.5,.67]) && INCOME_X === 5 && eq([0,49,50,99,100,275].map(s => scoreCoins(s, 0)), [0,0,150,150,300,750]) && eq([1,2,3].map(tr => scoreCoins(120, tr)), [400,550,670]),
       dia: () => eq([0,9,10,24,25,39,40,49].map(diaClear), [0,0,1,1,2,2,3,3].map(i => DIA_CLEAR[i])) && [DIA_LEVEL, DIA_DAILY, ...DIA_CLEAR].every(n => Number.isInteger(n) && n > 0),
@@ -3792,7 +4008,33 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
           && eq([vsOutcome([P(5, 1)], [P(4)]), vsOutcome([P(4, 1)], [P(4)]), vsOutcome([P(3)], [P(4, 1)]), vsOutcome([P(4)], [P(4)]), vsOutcome([P(4)], [P(9, 1)])], ['win','','lose','draw','lose'])
           && eq(s1, [3, '110', 3, true]) && s3[0] === 1 && s3[2] === 1 && s3[3] === true && eq(s4, [null, '011', 0, false]) && mid && mid.id === '4.' + a + '+' + c + '.' + b + '+' + d && mid.team === 0
           && eq([vsCodeSz('1000'), vsCodeSz('4999'), vsCodeSz('5000'), vsCodeSz('9999'), vsCodeSz('0042')], [1,1,2,2,1])
-          && ['ko','en','ja','zh'].every(l => ['searching2','vsIn','vsFillBtn','vsAiFill','vs2Rules','vsUs','vsThem','vsMate','vsPracTag'].every(k => I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && I18N[l].vsM1 === '1v1' && I18N[l].vsM2 === '2v2' && I18N[l].searching2.includes('{n}') && I18N[l].vsIn.includes('{n}')); }
+          && ['ko','en','ja','zh'].every(l => ['searching2','vsIn','vsFillBtn','vsAiFill','vs2Rules','vsUs','vsThem','vsMate','vsPracTag'].every(k => I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && I18N[l].vsM1 === '1v1' && I18N[l].vsM2 === '2v2' && I18N[l].searching2.includes('{n}') && I18N[l].vsIn.includes('{n}')); },
+      season: () => { const U = Date.UTC, a = '00000000-0000-4000-8000-00000000000a', b = '00000000-0000-4000-8000-00000000000b';   // seasons: KST month ids and ends, the reward a claim adds, the claim record
+        const R = (s, rank, tier, dia, gems, unit) => ({season: s, rank, tier, rp: 1, wins: 1, losses: 0, draws: 0, matches: 1, reward: rank ? {dia, gems, unit: unit || null, unit_gems: 30} : null});
+        const tbl = [[1000,0],[2500,3],[5000,8],[9000,15],[15000,30]], give = (i, top, has) => seaGive(seaNorm(R(202610, top ? 1 : 11, i, tbl[i][0], tbl[i][1], top && 'monarch')).reward, has);
+        const r0 = {g: [], p: {}}, r1 = seaPend(r0, seaKey(202609, a), R(202609, 3, 3, 9000, 15, 'monarch')), r2 = seaMark(r1, seaKey(202609, a)), q = (rec, id, res) => seaQ(rec, id, res).map(x => x.season + (x.reward ? '' : 'u')).join();
+        return eq([U(2026,9,31,14,59,59), U(2026,9,31,15), U(2026,11,31,14,59,59), U(2026,11,31,15), U(2026,1,28,15), U(2026,9,8)].map(seaOf), [202610,202611,202612,202701,202603,202610])   // 2026-10-31 15:00 UTC is already November in Korea
+          && eq([202610,202612,202602].map(seaEnd), [U(2026,9,31,15), U(2026,11,31,15), U(2026,1,28,15)]) && [202610,202612,202701].every(s => seaOf(seaEnd(s) - 1) === s && seaOf(seaEnd(s)) === (s % 100 === 12 ? s + 89 : s + 1))
+          && eq([23 * 864e5 + 5, 864e5, 864e5 - 1, 36e5 + 1, 5].map(seaLeft), [t('seaD', {n: 23}), t('seaD', {n: 1}), t('seaH', {n: 23}), t('seaH', {n: 1}), t('seaH', {n: 1})])
+          && tbl.every((x, i) => eq(give(i, false, false), {dia: x[0], gems: x[1], unit: '', dup: false}) && eq(give(i, true, false), {dia: x[0], gems: x[1], unit: 'monarch', dup: false}) && eq(give(i, true, true), {dia: x[0], gems: x[1] + 30, unit: '', dup: true}))
+          && seaNorm(R(202610, 0, 1)).reward === null && seaNorm({season: 'x'}) === null && seaNorm(null) === null && eq(seaNorm({season: 202610, rank: 2, tier: 9, rp: -5, wins: 'x', losses: 2.7, reward: {dia: -1, gems: 1e9, unit: '<b>', unit_gems: 'q'}}), {season: 202610, rank: 2, tier: 4, rp: 0, wins: 0, losses: 2, reward: {dia: 0, gems: 1e4, unit: '', unit_gems: 0}})
+          && q(r0, a, [R(202610, 5, 2, 5000, 8, 'monarch'), R(202609, 0, 0)]) === '202609u,202610' && q(r1, a, []) === '202609' && q(r1, b, []) === '' && q(r1, a, [R(202609, 3, 3, 9000, 15, 'monarch'), R(202610, 1, 4, 15000, 30, 'monarch')]) === '202609,202610'   // pending and listed: once
+          && q(r2, a, [R(202609, 3, 3, 9000, 15, 'monarch')]) === '' && eq(r2, {g: [seaKey(202609, a)], p: {}}) && eq(seaMark(r2, seaKey(202609, a)), r2) && q(r2, b, [R(202609, 3, 3, 9000, 15, 'monarch')]) === '202609'   // granted: never again for that player
+          && Object.keys(Array.from({length: 9}, (x, i) => i).reduce((rec, i) => seaPend(rec, seaKey(202601 + i, a), R(202601 + i, 1, 0, 1, 0)), r0).p).length === 6 && Array.from({length: 30}, (x, i) => i).reduce((rec, i) => seaMark(rec, 'k' + i), r0).g.length === 24
+          && Object.keys(I18N_F).every(l => I18N_F[l].length === I18N_F_KEYS.length) && ['ko','en','ja','zh'].every(l => /MONARCH/.test(I18N[l].seasonNote) && /10/.test(I18N[l].seasonNote)
+            && ['seaLine','seaD','seaH','seaTitle','seaRank','seaUnranked','seaStat','seaClaim','seaGot','seaUnit','seaDup','seaFail','seaGone','seaNow','seaLast','seaFirst','seaNone','seaMine','seaMineU'].every(k => I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && I18N[l].seaOk
+            && I18N[l].seaLine.includes('{m}') && I18N[l].seaLine.includes('{t}') && I18N[l].seaUnranked.includes('{n}') && I18N[l].seaDup.includes('{u}') && I18N[l].seaDup.includes('{n}')); },
+      monarch: () => { const m = birdById('monarch'), z = birdById('zero'), pk = md => { const b0 = B, m0 = mode; B = m; mode = md; const p = perks(), v = [p.shieldStart, p.shieldMax, p.shieldRegen, skv('cd'), skv('dur'), skv('win')]; B = b0; mode = m0; return v; };   // the season unit: legendary rank under its own label, no price, no trial, fair modes, texts that state its numbers
+        const b0 = B, has = owned.has('monarch'), tr0 = store.get('fw27_trial', ''), w0 = JSON.stringify(W), menu = state === 'menu'; let shut = true;
+        owned.delete('monarch'); unlockBird(m); shut = $('confScr').hidden && !owned.has('monarch') && JSON.stringify(W) === w0;   // a direct call does nothing
+        if (menu){ B = m; store.set('fw27_trial', ''); startGame('endless'); shut = shut && state === 'menu' && !runTrial && store.get('fw27_trial', '') === ''; store.set('fw27_trial', tr0); B = b0; $('toast').hidden = true; }   // no trial run even with today's trial unused
+        if (has) owned.add('monarch'); if (menu) renderHangar();
+        return shut && m.season && m.rarity === 2 && unitTier(m) === 'legendary' && BIRDS.filter(b => b.season).length === 1 && BIRDS.indexOf(m) === BIRDS.findIndex(b => b.rarity === 3) - 1 && priceOf(m) === null
+          && rarKey(m) === 'r_season' && eq(rarCol(m), SEASON_COL) && !RARITY_COL.some(c => eq(c, SEASON_COL)) && rarKey(z) === 'r_legendary' && eq(rarCol(z), RARITY_COL[2])
+          && eq(pk('endless'), [1, 1, m.shieldRegen, SK.monarch.cd, SK.monarch.dur, SK.monarch.win]) && m.shieldRegen > 0 && SK.monarch.win > 0 && eq(pk('daily'), [1,1,0,18,1,0]) && eq(pk('versus'), [1,1,0,18,1,0])
+          && ['shields','opt','back','sky','cast','snd','perfect','sig','death','idle','trail'].every(k => typeof UNIT_FX.monarch[k] === 'function')
+          && ['ko','en','ja','zh'].every(l => I18N[l].p_monarch.includes(String(m.shieldRegen)) && I18N[l].p_monarch.includes('1') && I18N[l].sd_monarch.includes('{n}') && I18N[l].sd_monarch.includes(String(SK.monarch.win)) && I18N[l].seaOnly.includes('10')
+            && (l === 'en' || ['r_monarch','p_monarch','sk_monarch','sd_monarch','r_season','seaOnly'].every(k => I18N[l][k] !== I18N.en[k]))); }
     };
     for (const k in checks){ let ok = false; try { ok = checks[k](); } catch(e){} if (!ok) fails.push(k); }
     return fails;

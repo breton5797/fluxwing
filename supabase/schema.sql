@@ -21,11 +21,16 @@
 --   Realtime quotas are per plan (Free: 100 messages/s and 20 presence messages/s for the whole project):
 --   one versus match costs about 20 messages/s at the client's 5 state sends per second per player.
 --   Housekeeping: Supabase has no automatic clean-up of anonymous users. Deleting an auth user deletes
---   their score row and their versus row (on delete cascade), so only prune users that have no row in
---   public.fw_scores and none in public.fw_versus. Versus match bookkeeping cleans itself up when a participant
+--   their score row, their versus row and their season results (on delete cascade), so only prune users that
+--   have no row in public.fw_scores, none in public.fw_versus and none in public.fw_vs_standing.
+--   Versus match bookkeeping cleans itself up when a participant
 --   comes back; for players who never do, run now and then (it takes every match that old, whatever its
 --   status — also the ones still 'open' because nobody of theirs ever called again; no pg_cron is used):
 --     delete from private.fw_vs_match where started_at < now() - interval '30 days';
+--   Season results (public.fw_vs_standing) grow by one row per player who played, per season, and the game
+--   never deletes them. To drop seasons older than a year (rewards not claimed by then go with them):
+--     delete from public.fw_vs_standing
+--     where season < to_char((now() at time zone 'Asia/Seoul') - interval '12 months', 'YYYYMM')::integer;
 -- =====================================================================================================
 
 -- ---------- schemas ----------
@@ -104,7 +109,8 @@ grant select, insert, update, delete on table public.fw_scores to service_role; 
 create or replace function private.fw_units() returns text[]
 language sql immutable set search_path = '' as $$
   select array['volt','blitz','nimbus','titan','mochi','aegis','phoenix','zero','pixel','neko','buzz',
-               'kraken','specter','oracle','raijin','chrono','goliath','solaris','aurora','tempest','pleiad','pulsar'];
+               'kraken','specter','oracle','raijin','chrono','goliath','solaris','aurora','tempest','pleiad','pulsar',
+               'monarch'];   -- monarch: the season reward unit (private.fw_vs_season_cfg().top_unit)
 $$;
 revoke all on function private.fw_units() from public, anon, authenticated;
 
@@ -248,6 +254,8 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 --   versus_start(match, mode, team, nick, cc, bird)   when the countdown ends: registers the caller in the match
 --   versus_report(match, result)                      'win' | 'lose' | 'draw' from the caller's TEAM's point of view
 --   versus_me()                                       the caller's RP row (creates nothing) + their latest match
+--                                                     + the season and the caller's unclaimed past results
+--   versus_claim(season)                              the caller's result and reward for an ended season, once
 -- and applies RP itself, once per match, inside these calls (no cron).
 --
 -- Match id (text), built identically by every participant:  <seed, base 36>.<team 0>.<team 1>
@@ -270,13 +278,13 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 --   4. nobody has reported by (first registration + void_after)         -> VOID. void_after is long on purpose:
 --      a match is one endless seeded run and good players can fly for many minutes, so a match with no report
 --      yet is normally just still being played (it used to be voided at settle_after, 5 minutes).
---      A deadline is only looked at when a participant of that match next calls one of the three functions.
+--      A deadline is only looked at when a participant of that match next calls versus_start, versus_report or versus_me.
 --   A match with a single registered team can never give RP. Roster members who never registered are untouched.
 --   Applied per participant, in player_id order: win +rp_win, loss -rp_loss floored at 0, and wins / losses / draws.
 --   Values: private.fw_vs_cfg().
 --
 -- What a modified client can and cannot do:
---   - Write the tables, or call anything but the three functions: no (RLS without a write policy, no table
+--   - Write the tables, or call anything but the four functions: no (RLS without a write policy, no table
 --     privilege, the bookkeeping sits in the unexposed schema, helpers are not executable by clients).
 --   - Report for someone else, twice, without having registered, or change a report: no.
 --   - Claim a win it did not earn: the rival's honest report contradicts it -> void. So a cheat can always turn its
@@ -297,13 +305,94 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 --     matches are deleted after "keep" when one of their participants next calls in. Both caps are counted under
 --     a per-player lock, so a burst of parallel calls cannot slip past them.
 --
+-- SEASONS. A season is one calendar month in Korea time (Asia/Seoul) and has the id YYYYMM of that month
+-- (202610); it changes at 00:00 KST on the 1st. private.fw_vs_season holds, in its single row, the id of the
+-- season that fw_versus currently describes. There is no cron: every one of the four functions calls
+-- private.fw_vs_tick() as soon as its arguments have been checked (a call with bad arguments is refused before
+-- it, so it can never make the server do a rollover), and the first call whose clock is in a later month than
+-- that row does the rollover, inside its own transaction, before it reads or writes anything else:
+--   1. every fw_versus row with at least one ranked match (wins + losses + draws > 0) is copied to
+--      public.fw_vs_standing under the season that ended, with its tier and, for players with at least
+--      min_matches ranked matches, its rank: rp desc, wins desc, earlier updated_at, player_id — a total
+--      order, so no two players share a rank. Players below min_matches are kept with their numbers but
+--      without a rank (and without a reward);
+--   2. rp, wins, losses and draws of every fw_versus row are set to 0 (the row, its nick / cc / bird stay);
+--   3. the state row moves to the current month and remembers the season just closed ("prev").
+-- Exactly once: step 3 is in the same transaction, and the whole of it runs under the season lock (below).
+-- A match that straddles the boundary belongs to the NEW season: RP is applied when a match settles, not when
+-- it starts, and a settlement can only run before the rollover (then it is part of the standings) or after it
+-- (then it lands on the zeroed row). Nothing but the rollover ever writes fw_vs_standing rows; settlement
+-- writes fw_versus only, so no settlement can reach an archived season.
+-- Months in which nobody called at all: the rollover runs once, when the next call comes. The numbers in
+-- fw_versus are then still those of the last season anybody played in, and are archived under THAT season's id;
+-- the silent months in between get no standings (nobody played, so there is nothing to rank) and "prev" names
+-- the season that was archived. Applying this file to a database that already has fw_versus rows starts the
+-- first season with those rows as they are (nothing is reset by the upgrade itself).
+-- Rewards are decided here, from the archived row, by private.fw_vs_reward(): a tier reward for every ranked
+-- player and the limited unit for ranks 1..top_n (numbers: private.fw_vs_season_cfg()). versus_claim marks the
+-- row claimed and returns the reward; a second call returns the same answer with "already": true.
+-- If the state row is ever set back by hand to a season that already has standings, the rollover keeps that
+-- archive as it is and writes nothing to it (the numbers then in fw_versus are reset without being archived).
+--
+-- SCALE LIMIT OF THE ROLLOVER. It is one insert and one update over every played fw_versus row, inside a single
+-- player's request, under the statement timeout of the API role (8 s for "authenticated" on Supabase). If it
+-- cannot finish in that time the call fails and everything is rolled back, the state row stays on the old month,
+-- and EVERY versus call (start, report, me, claim) tries the same rollover again and fails the same way: the
+-- ranking is down until an operator rolls over by hand. Fine for tens of thousands of players; this becomes a
+-- concern at around 10^5 players with a ranked match in one season. The remedy then is to take the rollover out
+-- of the players' requests: a scheduled job (pg_cron, shortly after 00:00 KST on the 1st, running the block
+-- below) or a batched rollover.
+-- Manual recovery, as a superuser (SQL editor / psql as postgres). It does what fw_vs_tick() does, without the
+-- timeout; every statement is a no-op when the state row already names the current month, so it is safe to run
+-- twice or after a player's call got through:
+--   begin;
+--   set local statement_timeout = 0;
+--   select pg_advisory_xact_lock(hashtextextended('fw_vs_season', 0));   -- the season lock, exclusive: waits for the calls in flight
+--   insert into public.fw_vs_standing (season, player_id, rank, rp, tier, wins, losses, draws, matches, nick, cc, bird)
+--   select x.season, x.player_id,
+--          case when x.ok then (row_number() over (partition by x.ok order by x.rp desc, x.wins desc, x.updated_at, x.player_id))::integer end,
+--          x.rp, private.fw_vs_tier(x.rp), x.wins, x.losses, x.draws, x.n, x.nick, x.cc, x.bird
+--   from (select s.season, v.player_id, v.rp, v.wins, v.losses, v.draws, v.updated_at, v.nick, v.cc, v.bird,
+--                v.wins + v.losses + v.draws as n,
+--                v.wins + v.losses + v.draws >= (select c.min_matches from private.fw_vs_season_cfg() c) as ok
+--         from public.fw_versus v cross join private.fw_vs_season s
+--         where v.wins + v.losses + v.draws > 0 and s.season < private.fw_vs_season_of(now())
+--           and not exists (select 1 from public.fw_vs_standing t where t.season = s.season)) x;
+--   update public.fw_versus set rp = 0, wins = 0, losses = 0, draws = 0
+--   where (rp <> 0 or wins <> 0 or losses <> 0 or draws <> 0)
+--     and (select s.season from private.fw_vs_season s) < private.fw_vs_season_of(now());
+--   update private.fw_vs_season set prev = season, season = private.fw_vs_season_of(now()), rolled_at = now()
+--   where one and season < private.fw_vs_season_of(now());
+--   commit;
+--
+-- What the rewards change, and what a modified client can do with them:
+--   - Collusion now pays in currency and in a unit, not only in a number on a board: two accounts trading wins
+--     (see above) can lift one of them into a higher tier or into the top N. The brakes are the ones above plus
+--     min_matches: with pair_cap matches per rival per pair_window, a farmed account needs several feeders or
+--     several days, each feeder being a rate-limited anonymous sign-in. A feeder that only loses still gets the
+--     Bronze reward once it has min_matches matches — kept small on purpose.
+--   - Claim someone else's reward, a running season, or twice on the server: no (own row only, ended season
+--     only, claimed_at set once under a row lock).
+--   - The wallet and the owned units are held on the device (as purchases are today): "claimed once" stops the
+--     server from answering twice with "already": false, it does not stop anyone from editing local storage and
+--     giving themselves diamonds, gems or the unit. Server-held inventory is what closes that.
+--   - The reward always names the unit for ranks 1..top_n. Whether the player already owns it is known only to
+--     the device, so the client tells the server nothing and converts the unit into unit_gems gems on its own
+--     when it is already owned; the server cannot and does not check that.
+--   - Read the standings: the top 10 of any season plus one's own rows, by policy; nothing else.
+--
 -- Locks, in the one order every call follows (so two calls can never wait on each other in a circle):
---   a. versus_start only: the caller's own cap lock (advisory, key = hash(uid, 1)) — taken first, holding nothing;
+--   0. the season lock (advisory, key = hash('fw_vs_season', 0)) — taken first by every call, holding nothing:
+--      SHARED by a normal call, EXCLUSIVE by the call that does the rollover. So a rollover waits until every
+--      call that is settling something has finished, and no settlement starts while a rollover runs; the
+--      rollover then touches every fw_versus row with nobody else holding any of them;
+--   a. versus_start only: the caller's own cap lock (advisory, key = hash(uid, 1)) — holding nothing but 0.;
 --   b. the one match the call is about (row lock, waited for while holding nothing else but a.);
 --   c. the caller's other open matches — only those nobody else is working on (SKIP LOCKED: never waited for;
 --      a match skipped here is settled by whoever holds it, or on the next call);
 --   d. a settle lock (advisory, key = hash(uid, 0)) for every participant of the matches held, in player id order;
---   e. the fw_versus rows of those players — only ever touched under d.
+--   e. the fw_versus rows of those players — only ever touched under d. (or by the rollover, under 0. exclusive);
+--   f. versus_claim only: the caller's own fw_vs_standing row (row lock), holding nothing but 0.
 -- =====================================================================================================
 
 -- ---------- table: one row per player who has finished at least one ranked match ----------
@@ -328,6 +417,9 @@ comment on table public.fw_versus is 'Flux Wing versus ranking: one row per (ano
 
 -- The board: top 100 by rp (player_id breaks ties, so the order is stable), and "how many are above me" (rp > mine).
 create index if not exists fw_versus_rp_idx on public.fw_versus (rp desc, player_id);
+-- After a season rollover every row is back at 0: the board lists only players with a match in the running season
+-- (the client's filter is exactly this predicate), in the same order.
+create index if not exists fw_versus_live_idx on public.fw_versus (rp desc, player_id) where wins > 0 or losses > 0 or draws > 0;
 
 alter table public.fw_versus enable row level security;
 drop policy if exists fw_versus_read on public.fw_versus;
@@ -378,6 +470,56 @@ alter table private.fw_vs_part  enable row level security;
 revoke all on table private.fw_vs_match, private.fw_vs_part from public, anon, authenticated;
 grant select, insert, update, delete on table private.fw_vs_match, private.fw_vs_part to service_role;
 
+-- ---------- seasons: the state row and the archived standings ----------
+create table if not exists private.fw_vs_season (
+  one       boolean     primary key default true,           -- a single row
+  season    integer     not null,                           -- YYYYMM (Asia/Seoul) of the season fw_versus describes
+  prev      integer,                                        -- the season closed by the latest rollover (null: none yet)
+  rolled_at timestamptz,
+  constraint fw_vs_season_one_chk check (one),
+  constraint fw_vs_season_id_chk  check (season between 200001 and 999912 and season % 100 between 1 and 12)
+);
+alter table private.fw_vs_season enable row level security;   -- no policy, as for the match bookkeeping
+revoke all on table private.fw_vs_season from public, anon, authenticated;
+grant select, insert, update, delete on table private.fw_vs_season to service_role;
+
+create table if not exists public.fw_vs_standing (
+  season     integer     not null,
+  player_id  uuid        not null references auth.users (id) on delete cascade,
+  rank       integer,                                       -- null: fewer than min_matches ranked matches (no reward)
+  rp         integer     not null,
+  tier       smallint    not null,                          -- 0..4, from rp at the rollover
+  wins       integer     not null,
+  losses     integer     not null,
+  draws      integer     not null,
+  matches    integer     not null,                          -- wins + losses + draws
+  nick       text        not null,
+  cc         text        not null,
+  bird       text        not null,
+  claimed_at timestamptz,                                   -- versus_claim
+  created_at timestamptz not null default now(),            -- the rollover
+  primary key (season, player_id),
+  constraint fw_vs_standing_rank_chk check (rank is null or rank >= 1),
+  constraint fw_vs_standing_tier_chk check (tier between 0 and 4),
+  constraint fw_vs_standing_num_chk  check (rp >= 0 and wins >= 0 and losses >= 0 and draws >= 0 and matches = wins + losses + draws)
+);
+comment on table public.fw_vs_standing is 'Flux Wing versus ranking: final standings of ended seasons. Rows written only by private.fw_vs_tick() (rollover), claimed_at only by private.fw_versus_claim().';
+-- a season's ranks in order (the past-season board: rank <= 10); unique: no shared ranks
+create unique index if not exists fw_vs_standing_rank_idx on public.fw_vs_standing (season, rank) where rank is not null;
+-- one player's results (versus_me, and the cascade from auth.users)
+create index if not exists fw_vs_standing_player_idx on public.fw_vs_standing (player_id, season);
+
+alter table public.fw_vs_standing enable row level security;
+-- Read: the top 10 of a season and the caller's own rows, nothing else. (The 10 is what the board shows. It equals
+-- top_n today, but it is a display limit: a policy cannot call the config function, which clients may not execute.)
+drop policy if exists fw_vs_standing_read on public.fw_vs_standing;
+create policy fw_vs_standing_read on public.fw_vs_standing for select to authenticated
+using (rank <= 10 or player_id = (select auth.uid()));
+-- No INSERT / UPDATE / DELETE policy on purpose (same model as fw_versus).
+revoke all on table public.fw_vs_standing from public, anon, authenticated;
+grant select (season, player_id, rank, rp, tier, wins, losses, draws, nick, cc, bird) on table public.fw_vs_standing to authenticated;   -- claimed_at and the timestamps stay private
+grant select, insert, update, delete on table public.fw_vs_standing to service_role;   -- server-side moderation only
+
 -- ---------- the numbers, in one place ----------
 drop function if exists private.fw_vs_cfg();   -- its OUT columns changed (void_after): "create or replace" cannot do that
 create or replace function private.fw_vs_cfg(
@@ -393,6 +535,20 @@ create or replace function private.fw_vs_cfg(
   out keep interval              -- finished matches older than this are deleted
 ) language sql immutable set search_path = '' as $$
   select 50, 45, interval '20 seconds', interval '4 seconds', interval '5 minutes', interval '60 seconds', interval '20 minutes', 30, 5, interval '24 hours', interval '3 days';
+$$;
+-- Seasons and their rewards. Arrays are per tier, Bronze first. tier_rp MIRRORS THE CLIENT'S TIERS (index.html:
+-- TIERS = [0, 400, 1000, 2000, 3600]); the server's copy decides the reward, the client's only draws the badge.
+create or replace function private.fw_vs_season_cfg(
+  out tz text,                   -- a season is one calendar month in this time zone
+  out min_matches integer,       -- settled ranked matches (wins + losses + draws) in the season to get a rank and a reward
+  out tier_rp integer[],         -- lowest RP of each tier
+  out tier_dia integer[],        -- tier reward: diamonds ...
+  out tier_gems integer[],       -- ... and gems
+  out top_n integer,             -- ranks 1..top_n also get ...
+  out top_unit text,             -- ... this unit (an id in private.fw_units())
+  out unit_gems integer          -- what the client grants instead when the device already owns that unit
+) language sql immutable set search_path = '' as $$
+  select 'Asia/Seoul', 10, array[0, 400, 1000, 2000, 3600], array[1000, 2500, 5000, 9000, 15000], array[0, 3, 8, 15, 30], 10, 'monarch', 30;
 $$;
 
 -- ---------- helpers (not executable by clients; they run inside the definer functions below) ----------
@@ -426,6 +582,86 @@ language sql immutable set search_path = '' as $$
           regexp_replace(left(coalesce(p_nick, ''), 64), '[\u0001-\u001F\u007F-\u009F\u200B-\u200F\u2028-\u202E\u2060-\u2069\uFEFF<>]', '', 'g'),
           '\s+', ' ', 'g')), 14)) as n) s;
 $$;
+
+-- Season id (YYYYMM in the season time zone) of an instant, and the instant a season ends (= the next one starts).
+-- The month is added to the local wall-clock time, not to the timestamptz: "+ 1 month" on a timestamptz is done in
+-- the session's time zone and would land a day off.
+create or replace function private.fw_vs_season_of(p_at timestamptz) returns integer
+language sql stable set search_path = '' as $$
+  select (extract(year from l.t) * 100 + extract(month from l.t))::integer
+  from (select p_at at time zone (select c.tz from private.fw_vs_season_cfg() c) as t) l;
+$$;
+create or replace function private.fw_vs_season_end(p_season integer) returns timestamptz
+language sql stable set search_path = '' as $$
+  select (make_timestamp(p_season / 100, p_season % 100, 1, 0, 0, 0) + interval '1 month') at time zone (select c.tz from private.fw_vs_season_cfg() c);
+$$;
+create or replace function private.fw_vs_tier(p_rp integer) returns integer
+language sql immutable set search_path = '' as $$
+  select coalesce(max(i), 1) - 1 from private.fw_vs_season_cfg() c, generate_subscripts(c.tier_rp, 1) i where p_rp >= c.tier_rp[i];
+$$;
+-- The reward of an archived row: null without a rank.
+create or replace function private.fw_vs_reward(p_rank integer, p_tier integer) returns jsonb
+language sql immutable set search_path = '' as $$
+  select case when p_rank is null then null else jsonb_build_object(
+           'dia', c.tier_dia[p_tier + 1], 'gems', c.tier_gems[p_tier + 1],
+           'unit', case when p_rank <= c.top_n then c.top_unit end, 'unit_gems', c.unit_gems) end
+  from private.fw_vs_season_cfg() c;
+$$;
+-- One archived result as the client is told it (versus_me, versus_claim).
+create or replace function private.fw_vs_result(p_uid uuid, p_season integer) returns jsonb
+language sql stable set search_path = '' as $$
+  select jsonb_build_object('season', t.season, 'rank', t.rank, 'tier', t.tier, 'rp', t.rp, 'wins', t.wins, 'losses', t.losses,
+           'draws', t.draws, 'matches', t.matches, 'reward', private.fw_vs_reward(t.rank, t.tier))
+  from public.fw_vs_standing t where t.season = p_season and t.player_id = p_uid;
+$$;
+
+-- The season gate: what every entry point does right after checking its arguments, before it touches any row. Takes
+-- the season lock (lock order 0) and, when the month has changed, does the rollover described in the section header.
+-- Returns the id of the running season.
+create or replace function private.fw_vs_tick() returns integer
+language plpgsql set search_path = '' as $$
+declare
+  c_key constant bigint := hashtextextended('fw_vs_season', 0);
+  v_now integer := private.fw_vs_season_of(now());
+  v_cur integer;
+  v_min integer;
+begin
+  select s.season into v_cur from private.fw_vs_season s;
+  if v_cur >= v_now then            -- the usual case (also a call whose clock is still in the month before a rollover already done)
+    perform pg_advisory_xact_lock_shared(c_key);
+    select s.season into v_cur from private.fw_vs_season s;   -- as it is now that no rollover can be running
+    return v_cur;
+  end if;
+  perform pg_advisory_xact_lock(c_key);   -- waits for every call in flight; held to the end of this call
+  select s.season into v_cur from private.fw_vs_season s for update;
+  if not found then                 -- the seed row was removed by hand: start a season, archive nothing
+    insert into private.fw_vs_season (season) values (v_now) on conflict (one) do nothing;
+    return v_now;
+  end if;
+  if v_cur >= v_now then return v_cur; end if;   -- another call did it while this one waited
+
+  -- Archive, unless this season already has standings. That cannot be while the state row is right; it is the case
+  -- when the row was set back by hand to a season archived before. Then the first archive stands untouched and the
+  -- numbers now in fw_versus are only reset: ranking them again would start at rank 1 a second time and break the
+  -- unique (season, rank) index on every call ("on conflict (season, player_id)" does not cover that index), which
+  -- would stop the rollover, and with it every versus call, for good.
+  if not exists (select 1 from public.fw_vs_standing t where t.season = v_cur) then
+    select c.min_matches into v_min from private.fw_vs_season_cfg() c;
+    insert into public.fw_vs_standing (season, player_id, rank, rp, tier, wins, losses, draws, matches, nick, cc, bird)
+    select v_cur, x.player_id,
+           case when x.ok then (row_number() over (partition by x.ok order by x.rp desc, x.wins desc, x.updated_at, x.player_id))::integer end,
+           x.rp, private.fw_vs_tier(x.rp), x.wins, x.losses, x.draws, x.n, x.nick, x.cc, x.bird
+    from (select v.player_id, v.rp, v.wins, v.losses, v.draws, v.updated_at, v.nick, v.cc, v.bird,
+                 v.wins + v.losses + v.draws as n, v.wins + v.losses + v.draws >= v_min as ok
+          from public.fw_versus v where v.wins + v.losses + v.draws > 0) x;
+  end if;
+  update public.fw_versus set rp = 0, wins = 0, losses = 0, draws = 0 where rp <> 0 or wins <> 0 or losses <> 0 or draws <> 0;
+  update private.fw_vs_season set season = v_now, prev = v_cur, rolled_at = now() where one;   -- "where": the API roles run with pg_safeupdate, which refuses an UPDATE without one
+  return v_now;
+end;
+$$;
+-- The first season is the month in which this file is first applied.
+insert into private.fw_vs_season (season) values (private.fw_vs_season_of(now())) on conflict (one) do nothing;
 
 -- Settle one match if its state allows it (rules 1-3 above). Safe to call any number of times.
 create or replace function private.fw_vs_settle(p_match text) returns void
@@ -526,11 +762,12 @@ begin
 end;
 $$;
 
--- What the client is told about itself and about one of its matches.
+-- What the client is told about itself and about one of its matches. "ranked": a settled match in the running season
+-- (the row itself outlives the season reset).
 create or replace function private.fw_vs_row(p_uid uuid) returns jsonb
 language sql set search_path = '' as $$
   select coalesce(
-    (select jsonb_build_object('rp', v.rp, 'wins', v.wins, 'losses', v.losses, 'draws', v.draws, 'ranked', true)
+    (select jsonb_build_object('rp', v.rp, 'wins', v.wins, 'losses', v.losses, 'draws', v.draws, 'ranked', v.wins + v.losses + v.draws > 0)
      from public.fw_versus v where v.player_id = p_uid),
     jsonb_build_object('rp', 0, 'wins', 0, 'losses', 0, 'draws', 0, 'ranked', false));
 $$;
@@ -543,7 +780,7 @@ language sql set search_path = '' as $$
   where m.id = p_match;
 $$;
 
--- ---------- the three entry points ----------
+-- ---------- the four entry points ----------
 -- Structure as for submit_score: public.versus_*() SECURITY INVOKER wrappers in the exposed schema,
 -- private.fw_versus_*() SECURITY DEFINER with search_path = '' doing the work, for auth.uid() only.
 create or replace function private.fw_versus_start(
@@ -567,9 +804,8 @@ begin
   if v_uid is null then
     raise exception 'fw_auth: sign-in required' using errcode = '28000';
   end if;
-  -- the caps below are read-then-insert: one start at a time per player, or parallel calls would each see the count before the others' rows
-  perform pg_advisory_xact_lock(hashtextextended(v_uid::text, 1));
-  select * into c from private.fw_vs_cfg();
+  -- Everything that depends only on the arguments and the caller's id is checked BEFORE the season gate: these checks
+  -- read no table and take no lock, so a call refused here can never do (and then roll back) a rollover.
   if p_match is null or char_length(p_match) > 160   -- length first: nothing longer reaches the regular expressions
      or p_mode is null or p_mode not in ('1v1', '2v2') or p_team is null or p_team not in (0, 1)
      or p_bird is null or not (p_bird = any (private.fw_units()))
@@ -587,6 +823,13 @@ begin
   if v_team <> p_team then
     raise exception 'fw_bad_input: wrong team for this match id' using errcode = '22023';
   end if;
+
+  -- What follows needs the database (the match's mode and join window, the caps), so it can only come after the gate:
+  -- a well-formed call that is refused below may still have paid for a rollover that its error rolls back. Accepted.
+  perform private.fw_vs_tick();   -- lock order 0: the season lock (and the rollover, when the month has changed)
+  -- the caps below are read-then-insert: one start at a time per player, or parallel calls would each see the count before the others' rows
+  perform pg_advisory_xact_lock(hashtextextended(v_uid::text, 1));   -- lock order a: after the season lock, as before
+  select * into c from private.fw_vs_cfg();
 
   -- the match: created by its first registration. Its row is locked before anything else of the ranking (lock order b);
   -- a call refused further down raises, which takes the row back out.
@@ -654,6 +897,7 @@ begin
     raise exception 'fw_bad_input: unknown result' using errcode = '22023';
   end if;
   select * into c from private.fw_vs_cfg();
+  perform private.fw_vs_tick();   -- lock order 0. A match started in the season that has just ended settles into the new one.
   perform 1 from private.fw_vs_match where id = p_match for update;   -- lock order b: this match first, then the sweep
   perform private.fw_vs_sweep(v_uid);   -- a report that comes after the deadline finds the match already settled
 
@@ -685,17 +929,69 @@ security definer
 set search_path = ''
 as $$
 declare
-  v_uid uuid := (select auth.uid());
+  v_uid    uuid := (select auth.uid());
+  v_season integer;
+  v_prev   integer;
 begin
   if v_uid is null then
     raise exception 'fw_auth: sign-in required' using errcode = '28000';
   end if;
+  v_season := private.fw_vs_tick();   -- lock order 0
+  select s.prev into v_prev from private.fw_vs_season s;
   perform private.fw_vs_sweep(v_uid);
   return private.fw_vs_row(v_uid) || jsonb_build_object(
     'pending', (select count(*) from private.fw_vs_part p join private.fw_vs_match m on m.id = p.match_id
                 where p.player_id = v_uid and m.status = 'open'),
     'last', (select private.fw_vs_state(v_uid, p.match_id) from private.fw_vs_part p
-             where p.player_id = v_uid order by p.joined_at desc limit 1));
+             where p.player_id = v_uid order by p.joined_at desc limit 1),
+    'season', v_season, 'season_end', private.fw_vs_season_end(v_season), 'prev', v_prev,
+    'need', (select c.min_matches from private.fw_vs_season_cfg() c),
+    -- past results not claimed yet, oldest first: every ranked one, and the unranked one of the season just closed
+    -- (that one carries no reward and cannot be claimed; the client shows it once)
+    'results', (select coalesce(jsonb_agg(private.fw_vs_result(v_uid, x.season) order by x.season), '[]'::jsonb)
+                from (select t.season from public.fw_vs_standing t
+                      where t.player_id = v_uid and t.claimed_at is null and (t.rank is not null or t.season = v_prev)
+                      order by t.season limit 12) x));
+end;
+$$;
+
+-- The caller's result and reward for an ended season. The first call marks it claimed; any later one returns the same
+-- answer with "already": true, so a client whose first answer was lost can ask again and decide for itself.
+create or replace function private.fw_versus_claim(p_season integer) returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid    uuid := (select auth.uid());
+  v_season integer;
+  v_rank   integer;
+  v_at     timestamptz;
+begin
+  if v_uid is null then
+    raise exception 'fw_auth: sign-in required' using errcode = '28000';
+  end if;
+  if p_season is null or p_season < 200001 or p_season > 999912 then   -- before the season gate: a call refused here does no rollover
+    raise exception 'fw_bad_input: bad season' using errcode = '22023';
+  end if;
+  -- The checks below need the database (which season is running, the caller's archived row) and so come after the gate:
+  -- a well-formed claim that is refused may still have paid for a rollover that its error rolls back. Accepted.
+  v_season := private.fw_vs_tick();   -- lock order 0
+  if p_season >= v_season then
+    raise exception 'fw_vs_season_open: this season has not ended' using errcode = 'P0001';
+  end if;
+  select t.rank, t.claimed_at into v_rank, v_at from public.fw_vs_standing t
+  where t.season = p_season and t.player_id = v_uid for update;   -- lock order f: a double tap waits here and then sees claimed_at
+  if not found then
+    raise exception 'fw_vs_no_result: no result for this player in that season' using errcode = 'P0001';
+  end if;
+  if v_rank is null then
+    raise exception 'fw_vs_unranked: too few ranked matches in that season, no reward' using errcode = 'P0001';
+  end if;
+  if v_at is null then
+    update public.fw_vs_standing set claimed_at = now() where season = p_season and player_id = v_uid;
+  end if;
+  return private.fw_vs_result(v_uid, p_season) || jsonb_build_object('already', v_at is not null);
 end;
 $$;
 
@@ -722,8 +1018,22 @@ set search_path = ''
 as $$
   select private.fw_versus_me();
 $$;
+create or replace function public.versus_claim(p_season integer) returns jsonb
+language sql
+security invoker
+set search_path = ''
+as $$
+  select private.fw_versus_claim(p_season);
+$$;
 
 revoke all on function private.fw_vs_cfg()                  from public, anon, authenticated;
+revoke all on function private.fw_vs_season_cfg()           from public, anon, authenticated;
+revoke all on function private.fw_vs_season_of(timestamptz) from public, anon, authenticated;
+revoke all on function private.fw_vs_season_end(integer)    from public, anon, authenticated;
+revoke all on function private.fw_vs_tier(integer)          from public, anon, authenticated;
+revoke all on function private.fw_vs_reward(integer, integer) from public, anon, authenticated;
+revoke all on function private.fw_vs_result(uuid, integer)  from public, anon, authenticated;
+revoke all on function private.fw_vs_tick()                 from public, anon, authenticated;
 revoke all on function private.fw_vs_roster(text)           from public, anon, authenticated;
 revoke all on function private.fw_vs_nick(text)             from public, anon, authenticated;
 revoke all on function private.fw_vs_settle(text)           from public, anon, authenticated;
@@ -733,15 +1043,19 @@ revoke all on function private.fw_vs_state(uuid, text)      from public, anon, a
 revoke all on function private.fw_versus_start(text, text, integer, text, text, text)  from public, anon, authenticated;
 revoke all on function private.fw_versus_report(text, text) from public, anon, authenticated;
 revoke all on function private.fw_versus_me()               from public, anon, authenticated;
+revoke all on function private.fw_versus_claim(integer)     from public, anon, authenticated;
 revoke all on function public.versus_start(text, text, integer, text, text, text)      from public, anon, authenticated;
 revoke all on function public.versus_report(text, text)     from public, anon, authenticated;
 revoke all on function public.versus_me()                   from public, anon, authenticated;
+revoke all on function public.versus_claim(integer)         from public, anon, authenticated;
 grant execute on function private.fw_versus_start(text, text, integer, text, text, text) to authenticated, service_role;
 grant execute on function private.fw_versus_report(text, text) to authenticated, service_role;
 grant execute on function private.fw_versus_me()               to authenticated, service_role;
+grant execute on function private.fw_versus_claim(integer)     to authenticated, service_role;
 grant execute on function public.versus_start(text, text, integer, text, text, text)     to authenticated, service_role;
 grant execute on function public.versus_report(text, text)     to authenticated, service_role;
 grant execute on function public.versus_me()                   to authenticated, service_role;
+grant execute on function public.versus_claim(integer)         to authenticated, service_role;
 
 -- ---------- Realtime: versus rooms are PRIVATE channels ----------
 -- The game uses Broadcast + Presence only (no table changes), on topics
