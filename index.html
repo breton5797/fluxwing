@@ -644,7 +644,7 @@ const owned = new Set(store.get('fw27_owned', ['volt','blitz','nimbus','titan'])
 let hasPass = store.get('fw27_pass', false), starterBought = store.get('fw27_starter', false);
 const XP_PER_LEVEL = 100;
 // Diamonds come from milestones only, so unit passives (SOLARIS x2) never multiply them. Provisional amounts: retune after measuring.
-const DIA_LEVEL = 60, DIA_DAILY = 300, DIA_CLEAR = [200, 400, 800, 1500];   // per level-up / first daily run of the day / first clear of a stage, by tier
+const DIA_LEVEL = 35, DIA_DAILY = 20, DIA_CLEAR = [40, 75, 115, 150];   // per level-up / first daily run of the day / first clear of a stage, by tier
 const diaClear = i => DIA_CLEAR[stTier(i)];
 const shortOf = p => CUR.map(([k, w]) => [k, Math.max(0, p[k] - W[w])]).filter(x => x[1] > 0);   // [price field, missing amount] for each currency the wallet cannot cover
 const saveW = () => { store.set('fw27_wallet2', W); store.set('fw27_owned', [...owned]); store.set('fw27_pass', hasPass); store.set('fw27_starter', starterBought); };
