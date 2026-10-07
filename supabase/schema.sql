@@ -23,7 +23,8 @@
 --   Housekeeping: Supabase has no automatic clean-up of anonymous users. Deleting an auth user deletes
 --   their score row and their versus row (on delete cascade), so only prune users that have no row in
 --   public.fw_scores and none in public.fw_versus. Versus match bookkeeping cleans itself up when a participant
---   comes back; for players who never do, run now and then:
+--   comes back; for players who never do, run now and then (it takes every match that old, whatever its
+--   status — also the ones still 'open' because nobody of theirs ever called again; no pg_cron is used):
 --     delete from private.fw_vs_match where started_at < now() - interval '30 days';
 -- =====================================================================================================
 
@@ -99,6 +100,14 @@ grant select, insert, update, delete on table public.fw_scores to service_role; 
 -- Daily runs are "fair mode" (bonus <= 1, feverMul 2, dashPts 1, Resonance x1, no combo lift): <= 2 * (k + 2) per gate, so
 --   daily:   score <= sum(k = 1..g) 2 * (k + 2) = g^2 + 5*g
 -- Both assume every single gate is a perfect in fever, i.e. they are generous by a wide margin.
+-- The units a row may name (BIRDS in index.html): one list for the leaderboard and the versus ranking.
+create or replace function private.fw_units() returns text[]
+language sql immutable set search_path = '' as $$
+  select array['volt','blitz','nimbus','titan','mochi','aegis','phoenix','zero','pixel','neko','buzz',
+               'kraken','specter','oracle','raijin','chrono','goliath','solaris','aurora','tempest','pleiad','pulsar'];
+$$;
+revoke all on function private.fw_units() from public, anon, authenticated;
+
 create or replace function private.fw_submit_score(
   p_score integer, p_gates integer, p_mode text, p_day text, p_bird text, p_nick text, p_cc text, p_lang text
 ) returns public.fw_scores
@@ -111,8 +120,7 @@ declare
   c_legacy_cap  constant integer  := 3000;             -- a best with no gate count (made before the board existed)
   c_min_gap     constant interval := interval '2 seconds';
   c_day_cap     constant integer  := 400;              -- accepted submits per player per UTC day
-  c_birds       constant text[]   := array['volt','blitz','nimbus','titan','mochi','aegis','phoenix','zero','pixel','neko','buzz',
-                                           'kraken','specter','oracle','raijin','chrono','goliath','solaris','aurora','tempest','pleiad','pulsar'];
+  c_birds       constant text[]   := private.fw_units();
   c_langs       constant text[]   := array['ko','en','ja','zh','es','pt','fr','de','id','vi'];
   v_uid   uuid        := (select auth.uid());
   v_now   timestamptz := now();
@@ -254,10 +262,14 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 --   1. two reports name different outcomes                              -> VOID at once: no RP, nothing counted
 --   2. every registered participant has reported, nobody else can still register (roster full, or the join
 --      window is over) and both teams are present                         -> SETTLED with that outcome
---   3. past the deadline = the later of (first registration + settle_after) and (first report + report_grace):
---        both teams present and at least one report -> SETTLED as reported; silent participants get the
---                                                      complementary result (closing the tab does not dodge a loss)
---        otherwise (one team only, or no report)    -> VOID
+--   3. somebody has reported and it is past the later of (first registration + settle_after) and
+--      (first report + report_grace):
+--        both teams present -> SETTLED as reported; silent participants get the complementary result
+--                              (closing the tab does not dodge a loss)
+--        one team only      -> VOID
+--   4. nobody has reported by (first registration + void_after)         -> VOID. void_after is long on purpose:
+--      a match is one endless seeded run and good players can fly for many minutes, so a match with no report
+--      yet is normally just still being played (it used to be voided at settle_after, 5 minutes).
 --      A deadline is only looked at when a participant of that match next calls one of the three functions.
 --   A match with a single registered team can never give RP. Roster members who never registered are untouched.
 --   Applied per participant, in player_id order: win +rp_win, loss -rp_loss floored at 0, and wins / losses / draws.
@@ -282,7 +294,16 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 --     step up.
 --   - Replay: a match id is registered once per player and settles once; reports after settlement change nothing.
 --   - Flooding: registrations are capped per player per hour, each adds one row (plus one per match), finished
---     matches are deleted after "keep" when one of their participants next calls in.
+--     matches are deleted after "keep" when one of their participants next calls in. Both caps are counted under
+--     a per-player lock, so a burst of parallel calls cannot slip past them.
+--
+-- Locks, in the one order every call follows (so two calls can never wait on each other in a circle):
+--   a. versus_start only: the caller's own cap lock (advisory, key = hash(uid, 1)) — taken first, holding nothing;
+--   b. the one match the call is about (row lock, waited for while holding nothing else but a.);
+--   c. the caller's other open matches — only those nobody else is working on (SKIP LOCKED: never waited for;
+--      a match skipped here is settled by whoever holds it, or on the next call);
+--   d. a settle lock (advisory, key = hash(uid, 0)) for every participant of the matches held, in player id order;
+--   e. the fw_versus rows of those players — only ever touched under d.
 -- =====================================================================================================
 
 -- ---------- table: one row per player who has finished at least one ranked match ----------
@@ -358,21 +379,24 @@ revoke all on table private.fw_vs_match, private.fw_vs_part from public, anon, a
 grant select, insert, update, delete on table private.fw_vs_match, private.fw_vs_part to service_role;
 
 -- ---------- the numbers, in one place ----------
+drop function if exists private.fw_vs_cfg();   -- its OUT columns changed (void_after): "create or replace" cannot do that
 create or replace function private.fw_vs_cfg(
   out rp_win integer, out rp_loss integer,
   out join_window interval,      -- after the first registration nobody else can register in that match
   out min_play interval,         -- a report sooner than this after the caller registered is refused
-  out settle_after interval,     -- deadline, from the first registration ...
+  out settle_after interval,     -- once somebody has reported: deadline, from the first registration ...
   out report_grace interval,     -- ... but never sooner than this after the first report
+  out void_after interval,       -- nobody has reported this long after the first registration: void
   out starts_per_hour integer,   -- registrations per player per rolling hour
   out pair_cap integer,          -- matches that count (not void) against one and the same rival (the client's vsCap text says "5") ...
   out pair_window interval,      -- ... per this rolling window; further ones are refused at versus_start (played unranked)
   out keep interval              -- finished matches older than this are deleted
 ) language sql immutable set search_path = '' as $$
-  select 50, 45, interval '20 seconds', interval '4 seconds', interval '5 minutes', interval '60 seconds', 30, 5, interval '24 hours', interval '3 days';
+  select 50, 45, interval '20 seconds', interval '4 seconds', interval '5 minutes', interval '60 seconds', interval '20 minutes', 30, 5, interval '24 hours', interval '3 days';
 $$;
 
 -- ---------- helpers (not executable by clients; they run inside the definer functions below) ----------
+-- (private.fw_units(), the unit whitelist shared with submit_score, is defined just above fw_submit_score.)
 -- Roster out of a match id. Raises unless the id is in canonical form, so two spellings of one match cannot exist.
 create or replace function private.fw_vs_roster(p_match text, out t0 uuid[], out t1 uuid[])
 language plpgsql immutable set search_path = '' as $$
@@ -393,12 +417,13 @@ begin
 end;
 $$;
 
--- same rules as fw_submit_score: control characters, zero-width / bidi marks and <> removed, whitespace collapsed, 14 chars max
+-- same rules as fw_submit_score: control characters, zero-width / bidi marks and <> removed, whitespace collapsed, 14 chars max.
+-- The character class is written with \u escapes only (no raw invisible characters in this file); at most 64 characters are looked at.
 create or replace function private.fw_vs_nick(p_nick text) returns text
 language sql immutable set search_path = '' as $$
   select case when char_length(n) < 2 then 'Pilot' else n end
   from (select btrim(left(btrim(regexp_replace(
-          regexp_replace(coalesce(p_nick, ''), '[\u0001-\u001F\u007F-\u009F​-‏ -‮⁠-⁩﻿<>]', '', 'g'),
+          regexp_replace(left(coalesce(p_nick, ''), 64), '[\u0001-\u001F\u007F-\u009F\u200B-\u200F\u2028-\u202E\u2060-\u2069\uFEFF<>]', '', 'g'),
           '\s+', ' ', 'g')), 14)) as n) s;
 $$;
 
@@ -435,10 +460,10 @@ begin
   elsif v_n > 0 and v_rep = v_n
         and (v_n >= case v_m.mode when '2v2' then 4 else 2 end or v_now >= v_m.started_at + c.join_window) then
     if v_teams = 2 then v_why := 'agreed'; else v_why := 'one_team'; v_out := null; end if;
-  elsif v_now >= greatest(v_m.started_at + c.settle_after, coalesce(v_m.first_report_at, v_m.started_at) + c.report_grace) then
-    if v_teams < 2 then v_why := 'one_team'; v_out := null;
-    elsif v_rep = 0 then v_why := 'no_report';
-    else v_why := 'timeout'; end if;
+  elsif v_rep > 0 and v_now >= greatest(v_m.started_at + c.settle_after, v_m.first_report_at + c.report_grace) then
+    if v_teams < 2 then v_why := 'one_team'; v_out := null; else v_why := 'timeout'; end if;
+  elsif v_rep = 0 and v_now >= v_m.started_at + c.void_after then
+    v_why := case when v_teams < 2 then 'one_team' else 'no_report' end;
   else
     return;   -- still open
   end if;
@@ -471,20 +496,33 @@ end;
 $$;
 
 -- Lazy settlement for one player: every open match they are in (oldest first), then the clean-up of their old ones.
+-- Lock order c-d-e of the section header: the open matches are taken without waiting (a match another call is working on is left
+-- to that call), then the settle locks of all their participants in player id order, and only then is anything settled. The
+-- caller's own match (versus_start / versus_report) is already locked when this runs and is simply part of the set.
 create or replace function private.fw_vs_sweep(p_uid uuid) returns void
 language plpgsql set search_path = '' as $$
 declare
-  v_id text;
+  v_ids text[];
+  v_id  text;
+  v_pl  uuid;
 begin
-  for v_id in
-    select m.id from private.fw_vs_part p join private.fw_vs_match m on m.id = p.match_id
-    where p.player_id = p_uid and m.status = 'open' order by m.started_at, m.id
-  loop
+  select coalesce(array_agg(x.id), '{}') into v_ids
+  from (select m.id from private.fw_vs_match m
+        where m.status = 'open'
+          and exists (select 1 from private.fw_vs_part p where p.match_id = m.id and p.player_id = p_uid)
+        order by m.id
+        for update of m skip locked) x;
+  for v_pl in select distinct p.player_id from private.fw_vs_part p where p.match_id = any (v_ids) order by p.player_id loop
+    perform pg_advisory_xact_lock(hashtextextended(v_pl::text, 0));
+  end loop;
+  for v_id in select m.id from private.fw_vs_match m where m.id = any (v_ids) order by m.started_at, m.id loop
     perform private.fw_vs_settle(v_id);
   end loop;
-  delete from private.fw_vs_match m
-  where m.status <> 'open' and m.started_at < now() - (select keep from private.fw_vs_cfg())
-    and exists (select 1 from private.fw_vs_part p where p.match_id = m.id and p.player_id = p_uid);
+  delete from private.fw_vs_match d
+  where d.id in (select m.id from private.fw_vs_match m
+                 where m.status <> 'open' and m.started_at < now() - (select keep from private.fw_vs_cfg())
+                   and exists (select 1 from private.fw_vs_part p where p.match_id = m.id and p.player_id = p_uid)
+                 for update of m skip locked);
 end;
 $$;
 
@@ -529,10 +567,14 @@ begin
   if v_uid is null then
     raise exception 'fw_auth: sign-in required' using errcode = '28000';
   end if;
+  -- the caps below are read-then-insert: one start at a time per player, or parallel calls would each see the count before the others' rows
+  perform pg_advisory_xact_lock(hashtextextended(v_uid::text, 1));
   select * into c from private.fw_vs_cfg();
-  if p_mode is null or p_mode not in ('1v1', '2v2') or p_team is null or p_team not in (0, 1)
-     or p_bird is null or p_bird !~ '^[a-z]{1,12}$' then
-    raise exception 'fw_bad_input: unknown mode, team or unit' using errcode = '22023';
+  if p_match is null or char_length(p_match) > 160   -- length first: nothing longer reaches the regular expressions
+     or p_mode is null or p_mode not in ('1v1', '2v2') or p_team is null or p_team not in (0, 1)
+     or p_bird is null or not (p_bird = any (private.fw_units()))
+     or char_length(coalesce(p_nick, '')) > 200 or char_length(coalesce(p_cc, '')) > 8 then
+    raise exception 'fw_bad_input: unknown mode, team or unit, or a field too long' using errcode = '22023';
   end if;
   select t0, t1 into v_t0, v_t1 from private.fw_vs_roster(p_match);
   if cardinality(v_t0) <> (case p_mode when '2v2' then 2 else 1 end) then
@@ -545,6 +587,11 @@ begin
   if v_team <> p_team then
     raise exception 'fw_bad_input: wrong team for this match id' using errcode = '22023';
   end if;
+
+  -- the match: created by its first registration. Its row is locked before anything else of the ranking (lock order b);
+  -- a call refused further down raises, which takes the row back out.
+  insert into private.fw_vs_match (id, mode) values (p_match, p_mode) on conflict (id) do nothing;
+  select * into strict v_m from private.fw_vs_match where id = p_match for update;
 
   perform private.fw_vs_sweep(v_uid);
 
@@ -559,19 +606,19 @@ begin
     raise exception 'fw_rate_limited: too many ranked matches this hour' using errcode = 'P0001';
   end if;
   foreach v_rival in array (case v_team when 0 then v_t1 else v_t0 end) loop
+    -- my registrations against this rival, whether or not the rival has registered yet (the roster is in the id: team 0 is its
+    -- 2nd part, team 1 its 3rd), so the answer does not depend on which of the two got in first
     select count(*) into v_cnt
     from private.fw_vs_part a
-    join private.fw_vs_part b on b.match_id = a.match_id and b.player_id = v_rival and b.team <> a.team
     join private.fw_vs_match m on m.id = a.match_id
-    where a.player_id = v_uid and a.joined_at > v_now - c.pair_window and m.status <> 'void';
+    where a.player_id = v_uid and a.joined_at > v_now - c.pair_window and m.status <> 'void'
+      and v_rival::text = any (string_to_array(split_part(m.id, '.', case a.team when 0 then 3 else 2 end), '+'));
     if v_cnt >= c.pair_cap then
       raise exception 'fw_vs_pair_cap: ranked matches against this rival are used up for now' using errcode = 'P0001';
     end if;
   end loop;
 
-  -- the match: created by its first registration, joinable for a short window only
-  insert into private.fw_vs_match (id, mode) values (p_match, p_mode) on conflict (id) do nothing;
-  select * into strict v_m from private.fw_vs_match where id = p_match for update;
+  -- joinable for a short window only
   if v_m.mode <> p_mode then
     raise exception 'fw_bad_input: this match was started in another mode' using errcode = '22023';
   end if;
@@ -580,7 +627,7 @@ begin
   end if;
   begin
     insert into private.fw_vs_part (match_id, player_id, team, nick, cc, bird)
-    values (p_match, v_uid, v_team, private.fw_vs_nick(p_nick), case when p_cc ~ '^[A-Za-z]{2}$' then upper(p_cc) else '' end, p_bird);
+    values (p_match, v_uid, v_team, private.fw_vs_nick(p_nick), case when coalesce(p_cc, '') ~ '^[A-Za-z]{2}$' then upper(p_cc) else '' end, p_bird);
   exception when foreign_key_violation then
     raise exception 'fw_auth: unknown player' using errcode = '28000';   -- token of a deleted user: the client signs in again
   end;
@@ -607,9 +654,10 @@ begin
     raise exception 'fw_bad_input: unknown result' using errcode = '22023';
   end if;
   select * into c from private.fw_vs_cfg();
+  perform 1 from private.fw_vs_match where id = p_match for update;   -- lock order b: this match first, then the sweep
   perform private.fw_vs_sweep(v_uid);   -- a report that comes after the deadline finds the match already settled
 
-  select * into v_m from private.fw_vs_match where id = p_match for update;
+  select * into v_m from private.fw_vs_match where id = p_match;      -- as the sweep left it
   if found then
     select * into v_p from private.fw_vs_part p where p.match_id = p_match and p.player_id = v_uid;
   end if;
@@ -697,9 +745,11 @@ grant execute on function public.versus_me()                   to authenticated,
 
 -- ---------- Realtime: versus rooms are PRIVATE channels ----------
 -- The game uses Broadcast + Presence only (no table changes), on topics
---   fw-v<N>-fw-lobby            quick-match lobby
---   fw-v<N>-m-<peer>-<peer>     quick-match room
---   fw-v<N>-c-<4 digits>        code room
+--   fw-v<N>-fw-lobby            quick-match lobby (1v1)
+--   fw-v<N>-m-<peer>-<peer>     quick-match room (1v1)
+--   fw-v<N>-c-<4 digits>        code room (1000-4999: 1v1, 5000-9999: 2v2)
+--   fw-v<N>-m-lobby-2v2         quick-match lobby (2v2)   } both are of the m-<x>-<y> shape:
+--   fw-v<N>-m-<peer>-<seed>     quick-match room (2v2)    } the policies below did not have to change
 -- Private (not public) channels, because the publishable key is in the page source: with public channels anyone
 -- holding it could open any number of arbitrary topics on this project and burn its message quota without even
 -- having a user. Private channels need a signed-in (anonymous) user, whose creation is rate limited, and these
