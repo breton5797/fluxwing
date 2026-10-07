@@ -1413,8 +1413,7 @@ function update(rdt){
   skillCharge = Math.min(1, skillCharge + dt / skillCd());
   if (skillCharge >= 1 && !skillWasReady){ skillWasReady = true; tone(660,.08,'sine',.08); tone(990,.12,'sine',.08,0,.07); haptic('ready'); }
   if (skillCharge < 1) skillWasReady = false;
-  { const f = ufx(B.id, 'idle'), tn = unitTier(B);   // standing particles: the unit's own recipe, else the shared legendary / ultra sparkle
-    if (f) f(dt); else if ((tn === 'legendary' || tn === 'ultra') && Math.random() < .3) part(bird.x + (Math.random()-.5)*26, bird.y + 10, -40, -60 - Math.random()*40, .6, tn === 'ultra' ? [Math.random()*360,100,70] : [42,100,62], 1.8); }
+  { const f = ufx(B.id, 'idle'); if (f) f(dt); }   // standing particles: every legendary-and-up unit has its own recipe (selfTest: unitFx)
   if (phaseT > 0) phaseT -= dt; if (giantT > 0) giantT -= dt; if (inkT > 0) inkT -= dt;
   for (const bo of bolts) bo.life -= rdt; bolts = bolts.filter(bo => bo.life > 0);
   if (magnetT > 0) magnetT -= dt;
@@ -2241,7 +2240,7 @@ function drawBird(){
                     · 'clone' the clone took the hit · 'smash' giant form broke gate g · 'dashEnd' · 'block' a wall met the invincible bird at gate g (every frame of it) · 'thru' inside gate g's wall while ghosting (every frame of it)
                     · 'crash' a dash broke gate g · 'refund' part of the dash came back · 'keep' a miss cut the combo but some of it stayed.  'veil' / 'gust' / 'ping' are looks whose rules do not exist yet: nothing fires them.
                     Legendary rows time their cast shape with FX.castT themselves (their tier has no sky event)
-   idle(dt)         update, play only: the unit's standing particles (replaces the shared tier sparkle); keep it ≤ 20 a second
+   idle(dt)         update, play only: the unit's standing particles; keep it ≤ 20 a second. Every legendary-and-up unit has one (an empty one for a unit without particles)
    trail()          render: replaces the shared trail.   strike(x, y)  strikeNext: the unit's ray and sound.   feverHue: fixed hue for the fever border */
 const ufx = (id, k) => (UNIT_FX[id] || O0)[k];
 const emit = (rate, dt) => Math.random() < rate * dt * (RM ? .5 : 1);   // particle spawn roll; reduced motion halves every standing rate
@@ -3398,7 +3397,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
         return ['flash','shake','parts'].every(k => up(k)) && ['z','stop','sky','ban'].every(k => up(k, 1)) && L.every((v, i) => !i || (rad(v) > rad(L[i-1]) && v.rings.length >= L[i-1].rings.length)) && TIER_FX.ultra.shake < 18
           && eq([TIER_FX.common, TIER_FX.epic].map(v => [v.rings, v.flash, v.shake, v.z, v.stop, v.parts, v.sky, v.ban, v.big]), [[[180,110],.2,3,1.07,0,0,0,1,false],[[240,110],.3,5,1.07,0,0,0,1,false]]); },
       unitFx: () => Object.keys(UNIT_ART).concat(Object.keys(UNIT_FX)).every(id => birdById(id)) && Object.values(UNIT_ART).every(f => typeof f === 'function') && ['solaris','pleiad','oracle','phoenix','zero','raijin','chrono','goliath','aegis','kraken','specter','aurora','tempest','pulsar'].every(id => UNIT_ART[id] && UNIT_FX[id])
-        && eq(['castT','castMax','sigT','sigK','perfT'].map(k => newFx()[k]), [0,0,0,'',0]) && [O0, OL].every(o => o.pose === 0 && o.vy === 0) && OL.lite && !O0.lite,
+        && BIRDS.every(b => (b.rarity || 0) < 2 || (UNIT_ART[b.id] && typeof UNIT_FX[b.id].idle === 'function')) && eq(['castT','castMax','sigT','sigK','perfT'].map(k => newFx()[k]), [0,0,0,'',0]) && [O0, OL].every(o => o.pose === 0 && o.vy === 0) && OL.lite && !O0.lite,
       i18n: () => Object.keys(I18N).every(l => BIRDS.every(b => ['r_','p_','sk_','sd_'].every(p => typeof I18N[l][p + b.id] === 'string' && I18N[l][p + b.id]))),
       i18nIdx: () => I18N.ja.p_pixel.startsWith('コイン2倍'),
       price: () => eq(['volt','mochi','zero','aegis','solaris','pulsar'].map(id => priceOf(birdById(id))), [null,{coin:40000,dia:10000,gem:15},{coin:90000,dia:22000,gem:25},{coin:100000,dia:33000,gem:40},{coin:150000,dia:40000,gem:100},{coin:150000,dia:40000,gem:100}]),
