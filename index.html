@@ -189,12 +189,15 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .hg-info.clip{padding-bottom:12px;-webkit-mask-image:linear-gradient(#000 calc(100% - 18px),transparent);mask-image:linear-gradient(#000 calc(100% - 18px),transparent)}
 .bdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px}
 /* wallet, rarity, shop, rewards */
-.wallet{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:10px;display:flex;gap:4px;align-items:center;flex-wrap:nowrap;max-width:calc(100% - 140px);z-index:3}
+.wallet{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:10px;display:flex;gap:3px;align-items:center;flex-wrap:nowrap;max-width:calc(100% - 140px);z-index:3}
 .wpill{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 8px;border-radius:999px;background:rgba(14,10,30,.7);border:1px solid var(--line);font:700 12px var(--body);color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 button.wpill{cursor:pointer}
+.wallet .wpill{padding:0 6px;gap:4px}
+@media (max-width:379px){.wallet .lvbar{display:none}}   /* three currency pills: the XP bar gives way on narrow screens */
 button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 .ic{display:inline-block;flex:none}
 .ic.coin{width:11px;height:11px;border-radius:50%;background:var(--gold);box-shadow:inset -2px -2px 0 rgba(0,0,0,.25)}
+.ic.dia{width:8px;height:8px;margin:0 2px;transform:rotate(45deg);background:var(--cool)}
 .ic.gem{width:12px;height:12px;background:linear-gradient(135deg,#ffb3dc,#ff4f8b);clip-path:polygon(50% 0,100% 38%,50% 100%,0 38%)}
 .lvbar{width:22px;height:5px;border-radius:3px;background:rgba(243,238,252,.15);overflow:hidden}
 .lvbar i{display:block;height:100%;background:var(--cool)}
@@ -202,6 +205,9 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 .hg-lock{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .hg-lock .ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 13px;min-height:44px}
 .hg-lock .ghost.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.hg-lock .costs{width:100%;display:flex;justify-content:center;gap:14px;font:700 13px var(--body);font-variant-numeric:tabular-nums}
+.hg-lock .cost{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.hg-lock .cost.short{color:var(--hot)}
 .hg-lock .note{width:100%;font-size:12px;color:var(--dim)}
 .hangar.premium{border-color:rgba(255,210,90,.45);box-shadow:0 0 24px rgba(255,210,90,.12)}
 .shopcard{max-height:100%;min-height:0;text-align:left}
@@ -228,6 +234,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 #menu.tight .tag,#menu.tight .keys{display:none}
 #menu.tight .logo{font-size:44px}
 #menu.tight .hangar{gap:6px;padding:12px 16px}
+#menu.tight .hg-lock{gap:2px 8px}
 @media (prefers-reduced-motion:reduce){.abtn.ready,#over .card,.rank.stamp,.newbest,.logowrap,.logo::after,.startbig,#tip{animation:none!important}.btn{transition:none}}
 </style>
 
@@ -237,6 +244,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
   <div class="wallet" id="wallet">
     <span class="wpill" id="wLv">Lv 1 <span class="lvbar"><i id="wXp" style="width:0%"></i></span></span>
     <span class="wpill"><i class="ic coin"></i><span id="wCoin">0</span></span>
+    <span class="wpill"><i class="ic dia"></i><span id="wDia">0</span></span>
     <span class="wpill" id="wGemBtn"><i class="ic gem"></i><span id="wGem">0</span></span>
   </div>
   <div id="toast" hidden></div>
@@ -465,11 +473,11 @@ const BIRDS = [
   // ---- premium ----
   { id:'mochi',   name:'MOCHI',   rarity:1, col:[350,100,90], wingCol:[340,85,78], speed:0.98, flap:430, grav:1300, maxFall:640, dash:1.00, r:13.5, window:18, bonus:0, nose:15, h:13, span:20, stats:[3,3,4,3],
     xpMul:2, magnet:95 },
-  { id:'aegis',   name:'AEGIS',   rarity:2, col:[44,90,56],   wingCol:[210,25,78], speed:1.00, flap:500, grav:1600, maxFall:740, dash:1.00, r:14,   window:16, bonus:0, nose:17, h:14, span:28, stats:[3,4,2,3],
+  { id:'aegis',   name:'AEGIS',   rarity:3, col:[44,90,56],   wingCol:[210,25,78], speed:1.00, flap:500, grav:1600, maxFall:740, dash:1.00, r:14,   window:16, bonus:0, nose:17, h:14, span:28, stats:[3,4,2,3],
     shieldStart:2, shieldMax:3, shieldRegen:40 },
-  { id:'phoenix', name:'PHOENIX', rarity:3, col:[14,100,56],  wingCol:[42,100,60], speed:1.06, flap:480, grav:1520, maxFall:720, dash:1.15, r:13,   window:18, bonus:1, nose:19, h:12, span:34, stats:[4,4,3,3],
+  { id:'phoenix', name:'PHOENIX', rarity:2, col:[14,100,56],  wingCol:[42,100,60], speed:1.06, flap:480, grav:1520, maxFall:720, dash:1.15, r:13,   window:18, bonus:1, nose:19, h:12, span:34, stats:[4,4,3,3],
     revive:1, feverAt:7 },
-  { id:'zero',    name:'ZERO',    rarity:3, col:[268,35,22],  wingCol:[288,100,66],speed:1.10, flap:480, grav:1560, maxFall:740, dash:1.20, r:12.5, window:16, bonus:0, uiCol:[288,100,66], nose:21, h:11, span:26, stats:[4,3,3,5],
+  { id:'zero',    name:'ZERO',    rarity:2, col:[268,35,22],  wingCol:[288,100,66],speed:1.10, flap:480, grav:1560, maxFall:740, dash:1.20, r:12.5, window:16, bonus:0, uiCol:[288,100,66], nose:21, h:11, span:26, stats:[4,3,3,5],
     dashFull:true, dashLen:1.5, dashPts:2 },
   // ---- high-end premium (special abilities) ----
   { id:'pixel',   name:'PIXEL',   rarity:1, col:[48,100,58],  wingCol:[20,100,58],  speed:1.00, flap:470, grav:1500, maxFall:720, dash:1.00, r:13,   window:16, bonus:0, nose:16, h:13, span:26, stats:[3,3,3,3],
@@ -478,17 +486,17 @@ const BIRDS = [
     bounce:99 },
   { id:'buzz',    name:'BUZZ',    rarity:1, col:[46,100,55],  wingCol:[200,60,92],  speed:1.02, flap:420, grav:1250, maxFall:600, dash:1.05, r:12,   window:17, bonus:0, nose:16, h:12, span:24, stats:[3,2,4,3],
     powerChance:2, powerDur:1.5 },
-  { id:'kraken',  name:'KRAKEN',  rarity:2, col:[285,65,55],  wingCol:[320,80,65],  speed:0.96, flap:500, grav:1550, maxFall:700, dash:1.00, r:14,   window:16, bonus:0, nose:16, h:13, span:26, stats:[2,4,3,3],
+  { id:'kraken',  name:'KRAKEN',  rarity:3, col:[285,65,55],  wingCol:[320,80,65],  speed:0.96, flap:500, grav:1550, maxFall:700, dash:1.00, r:14,   window:16, bonus:0, nose:16, h:13, span:26, stats:[2,4,3,3],
     inkEvery:10 },
-  { id:'specter', name:'SPECTER', rarity:2, col:[185,60,92],  wingCol:[185,100,70], speed:1.04, flap:440, grav:1300, maxFall:620, dash:1.10, r:12.5, window:17, bonus:0, nose:16, h:13, span:26, stats:[4,3,4,3],
+  { id:'specter', name:'SPECTER', rarity:3, col:[185,60,92],  wingCol:[185,100,70], speed:1.04, flap:440, grav:1300, maxFall:620, dash:1.10, r:12.5, window:17, bonus:0, nose:16, h:13, span:26, stats:[4,3,4,3],
     phaseEvery:12 },
-  { id:'oracle',  name:'ORACLE',  rarity:2, col:[170,70,42],  wingCol:[55,100,65],  speed:1.00, flap:460, grav:1450, maxFall:690, dash:1.00, r:13,   window:16, bonus:0, nose:15, h:14, span:30, stats:[3,3,4,3],
+  { id:'oracle',  name:'ORACLE',  rarity:3, col:[170,70,42],  wingCol:[55,100,65],  speed:1.00, flap:460, grav:1450, maxFall:690, dash:1.00, r:13,   window:16, bonus:0, nose:15, h:14, span:30, stats:[3,3,4,3],
     oracle:true, windowBonus:8 },
-  { id:'raijin',  name:'RAIJIN',  rarity:3, col:[205,100,55], wingCol:[55,100,62],  speed:1.12, flap:500, grav:1650, maxFall:780, dash:1.20, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,4,2,4],
+  { id:'raijin',  name:'RAIJIN',  rarity:2, col:[205,100,55], wingCol:[55,100,62],  speed:1.12, flap:500, grav:1650, maxFall:780, dash:1.20, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,4,2,4],
     boltEvery:3 },
-  { id:'chrono',  name:'CHRONO',  rarity:3, col:[32,60,46],   wingCol:[40,85,65],   speed:1.00, flap:470, grav:1480, maxFall:700, dash:1.00, r:13,   window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3],
+  { id:'chrono',  name:'CHRONO',  rarity:2, col:[32,60,46],   wingCol:[40,85,65],   speed:1.00, flap:470, grav:1480, maxFall:700, dash:1.00, r:13,   window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3],
     rewind:2 },
-  { id:'goliath', name:'GOLIATH', rarity:3, col:[220,15,58],  wingCol:[25,100,55],  speed:0.95, flap:560, grav:1800, maxFall:780, dash:1.30, r:15,   window:16, bonus:0, nose:17, h:16, span:26, stats:[2,5,1,5],
+  { id:'goliath', name:'GOLIATH', rarity:2, col:[220,15,58],  wingCol:[25,100,55],  speed:0.95, flap:560, grav:1800, maxFall:780, dash:1.30, r:15,   window:16, bonus:0, nose:17, h:16, span:26, stats:[2,5,1,5],
     giantEvery:20 },
   { id:'solaris', name:'SOLARIS', rarity:4, col:[45,100,62],  wingCol:[18,100,60],  speed:1.08, flap:490, grav:1550, maxFall:740, dash:1.20, r:13.5, window:18, bonus:1, nose:18, h:13, span:32, stats:[4,4,3,4],
     shieldStart:1, feverMul:3, comboGuard:true, coinMul:2, xpMul:2, gemMul:2 },
@@ -497,10 +505,12 @@ const BIRDS = [
   { id:'pleiad',  name:'PLEIAD',  rarity:4, col:[232,65,62],  wingCol:[50,100,72],  speed:1.00, flap:480, grav:1500, maxFall:700, dash:1.10, r:13.5, window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3], shieldStart:2, shieldMax:2, shieldRegen:60, shieldBurst:true },
   { id:'pulsar',  name:'PULSAR',  rarity:4, col:[320,100,62], wingCol:[180,100,66], speed:1.06, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:19, bonus:2, nose:19, h:12, span:28, stats:[4,3,3,3], perfCharge:.08, feverAt:8 }
 ];
-BIRDS.sort((a, b) => (a.rarity || 0) - (b.rarity || 0));   // stable: basics first, then by rarity
-const RARITY_COL = [[0,0,70],[280,90,68],[350,90,64],[45,100,58],[300,100,74]];
-const RARITY_KEY = ['r_common','r_epic','r_mythic','r_legendary','r_ultra'];
-const PRICE = [null, {coin:2000}, {coin:5000}, {coin:10000}, {gem:60}]; const priceOf = b => PRICE[b.rarity || 0];   // by rarity; Ultra is gems only
+BIRDS.sort((a, b) => (a.rarity || 0) - (b.rarity || 0));   // stable: basics first, then by rarity rank: common 0 < epic 1 < legendary 2 < mythic 3 < ultra 4
+const RARITY_COL = [[0,0,70],[280,90,68],[45,100,58],[350,90,64],[300,100,74]];
+const RARITY_KEY = ['r_common','r_epic','r_legendary','r_mythic','r_ultra'];
+// Unit prices by rarity rank. All three currencies are required together (coins + diamonds + gems), never as alternatives.
+const PRICE = [null, {coin:40000, dia:10000, gem:15}, {coin:90000, dia:22000, gem:25}, {coin:100000, dia:33000, gem:40}, {coin:150000, dia:40000, gem:100}]; const priceOf = b => PRICE[b.rarity || 0];
+const CUR = [['coin','coins'],['dia','dia'],['gem','gems']];   // price field (= icon class) → wallet field
 // Effective perks: Daily Challenge runs in fair mode (see design doc)
 function perks(){
   const d = mode === 'daily' || mode === 'versus';
@@ -573,17 +583,17 @@ I18N_D_KEYS.forEach((k,i) => { for (const l in I18N) I18N[l][k] = (I18N_D[l] || 
 const I18N_F_KEYS = ['start','stageSel','stage','locked','unlockHint','bestG','vs','autoMatch','makeRoom','joinRoom','aiMatch','searching','roomCode','waitingOpp','enterCode','join','cancel','aiFallback','youWin','youLose','drawR','rankPts','t0','t1','t2','t3','t4','forfeit','onlineNA','opp','watching','rematch','seasonNote','help','hControls','hScore','hMoney','hUnits','tut1','tut2','tut3','skillLbl','potionP','contTitle','contAd','contCoin','giveUp','adPlaying','confirmBuy','confirmUnlock','buy','danger','easy','normal','hard','expert','vsVs','shareCode','matchFound'];
 const I18N_F = {
 ko:['START','스테이지 선택','STAGE {n}','잠김','이전 스테이지를 클리어하면 열려요','최고 {n}점','2인 대전','자동 매치','방 만들기','코드로 참가','AI와 대전','상대 찾는 중… {s}초','방 코드','상대를 기다리는 중…','4자리 코드','참가','취소','1분 동안 상대가 없어 AI와 대전합니다','승리!','패배','무승부','랭크 점수','브론즈','실버','골드','다이아','마스터','상대가 나가서 승리했어요','온라인 대전에 연결할 수 없어요. AI와는 대전할 수 있어요.','상대','상대가 아직 날고 있어요…','다시 대전','한 달 시즌이 끝나면 랭크 상위 10명에게 한정 유닛을 드려요','도움말',
- '조작 — 화면 탭(스페이스)으로 날갯짓. 게이지가 차면 DASH(Shift)로 벽을 뚫고, SKILL(S)로 유닛 고유 스킬을 써요.','점수 — 게이트 통과 1점. 가장자리를 아슬아슬하게 스치면 PERFECT로 콤보 점수, 10콤보부터 피버 2배.','재화 — 코인(오브·레벨업·스테이지 첫 클리어)으로 유닛을 사요. 젬은 스테이지 플레이 중 1% 확률로 떨어지고, 60개를 모으면 울트라 유닛 1기를 살 수 있어요.','유닛 — 기본·에픽·미식·레전더리·울트라 5등급. 모두 고유 스킬과 아우라가 있고, 오늘의 챌린지와 2인 대전에서는 능력이 공정하게 제한돼요.',
- '화면을 탭해서 날아오르세요','게이트 가장자리를 아슬아슬하게 스치면 PERFECT!','게이지가 차면 DASH, SKILL 버튼으로 고유 스킬!','스킬','무적 질주!','이어서 할까요?','광고 보고 이어하기','{n} 코인으로 이어하기','그만하기','광고 재생 중 (테스트 빌드)','{item} · {price}\n구매할까요?','{u}을(를) 젬 {n}개로 해금할까요?','구매','위험!','쉬움','일반','보통','어려움','VS','친구에게 이 코드를 알려주세요','상대를 찾았어요!'],
+ '조작 — 화면 탭(스페이스)으로 날갯짓. 게이지가 차면 DASH(Shift)로 벽을 뚫고, SKILL(S)로 유닛 고유 스킬을 써요.','점수 — 게이트 통과 1점. 가장자리를 아슬아슬하게 스치면 PERFECT로 콤보 점수, 10콤보부터 피버 2배.','재화 — 유닛은 코인·다이아몬드·젬 세 가지를 모두 내고 사요. 코인은 스테이지에서 50점마다(난이도가 높을수록 더 많이) 받고 필드 오브로도 모아요. 다이아몬드는 레벨업·오늘의 챌린지 첫 판·스테이지 첫 클리어 보상이에요. 젬은 스테이지 플레이 중 1% 확률로 떨어져요.','유닛 — 기본·에픽·레전더리·미식·울트라 5등급. 모두 고유 스킬과 아우라가 있고, 오늘의 챌린지와 2인 대전에서는 능력이 공정하게 제한돼요.',
+ '화면을 탭해서 날아오르세요','게이트 가장자리를 아슬아슬하게 스치면 PERFECT!','게이지가 차면 DASH, SKILL 버튼으로 고유 스킬!','스킬','무적 질주!','이어서 할까요?','광고 보고 이어하기','{n} 코인으로 이어하기','그만하기','광고 재생 중 (테스트 빌드)','{item} · {price}\n구매할까요?','{u}을(를) 해금할까요?\n{list}','구매','위험!','쉬움','일반','보통','어려움','VS','친구에게 이 코드를 알려주세요','상대를 찾았어요!'],
 en:['START','Select stage','STAGE {n}','Locked','Clear the previous stage to unlock','Best {n}','Versus','Quick match','Create room','Join with code','Play the AI','Finding an opponent… {s}s','Room code','Waiting for an opponent…','4-digit code','Join','Cancel','No opponent in 1 minute. Playing the AI.','VICTORY!','DEFEAT','DRAW','Rank points','Bronze','Silver','Gold','Diamond','Master','Your opponent left. You win.','Online versus is unavailable here. You can still play the AI.','Rival','Your rival is still flying…','Rematch','Top 10 ranked players each monthly season get a limited unit','Help',
- 'Controls — tap (Space) to flap. When the meter fills, DASH (Shift) breaks walls; SKILL (S) fires your unit’s own skill.','Score — 1 point per gate. Skim an edge for a PERFECT and combo points; Fever doubles points from a 10 combo.','Currencies — coins (orbs, level-ups, first stage clears) buy units. Gems drop at a 1% chance during stage play; 60 gems buy one Ultra unit.','Units — Common, Epic, Mythic, Legendary, Ultra. Every unit has a skill and an aura; Daily Challenge and Versus cap abilities for fairness.',
- 'Tap the screen to fly up','Skim a gate edge for a PERFECT!','Meter full? DASH. Then fire your SKILL!','Skill','UNSTOPPABLE!','Continue?','Watch an ad to continue','Continue for {n} coins','Give up','Ad playing (test build)','{item} · {price}\nBuy now?','Unlock {u} for {n} gems?','Buy','DANGER!','Easy','Normal','Hard','Expert','VS','Share this code with your friend','Opponent found!'],
+ 'Controls — tap (Space) to flap. When the meter fills, DASH (Shift) breaks walls; SKILL (S) fires your unit’s own skill.','Score — 1 point per gate. Skim an edge for a PERFECT and combo points; Fever doubles points from a 10 combo.','Currencies — a unit costs coins, diamonds and gems together. Coins: paid for every 50 score in stage play (more on harder tiers), plus field orbs. Diamonds: level-ups, your first Daily run of the day and first stage clears. Gems: a 1% drop chance during stage play.','Units — Common, Epic, Legendary, Mythic, Ultra. Every unit has a skill and an aura; Daily Challenge and Versus cap abilities for fairness.',
+ 'Tap the screen to fly up','Skim a gate edge for a PERFECT!','Meter full? DASH. Then fire your SKILL!','Skill','UNSTOPPABLE!','Continue?','Watch an ad to continue','Continue for {n} coins','Give up','Ad playing (test build)','{item} · {price}\nBuy now?','Unlock {u}?\n{list}','Buy','DANGER!','Easy','Normal','Hard','Expert','VS','Share this code with your friend','Opponent found!'],
 ja:['START','ステージ選択','STAGE {n}','ロック中','前のステージをクリアすると解放','ベスト {n}','2人対戦','オートマッチ','ルーム作成','コードで参加','AIと対戦','対戦相手を検索中… {s}秒','ルームコード','相手を待っています…','4桁のコード','参加','キャンセル','1分間相手がいないためAIと対戦します','勝利!','敗北','引き分け','ランクポイント','ブロンズ','シルバー','ゴールド','ダイヤ','マスター','相手が退出したため勝利','オンライン対戦に接続できません。AI対戦は可能です。','相手','相手はまだ飛んでいます…','再戦','月間シーズン終了時、ランク上位10名に限定ユニット','ヘルプ',
- '操作 — タップ(スペース)で羽ばたく。ゲージが溜まったらDASH(Shift)で壁を突破、SKILL(S)で固有スキル。','スコア — ゲート通過で1点。ふちをかすめるとPERFECTでコンボ得点、10コンボからフィーバー2倍。','通貨 — コイン(オーブ・レベルアップ・ステージ初クリア)でユニットを購入。ジェムはステージプレイ中に1%の確率でドロップし、60個でウルトラユニット1体。','ユニット — ノーマル〜ウルトラの5等級。全ユニットに固有スキルとオーラ。デイリーと対戦では能力を公平に制限。',
- '画面をタップして飛び上がろう','ゲートのふちをかすめるとPERFECT!','ゲージが溜まったらDASH、SKILLで固有スキル!','スキル','無敵ダッシュ!','続けますか?','広告を見て続ける','{n}コインで続ける','やめる','広告再生中(テストビルド)','{item} · {price}\n購入しますか?','{u}をジェム{n}個で解放しますか?','購入','危険!','やさしい','ふつう','むずかしい','最上級','VS','このコードを友だちに伝えてね','相手が見つかりました!'],
+ '操作 — タップ(スペース)で羽ばたく。ゲージが溜まったらDASH(Shift)で壁を突破、SKILL(S)で固有スキル。','スコア — ゲート通過で1点。ふちをかすめるとPERFECTでコンボ得点、10コンボからフィーバー2倍。','通貨 — ユニットの購入にはコイン・ダイヤ・ジェムの3つすべてが必要。コインはステージで50点ごとにもらえ(難しいほど多い)、フィールドのオーブでも集まる。ダイヤはレベルアップ・デイリー初回・ステージ初クリアの報酬。ジェムはステージプレイ中に1%の確率でドロップ。','ユニット — ノーマル〜ウルトラの5等級。全ユニットに固有スキルとオーラ。デイリーと対戦では能力を公平に制限。',
+ '画面をタップして飛び上がろう','ゲートのふちをかすめるとPERFECT!','ゲージが溜まったらDASH、SKILLで固有スキル!','スキル','無敵ダッシュ!','続けますか?','広告を見て続ける','{n}コインで続ける','やめる','広告再生中(テストビルド)','{item} · {price}\n購入しますか?','{u}を解放しますか?\n{list}','購入','危険!','やさしい','ふつう','むずかしい','最上級','VS','このコードを友だちに伝えてね','相手が見つかりました!'],
 zh:['START','选择关卡','STAGE {n}','未解锁','通关上一关后解锁','最高 {n}','双人对战','自动匹配','创建房间','输入代码加入','与AI对战','正在寻找对手… {s}秒','房间代码','等待对手…','4位代码','加入','取消','1分钟内没有对手,改为与AI对战','胜利!','失败','平局','段位分','青铜','白银','黄金','钻石','大师','对手已离开,你获胜','无法连接在线对战,可以与AI对战。','对手','对手还在飞…','再战','每月赛季结束时,段位前10名获得限定机体','帮助',
- '操作 — 点击(空格)振翅。能量满后DASH(Shift)冲破墙壁,SKILL(S)释放专属技能。','得分 — 通过关卡得1分。擦边通过为PERFECT并累积连击,10连击起狂热2倍。','货币 — 金币(能量球、升级、关卡首通)用于购买机体。宝石在关卡中以1%概率掉落,集齐60个可购买1台究极机体。','机体 — 普通到究极5个等级,全部拥有专属技能和光环。每日挑战与对战会公平限制能力。',
- '点击屏幕向上飞','擦过关卡边缘即可PERFECT!','能量满了就DASH,再用SKILL释放技能!','技能','无敌冲刺!','要继续吗?','看广告继续','用{n}金币继续','放弃','广告播放中(测试版本)','{item} · {price}\n确定购买吗?','用{n}个宝石解锁{u}吗?','购买','危险!','简单','普通','困难','极难','VS','把这个代码告诉朋友','找到对手了!']
+ '操作 — 点击(空格)振翅。能量满后DASH(Shift)冲破墙壁,SKILL(S)释放专属技能。','得分 — 通过关卡得1分。擦边通过为PERFECT并累积连击,10连击起狂热2倍。','货币 — 购买机体需要同时支付金币、钻石和宝石。金币:关卡中每得50分发放一次(难度越高越多),也可拾取场上的能量球。钻石:升级、每日挑战当天首局、关卡首通的奖励。宝石:在关卡中以1%概率掉落。','机体 — 普通到究极5个等级,全部拥有专属技能和光环。每日挑战与对战会公平限制能力。',
+ '点击屏幕向上飞','擦过关卡边缘即可PERFECT!','能量满了就DASH,再用SKILL释放技能!','技能','无敌冲刺!','要继续吗?','看广告继续','用{n}金币继续','放弃','广告播放中(测试版本)','{item} · {price}\n确定购买吗?','解锁{u}吗?\n{list}','购买','危险!','简单','普通','困难','极难','VS','把这个代码告诉朋友','找到对手了!']
 };
 I18N_F_KEYS.forEach((k,i) => { for (const l in I18N) I18N[l][k] = (I18N_F[l] || I18N_F.en)[i]; });
 // Unit skills: [name, description] per unit id
@@ -595,24 +605,26 @@ ja:[['オーバードライブ','{n}秒間パーフェクト判定が大きく�
 zh:[['超速驱动','{n}秒内完美判定大幅放宽'],['闪现','瞬移穿过前方关卡,并耗尽冲刺能量'],['滑翔','{n}秒内重力减弱'],['钢铁之躯','无敌{n}秒,随后身体变重、短暂减速'],['麻薯泡泡','{n}秒内自动沿关卡中央飞行'],['钢铁屏障','无敌{n}秒。没有护盾时生成1层'],['不死','{n}秒内不会死亡'],['影分身','{n}秒内分身替你承受1次碰撞'],['金币冲刺','{n}秒内金币2倍+强力磁铁'],['猫之感知','时间减慢{n}秒'],['蜂群召唤','在前方召唤{n}个道具(不含无敌冲刺)'],['墨汁爆发','{n}秒内所有缝隙变宽'],['灵体化','{n}秒内穿墙'],['预知','{n}秒内轻松完美+显示路线'],['雷霆','闪电击碎前方{n}个关卡'],['时间停止','世界静止{n}秒'],['泰坦降临','巨大化{n}秒撞碎关卡'],['超新星','立即进入狂热+无敌{n}秒']]
 };
 SK_IDS.forEach((id,i) => { for (const l in I18N){ const tx = (SK_TXT[l] || SK_TXT.en)[i]; I18N[l]['sk_' + id] = tx[0]; I18N[l]['sd_' + id] = tx[1]; } });
-// Key-based additions (ko/en; other languages fall back to en). The index arrays above keep their length and order.
+// Key-based additions (ko/en; other languages fall back to en, except the three cost labels at the end). The index arrays above keep their length and order.
 const I18N_N = {
 ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 틈', tierRule2:'더 좁은 틈 · 0.5초 안개', tierRule3:'가장 좁은 틈 · 2초 안개 · 2초 안에 탭',
- idleRule:'2초 안에 탭!', idleStall:'엔진 정지!', heavyP:'무거움', gemP:'젬 +1', gemHint:'젬은 스테이지 플레이 중 1% 확률로 나와요 · {n}/60',
+ idleRule:'2초 안에 탭!', idleStall:'엔진 정지!', heavyP:'무거움', gemP:'젬 +1', gemHint:'젬은 스테이지 플레이 중 1% 확률로 나와요 · {n}/{m}',
  lbRetry:'기록을 올리지 못했어요. 곧 다시 시도합니다', lbRate:'전송이 너무 잦아요. 잠시 후 다시 올립니다', lbReject:'서버가 이 기록을 받지 않았어요', vsStranded:'상대가 들어오지 않았어요. 다시 찾는 중…',
- confirmCoin:'{u}을(를) 코인 {n}개로 구매할까요?', needCoin:'코인이 {n}개 부족해요', needGem:'젬이 {n}개 부족해요',
+ nCoin:'코인\u00a0{n}', nDia:'다이아몬드\u00a0{n}', nGem:'젬\u00a0{n}', diaP:'다이아몬드 +{n}', rwScore:'점수', rwField:'필드', rwLevel:'레벨업', rwClear:'첫 클리어', rwDaily:'오늘의 첫 판',
  r_aurora:'극광형', p_aurora:'콤보가 끊겨도 절반이 남는다. 퍼펙트 판정이 넓고 퍼펙트마다 +1점.', sk_aurora:'극광 회랑', sd_aurora:'다음 게이트 {n}개가 내 높이로 모이고 멈추며 틈이 넓어진다',
  r_tempest:'폭풍형', p_tempest:'대시 관통 점수 2배. 대시로 게이트를 부수면 게이지 30% 환급(대시당 1회).', sk_tempest:'태풍의 눈', sd_tempest:'게이지를 쓰지 않는 1.5배 길이 대시를 즉시 발동',
  r_pleiad:'성단형', p_pleiad:'실드 2개로 출발(최대 2개), 게이트 60개마다 1개 재충전. 실드가 깨지면 그 게이트도 부서진다.', sk_pleiad:'궤도 포격', sd_pleiad:'앞 게이트 {n}개를 차례로 부수고 실드 +1',
  r_pulsar:'맥동형', p_pulsar:'퍼펙트마다 +2점, 스킬이 더 빨리 찬다. 피버가 8콤보에서 시작된다.', sk_pulsar:'공명', sd_pulsar:'{n}초간 퍼펙트 점수 2배, 판정이 넓어진다'},
 en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', tierRule2:'Narrower gaps · 0.5s haze', tierRule3:'Narrowest gaps · 2s haze · tap within 2s',
- idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/60',
+ idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/{m}',
  lbRetry:"Couldn't post your score. Retrying soon", lbRate:'Posting too fast. It will be sent in a moment', lbReject:'The server did not accept this score', vsStranded:"Opponent didn't show up. Searching again…",
- confirmCoin:'Buy {u} for {n} coins?', needCoin:'{n} more coins needed', needGem:'{n} more gems needed',
+ nCoin:'Coins\u00a0{n}', nDia:'Diamonds\u00a0{n}', nGem:'Gems\u00a0{n}', diaP:'DIAMOND +{n}', rwScore:'Score', rwField:'Field', rwLevel:'Level up', rwClear:'First clear', rwDaily:'Daily',
  r_aurora:'Skyweaver', p_aurora:'A broken combo keeps half. Wide Perfect window, +1 on every Perfect.', sk_aurora:'Aurora Lane', sd_aurora:'The next {n} gates slide to your height, stop moving and widen',
  r_tempest:'Stormbreaker', p_tempest:'Dash-through points x2. Smashing a gate with a dash refunds 30% meter (once per dash).', sk_tempest:'Eye of the Storm', sd_tempest:'Fires a free dash that lasts 1.5x longer',
  r_pleiad:'Star Guard', p_pleiad:'Starts with 2 shields (max 2), recharges 1 every 60 gates. A breaking shield also breaks that gate.', sk_pleiad:'Orbital Barrage', sd_pleiad:'Smashes the next {n} gates one by one and adds a shield',
- r_pulsar:'Resonator', p_pulsar:'+2 on every Perfect and faster skill charge. Fever starts at an 8 combo.', sk_pulsar:'Resonance', sd_pulsar:'Perfects score double and the window widens for {n}s'}
+ r_pulsar:'Resonator', p_pulsar:'+2 on every Perfect and faster skill charge. Fever starts at an 8 combo.', sk_pulsar:'Resonance', sd_pulsar:'Perfects score double and the window widens for {n}s'},
+ja:{nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0{n}'},
+zh:{nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
 const birdById = id => BIRDS.find(b => b.id === id);
@@ -621,18 +633,23 @@ let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
 /* ---------- economy (local; moves server-side at paid launch) ---------- */
 const clampI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
 // Wallet lives in fw27_wallet2. First load converts the old fw27_wallet once (credits x2 -> coins, gems x0.06 rounded up) and never writes it.
+// dia (diamonds) joined later: a saved wallet without the field starts at 0, nothing else is migrated.
 const W = (() => {
   const w = store.get('fw27_wallet2', null), o = w || store.get('fw27_wallet', {}) || {};
-  const n = {xp: clampI(o.xp, 0, 99), lvl: clampI(o.lvl, 1, 1e6), coins: clampI(o.coins, 0, 1e12), gems: clampI(o.gems, 0, 1e9)};
+  const n = {xp: clampI(o.xp, 0, 99), lvl: clampI(o.lvl, 1, 1e6), coins: clampI(o.coins, 0, 1e12), dia: clampI(o.dia, 0, 1e12), gems: clampI(o.gems, 0, 1e9)};
   if (!w){ n.coins += clampI(o.credits, 0, 1e12) * 2; n.gems = Math.ceil(n.gems * 6 / 100); store.set('fw27_wallet2', n); }
   return n;
 })();
 const owned = new Set(store.get('fw27_owned', ['volt','blitz','nimbus','titan']));
 let hasPass = store.get('fw27_pass', false), starterBought = store.get('fw27_starter', false);
 const XP_PER_LEVEL = 100;
+// Diamonds come from milestones only, so unit passives (SOLARIS x2) never multiply them. Provisional amounts: retune after measuring.
+const DIA_LEVEL = 60, DIA_DAILY = 300, DIA_CLEAR = [200, 400, 800, 1500];   // per level-up / first daily run of the day / first clear of a stage, by tier
+const diaClear = i => DIA_CLEAR[stTier(i)];
+const shortOf = p => CUR.map(([k, w]) => [k, Math.max(0, p[k] - W[w])]).filter(x => x[1] > 0);   // [price field, missing amount] for each currency the wallet cannot cover
 const saveW = () => { store.set('fw27_wallet2', W); store.set('fw27_owned', [...owned]); store.set('fw27_pass', hasPass); store.set('fw27_starter', starterBought); };
 const isOwned = b => !b.rarity || owned.has(b.id);
-function grantXP(n){ let ups = 0; W.xp += n; while (W.xp >= XP_PER_LEVEL){ W.xp -= XP_PER_LEVEL; W.lvl++; W.coins += 50; if (W.lvl % 5 === 0) W.gems += 1; ups++; } return ups; }
+function grantXP(n){ let ups = 0; W.xp += n; while (W.xp >= XP_PER_LEVEL){ W.xp -= XP_PER_LEVEL; W.lvl++; W.coins += 50; W.dia += DIA_LEVEL; if (W.lvl % 5 === 0) W.gems += 1; ups++; } return ups; }
 
 function detectLang(){
   const saved = store.get('fw27_lang', null);
@@ -772,7 +789,7 @@ let skillCharge = 0, skillWasReady = false, boostT = 0, lowGravT = 0, autoT = 0,
 let bounceLeft = 0, rewindLeft = 0, perfCount = 0, phaseT = 0, giantT = 0, inkT = 0, guardUsed = false, travel = 0, hist = [], bolts = [];
 let score, gatesPassed, combo, maxCombo, perfects, speed, dashMeter, dashT, invuln, magnetT, slowT, zoneIdx, zoneBanner, deathT, spawnIdx, runDay;
 // Per-run state for stage rules and the newer skills; TMAX remembers each timer's value when it was set (render/HUD read it).
-const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:0, clearDone:false, clearCoin:0, gemsRun:0,
+const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:0, clearDone:false, clearCoin:0, clearDia:0, gemsRun:0,
   laneN:0, laneY:0, strikeN:0, strikeT:0, stormDash:false, dashHit:false, resoT:0, resoMul:1 });
 let FX = newFx(); const TMAX = {};
 
@@ -827,7 +844,7 @@ function spawnGate(x){
   const g = { x, w:68, base, gap, type, amp, d, ph:rng()*6.28, scored:false, minClear:1e9, dashed:false };
   gates.push(g);
   const n = 3 + (rng()*3|0);
-  if (idx > 0){
+  if (idx > 0 && (!inSt || Math.random() < ST_ORBP[tr])){   // stage mode: the field-coin row is a per-tier chance, rolled outside the seeded rng
     const sx = x - 170;
     for (let i=0;i<n;i++) orbs.push({ x:sx + i*28, y: base + Math.sin(i/(n-1)*Math.PI)*-26, k:'orb', got:false, t:Math.random()*6 });
   }
@@ -854,7 +871,8 @@ const gGap = g => g.gap + (g.lane ? g.laneGap : g.type === 'pulse' ? Math.sin(T*
 const ST_N = 50, ST_FIRST = [0,10,25,40], ST_CNT = [10,15,15,10];
 const ST_D0 = [0,.10,.20,.30], ST_SPAN = .08, ST_GM = [1.2,1.1,1,.92], ST_G0 = [10,21,29,37];   // head start per tier (+ST_SPAN across the tier), gap scale, first goal
 const ST_MOVE = [.04,.10,.16,.22], ST_PULSE = [.02,.05,.09,.13];
-const ST_COIN = [1,1.25,1.5,2];
+const ST_SCOIN = [30,40,55,67], ST_ORBP = [.30,.40,.50,.67];   // coin income by tier: coins per 50 score at the end of a run, chance that a gate spawns its field-coin orb row
+const scoreCoins = (sc, tr) => Math.floor(sc / 50) * ST_SCOIN[tr];   // partial 50s do not carry
 const ZONE_MOVE = [.16,.42,.2,.36], ZONE_PULSE = [.06,.1,.36,.3];   // daily / versus only (by 12-gate zone)
 const STAGE_DKEY = ['easy','normal','hard','expert'];               // indexed by tier
 const stTier = i => i < 10 ? 0 : i < 25 ? 1 : i < 40 ? 2 : 3;
@@ -1096,7 +1114,7 @@ function toMenu(){
 }
 
 /* ---------- unit skills ---------- */
-// One row per unit: cd (s) tuned per unit from bot runs (base by rarity 16/16/18/20/22), effect values, and f = overrides for fair modes (daily / versus, cd 18 for all)
+// One row per unit: cd (s) tuned per unit from bot runs (base by rarity: common 16, epic 16, legendary 20, mythic 18, ultra 22), effect values, and f = overrides for fair modes (daily / versus, cd 18 for all)
 const SK = {
  volt:{cd:16,dur:3,f:{cd:18,dur:2}}, blitz:{cd:16,n:1,f:{cd:18}}, nimbus:{cd:16,dur:2.5,f:{cd:18,dur:2}}, titan:{cd:16,dur:1,heavy:2.5,f:{cd:18}},
  mochi:{cd:16,dur:2,f:{cd:18,dur:1.5}}, pixel:{cd:16,dur:5,f:{cd:18,dur:3}}, neko:{cd:16,dur:3,f:{cd:18,dur:2}}, buzz:{cd:16,n:2,f:{cd:18,n:1}},
@@ -1109,7 +1127,7 @@ const fairMode = () => mode === 'daily' || mode === 'versus';
 const skv = k => { const s = SK[B.id]; return fairMode() && s.f && s.f[k] != null ? s.f[k] : s[k]; };
 const skillCd = () => skv('cd');
 const skN = id => { const s = SK[id]; return s.dur ?? s.n ?? ''; };   // {n} in the hangar skill text
-const SK_FX = [[180,.2,3],[240,.3,5],[300,.4,7],[0,.55,10],[0,.7,14]];   // cast fx by rarity: first ring radius (0 = screen-wide), flash, shake
+const SK_FX = [[180,.2,3],[240,.3,5],[300,.4,7],[0,.55,10],[0,.7,14]];   // cast fx by rarity rank: first ring radius (0 = screen-wide), flash, shake
 function strikeNext(){
   const tg = gates.find(q => !q.scored && !q.broken && q.x > bird.x + 40); if (!tg) return false;
   tg.broken = true; tg.flash = 1; const ty = gY(tg); bolts.push({x: tg.x + tg.w/2, y: ty, life:.45, seed: Math.random()*1000});
@@ -1168,7 +1186,7 @@ function useSkill(){
     case 'pulsar': FX.resoT = TMAX.reso = skv('dur'); FX.resoMul = skv('mul'); break;
   }
 }
-// Aura behind each unit, by rarity: common glow → epic sparkles → mythic runes → legendary flames → ultra prism
+// Aura behind each unit. The glow scales with rank; the motif follows the tier's name: common glow → epic sparkles → legendary flames → mythic runes → ultra prism
 function drawAura(c, d, R, tt){
   const rar = d.rarity || 0, col = d.uiCol || d.col, rc = RARITY_COL[rar] || col;
   c.save();
@@ -1177,11 +1195,11 @@ function drawAura(c, d, R, tt){
   c.fillStyle = g; c.beginPath(); c.arc(0,0,RR,0,6.28); c.fill();
   if (rar === 1){
     for (let i=0;i<6;i++){ const a = tt*2 + i*1.047, rr = R*1.8; c.save(); c.translate(Math.cos(a)*rr, Math.sin(a)*rr*.7); c.rotate(.785); c.fillStyle = hsl(rc, .55 + .45*Math.sin(tt*6 + i)); c.fillRect(-2,-2,4,4); c.restore(); }
-  } else if (rar === 2){
+  } else if (rar === 3){
     c.strokeStyle = hsl(rc, .55); c.lineWidth = 1.6; c.setLineDash([6,5]);
     c.save(); c.rotate(tt*1.2); c.beginPath(); c.arc(0,0,R*1.75,0,6.28); c.stroke(); c.restore();
     c.save(); c.rotate(-tt*1.8); c.beginPath(); c.arc(0,0,R*1.35,0,4.2); c.stroke(); c.restore(); c.setLineDash([]);
-  } else if (rar === 3){
+  } else if (rar === 2){
     for (let i=0;i<9;i++){ const a = i*.698 + tt*.6, fl = 4 + 3*Math.sin(tt*9 + i*1.7); c.save(); c.rotate(a); c.translate(R*1.45,0);
       c.fillStyle = hsl([38 + (i%3)*8,100,58], .5); c.beginPath(); c.moveTo(0,-3); c.quadraticCurveTo(fl*2.2,0,0,3); c.fill(); c.restore(); }
     c.strokeStyle = hsl([45,100,62], .35 + .25*pul); c.lineWidth = 2; c.beginPath(); c.arc(0,0,R*1.9,0,6.28); c.stroke();
@@ -1289,13 +1307,18 @@ function showOver(){
   $('over').hidden = false; vsFillOver(); if (mode === 'versus') vsResolve();
   if (mode !== 'versus') submitScore(score, gatesPassed, mode, runDay);
   // rewards
-  const xpGain = Math.round((gatesPassed + perfects*2 + Math.floor(score/10)) * PK.xpMul), coinGain = Math.round(orbsGot * PK.coinMul * (mode === 'endless' ? ST_COIN[stTier(curStage)] : 1));
-  const gems0 = W.gems; let dCoin = 0;
-  if (mode === 'daily' && store.get('fw27_dbonus','') !== runDay){ store.set('fw27_dbonus', runDay); dCoin = 60; W.coins += 60; W.gems += 1; }
-  W.coins += coinGain; const ups = grantXP(xpGain); saveW();
+  // coins: field coins (orbs picked up) + score coins (stage mode, per 50 score by tier); the unit's coin multiplier applies to both
+  const inSt = mode === 'endless', xpGain = Math.round((gatesPassed + perfects*2 + Math.floor(score/10)) * PK.xpMul);
+  const fieldCoin = Math.round(orbsGot * PK.coinMul), scoreCoin = inSt ? Math.round(scoreCoins(score, stTier(curStage)) * PK.coinMul) : 0;
+  const gems0 = W.gems, dia0 = W.dia; let dCoin = 0;
+  if (mode === 'daily' && store.get('fw27_dbonus','') !== runDay){ store.set('fw27_dbonus', runDay); dCoin = 60; W.coins += 60; W.gems += 1; W.dia += DIA_DAILY; }
+  W.coins += fieldCoin + scoreCoin; const ups = grantXP(xpGain); saveW();
   const rw = $('oRewards'); rw.textContent = '';
   const pill = (cls, txt) => { const p = document.createElement('span'); p.className = 'wpill'; if (cls){ const i = document.createElement('i'); i.className = 'ic ' + cls; p.appendChild(i); } p.appendChild(document.createTextNode(txt)); rw.appendChild(p); };
-  pill('', `+${xpGain} XP` + (PK.xpMul > 1 ? ` ×${PK.xpMul}` : '')); pill('coin', '+' + (coinGain + ups*50 + FX.clearCoin + dCoin)); { const gn = FX.gemsRun + (W.gems - gems0); if (gn > 0) pill('gem', '+' + gn); }
+  const cm = PK.coinMul > 1 ? ` ×${PK.coinMul}` : '', cpill = (k, n, x = '') => pill('coin', `${t(k)} +${n.toLocaleString()}${x}`);   // one coin pill per source
+  pill('', `+${xpGain} XP` + (PK.xpMul > 1 ? ` ×${PK.xpMul}` : '')); if (inSt) cpill('rwScore', scoreCoin, cm); cpill('rwField', fieldCoin, cm);
+  if (ups) cpill('rwLevel', ups*50); if (FX.clearCoin) cpill('rwClear', FX.clearCoin); if (dCoin) cpill('rwDaily', dCoin);
+  { const dn = FX.clearDia + (W.dia - dia0), gn = FX.gemsRun + (W.gems - gems0); if (dn > 0) pill('dia', '+' + dn.toLocaleString()); if (gn > 0) pill('gem', '+' + gn); }
   $('oLvup').hidden = !ups; if (ups) $('oLvup').textContent = `${t('levelUp')} Lv ${W.lvl}`;
   $('oTrial').hidden = !runTrial; if (runTrial) $('oTrial').textContent = t('trialRun') + ' · ' + B.name;
   $('wallet').hidden = false; renderWallet();
@@ -1371,7 +1394,7 @@ function update(rdt){
   skillCharge = Math.min(1, skillCharge + dt / skillCd());
   if (skillCharge >= 1 && !skillWasReady){ skillWasReady = true; tone(660,.08,'sine',.08); tone(990,.12,'sine',.08,0,.07); haptic('ready'); }
   if (skillCharge < 1) skillWasReady = false;
-  if ((B.rarity || 0) >= 3 && Math.random() < .3) part(bird.x + (Math.random()-.5)*26, bird.y + 10, -40, -60 - Math.random()*40, .6, B.rarity === 4 ? [Math.random()*360,100,70] : [42,100,62], 1.8);
+  if ((B.rarity === 2 || B.rarity === 4) && Math.random() < .3) part(bird.x + (Math.random()-.5)*26, bird.y + 10, -40, -60 - Math.random()*40, .6, B.rarity === 4 ? [Math.random()*360,100,70] : [42,100,62], 1.8);
   if (phaseT > 0) phaseT -= dt; if (giantT > 0) giantT -= dt; if (inkT > 0) inkT -= dt;
   for (const bo of bolts) bo.life -= rdt; bolts = bolts.filter(bo => bo.life > 0);
   if (magnetT > 0) magnetT -= dt;
@@ -1434,8 +1457,8 @@ function update(rdt){
       g.scored = true; gatesPassed++;
       if (mode === 'endless' && !FX.clearDone && gatesPassed >= stGoal(curStage)){
         FX.clearDone = true; const first = !stg.clr[curStage]; stg.clr[curStage] = 1; stg.open = Math.max(stg.open, Math.min(ST_N-1, curStage+1));
-        if (first){ FX.clearCoin = 100 + 10*(curStage+1); W.coins += FX.clearCoin; saveW(); }
-        store.set('fw27_stg2', stg); banner(t('stClear',{n:curStage+1}), [48,100,62], 1.8); SFX.fanfare(); haptic('newBest'); confetti(bird.x+60, bird.y, 50); flash = Math.max(flash,.5); shake = Math.max(shake,8);
+        if (first){ FX.clearCoin = 100 + 10*(curStage+1); FX.clearDia = diaClear(curStage); W.coins += FX.clearCoin; W.dia += FX.clearDia; saveW(); }
+        store.set('fw27_stg2', stg); banner(t('stClear',{n:curStage+1}), [48,100,62], 1.8); if (first) banner(t('diaP', {n: FX.clearDia.toLocaleString()}), [185,100,66], 1.2, false); SFX.fanfare(); haptic('newBest'); confetti(bird.x+60, bird.y, 50); flash = Math.max(flash,.5); shake = Math.max(shake,8);
       }
       if (mode === 'endless'){
         const tr = stTier(curStage), fn = stFogN(curStage);
@@ -1932,8 +1955,10 @@ function renderHangar(){
     const btn = (label, fn, cls, icon) => { const b = document.createElement('button'); b.className = 'ghost' + (cls ? ' ' + cls : ''); if (icon){ const i = document.createElement('i'); i.className = 'ic ' + icon; b.appendChild(i); } b.appendChild(document.createTextNode(label)); b.addEventListener('click', e => { e.stopPropagation(); audioInit(); fn(); }); lk.appendChild(b); };
     if (store.get('fw27_trial','') !== dayKey()) btn(t('trial'), () => startGame('endless'), 'primary');
     else { const n = document.createElement('div'); n.className = 'note'; n.textContent = t('trialUsed'); lk.appendChild(n); }
-    const p = priceOf(B); btn(p.gem ? String(p.gem) : p.coin.toLocaleString(), () => unlockBird(B), '', p.gem ? 'gem' : 'coin');
-    if (p.gem){ const n = document.createElement('div'); n.className = 'note'; n.textContent = t('gemHint', {n: W.gems}); lk.appendChild(n); }
+    const p = priceOf(B), sh = shortOf(p).map(x => x[0]), cs = document.createElement('div'); btn(t('buy'), () => unlockBird(B));
+    cs.className = 'costs'; cs.setAttribute('aria-label', costList(p, ' + ')); lk.appendChild(cs);   // all three costs; the ones the wallet cannot cover turn red, the covered ones get a tick
+    CUR.forEach(([k]) => { const s = document.createElement('span'), ic = document.createElement('i'), lack = sh.includes(k); s.className = 'cost' + (lack ? ' short' : ''); ic.className = 'ic ' + k; s.append(ic, p[k].toLocaleString() + (lack ? '' : ' ✓')); cs.appendChild(s); });
+    { const n = document.createElement('div'); n.className = 'note'; n.textContent = t('gemHint', {n: W.gems, m: p.gem}); lk.appendChild(n); }
   }
   $('hgRole').textContent = t('r_' + B.id);
   { const hc = $('hgChips'); hc.textContent = '';
@@ -2001,9 +2026,11 @@ function drawHangarPreview(){
 }
 
 /* ---------- wallet, unlocks, shop ---------- */
+// Three pills must stay clear of the top-right buttons on a 360px screen: at most 4 characters each (1.2K / 12K / 150K / 1.2M, rounded down); the exact amount is in the tooltip
+const fmtW = n => n < 1e3 ? String(n) : n < 1e4 ? Math.floor(n / 100) / 10 + 'K' : n < 1e6 ? Math.floor(n / 1e3) + 'K' : n < 1e7 ? Math.floor(n / 1e5) / 10 + 'M' : Math.floor(n / 1e6) + 'M';
 function renderWallet(){
   $('wLv').firstChild.nodeValue = `Lv ${W.lvl} `; $('wXp').style.width = (W.xp / XP_PER_LEVEL * 100) + '%';
-  $('wCoin').textContent = W.coins.toLocaleString(); $('wGem').textContent = W.gems.toLocaleString();
+  [['wCoin','coins','nCoin'],['wDia','dia','nDia'],['wGem','gems','nGem']].forEach(([id, w, k]) => { $(id).textContent = fmtW(W[w]); $(id).parentElement.title = t(k, {n: W[w].toLocaleString()}); });
 }
 let toastT = 0;
 function toast(msg){ const el = $('toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 2200); }
@@ -2017,17 +2044,18 @@ function confirmDlg(msg, yes){ $('confMsg').textContent = msg; confCb = yes; $('
 function confClose(){ $('confScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden; }
 $('confYes').addEventListener('click', e => { e.stopPropagation(); const f = confCb; confCb = null; confClose(); if (f) f(); });
 $('confNo').addEventListener('click', e => { e.stopPropagation(); confCb = null; confClose(); });
+const COST_KEY = {coin:'nCoin', dia:'nDia', gem:'nGem'};
+const costList = (p, sep, amt = k => p[k]) => CUR.filter(([k]) => amt(k) > 0).map(([k]) => t(COST_KEY[k], {n: amt(k).toLocaleString()})).join(sep);
+// A unit costs all three currencies at once: refuse and name every shortfall, or confirm and deduct all three together (re-checked inside the confirm)
 function unlockBird(b){
-  const p = priceOf(b);
-  if (p.gem){
-    if (W.gems < p.gem) return toast(t('needGem', {n: p.gem - W.gems}));
-    return confirmDlg(t('confirmUnlock', {u:b.name, n:p.gem}), () => { if (W.gems < p.gem) return; W.gems -= p.gem; owned.add(b.id); saveW(); celebrate(b); });
-  }
-  if (W.coins < p.coin) return toast(t('needCoin', {n: (p.coin - W.coins).toLocaleString()}));
-  confirmDlg(t('confirmCoin', {u:b.name, n:p.coin.toLocaleString()}), () => { if (W.coins < p.coin) return; W.coins -= p.coin; owned.add(b.id); saveW(); celebrate(b); });
+  const p = priceOf(b), miss = Object.fromEntries(shortOf(p));
+  if (shortOf(p).length) return toast(t('needMore') + ' · ' + costList(p, ' · ', k => miss[k] || 0));
+  confirmDlg(t('confirmUnlock', {u:b.name, list: costList(p, ' + ')}), () => { if (isOwned(b) || shortOf(p).length) return; CUR.forEach(([k, w]) => { W[w] -= p[k]; }); owned.add(b.id); saveW(); celebrate(b); });
 }
 const SHOP_ON = false;
-// 재가격 필요: SHOP_ON = true 전에 60젬 경제 기준으로 젬 팩 수량 재설정
+// 재가격 필요: SHOP_ON = true 전에 3재화 경제(유닛 = 코인 + 다이아몬드 + 젬 동시 지불, 젬 15/25/40/100) 기준으로 젬 팩·패스·스타터 수량을 다시 정할 것.
+// 아래 수량은 옛 60젬 경제 그대로이고, passDesc/starterDesc 문구(옛 '크레딧' 표기 포함)와 다이아몬드 상품 여부도 그때 함께 정리한다.
+// buy()는 W.gems / W.coins에 정수만 더하므로 dia가 추가된 지갑에서도 NaN이나 예외가 나지 않는다.
 const SHOP = [
   { id:'pass',    hero:true, name:() => t('pass'),    desc:() => t('passDesc'),    price:'₩4,900', done:() => hasPass, buy:() => { hasPass = true; owned.add('zero'); W.gems += 150; W.coins += 4000; return birdById('zero'); } },
   { id:'starter', hero:true, name:() => t('starter'), desc:() => t('starterDesc'), price:'₩3,300', done:() => starterBought, buy:() => { starterBought = true; owned.add('mochi'); W.gems += 100; return birdById('mochi'); } },
@@ -2674,9 +2702,10 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N,
+if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
-  get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T}; },
+  get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot}; },
+  setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); },   // QA only: result-screen reward checks
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter}; },
   get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
   hold: false, step(dt, n){ for (let i = 0; i < (n || 1); i++) update(dt); },
@@ -2692,7 +2721,13 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       ultra5: () => BIRDS.filter(b => b.rarity === 4).length === 5,
       i18n: () => Object.keys(I18N).every(l => BIRDS.every(b => ['r_','p_','sk_','sd_'].every(p => typeof I18N[l][p + b.id] === 'string' && I18N[l][p + b.id]))),
       i18nIdx: () => I18N.ja.p_pixel.startsWith('コイン2倍'),
-      price: () => eq(['volt','mochi','aegis','zero','solaris','pulsar'].map(id => priceOf(birdById(id))), [null,{coin:2000},{coin:5000},{coin:10000},{gem:60},{gem:60}])
+      price: () => eq(['volt','mochi','zero','aegis','solaris','pulsar'].map(id => priceOf(birdById(id))), [null,{coin:40000,dia:10000,gem:15},{coin:90000,dia:22000,gem:25},{coin:100000,dia:33000,gem:40},{coin:150000,dia:40000,gem:100},{coin:150000,dia:40000,gem:100}]),
+      price3: () => BIRDS.every(b => { const p = priceOf(b); return b.rarity ? CUR.every(([k]) => Number.isInteger(p[k]) && p[k] > 0) : p === null; }),
+      rarity: () => { const ids = r => BIRDS.filter(b => b.rarity === r).map(b => b.id).sort();
+        return eq(RARITY_KEY, ['r_common','r_epic','r_legendary','r_mythic','r_ultra']) && eq(ids(2), ['chrono','goliath','phoenix','raijin','zero']) && eq(ids(3), ['aegis','kraken','oracle','specter'])
+          && BIRDS.every((b, i) => !i || (b.rarity || 0) >= (BIRDS[i-1].rarity || 0)) && [2,3,4].every(r => CUR.every(([k]) => PRICE[r][k] > PRICE[r-1][k])); },
+      coinTbl: () => eq(ST_SCOIN, [30,40,55,67]) && eq(ST_ORBP, [.3,.4,.5,.67]) && eq([0,49,50,99,100,275].map(s => scoreCoins(s, 0)), [0,0,30,30,60,150]) && eq([1,2,3].map(tr => scoreCoins(120, tr)), [80,110,134]),
+      dia: () => eq([0,9,10,24,25,39,40,49].map(diaClear), [0,0,1,1,2,2,3,3].map(i => DIA_CLEAR[i])) && [DIA_LEVEL, DIA_DAILY, ...DIA_CLEAR].every(n => Number.isInteger(n) && n > 0)
     };
     for (const k in checks){ let ok = false; try { ok = checks[k](); } catch(e){} if (!ok) fails.push(k); }
     return fails;
