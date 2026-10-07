@@ -790,7 +790,8 @@ let bounceLeft = 0, rewindLeft = 0, perfCount = 0, phaseT = 0, giantT = 0, inkT 
 let score, gatesPassed, combo, maxCombo, perfects, speed, dashMeter, dashT, invuln, magnetT, slowT, zoneIdx, zoneBanner, deathT, spawnIdx, runDay;
 // Per-run state for stage rules and the newer skills; TMAX remembers each timer's value when it was set (render/HUD read it).
 const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:0, clearDone:false, clearCoin:0, clearDia:0, gemsRun:0,
-  laneN:0, laneY:0, strikeN:0, strikeT:0, stormDash:false, dashHit:false, resoT:0, resoMul:1 });
+  laneN:0, laneY:0, strikeN:0, strikeT:0, stormDash:false, dashHit:false, resoT:0, resoMul:1,
+  castT:0, castMax:0, sigT:0, sigK:'', perfT:0 });   // unit fx timers (s): cast sky event and its length, passive moment and its kind, perfect flourish
 let FX = newFx(); const TMAX = {};
 
 function reset(){
@@ -864,6 +865,7 @@ function laneApply(g){
   g.off = Math.max(m, Math.min(GROUND - m, c)) - g.base; g.lane = 1; g.laneGap = gb; g.flash = 1; FX.laneN--;
 }
 const gY = g => g.lane ? g.base + g.off : g.base + (g.type === 'move' ? Math.sin(T*1.7 + g.ph) * g.amp : 0);
+const perfWin = () => B.window + PK.windowBonus + (boostT > 0 ? 10 : 0) + (FX.resoT > 0 ? 10 : 0) + (foreT > 0 ? 20 : 0);   // Perfect window right now (px of clearance): scoring and the on-gate marks read the same number
 const gGap = g => g.gap + (g.lane ? g.laneGap : g.type === 'pulse' ? Math.sin(T*2.3 + g.ph) * Math.min(26, g.gap - 112) : 0) + (inkT > 0 ? 46 * Math.min(1, inkT, (TMAX.ink - inkT) * 3) : 0);
 
 /* ---------- stages: per-zone background art, gate skins, music ---------- */
@@ -1127,13 +1129,24 @@ const fairMode = () => mode === 'daily' || mode === 'versus';
 const skv = k => { const s = SK[B.id]; return fairMode() && s.f && s.f[k] != null ? s.f[k] : s[k]; };
 const skillCd = () => skv('cd');
 const skN = id => { const s = SK[id]; return s.dur ?? s.n ?? ''; };   // {n} in the hangar skill text
-const SK_FX = [[180,.2,3],[240,.3,5],[300,.4,7],[0,.55,10],[0,.7,14]];   // cast fx by rarity rank: first ring radius (0 = screen-wide), flash, shake
+// Cast fx by tier NAME (never by rank number). rings: radii, px or (≤ 2) × screen width; w: first ring's width; stop: cast hitstop; sky: seconds of FX.castT for skyEvent; tint: edge-tint alpha during it; ban/big: banner
+// Common and epic are the pre-ladder look. The ladder must hold: legendary < mythic < ultra, and ultra's shake stays under the death shake (18).
+const unitTier = d => RARITY_KEY[d.rarity || 0].slice(2);
+const TIER_FX = {
+  common:   {rings:[180,110],       w:8,  flash:.2,  shake:3,  z:1.07, stop:0,   parts:0,  sky:0,   tint:0,  ban:1,   big:false},
+  epic:     {rings:[240,110],       w:8,  flash:.3,  shake:5,  z:1.07, stop:0,   parts:0,  sky:0,   tint:0,  ban:1,   big:false},
+  legendary:{rings:[1,110],         w:8,  flash:.55, shake:10, z:1.07, stop:.04, parts:24, sky:0,   tint:0,  ban:1,   big:false},
+  mythic:   {rings:[1.2,260,110],   w:8,  flash:.65, shake:13, z:1.09, stop:.07, parts:36, sky:.45, tint:.3, ban:1.2, big:false},
+  ultra:    {rings:[1.4,1,260,120], w:10, flash:.8,  shake:16, z:1.12, stop:.1,  parts:56, sky:.9,  tint:.3, ban:1.4, big:true}
+};
 function strikeNext(){
   const tg = gates.find(q => !q.scored && !q.broken && q.x > bird.x + 40); if (!tg) return false;
-  tg.broken = true; tg.flash = 1; const ty = gY(tg); bolts.push({x: tg.x + tg.w/2, y: ty, life:.45, seed: Math.random()*1000});
-  shards(tg.x + tg.w/2, ty, [55,100,70], 30); ring(tg.x + tg.w/2, ty, 140, [205,100,70], .5, 6); flash = Math.max(flash, .6); shake = Math.max(shake, 12);
-  if (B.id === 'raijin') banner(t('fx_bolt'), [205,100,65], .9, false);
-  haptic('shatter'); noise(.4, .3); tone(90, .4, 'sawtooth', .2, -40);
+  tg.broken = true; tg.flash = 1; const ty = gY(tg), tx = tg.x + tg.w/2, f = ufx(B.id, 'strike');
+  flash = Math.max(flash, .6); shake = Math.max(shake, 12); haptic('shatter');
+  if (f) f(tx, ty);   // the unit's own strike look and sound; what happens to the gate is the lines above
+  else { bolts.push({x: tx, y: ty, life:.45, seed: Math.random()*1000}); shards(tx, ty, [55,100,70], 30); ring(tx, ty, 140, [205,100,70], .5, 6);
+    if (B.id === 'raijin') banner(t('fx_bolt'), [205,100,65], .9, false);
+    noise(.4, .3); tone(90, .4, 'sawtooth', .2, -40); }
   return true;
 }
 function blink(){
@@ -1151,10 +1164,13 @@ function summonPowers(){
 }
 function useSkill(){
   if (state !== 'play' || skillCharge < 1) return;
-  skillCharge = 0; const id = B.id, c = B.uiCol || B.col, rar = B.rarity || 0, fxv = SK_FX[rar];
-  ring(bird.x, bird.y, rar === 3 ? LW : rar === 4 ? LW*1.4 : fxv[0], c, .6, 8); ring(bird.x, bird.y, 110, [45,100,72], .45, 4);
-  flash = Math.max(flash, fxv[1]); cam.z = Math.max(cam.z, 1.07); shake = Math.max(shake, fxv[2]); haptic('fever'); SFX.skill();
-  banner(t('sk_' + id), c, 1, false);
+  skillCharge = 0; const id = B.id, c = B.uiCol || B.col, fxv = TIER_FX[unitTier(B)], U = UNIT_FX[id] || O0, rc = U.ringCol || [c, [45,100,72]], cut = RM && fxv.stop > 0;   // reduced motion (legendary and up): half the rings and particles
+  fxv.rings.forEach((v, i, a) => { if (!cut || i < Math.ceil(a.length/2)) ring(bird.x, bird.y, v <= 2 ? v*LW : v, rc[i % 2], i ? .45 : .6, i ? (i === a.length-1 ? 4 : 6) : fxv.w); });
+  for (let i = 0, n = fxv.parts >> (cut ? 1 : 0); i < n; i++){ const a = i/n*6.283 + Math.random()*.3, s = 120 + Math.random()*260; part(bird.x, bird.y, Math.cos(a)*s, Math.sin(a)*s, .5 + Math.random()*.4, rc[i % 2], 2.5); }
+  flash = Math.max(flash, fxv.flash); cam.z = Math.max(cam.z, fxv.z); shake = Math.max(shake, Math.min(fxv.shake, U.shake || 99)); haptic('fever');
+  { const st = fairMode() || RM ? Math.min(.04, fxv.stop) : fxv.stop; if (st) hitstop = Math.max(hitstop, st); }   // cast hitstop: the one timing effect of a cast; capped at .04 in fair modes and with reduced motion
+  FX.castT = FX.castMax = fxv.sky; castFx(id);
+  banner(t('sk_' + id), c, fxv.ban, fxv.big);
   switch (id){
     case 'volt': boostT = TMAX.boost = skv('dur'); break;
     case 'blitz': blink(); dashMeter = 0; break;
@@ -1177,7 +1193,7 @@ function useSkill(){
       setGod(skv('dur'));
       if (skv('fever')){
         combo = Math.max(combo, PK.feverAt);
-        if (tier < 2){ tier = 2; guardUsed = false; banner(t('fever').replace('2', PK.feverMul), [300,100,68], 1.4); SFX.fever(); }
+        if (tier < 2){ tier = 2; guardUsed = false; banner(t('fever').replace('2', PK.feverMul), [300,100,68], 1.4, false); SFX.fever(); }   // small slot: the skill name holds the big one
       }
       break;
     case 'aurora': FX.laneN = skv('n'); FX.laneY = bird.y; invuln = Math.max(invuln, .3); for (const g of gates) if (!g.scored && !g.broken) laneApply(g); break;
@@ -1188,24 +1204,26 @@ function useSkill(){
 }
 // Aura behind each unit. The glow scales with rank; the motif follows the tier's name: common glow → epic sparkles → legendary flames → mythic runes → ultra prism
 function drawAura(c, d, R, tt){
-  const rar = d.rarity || 0, col = d.uiCol || d.col, rc = RARITY_COL[rar] || col;
+  const rar = d.rarity || 0, tn = unitTier(d), col = d.uiCol || d.col, rc = RARITY_COL[rar] || col;
   c.save();
   const glowC = rar ? rc : col, pul = .5 + .5*Math.sin(tt*3), RR = R*(2 + rar*.25);
   const g = c.createRadialGradient(0,0,R*.3,0,0,RR); g.addColorStop(0, hsl(glowC, .16 + .06*pul + rar*.03)); g.addColorStop(1, hsl(glowC, 0));
   c.fillStyle = g; c.beginPath(); c.arc(0,0,RR,0,6.28); c.fill();
-  if (rar === 1){
+  if (tn === 'epic'){
     for (let i=0;i<6;i++){ const a = tt*2 + i*1.047, rr = R*1.8; c.save(); c.translate(Math.cos(a)*rr, Math.sin(a)*rr*.7); c.rotate(.785); c.fillStyle = hsl(rc, .55 + .45*Math.sin(tt*6 + i)); c.fillRect(-2,-2,4,4); c.restore(); }
-  } else if (rar === 3){
+  } else if (tn === 'mythic'){
     c.strokeStyle = hsl(rc, .55); c.lineWidth = 1.6; c.setLineDash([6,5]);
     c.save(); c.rotate(tt*1.2); c.beginPath(); c.arc(0,0,R*1.75,0,6.28); c.stroke(); c.restore();
     c.save(); c.rotate(-tt*1.8); c.beginPath(); c.arc(0,0,R*1.35,0,4.2); c.stroke(); c.restore(); c.setLineDash([]);
-  } else if (rar === 2){
+    c.beginPath(); for (let i=0;i<6;i++){ const a = i*1.047 + tt*.4, x = Math.cos(a), y = Math.sin(a); c.moveTo(x*R*2.05, y*R*2.05); c.lineTo(x*(R*2.05 + 4), y*(R*2.05 + 4)); } c.stroke();   // six tick marks outside the rune rings
+  } else if (tn === 'legendary'){
     for (let i=0;i<9;i++){ const a = i*.698 + tt*.6, fl = 4 + 3*Math.sin(tt*9 + i*1.7); c.save(); c.rotate(a); c.translate(R*1.45,0);
       c.fillStyle = hsl([38 + (i%3)*8,100,58], .5); c.beginPath(); c.moveTo(0,-3); c.quadraticCurveTo(fl*2.2,0,0,3); c.fill(); c.restore(); }
     c.strokeStyle = hsl([45,100,62], .35 + .25*pul); c.lineWidth = 2; c.beginPath(); c.arc(0,0,R*1.9,0,6.28); c.stroke();
-  } else if (rar === 4){
-    for (let i=0;i<24;i++){ const a0 = i/24*6.283 + tt*.8; c.strokeStyle = `hsla(${(i*15 + tt*120)%360},100%,65%,.55)`; c.lineWidth = 2.5; c.beginPath(); c.arc(0,0,R*2,a0,a0 + .22); c.stroke(); }
+  } else if (tn === 'ultra'){   // 12 prism arcs (was 24), 5 motes and one outer halo: 18 draws, the rest of the budget goes to the unit's own art
+    for (let i=0;i<12;i++){ const a0 = i/12*6.283 + tt*.8; c.strokeStyle = `hsla(${(i*30 + tt*120)%360},100%,65%,.55)`; c.lineWidth = 2.5; c.beginPath(); c.arc(0,0,R*2,a0,a0 + .44); c.stroke(); }
     for (let i=0;i<5;i++){ const a = -tt*1.5 + i*1.256; c.fillStyle = `hsla(${(i*72 + tt*90)%360},100%,75%,.9)`; c.beginPath(); c.arc(Math.cos(a)*R*1.6, Math.sin(a)*R*1.6, 1.8, 0, 6.28); c.fill(); }
+    c.strokeStyle = hsl(rc, .25); c.lineWidth = 1.5; c.beginPath(); c.arc(0,0,R*2.5,0,6.28); c.stroke();
   }
   c.restore();
 }
@@ -1246,7 +1264,7 @@ function die(){
   state = 'dying'; deathT = 0; SFX.die(); haptic('death'); vsOnMyDeath();
   shake = 18; flash = .6; hitstop = .14;
   cam.fx = bird.x; cam.fy = bird.y; cam.tz = 1.32; ring(bird.x, bird.y, LW, [0,100,62], .8, 10); banners = [];
-  for (let i=0;i<46;i++){ const a = Math.random()*6.28, s = 80+Math.random()*360; part(bird.x, bird.y, Math.cos(a)*s, Math.sin(a)*s, .9+Math.random()*.6, Math.random()<.5?pal.a:pal.b, 2+Math.random()*3); }
+  if (!deathFx(B.id)) for (let i=0;i<46;i++){ const a = Math.random()*6.28, s = 80+Math.random()*360; part(bird.x, bird.y, Math.cos(a)*s, Math.sin(a)*s, .9+Math.random()*.6, Math.random()<.5?pal.a:pal.b, 2+Math.random()*3); }
   $('dashBtn').hidden = true; $('skillBtn').hidden = true; $('pauseBtn').hidden = true;
 }
 /* ---------- continue (rewarded ad or coins), once per run, stage mode only ---------- */
@@ -1347,6 +1365,7 @@ function update(rdt){
   const dt = rdt * (state === 'dying' ? .35 : timeScale);
   T += dt * (freezeT > 0 && state === 'play' ? .03 : 1);
   shake = Math.max(0, shake - rdt*40); flash = Math.max(0, flash - rdt*1.8); FX.amb = Math.max(0, FX.amb - rdt*12);
+  FX.castT = Math.max(0, FX.castT - rdt); FX.sigT = Math.max(0, FX.sigT - rdt); FX.perfT = Math.max(0, FX.perfT - rdt);   // up here so they also run out while dying
   zoneBanner = Math.max(0, zoneBanner - rdt); banDrop += (Math.max(0, pillBot + 32 - LH*.27) - banDrop) * Math.min(1, rdt*12);
 
   const z = ZONES[zoneIdx], k = Math.min(1, rdt*1.6);
@@ -1394,7 +1413,8 @@ function update(rdt){
   skillCharge = Math.min(1, skillCharge + dt / skillCd());
   if (skillCharge >= 1 && !skillWasReady){ skillWasReady = true; tone(660,.08,'sine',.08); tone(990,.12,'sine',.08,0,.07); haptic('ready'); }
   if (skillCharge < 1) skillWasReady = false;
-  if ((B.rarity === 2 || B.rarity === 4) && Math.random() < .3) part(bird.x + (Math.random()-.5)*26, bird.y + 10, -40, -60 - Math.random()*40, .6, B.rarity === 4 ? [Math.random()*360,100,70] : [42,100,62], 1.8);
+  { const f = ufx(B.id, 'idle'), tn = unitTier(B);   // standing particles: the unit's own recipe, else the shared legendary / ultra sparkle
+    if (f) f(dt); else if ((tn === 'legendary' || tn === 'ultra') && Math.random() < .3) part(bird.x + (Math.random()-.5)*26, bird.y + 10, -40, -60 - Math.random()*40, .6, tn === 'ultra' ? [Math.random()*360,100,70] : [42,100,62], 1.8); }
   if (phaseT > 0) phaseT -= dt; if (giantT > 0) giantT -= dt; if (inkT > 0) inkT -= dt;
   for (const bo of bolts) bo.life -= rdt; bolts = bolts.filter(bo => bo.life > 0);
   if (magnetT > 0) magnetT -= dt;
@@ -1448,13 +1468,13 @@ function update(rdt){
         if (bird.y - hr < top || bird.y + hr > bot){
           if (invuln > 0 || godT > 0 || freezeT > 0) {}
           else if (cloneT > 0){ cloneHit(); }
-          else if (shields > 0){ breakShield(); if (PK.shieldBurst){ g.broken = true; g.flash = 1; shards(g.x + g.w/2, bird.y, [50,100,72], 24); } }
+          else if (shields > 0){ breakShield(); if (PK.shieldBurst){ g.broken = true; g.flash = 1; shards(g.x + g.w/2, bird.y, [50,100,72], 24); sigFx(B.id, 'burst', g); } }
           else { die(); if (state !== 'play') return; }
         }
       }
     }
     if (!g.scored && bird.x - bird.r > g.x + g.w){
-      g.scored = true; gatesPassed++;
+      g.scored = true; gatesPassed++; sigFx(B.id, 'pass', g);
       if (mode === 'endless' && !FX.clearDone && gatesPassed >= stGoal(curStage)){
         FX.clearDone = true; const first = !stg.clr[curStage]; stg.clr[curStage] = 1; stg.open = Math.max(stg.open, Math.min(ST_N-1, curStage+1));
         if (first){ FX.clearCoin = 100 + 10*(curStage+1); FX.clearDia = diaClear(curStage); W.coins += FX.clearCoin; W.dia += FX.clearDia; saveW(); }
@@ -1467,7 +1487,7 @@ function update(rdt){
       }
       if (g.dashed){
         const dp = 2 * PK.dashPts; addScore(dp); pop(t('phase') + ' +' + dp, bird.x, bird.y-30, pal.b, true);
-      } else if (g.minClear < B.window + PK.windowBonus + (boostT > 0 ? 10 : 0) + (FX.resoT > 0 ? 10 : 0) + (foreT > 0 ? 20 : 0) && g.minClear > -5){
+      } else if (g.minClear < perfWin() && g.minClear > -5){
         combo++; perfects++; maxCombo = Math.max(maxCombo, combo);
         const nt = combo >= PK.feverAt ? 2 : combo >= Math.min(5, PK.feverAt - 3) ? 1 : 0;
         if (nt > tier){
@@ -1480,14 +1500,14 @@ function update(rdt){
           strikeNext();
         }
         dashMeter = Math.min(1, dashMeter + .34*B.dash); skillCharge = Math.min(1, skillCharge + (FX.resoT > 0 ? 0 : PK.perfCharge));
-        SFX.perfect(combo); flash = Math.max(flash, .18); hitstop = .06; shake = Math.max(shake, 4);
+        SFX.perfect(combo); perfectFx(B.id, g); flash = Math.max(flash, .18); hitstop = .06; shake = Math.max(shake, 4);
         g.flash = 1; cam.z = Math.max(cam.z, 1.035);
         { const cy2 = gY(g), gp2 = gGap(g); ring(g.x + g.w, bird.y < cy2 ? cy2 - gp2/2 : cy2 + gp2/2, 95, tier === 2 ? [300,100,68] : pal.a, .45, 3); }
         pop(combo > 1 ? `${t('perfectP')} x${combo}  +${pts}` : `${t('perfectP')} +${pts}`, bird.x+10, bird.y-30, pal.a, true);
         for (let i=0;i<16;i++) part(g.x+g.w, bird.y, 60+Math.random()*200, (Math.random()-.5)*260, .6, pal.a, 2.5);
       } else {
         if (tier === 2 && PK.comboGuard && !guardUsed){
-          guardUsed = true; addScore(1); pop(t('fx_guard'), bird.x, bird.y+36, [45,100,62], true); ring(bird.x, bird.y, 110, [45,100,62], .5, 5); haptic('power'); SFX.ready();
+          guardUsed = true; addScore(1); pop(t('fx_guard'), bird.x, bird.y+36, [45,100,62], true); ring(bird.x, bird.y, 110, [45,100,62], .5, 5); haptic('power'); SFX.ready(); sigFx(B.id, 'guard', g);
         } else {
           if (combo > 1) pop(t('comboBreak'), bird.x, bird.y+36, [0,0,70]);
           if (tier === 2) banner(t('feverEnd'), [0,0,78], .9, false);
@@ -1495,7 +1515,7 @@ function update(rdt){
         }
         dashMeter = Math.min(1, dashMeter + .08*B.dash);
       }
-      if (PK.shieldRegen && gatesPassed % PK.shieldRegen === 0 && shields < PK.shieldMax){ shields++; popT = 0; ring(bird.x, bird.y, 120, [190,100,70], .5, 5); pop(t('shieldP') + ' +1', bird.x, bird.y-34, [190,100,70], true); haptic('power'); SFX.power(); }
+      if (PK.shieldRegen && gatesPassed % PK.shieldRegen === 0 && shields < PK.shieldMax){ shields++; popT = 0; ring(bird.x, bird.y, 120, [190,100,70], .5, 5); pop(t('shieldP') + ' +1', bird.x, bird.y-34, [190,100,70], true); haptic('power'); SFX.power(); sigFx(B.id, 'regen', g); }
       if (PK.inkEvery && gatesPassed % PK.inkEvery === 0){ inkT = TMAX.ink = 4; banner(t('fx_ink'), [285,80,70], .9, false); for (let i=0;i<40;i++){ const a = Math.random()*6.28, sp = 60 + Math.random()*260; part(bird.x, bird.y, Math.cos(a)*sp, Math.sin(a)*sp, 1, [285,60,25 + Math.random()*20], 4 + Math.random()*4); } ring(bird.x, bird.y, LW, [285,70,55], .8, 10); haptic('power'); tone(160, .4, 'sine', .2, -80); }
       if (PK.phaseEvery && gatesPassed % PK.phaseEvery === 0){ phaseT = TMAX.phase = 1.6; banner(t('fx_phase'), [185,100,80], .9, false); ring(bird.x, bird.y, 160, [185,100,80], .6, 5); haptic('ready'); tone(900, .5, 'sine', .08, -500); }
       if (PK.giantEvery && gatesPassed % PK.giantEvery === 0){ giantT = TMAX.giant = 3; banner(t('fx_giant'), [25,100,60], 1.1); ring(bird.x, bird.y, LW, [25,100,60], .8, 12); shake = Math.max(shake, 14); haptic('fever'); tone(70, .6, 'sawtooth', .22, 40); noise(.5, .2); }
@@ -1587,6 +1607,7 @@ function render(){
   drawSky(sky2, .12, hsl(pal.sky0,.85,4), GROUND-10, false);
   drawSky(sky1, .3, hsl(pal.sky0,1,1), GROUND, true);
   }
+  skyEvent();   // unit sky effects sit behind the gates so they never hide a gap
   if ((dashT > 0 || feverGlow > .3) && !RM){
     ctx.strokeStyle = dashT > 0 ? hsl(B.wingCol,.35) : hsl([(T*160)%360,100,70],.18); ctx.lineWidth = 2;
     for (let i=0;i<14;i++){ const y = (i*47 + T*900) % GROUND, x = (LW + 40) - ((T*1800 + i*173) % (LW + 260)); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 70 + (i%3)*30, y); ctx.stroke(); }
@@ -1601,7 +1622,14 @@ function render(){
     for (const g of nx){ ctx.fillStyle = 'hsla(55,100%,70%,.8)'; ctx.save(); ctx.translate(g.x + g.w/2, gY(g)); ctx.rotate(.785); ctx.fillRect(-4,-4,8,8); ctx.restore(); }
     ctx.restore();
   }
+  if (state === 'play'){ const f = ufx(B.id, 'marks'); if (f) f(); }   // unit judgment marks: the only unit art allowed on top of the gates
   for (const bo of bolts){
+    if (bo.kind === 'beam'){   // straight ray x0,y0 → x,y (width bo.w, narrowing as it fades) with a four-point burst where it lands; no shadowBlur
+      const q = bo.life/bo.max, wd = 2 + (bo.w - 2)*q, dx = bo.x - bo.x0, dy = bo.y - bo.y0, L = Math.hypot(dx, dy) || 1, nx = -dy/L*wd/2, ny = dx/L*wd/2, R = 60*(1 - q*.6)*Math.min(1, bo.w/14 + .3);
+      ctx.save(); ctx.globalAlpha = Math.min(1, q*2.5);
+      for (let j=0;j<2;j++){ const m = j ? .35 : 1; ctx.fillStyle = j ? '#fff' : 'hsl(50,100%,70%)'; ctx.beginPath(); ctx.moveTo(bo.x0 + nx*m, bo.y0 + ny*m); ctx.lineTo(bo.x + nx*m, bo.y + ny*m); ctx.lineTo(bo.x - nx*m, bo.y - ny*m); ctx.lineTo(bo.x0 - nx*m, bo.y0 - ny*m); ctx.fill(); }
+      ctx.translate(bo.x, bo.y); ctx.fillStyle = 'hsl(50,100%,82%)'; star4(ctx, R, R, R*.16); ctx.fill(); ctx.restore(); continue;
+    }
     ctx.save(); ctx.globalAlpha = Math.min(1, bo.life*3); ctx.strokeStyle = '#fff'; ctx.shadowColor = 'hsl(205,100%,65%)'; ctx.shadowBlur = 24; ctx.lineWidth = 4;
     ctx.beginPath(); let yy = -10, xx = bo.x; ctx.moveTo(xx, yy); let k = 0;
     while (yy < bo.y){ yy += 28; k++; xx = bo.x + Math.sin(bo.seed + k*2.7 + T*40) * 18; ctx.lineTo(xx, Math.min(yy, bo.y)); }
@@ -1632,6 +1660,7 @@ function render(){
   for (let j=1;j<6;j++){ const yy = GROUND + Math.pow(j/6,1.6)*(LH-GROUND+10); ctx.beginPath(); ctx.moveTo(-20,yy); ctx.lineTo(LW+20,yy); ctx.stroke(); }
 
   if (trail.length > 2 && state !== 'dying' && state !== 'over'){
+    const tf = ufx(B.id, 'trail'); if (tf) tf(); else
     for (let i=1;i<trail.length;i++){
       const a = i/trail.length;
       ctx.strokeStyle = tier === 2 ? hsl([(T*240 + i*16)%360,100,64], a*.8) : tier === 1 ? hsl([20 + i*2,100,58], a*.8) : hsl(dashT>0 ? B.wingCol : (B.uiCol || B.col), a*.7); ctx.lineWidth = a*(dashT>0?14:8); ctx.lineCap='round';
@@ -1652,7 +1681,7 @@ function render(){
   ctx.globalAlpha = 1; ctx.shadowBlur = 0;
   if (ghosts.length){
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    for (const gh of ghosts){ ctx.save(); ctx.globalAlpha = gh.life/.32*.45; ctx.translate(gh.x, gh.y); ctx.rotate(gh.rot); drawShape(ctx, B, .5, null); ctx.restore(); }
+    for (const gh of ghosts){ ctx.save(); ctx.globalAlpha = gh.life/.32*.45; ctx.translate(gh.x, gh.y); ctx.rotate(gh.rot); drawShape(ctx, B, .5, null, OL); ctx.restore(); }
     ctx.restore();
   }
 
@@ -1689,7 +1718,7 @@ function render(){
 
   ctx.setTransform(scale,0,0,scale,0,0);
   if (feverGlow > .01 && !RM){
-    const pu = .5 + .5*Math.sin(T*10), hue = (T*120) % 360, w = 46;
+    const pu = .5 + .5*Math.sin(T*10), hue = ufx(B.id, 'feverHue') ?? (T*120) % 360, w = 46;
     const edge = (x0,y0,x1,y1,rx,ry,rw,rh) => { const gr = ctx.createLinearGradient(x0,y0,x1,y1); gr.addColorStop(0, `hsla(${hue},100%,60%,${feverGlow*(.3+.25*pu)})`); gr.addColorStop(1,'hsla(0,0%,0%,0)'); ctx.fillStyle = gr; ctx.fillRect(rx,ry,rw,rh); };
     edge(0,0,w,0, 0,0,w,LH); edge(LW,0,LW-w,0, LW-w,0,w,LH); edge(0,0,0,w, 0,0,LW,w); edge(0,LH,0,LH-w, 0,LH-w,LW,w);
   }
@@ -1833,7 +1862,7 @@ function drawSpecter(c, d, w, glow){
 }
 function drawMecha(c, d, w, glow){
   const k = d.r/13; c.save(); c.scale(k,k);
-  c.fillStyle = hsl([25,100,55 + Math.random()*15], .9); c.beginPath(); c.moveTo(-13,-4); c.lineTo(-24 - Math.random()*8,0); c.lineTo(-13,4); c.fill();
+  const fl = RM ? 1 : Math.sin(T*30); c.fillStyle = hsl([25,100,62 + fl*7], .9); c.beginPath(); c.moveTo(-13,-4); c.lineTo(-24 - fl*4,0); c.lineTo(-13,4); c.fill();   // time-based flicker (was per-frame random); steady with reduced motion
   if (glow){ c.shadowColor = hsl(d.wingCol); c.shadowBlur = 16; }
   c.fillStyle = hsl(d.col,1,-6); c.fillRect(-13,-11,26,22); c.shadowBlur = 0;
   c.fillStyle = hsl(d.col,1,10); c.fillRect(-13,-11,26,5); c.fillStyle = hsl(d.wingCol); c.fillRect(-13,5,26,3);
@@ -1842,7 +1871,17 @@ function drawMecha(c, d, w, glow){
   c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1; c.strokeRect(-13,-11,26,22); c.beginPath(); c.moveTo(-4,-6); c.lineTo(-4,11); c.stroke();
   c.restore();
 }
-function drawShape(c, d, w, glow){
+// Shared helpers for unit art. O0 / OL: the default and the lite body options; hash1: index hash for effect placement (effects never call rng()); star4: four-point star path, tips ±a on x and ±b on y, waist q
+const O0 = {lite:false, pose:0, vy:0}, OL = {lite:true, pose:0, vy:0};
+const hash1 = n => { const v = Math.sin(n*127.1 + 311.7)*43758.5453; return v - Math.floor(v); };
+function star4(c, a, b, q){ c.beginPath(); c.moveTo(a,0); c.lineTo(q,-q); c.lineTo(0,-b); c.lineTo(-q,-q); c.lineTo(-a,0); c.lineTo(-q,q); c.lineTo(0,b); c.lineTo(q,q); c.closePath(); }
+/* Unit bodies, one function per converted unit: UNIT_ART[id](c, d, w, glow, o).
+   Same space as the shared body below: c.scale(d.r/13) first, then 13 units = the hitbox radius, +x forward, -y up.
+   o.lite: the cheap body for the rival and the dash ghosts — at most 6 draws, no shadowBlur.  o.pose: 0..1 show-off pulse, hangar only.  o.vy: own bird's vertical speed (0 elsewhere).
+   Further keys are that unit's own state, filled in by UNIT_FX[id].opt. A body never reads run state itself (godT, shields, FX …): the rival, the hangar, the menu flock and the ghosts all draw through here. */
+const UNIT_ART = {};
+function drawShape(c, d, w, glow, o){
+  const art = UNIT_ART[d.id]; if (art) return art(c, d, w, glow, o || O0);
   if (d.id === 'mochi') return drawMochi(c, d, w, glow);
   if (d.id === 'pixel') return drawPixel(c, d, w, glow);
   if (d.id === 'neko') return drawNeko(c, d, w, glow);
@@ -1881,7 +1920,7 @@ function drawShape(c, d, w, glow){
   if (d.id === 'raijin'){
     c.fillStyle = hsl([55,100,70]); c.beginPath(); c.moveTo(2,-d.h+1); c.quadraticCurveTo(-2,-d.h-10,-10,-d.h-9); c.quadraticCurveTo(-3,-d.h-4,-1,-d.h+2); c.fill();
     c.beginPath(); c.moveTo(7,-d.h+2); c.quadraticCurveTo(6,-d.h-8,0,-d.h-10); c.quadraticCurveTo(4,-d.h-3,4,-d.h+2); c.fill();
-    c.strokeStyle = 'hsla(205,100%,85%,.9)'; c.lineWidth = 1.2; for (let i=0;i<2;i++){ const a = Math.random()*6.28, r0 = 12 + Math.random()*4; c.beginPath(); c.moveTo(Math.cos(a)*r0, Math.sin(a)*r0); c.lineTo(Math.cos(a+.3)*(r0+6), Math.sin(a+.3)*(r0+6)); c.lineTo(Math.cos(a+.1)*(r0+11), Math.sin(a+.1)*(r0+11)); c.stroke(); }
+    c.strokeStyle = 'hsla(205,100%,85%,.9)'; c.lineWidth = 1.2; for (let i=0;i<2;i++){ const tk = RM ? 0 : Math.floor(T*8), a = (RM ? T*1.5 : tk*2.399) % 6.283 + i*2.6, r0 = 12 + hash1(tk + i*7)*4; c.beginPath();   /* jumps 8 times a second (was every frame); drifts slowly with reduced motion */ c.moveTo(Math.cos(a)*r0, Math.sin(a)*r0); c.lineTo(Math.cos(a+.3)*(r0+6), Math.sin(a+.3)*(r0+6)); c.lineTo(Math.cos(a+.1)*(r0+11), Math.sin(a+.1)*(r0+11)); c.stroke(); }
   }
   if (d.id === 'chrono'){
     c.fillStyle = '#fbf3df'; c.beginPath(); c.arc(-2,1,6.5,0,6.28); c.fill(); c.strokeStyle = hsl(d.wingCol); c.lineWidth = 1.4; c.stroke();
@@ -1916,18 +1955,19 @@ function drawBird(){
     for (let i=0;i<2;i++){ const rr = 40 + ((T*90 + i*75) % 150); ctx.globalAlpha = 1 - rr/190; ctx.beginPath(); ctx.arc(bird.x, bird.y, rr, 0, 6.28); ctx.stroke(); }
     ctx.restore();
   }
+  const U = UNIT_FX[B.id] || O0;
   ctx.save(); ctx.translate(bird.x, bird.y);
-  drawAura(ctx, B, bird.r, T);
+  drawAura(ctx, B, bird.r, T); unitBack(B);
   if (mode === 'endless' && stTier(curStage) === 3 && (state === 'play' || state === 'paused')){
     const wn = FX.idleT >= 1.2; ctx.strokeStyle = wn ? `rgba(255,70,90,${RM ? .9 : .7 + .3*Math.sin(T*24)})` : 'rgba(255,255,255,.35)'; ctx.lineWidth = wn ? 3 : 2;
     ctx.beginPath(); ctx.arc(0, 0, bird.r + 22, -1.57, -1.57 + 6.283 * Math.max(0, 1 - FX.idleT/2)); ctx.stroke();
   }
   const skA = godT > 0 || boostT > 0 || lowGravT > 0 || autoT > 0 || rushT > 0 || foreT > 0 || freezeT > 0;
-  if (skA){ ctx.strokeStyle = hsl(godT > 0 ? [45,100,62] : (B.uiCol || B.col), .6 + .3*Math.sin(T*14)); ctx.lineWidth = 3; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(0,0,bird.r*2.1 + Math.sin(T*10)*3,0,6.28); ctx.stroke(); ctx.shadowBlur = 0; }
+  if (skA && !U.active){ ctx.strokeStyle = hsl(godT > 0 ? [45,100,62] : (B.uiCol || B.col), .6 + .3*Math.sin(T*14)); ctx.lineWidth = 3; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(0,0,bird.r*2.1 + Math.sin(T*10)*3,0,6.28); ctx.stroke(); ctx.shadowBlur = 0; }
   if (potionT > 0){ for (let i=0;i<10;i++){ const a = T*4 + i*.628; ctx.fillStyle = `hsla(${(i*36 + T*300)%360},100%,65%,.8)`; ctx.beginPath(); ctx.arc(Math.cos(a)*bird.r*2, Math.sin(a)*bird.r*2, 2.2, 0, 6.28); ctx.fill(); } }
   if (cloneT > 0){ ctx.save(); ctx.globalAlpha = .45 + .1*Math.sin(T*12); ctx.translate(-30, Math.sin(T*5)*8); ctx.rotate(bird.rot); drawShape(ctx, B, bird.wing, [288,100,66]); ctx.restore(); }
-  for (let k = 0; k < shields; k++){
-    const R = (bird.r + 10 + k*6) * vs, hue = B.id === 'aegis' ? 45 : 190;
+  if (U.shields) U.shields(vs); else for (let k = 0; k < shields; k++){
+    const R = (bird.r + 10 + k*6) * vs, hue = B.id === 'aegis' ? 45 : U.shieldHue || 190;
     ctx.save(); ctx.rotate(T*1.4*(k % 2 ? -1 : 1) + k*.5); ctx.shadowColor = `hsl(${hue},100%,60%)`; ctx.shadowBlur = 18;
     ctx.strokeStyle = `hsla(${hue},100%,72%,${.6+.25*Math.sin(T*8 + k)})`; ctx.fillStyle = `hsla(${hue},100%,60%,${k ? .04 : .10})`; ctx.lineWidth = 2.5 - k*.5;
     ctx.beginPath(); for (let i=0;i<6;i++){ const a = i/6*6.283; ctx.lineTo(Math.cos(a)*R, Math.sin(a)*R); } ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -1936,8 +1976,42 @@ function drawBird(){
   if (giantT > 0) vs *= 1 + Math.min(1, (TMAX.giant - giantT) * 5, giantT * 4);
   if (phaseT > 0) ctx.globalAlpha = .4 + .15*Math.sin(T*30);
   ctx.rotate(bird.rot); ctx.scale(vs*(1 - .12*squash), vs*(1 + .22*squash));
-  drawShape(ctx, B, bird.wing, dashT > 0 ? B.wingCol : tier === 2 ? [(T*240)%360,100,64] : (B.uiCol || B.col));
+  const o = {lite:false, pose:0, vy:bird.vy}; if (U.opt) U.opt(o);
+  drawShape(ctx, B, bird.wing, dashT > 0 ? B.wingCol : tier === 2 ? [(T*240)%360,100,64] : (B.uiCol || B.col), o); unitFront(B);
   ctx.restore();
+}
+/* ---------- unit fx: state-dependent looks and moments ----------
+   One row per converted unit, every key optional; a unit without a row keeps the shared look everywhere. Rows may read run state, bodies (UNIT_ART) may not.
+   opt(o)           drawBird: add this unit's state keys to the body options (lite, pose, vy are set already)
+   back()           drawBird, right after the aura: at the bird's position, not rotated
+   front()          drawBird, right after the body: inside the body's rotation and scale
+   shields(vs)      drawBird: draws the shield count instead of the hex rings (vs = pickup pop scale); shieldHue only recolours the rings
+   active: true     the unit shows its own skill-active look, so the shared gold circle is skipped
+   sky(k, e)        render, BEFORE the gates, every frame of play / pause / dying: k = 1 → 0 across the cast (0 = no cast running), e = seconds since the cast.
+                    No shadowBlur, at most 2 gradients, summed alpha ≤ .45; with RM one fixed-alpha frame, nothing moving. tint: 0 drops the tier's edge tint
+   marks()          render, after the gates, play only: judgment marks, nothing decorative
+   cast() snd()     useSkill, after the shared rings and particles; snd replaces SFX.skill.  ringCol: [a, b] recolours them.  shake: caps the tier's cast shake
+   perfect(g)       Perfect pass, after SFX.perfect.   death()  final death, replaces the 46 shared particles (the red ring stays)
+   sig(kind, g)     passive moments: 'pass' every scored gate · 'guard' combo guard · 'regen' shield regen · 'burst' shield-burst gate
+   idle(dt)         update, play only: the unit's standing particles (replaces the shared tier sparkle); keep it ≤ 20 a second
+   trail()          render: replaces the shared trail.   strike(x, y)  strikeNext: the unit's ray and sound.   feverHue: fixed hue for the fever border */
+const UNIT_FX = {};
+const ufx = (id, k) => (UNIT_FX[id] || O0)[k];
+const emit = (rate, dt) => Math.random() < rate * dt * (RM ? .5 : 1);   // particle spawn roll; reduced motion halves every standing rate
+function unitBack(d){ const f = ufx(d.id, 'back'); if (f) f(); }
+function unitFront(d){ const f = ufx(d.id, 'front'); if (f) f(); }
+function castFx(id){ const f = ufx(id, 'cast'); if (f) f(); (ufx(id, 'snd') || SFX.skill)(); }
+function perfectFx(id, g){ const f = ufx(id, 'perfect'); if (f) f(g); }
+function deathFx(id){ const f = ufx(id, 'death'); if (f) f(); return !!f; }
+function sigFx(id, kind, g){ const f = ufx(id, 'sig'); if (f) f(kind, g); }
+function skyEvent(){
+  if (state !== 'play' && state !== 'paused' && state !== 'dying') return;
+  const U = UNIT_FX[B.id] || O0, k = FX.castT > 0 ? FX.castT / FX.castMax : 0, tint = U.tint != null ? U.tint : TIER_FX[unitTier(B)].tint;
+  if (k > 0 && tint){   // tier edge tint in the unit's colour: one radial gradient, steady with reduced motion
+    const c = B.uiCol || B.col, g = ctx.createRadialGradient(LW/2,LH/2,LH*.26,LW/2,LH/2,LH*.7); g.addColorStop(0, hsl(c, 0)); g.addColorStop(1, hsl(c, tint * (RM ? .6 : Math.min(1, k*2.5))));
+    ctx.fillStyle = g; ctx.fillRect(-20,-20,LW+40,LH+40);
+  }
+  if (U.sky) U.sky(k, FX.castMax - FX.castT);
 }
 
 /* ---------- hangar ---------- */
@@ -2021,7 +2095,7 @@ function drawHangarPreview(){
   if (!isOwned(B)) hctx.globalAlpha = .55;
   hctx.translate(cx + 10, cy); hctx.rotate(Math.sin(T*2.4)*.08); hctx.scale(2.6,2.6);
   drawAura(hctx, B, B.r, T);
-  drawShape(hctx, B, (Math.sin(T*12)+1)/2, B.uiCol || B.col);
+  drawShape(hctx, B, (Math.sin(T*12)+1)/2, B.uiCol || B.col, {lite:false, pose: RM ? 0 : Math.pow(Math.max(0, Math.sin(T*1.6)), 8), vy:0});   // pose: a half-second show-off pulse about every 3.9s
   hctx.globalAlpha = 1;
 }
 
@@ -2676,7 +2750,7 @@ function drawRival(){
   const d = birdById(vs.oppBird) || BIRDS[0], x = bird.x + 34, y = vs.oppVis;
   ctx.save(); ctx.globalAlpha = .55; ctx.translate(x, y);
   ctx.strokeStyle = 'hsla(0,100%,62%,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0,0,d.r*1.7,0,6.28); ctx.stroke();
-  drawShape(ctx, d, (Math.sin(T*12)+1)/2, [0,100,62]); ctx.restore();
+  drawShape(ctx, d, (Math.sin(T*12)+1)/2, [0,100,62], OL); ctx.restore();
   ctx.save(); ctx.font = `700 11px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = 'hsla(0,100%,72%,.95)';
   ctx.fillText(`${vs.oppNick || t('opp')} · ${vs.oppScore}`, x, y - d.r*2 - 6); ctx.restore();
   ctx.save(); ctx.font = `700 11px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = 'hsla(200,100%,72%,.95)';
@@ -2705,7 +2779,8 @@ function loop(now){
 if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot}; },
-  setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); },   // QA only: result-screen reward checks
+  setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots
+  TIER_FX, UNIT_ART, UNIT_FX, unitTier, cast(){ skillCharge = 1; useSkill(); }, kill(){ die(); }, sig(k){ sigFx(B.id, k, gates.find(g => !g.scored)); }, dbg: {render, drawBird, drawShape, skyEvent},   // QA only: fire a cast / death / passive moment, count draws
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter}; },
   get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
   hold: false, step(dt, n){ for (let i = 0; i < (n || 1); i++) update(dt); },
@@ -2719,6 +2794,12 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       pow: () => eq([0,.19,.2,.59,.6,.79,.8,.99].map(powKind), ['shield','shield','magnet','magnet','slow','slow','potion','potion']),
       sk22: () => BIRDS.length === 22 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
       ultra5: () => BIRDS.filter(b => b.rarity === 4).length === 5,
+      tiers: () => eq(['volt','mochi','zero','aegis','solaris'].map(id => unitTier(birdById(id))), ['common','epic','legendary','mythic','ultra']) && eq(Object.keys(TIER_FX), RARITY_KEY.map(k => k.slice(2))),
+      tierFx: () => { const L = ['epic','legendary','mythic','ultra'].map(k => TIER_FX[k]), up = (k, f) => L.every((v, i) => !i || (f ? v[k] >= L[i-1][k] : v[k] > L[i-1][k])), rad = v => v.rings[0] <= 2 ? v.rings[0]*LW : v.rings[0];
+        return ['flash','shake','parts'].every(k => up(k)) && ['z','stop','sky','ban'].every(k => up(k, 1)) && L.every((v, i) => !i || (rad(v) > rad(L[i-1]) && v.rings.length >= L[i-1].rings.length)) && TIER_FX.ultra.shake < 18
+          && eq([TIER_FX.common, TIER_FX.epic].map(v => [v.rings, v.flash, v.shake, v.z, v.stop, v.parts, v.sky, v.ban, v.big]), [[[180,110],.2,3,1.07,0,0,0,1,false],[[240,110],.3,5,1.07,0,0,0,1,false]]); },
+      unitFx: () => Object.keys(UNIT_ART).concat(Object.keys(UNIT_FX)).every(id => birdById(id)) && Object.values(UNIT_ART).every(f => typeof f === 'function')
+        && eq(['castT','castMax','sigT','sigK','perfT'].map(k => newFx()[k]), [0,0,0,'',0]) && [O0, OL].every(o => o.pose === 0 && o.vy === 0) && OL.lite && !O0.lite,
       i18n: () => Object.keys(I18N).every(l => BIRDS.every(b => ['r_','p_','sk_','sd_'].every(p => typeof I18N[l][p + b.id] === 'string' && I18N[l][p + b.id]))),
       i18nIdx: () => I18N.ja.p_pixel.startsWith('コイン2倍'),
       price: () => eq(['volt','mochi','zero','aegis','solaris','pulsar'].map(id => priceOf(birdById(id))), [null,{coin:40000,dia:10000,gem:15},{coin:90000,dia:22000,gem:25},{coin:100000,dia:33000,gem:40},{coin:150000,dia:40000,gem:100},{coin:150000,dia:40000,gem:100}]),
