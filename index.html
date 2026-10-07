@@ -1460,13 +1460,13 @@ function update(rdt){
     const cy = gY(g), gp = gGap(g), top = cy - gp/2, bot = cy + gp/2;
     const overX = bird.x + bird.r > g.x && bird.x - bird.r < g.x + g.w;
     if (overX){
-      if (g.broken || phaseT > 0){ g.dashed = true; }
+      if (g.broken || phaseT > 0){ g.dashed = true; if (!g.broken && (bird.y - bird.r*.82 < top || bird.y + bird.r*.82 > bot)) sigFx(B.id, 'thru', g); }
       else if (dashT > 0 || giantT > 0){ if (!g.dashed){ g.dashed = true; g.flash = 1; if (dashT > 0) FX.dashHit = true; shards(g.x + g.w/2, bird.y, g.type === 'move' ? pal.b : g.type === 'pulse' ? pal.a : pal.gate, 28); ring(g.x + g.w/2, bird.y, 130, B.wingCol, .4, 5); shake = Math.max(shake, 10); haptic('shatter'); SFX.shatter(); if (giantT > 0) sigFx(B.id, 'smash', g); } }
       else {
         const hr = bird.r * .82;   // slightly forgiving hitbox
         g.minClear = Math.min(g.minClear, (bird.y - hr) - top, bot - (bird.y + hr));
         if (bird.y - hr < top || bird.y + hr > bot){
-          if (invuln > 0 || godT > 0 || freezeT > 0) {}
+          if (invuln > 0 || godT > 0 || freezeT > 0){ if (godT > 0) sigFx(B.id, 'block', g); }
           else if (cloneT > 0){ cloneHit(); }
           else if (shields > 0){ breakShield(); if (PK.shieldBurst){ g.broken = true; g.flash = 1; shards(g.x + g.w/2, bird.y, [50,100,72], 24); sigFx(B.id, 'burst', g); } }
           else { die(); if (state !== 'play') return; }
@@ -1569,9 +1569,10 @@ function cloneHit(){
 function breakShield(){
   hurtT = .45;
   shields = Math.max(0, shields - 1); invuln = POW.shieldInv; popT = -1;
-  shards(bird.x, bird.y, [190,100,78], 22); ring(bird.x, bird.y, 170, [190,100,78], .5, 7); SFX.shield(); haptic('shieldBreak'); shake = 10; flash = .3;
+  const bc = ufx(B.id, 'breakCol');   // a unit may recolour the pieces of its own shield
+  shards(bird.x, bird.y, bc || [190,100,78], 22); ring(bird.x, bird.y, 170, bc || [190,100,78], .5, 7); SFX.shield(); haptic('shieldBreak'); shake = 10; flash = .3;
   pop(t('shieldBreak'), bird.x, bird.y-34, [190,100,70]);
-  for (let i=0;i<20;i++){ const a=Math.random()*6.28; part(bird.x,bird.y,Math.cos(a)*220,Math.sin(a)*220,.5,[190,100,70],2.5); }
+  for (let i=0;i<20;i++){ const a=Math.random()*6.28; part(bird.x,bird.y,Math.cos(a)*220,Math.sin(a)*220,.5,bc || [190,100,70],2.5); }
 }
 
 /* ---------- render ---------- */
@@ -1833,27 +1834,6 @@ function drawBuzz(c, d, w, glow){
   c.strokeStyle = '#1b1208'; c.lineWidth = 1; c.beginPath(); c.moveTo(11,-6); c.quadraticCurveTo(13,-12,17,-12); c.moveTo(9,-6); c.quadraticCurveTo(9,-13,12,-14); c.stroke();
   c.restore();
 }
-function drawKraken(c, d, w, glow){
-  const k = d.r/13; c.save(); c.scale(k,k);
-  c.strokeStyle = hsl(d.wingCol); c.lineCap = 'round';
-  for (let i=0;i<5;i++){ c.lineWidth = 3.4 - i*.3; c.beginPath(); c.moveTo(-6, -4 + i*2.4); for (let j=1;j<=5;j++) c.lineTo(-6 - j*4.4, -4 + i*2.4 + Math.sin(T*8 + j*.9 + i)*2.6 + (i-2)*j*.5); c.stroke(); }
-  if (glow){ c.shadowColor = hsl(d.col); c.shadowBlur = 18; }
-  const g2 = c.createLinearGradient(0,-12,0,10); g2.addColorStop(0, hsl(d.col,1,14)); g2.addColorStop(1, hsl(d.col,1,-12));
-  c.fillStyle = g2; c.beginPath(); c.ellipse(4,-2,13,11,-.15,0,6.28); c.fill(); c.shadowBlur = 0;
-  c.fillStyle = hsl(d.wingCol,.8); for (let i=0;i<3;i++){ c.beginPath(); c.arc(-1 + i*5,-8 + i,1.4,0,6.28); c.fill(); }
-  c.fillStyle = '#ffe36b'; c.beginPath(); c.ellipse(10,-1,3.4,4,0,0,6.28); c.fill(); c.fillStyle = '#120818'; c.fillRect(9.2,-3.6,1.6,5.2);
-  c.restore();
-}
-function drawSpecter(c, d, w, glow){
-  const k = d.r/13; c.save(); c.scale(k,k);
-  if (glow){ c.shadowColor = hsl(d.wingCol); c.shadowBlur = 22; }
-  c.fillStyle = 'rgba(235,252,255,.88)'; c.beginPath(); c.arc(4,-2,12,Math.PI*.5,Math.PI*1.5,true);
-  for (let i=0;i<=6;i++){ const x = 4 - i*4.2; c.lineTo(x, 10 + Math.sin(T*10 + i)*2.5 + (i%2)*2); }
-  c.lineTo(-22,-4 + Math.sin(T*8)*3); c.quadraticCurveTo(-8,-14,4,-14); c.closePath(); c.fill(); c.shadowBlur = 0;
-  c.fillStyle = '#0b1a24'; c.beginPath(); c.ellipse(6,-4,2,3.2,0,0,6.28); c.fill(); c.beginPath(); c.ellipse(12,-4,1.7,2.8,0,0,6.28); c.fill();
-  c.beginPath(); c.ellipse(9,3,2.2,1.6,0,0,6.28); c.fill();
-  c.restore();
-}
 // Shared helpers for unit art. O0 / OL: the default and the lite body options; hash1: index hash for effect placement (effects never call rng()); star4: four-point star path, tips a (front) / a2 (back) on x and ±b on y, waist q
 const O0 = {lite:false, pose:0, vy:0}, OL = {lite:true, pose:0, vy:0};
 const hash1 = n => { const v = Math.sin(n*127.1 + 311.7)*43758.5453; return v - Math.floor(v); };
@@ -2046,6 +2026,72 @@ const UNIT_ART = {
     c.fillStyle = hsl(wn ? [48,100,72] : d.wingCol); c.fillRect(10.4 + px, -5.4, o.warn && RM ? 5 : 2.6, 12.8);
     c.strokeStyle = 'rgba(0,0,0,.4)'; c.lineWidth = 1; c.beginPath(); c.rect(-13,-11,26,22); fist(); for (let j=1;j<4;j++){ c.moveTo(16.5 + px, -6 + j*3.5); c.lineTo(22 + px, -6 + j*3.5); } c.moveTo(-5,-7.5); c.lineTo(-5,6); c.stroke();
     c.restore();
+  },
+  // AEGIS — the teardrop body behind a big crescent shield plate: the only one walled off in front, heaviest at the nose. Tall helmet crest, a shield-shaped back wing, a red visor; a bright point runs down the plate's rim every 2.5s.
+  // o.glint: 0..1 the plate lights up (shield regained, Perfect). The hangar pose pushes the plate out and lets the dome pass once. 11 draws (+1 with the rim point, +1 in the pose)
+  aegis(c, d, w, glow, o){
+    const k = d.r/13, gold = [45,100,62]; c.save(); c.scale(k,k);
+    const plate = () => { c.beginPath(); c.moveTo(15,-14); c.quadraticCurveTo(31,0,15,14); c.quadraticCurveTo(19,0,15,-14); };   // 28 tall, 6 thick
+    const body = () => { c.beginPath(); c.moveTo(d.nose,0); c.quadraticCurveTo(6,-d.h,-10,-d.h*.77); c.quadraticCurveTo(-18,0,-10,d.h*.77); c.quadraticCurveTo(6,d.h,d.nose,0); };
+    const crest = () => { c.fillStyle = hsl([44,100,70]); c.beginPath(); c.moveTo(-2,-13); c.lineTo(8,-24); c.lineTo(8,-12); c.fill(); };
+    if (o.lite){ crest(); c.fillStyle = hsl(d.col); body(); c.fill(); c.fillStyle = hsl(d.wingCol); plate(); c.fill(); c.restore(); return; }   // body + plate + crest
+    const wy = -4 - w*14, fs = d.span*.77, gl = o.glint || 0, s = (T % 2.5)/.6;
+    if (o.pose > .02){ c.strokeStyle = hsl(gold, .8*o.pose); c.lineWidth = 1.4; c.beginPath(); for (let i=0;i<=6;i++){ const a = i*1.047 + .52; c.lineTo(Math.cos(a)*(34 - 6*o.pose), Math.sin(a)*(34 - 6*o.pose)); } c.stroke(); }
+    c.fillStyle = hsl(d.wingCol,.95); c.beginPath(); c.moveTo(-4,-2); c.quadraticCurveTo(-d.span*.7, wy-4, -d.span, wy); c.quadraticCurveTo(-d.span*.55, 2, -4, 4); c.fill();
+    crest();
+    if (glow){ c.shadowColor = hsl(glow); c.shadowBlur = 22; }
+    const bg = c.createLinearGradient(-14,-12,14,12); bg.addColorStop(0, hsl(d.col,1,20)); bg.addColorStop(1, hsl(d.col,1,-12));
+    c.fillStyle = bg; body(); c.fill(); c.shadowBlur = 0;
+    c.strokeStyle = hsl([45,100,80]); c.lineWidth = 1.6; c.beginPath(); c.moveTo(-6,-d.h*.7); c.quadraticCurveTo(0,0,-6,d.h*.7); c.stroke();
+    c.fillStyle = '#1a1206'; c.fillRect(2,-5,11,4); c.fillStyle = hsl([0,100,60]); c.fillRect(4,-4,8,1.8);
+    c.save(); c.translate(-fs*.55, wy*.6 + 3); c.fillStyle = hsl(d.wingCol); c.strokeStyle = hsl(gold); c.lineWidth = 1.5;   // back wing, shield-shaped
+    c.beginPath(); c.moveTo(-7,-6); c.lineTo(7,-6); c.lineTo(6,2); c.lineTo(0,9); c.lineTo(-6,2); c.closePath(); c.fill(); c.stroke(); c.restore();
+    c.translate(15 + 3*o.pose, 0); c.scale(1 + .12*o.pose, 1 + .12*o.pose); c.translate(-15, 0);
+    c.fillStyle = hsl(d.wingCol, 1, gl*18); c.strokeStyle = hsl(gold, 1, gl*25); c.lineWidth = 1.5 + gl; plate(); c.fill(); c.stroke();
+    if (s < 1 && !RM){ c.fillStyle = '#fff'; c.beginPath(); c.arc(15 + 32*s*(1 - s), 14*(2*s - 1), 1.6, 0, 6.28); c.fill(); }
+    c.restore();
+  },
+  // KRAKEN — round mantle with a back fin over five long tentacles, two of them thin hunting arms ending in a club: the only "one head, many strands". The tentacles gather on every flap and lag behind a climb; five light spots run along the mantle one after another.
+  // o.spread: how far the tentacles fan out (1.6 while the ink is out). The hangar pose fans them twice as wide and shuts the eye. 14 draws
+  kraken(c, d, w, glow, o){
+    const k = d.r/13; c.save(); c.scale(k,k); c.lineCap = 'round'; c.lineJoin = 'round';
+    const mantle = () => { c.beginPath(); c.ellipse(4,-2,13,11,-.15,0,6.28); c.moveTo(-4,-11); c.lineTo(-12,-20); c.lineTo(2,-12); c.closePath(); };
+    const eye = () => { c.fillStyle = '#ffe36b'; c.beginPath(); c.ellipse(10,-1,3.4,4,0,0,6.28); c.fill(); c.fillStyle = '#120818'; c.fillRect(9.2,-3.6,1.6,5.2); };
+    if (o.lite){   // mantle + three short tentacles (one path) + eye
+      c.strokeStyle = hsl(d.wingCol); c.lineWidth = 3; c.beginPath(); for (let i=0;i<3;i++){ c.moveTo(-6, -4 + i*4); for (let j=1;j<=4;j++) c.lineTo(-6 - j*6, -4 + i*4 + (i - 1)*j*2 + (j % 2 ? 1.5 : -1.5)); } c.stroke();
+      c.fillStyle = hsl(d.col); mantle(); c.fill(); eye(); c.restore(); return; }
+    const lift = Math.max(-1, Math.min(1, -o.vy/720)), sp = (o.spread || 1)*(1 - .6*w)*(1 + o.pose), clubs = [];
+    for (let i=0;i<5;i++){ const hunt = i === 1 || i === 3, n = hunt ? 9 : 7, y0 = -4 + i*2.4; let x = -6, y = y0;   // seven joints (31 long), the last two curl; the hunting arms have nine (38)
+      c.strokeStyle = hsl(d.wingCol, 1, hunt ? 8 : -3); c.lineWidth = hunt ? 2 : 3.6 - i*.25; c.beginPath(); c.moveTo(x, y);
+      for (let j=1;j<=n;j++){ const cu = hunt ? 0 : Math.max(0, j - n + 2); x = -6 - j*4.4 + cu*cu*1.8; y = y0 + (i - 2)*j*.75*sp + Math.sin(T*8 + j*.9 + i)*2.6*j/n + lift*j*1.2 + (i < 2 ? -cu : cu)*2.2; c.lineTo(x, y); }
+      c.stroke(); if (hunt) clubs.push(x, y); }
+    c.fillStyle = hsl(d.wingCol, 1, 12); c.beginPath(); for (let i=0;i<4;i+=2){ c.moveTo(clubs[i] + 3.2, clubs[i+1]); c.ellipse(clubs[i], clubs[i+1], 3.2, 2.2, 0, 0, 6.28); } c.fill();
+    if (glow){ c.shadowColor = hsl(d.col); c.shadowBlur = 18; }
+    const g2 = c.createLinearGradient(0,-12,0,10); g2.addColorStop(0, hsl(d.col,1,14)); g2.addColorStop(1, hsl(d.col,1,-12));
+    c.fillStyle = g2; mantle(); c.fill(); c.shadowBlur = 0;
+    for (let i=0;i<5;i++){ c.fillStyle = hsl([175,100,70], .3 + .7*Math.max(0, Math.sin(T*3 - i))); c.beginPath(); c.arc(-5 + i*3.7, -9.6 + (i - 2)*(i - 2)*.45, 1.4, 0, 6.28); c.fill(); }
+    if (o.pose > .8){ c.strokeStyle = '#120818'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(7,-1); c.quadraticCurveTo(10,1,13,-1); c.stroke(); } else eye();
+    c.restore();
+  },
+  // SPECTER — a hooded cloak with a curled-back hood tip, a ragged hem of seven teeth and a hollow face: the only see-through one, fading out toward the tail. The whole body drifts up and down and breathes in opacity (1.2Hz).
+  // o.eye: the eyes glow (ghosting, or the gate before it); o.edge: solid white outline (ghosting about to end); o.fade: thinned out for a moment. The hangar pose fades it almost away. 6 draws (+1 with the outline)
+  specter(c, d, w, glow, o){
+    const k = d.r/13; c.save(); c.scale(k,k);
+    const cloak = wv => { c.beginPath(); c.arc(4,-2,12,-1.571,1.571); for (let i=1;i<=7;i++) c.lineTo(4 - i*4.9, 10 - i*1.5 + (i % 2 ? 3.4 : 0) + wv*Math.sin(T*10 + i)*2.2*i/7);
+      c.lineTo(-33, -2 + wv*Math.sin(T*8)*2.5); c.quadraticCurveTo(-16,-9,-7,-12.5); c.lineTo(-12,-17.5); c.quadraticCurveTo(-3,-21,4,-14); c.closePath(); };
+    const eyes = () => { c.beginPath(); c.ellipse(6,-4,2,3.2,0,0,6.28); c.moveTo(13.7,-4); c.ellipse(12,-4,1.7,2.8,0,0,6.28); c.fill(); };
+    if (o.lite){ c.fillStyle = 'rgba(235,252,255,.85)'; cloak(0); c.fill(); c.fillStyle = '#0b1a24'; eyes(); c.restore(); return; }   // one cloak face + the eyes
+    c.globalAlpha *= (RM ? .88 : .86 + .06*Math.sin(T*7.54))*(1 - .72*o.pose)*(o.fade ? .35 : 1);
+    if (!RM) c.translate(0, Math.sin(T*3)*1.5);
+    if (glow){ c.shadowColor = hsl(d.wingCol); c.shadowBlur = 22; }
+    const g = c.createLinearGradient(16,0,-32,0); g.addColorStop(0, 'rgba(235,252,255,.9)'); g.addColorStop(1, 'rgba(235,252,255,.25)');
+    c.fillStyle = g; cloak(1); c.fill(); c.shadowBlur = 0;
+    if (o.edge){ c.strokeStyle = '#fff'; c.lineWidth = 1.4; c.stroke(); }
+    c.strokeStyle = 'rgba(235,252,255,.9)'; c.lineWidth = 1.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(8,4); c.lineTo(17,10); c.moveTo(3,6); c.lineTo(10,12); c.stroke();   // two thin arms
+    c.fillStyle = hsl([200,45,10], .2); c.beginPath(); c.ellipse(8.5,-2.5,7,8.5,0,0,6.28); c.fill();   // the hollow under the hood
+    c.fillStyle = hsl(o.eye || o.pose > .3 ? d.wingCol : [200,45,10]); eyes();
+    c.fillStyle = hsl([200,45,10]); c.beginPath(); c.ellipse(9,3,2.2,1.6,0,0,6.28); c.fill();
+    c.restore();
   }
 };
 function drawShape(c, d, w, glow, o){
@@ -2054,8 +2100,6 @@ function drawShape(c, d, w, glow, o){
   if (d.id === 'pixel') return drawPixel(c, d, w, glow);
   if (d.id === 'neko') return drawNeko(c, d, w, glow);
   if (d.id === 'buzz') return drawBuzz(c, d, w, glow);
-  if (d.id === 'kraken') return drawKraken(c, d, w, glow);
-  if (d.id === 'specter') return drawSpecter(c, d, w, glow);
   const k = d.r/13, wy = -4 - w*14;
   c.save(); c.scale(k,k);
   if (d.id === 'aurora'){ c.lineWidth = 2; c.lineCap = 'round'; for (let j=0;j<3;j++){ c.strokeStyle = hsl([[150,190,280][j],100,70], .85); c.beginPath(); c.moveTo(-8,-4 + j*4); for (let i=1;i<=5;i++) c.lineTo(-8 - i*6, -4 + j*4 + Math.sin(T*10 + i + j)*2.5); c.stroke(); } }
@@ -2071,19 +2115,11 @@ function drawShape(c, d, w, glow, o){
   c.beginPath(); c.moveTo(d.nose,0); c.quadraticCurveTo(6,-d.h,-10,-d.h*.77); c.quadraticCurveTo(-18,0,-10,d.h*.77); c.quadraticCurveTo(6,d.h,d.nose,0); c.fill();
   c.shadowBlur = 0;
   if (d.id === 'titan'){ c.strokeStyle = hsl(d.col,.9,30); c.lineWidth = 2; c.beginPath(); c.moveTo(-6,-d.h*.6); c.quadraticCurveTo(-1,0,-6,d.h*.6); c.stroke(); }
-  if (d.id === 'aegis'){
-    c.strokeStyle = hsl([45,100,80]); c.lineWidth = 1.6; c.beginPath(); c.moveTo(-6,-d.h*.7); c.quadraticCurveTo(0,0,-6,d.h*.7); c.stroke();
-    c.fillStyle = hsl([44,100,70]); c.beginPath(); c.moveTo(-2,-d.h); c.lineTo(4,-d.h-7); c.lineTo(6,-d.h+1); c.fill();
-  }
-  if (d.id === 'aegis'){ c.fillStyle = '#1a1206'; c.fillRect(2,-5,11,4); c.fillStyle = hsl([0,100,60]); c.shadowColor = 'hsl(0,100%,60%)'; c.shadowBlur = 8; c.fillRect(4,-4,8,1.8); c.shadowBlur = 0; }
-  else { c.fillStyle = '#fff'; c.beginPath(); c.ellipse(6,-3,5,3.2,.2,0,6.28); c.fill();
-  c.fillStyle = '#0b0718'; c.beginPath(); c.arc(7.5,-3,1.8,0,6.28); c.fill(); }
+  c.fillStyle = '#fff'; c.beginPath(); c.ellipse(6,-3,5,3.2,.2,0,6.28); c.fill();
+  c.fillStyle = '#0b0718'; c.beginPath(); c.arc(7.5,-3,1.8,0,6.28); c.fill();
   c.fillStyle = hsl(d.wingCol);
   const fs = d.span*.77;
-  if (d.id === 'aegis'){
-    c.save(); c.translate(-fs*.55, wy*.6 + 3); c.fillStyle = hsl(d.wingCol); c.strokeStyle = hsl([45,100,62]); c.lineWidth = 1.5;
-    c.beginPath(); c.moveTo(-7,-6); c.lineTo(7,-6); c.lineTo(6,2); c.quadraticCurveTo(0,9,0,9); c.quadraticCurveTo(0,9,-6,2); c.closePath(); c.fill(); c.stroke(); c.restore();
-  } else { c.beginPath(); c.moveTo(-2,0); c.quadraticCurveTo(-fs*.6, wy+6, -fs, wy+8); c.quadraticCurveTo(-8, 6, -2, 5); c.fill(); }
+  c.beginPath(); c.moveTo(-2,0); c.quadraticCurveTo(-fs*.6, wy+6, -fs, wy+8); c.quadraticCurveTo(-8, 6, -2, 5); c.fill();
   c.restore();
 }
 function drawBird(){
@@ -2107,14 +2143,14 @@ function drawBird(){
   if (skA && !U.active){ ctx.strokeStyle = hsl(godT > 0 ? [45,100,62] : (B.uiCol || B.col), .6 + .3*Math.sin(T*14)); ctx.lineWidth = 3; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(0,0,bird.r*2.1 + Math.sin(T*10)*3,0,6.28); ctx.stroke(); ctx.shadowBlur = 0; }
   if (potionT > 0){ for (let i=0;i<10;i++){ const a = T*4 + i*.628; ctx.fillStyle = `hsla(${(i*36 + T*300)%360},100%,65%,.8)`; ctx.beginPath(); ctx.arc(Math.cos(a)*bird.r*2, Math.sin(a)*bird.r*2, 2.2, 0, 6.28); ctx.fill(); } }
   if (U.shields) U.shields(vs); else for (let k = 0; k < shields; k++){
-    const R = (bird.r + 10 + k*6) * vs, hue = B.id === 'aegis' ? 45 : U.shieldHue || 190;
+    const R = (bird.r + 10 + k*6) * vs, hue = U.shieldHue || 190;
     ctx.save(); ctx.rotate(T*1.4*(k % 2 ? -1 : 1) + k*.5); ctx.shadowColor = `hsl(${hue},100%,60%)`; ctx.shadowBlur = 18;
     ctx.strokeStyle = `hsla(${hue},100%,72%,${.6+.25*Math.sin(T*8 + k)})`; ctx.fillStyle = `hsla(${hue},100%,60%,${k ? .04 : .10})`; ctx.lineWidth = 2.5 - k*.5;
     ctx.beginPath(); for (let i=0;i<6;i++){ const a = i/6*6.283; ctx.lineTo(Math.cos(a)*R, Math.sin(a)*R); } ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.restore();
   }
   if (giantT > 0) vs *= 1 + Math.min(1, (TMAX.giant - giantT) * 5, giantT * 4);
-  if (phaseT > 0) ctx.globalAlpha = .4 + .15*Math.sin(T*30);
+  if (phaseT > 0) ctx.globalAlpha = RM ? .6 : .52 + .15*Math.sin(T*18.85);   // ghosting: 3Hz (was 4.8Hz) and a little more solid, steady with reduced motion
   ctx.rotate(bird.rot); ctx.scale(vs*(1 - .12*squash), vs*(1 + .22*squash));
   const o = {lite:false, pose:0, vy:bird.vy}; if (U.opt) U.opt(o);
   drawShape(ctx, B, bird.wing, dashT > 0 ? B.wingCol : tier === 2 ? [(T*240)%360,100,64] : (B.uiCol || B.col), o); unitFront(B);
@@ -2125,7 +2161,7 @@ function drawBird(){
    opt(o)           drawBird: add this unit's state keys to the body options (lite, pose, vy are set already)
    back()           drawBird, right after the aura: at the bird's position, not rotated
    front()          drawBird, right after the body: inside the body's rotation and scale
-   shields(vs)      drawBird: draws the shield count instead of the hex rings (vs = pickup pop scale); shieldHue only recolours the rings
+   shields(vs)      drawBird: draws the shield count instead of the hex rings (vs = pickup pop scale); shieldHue only recolours the rings, breakCol the pieces when one breaks
    active: true     the unit shows its own skill-active look, so the shared gold circle is skipped
    sky(k, e)        render, BEFORE the gates, every frame of play / pause / dying: k = 1 → 0 across the cast (0 = no cast running), e = seconds since the cast.
                     No shadowBlur, at most 2 gradients, summed alpha ≤ .45; with RM one fixed-alpha frame, nothing moving. tint: 0 drops the tier's edge tint
@@ -2133,7 +2169,8 @@ function drawBird(){
    cast() snd()     useSkill, after the shared rings and particles; snd replaces SFX.skill.  ringCol: [a, b] recolours them.  shake: caps the tier's cast shake
    perfect(g)       Perfect pass, after SFX.perfect.   death()  final death, replaces the 46 shared particles (the red ring stays)
    sig(kind, g)     passive moments: 'pass' every scored gate · 'guard' combo guard · 'regen' shield regen · 'burst' shield-burst gate · 'rebirth' revive spent · 'rewind' before the rewind is applied (hist still full)
-                    · 'clone' the clone took the hit · 'smash' giant form broke gate g · 'dashEnd'.  Legendary rows time their cast shape with FX.castT themselves (their tier has no sky event)
+                    · 'clone' the clone took the hit · 'smash' giant form broke gate g · 'dashEnd' · 'block' a wall met the invincible bird at gate g (every frame of it) · 'thru' inside gate g's wall while ghosting (every frame of it).
+                    Legendary rows time their cast shape with FX.castT themselves (their tier has no sky event)
    idle(dt)         update, play only: the unit's standing particles (replaces the shared tier sparkle); keep it ≤ 20 a second
    trail()          render: replaces the shared trail.   strike(x, y)  strikeNext: the unit's ray and sound.   feverHue: fixed hue for the fever border */
 const ufx = (id, k) => (UNIT_FX[id] || O0)[k];
@@ -2328,6 +2365,82 @@ const UNIT_FX = {
     idle(dt){ if (emit(6, dt)){ const k = bird.r/13; part(bird.x - (Math.random() < .5 ? 10 : 5.5)*k, bird.y - 22*k, -30 - Math.random()*20, -70 - Math.random()*40, .5, [220,10,70], 3); } },   // steam from the stacks
     trail(){ const n = trail.length; ctx.lineCap = 'butt'; ctx.lineWidth = 4;   // two parallel tracks
       for (let i=1;i<n;i++){ ctx.strokeStyle = hsl([25,100,55], i/n*.65); ctx.beginPath(); for (let s=-4;s<5;s+=8){ ctx.moveTo(trail[i-1].x, trail[i-1].y + s); ctx.lineTo(trail[i].x, trail[i].y + s); } ctx.stroke(); } }
+  },
+  aegis: {
+    active:true, shieldHue:45, breakCol:[45,100,70], ringCol:[[45,100,62],[210,25,82]],
+    opt(o){ o.glint = Math.max(FX.sigK === 'regen' ? FX.sigT/.5 : 0, Math.min(1, FX.perfT/.2)); },
+    back(){   // skill on: a hexagonal dome, 4.2 r with a 2.8 r hexagon inside and six spokes. Its six sides slot in from 1.6× out, .03s apart (.25s); the half a wall touches lights up; the last .8s it blinks at 3Hz (reduced motion: it thins instead)
+      if (godT <= 0) return; const R = bird.r*4.2, e = FX.castT > 0 && !RM ? FX.castMax - FX.castT : 9, rot = RM ? 0 : T*.6, end = godT < .8, dim = end && !RM && Math.floor(T*6) % 2;
+      const hit = FX.sigT > 0 && FX.sigK === 'blockU' ? -1 : FX.sigT > 0 && FX.sigK === 'blockD' ? 1 : 0, vx = i => Math.cos(rot + i*1.047), vy = i => Math.sin(rot + i*1.047);
+      const sides = lit => { ctx.beginPath(); for (let i=0;i<6;i++){ if ((hit*Math.sin(rot + (i + .5)*1.047) > .4) !== lit) continue; const s = R*(1.6 - .6*Math.max(0, Math.min(1, (e - i*.03)/.1))); ctx.moveTo(vx(i)*s, vy(i)*s); ctx.lineTo(vx(i + 1)*s, vy(i + 1)*s); } ctx.stroke(); };
+      ctx.lineCap = 'round'; ctx.strokeStyle = `hsla(45,100%,62%,${dim ? .25 : .7})`; ctx.lineWidth = end && RM ? 1.5 : 3; sides(false);
+      if (hit){ ctx.strokeStyle = 'hsla(45,100%,88%,1)'; ctx.lineWidth = 5; sides(true); }
+      if (e >= .25){ ctx.fillStyle = 'hsla(45,100%,70%,.06)'; ctx.strokeStyle = `hsla(45,100%,72%,${dim ? .12 : .35})`; ctx.lineWidth = 1.2; ctx.beginPath();
+        for (let i=0;i<6;i++) ctx.lineTo(vx(i)*R*.667, vy(i)*R*.667); ctx.closePath(); ctx.fill(); for (let i=0;i<6;i++){ ctx.moveTo(vx(i)*R*.667, vy(i)*R*.667); ctx.lineTo(vx(i)*R, vy(i)*R); } ctx.stroke(); }
+    },
+    snd(){ tone(196,.6,'triangle',.2,98); tone(392,.5,'triangle',.12,0,.08); noise(.25,.18); },
+    perfect(){ FX.perfT = .2; const k = bird.r/13; for (let i=0;i<6;i++) part(bird.x + 16*k, bird.y + (i % 2 ? 14 : -14)*k, 60 + Math.random()*140, (i % 2 ? 1 : -1)*Math.random()*160, .35, [45,100,72], 2); },   // sparks off both tips of the plate
+    sig(kind, g){
+      if (kind === 'regen'){ FX.sigT = .5; FX.sigK = 'regen'; }   // shield back: the plate lights up
+      else if (kind === 'block' && FX.sigT <= .05){ const cy = gY(g), gp = gGap(g), up = bird.y < cy, ey = up ? cy - gp/2 : cy + gp/2; FX.sigT = .15; FX.sigK = up ? 'blockU' : 'blockD';   // a wall met the dome: that half flashes, six sparks, a clank (at most once every .1s)
+        for (let i=0;i<6;i++) part(bird.x + (Math.random()-.5)*40, ey, (Math.random()-.5)*260, (up ? 1 : -1)*(40 + Math.random()*160), .35, [45,100,75], 2.5); tone(520,.08,'square',.1,-200); }
+    },
+    death(){ for (let s=-1;s<2;s+=2) parts.push({x:bird.x + 12, y:bird.y + s*6, vx:120 + s*40, vy:s*170 - 90, life:1.1, max:1.1, col:[210,25,78], size:14, rot:1.571, vr:s*9, rect:true});   // the plate splits in two
+      shards(bird.x, bird.y, [45,100,62], 26); },
+    idle(dt){ if (emit(4, dt)) part(bird.x + (Math.random()-.5)*30, bird.y + (Math.random()-.5)*26, -30, -30 - Math.random()*20, .8, [45,100,75], 1.5); },   // gold dust
+    trail(){ const n = trail.length; ctx.lineCap = 'butt'; ctx.lineWidth = dashT > 0 ? 14 : 10;   // a wide flat band, the same width all along
+      for (let i=1;i<n;i++){ ctx.strokeStyle = hsl([45,100,62], i/n*.5); ctx.beginPath(); ctx.moveTo(trail[i-1].x, trail[i-1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke(); } }
+  },
+  kraken: {
+    tint:0, ringCol:[[285,70,50],[320,80,65]],   // no edge tint: the ink vignette is the screen-wide part
+    opt(o){ o.spread = inkT > 0 ? 1.6 : 1; },
+    back(){   // Perfect: one tentacle whips out to the gate edge it grazed (.15s)
+      if (FX.perfT <= 0) return; let g; for (const q of gates) if (q.scored) g = q; if (!g) return;
+      const cy = gY(g), gp = gGap(g), tx = g.x + g.w - bird.x, ty = (bird.y < cy ? cy - gp/2 : cy + gp/2) - bird.y;
+      ctx.strokeStyle = hsl(B.wingCol, Math.min(1, FX.perfT/.08)); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-6,0); ctx.quadraticCurveTo(tx*.4 - 14, ty*1.1, tx, ty); ctx.stroke();
+    },
+    sky(k, e){   // ink blots swelling round the bird as ONE path (filled dark, rimmed violet so they show on a dark zone): five on the cast (to 140px), three when the passive ink comes (to 90px). Reduced motion: full size at once
+      const pas = k <= 0 && FX.sigK === 'ink' && FX.sigT > 0; if (k <= 0 && !pas) return;
+      const n = pas ? 3 : 5, q = pas ? 1 - FX.sigT/.5 : 1 - k, R = 20 + ((pas ? 90 : 140) - 20)*(RM ? 1 : Math.min(1, q*1.15)), s = gatesPassed*5;
+      ctx.fillStyle = `hsla(285,70%,12%,${.45*(RM ? .7 : Math.min(1, (1 - q)*3))})`; ctx.beginPath();
+      for (let i=0;i<n;i++){ const x = bird.x + (hash1(i + s) - .4)*240, y = bird.y + (hash1(i + s + 9) - .5)*220, r = R*(.7 + .3*hash1(i + s + 4)); ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, 6.28); } ctx.fill(); ctx.strokeStyle = `hsla(285,80%,48%,${.3*(RM ? .7 : Math.min(1, (1 - q)*3))})`; ctx.lineWidth = 2; ctx.stroke();
+    },
+    marks(){   // ink out: the strip each wall has pulled back by, as a dark violet band on both lips of the next three gates (one path)
+      if (inkT <= 0) return; const ad = 23*Math.min(1, inkT, (TMAX.ink - inkT)*3); let n = 0; ctx.fillStyle = 'hsla(285,80%,62%,.3)'; ctx.beginPath();
+      for (const g of gates){ if (g.scored || g.broken || g.x > LW || n++ >= 3) continue; const cy = gY(g), gp = gGap(g); ctx.rect(g.x, cy - gp/2, g.w, ad); ctx.rect(g.x, cy + gp/2 - ad, g.w, ad); } ctx.fill();
+    },
+    snd(){ tone(140,.5,'sine',.22,-90); noise(.5,.22); },
+    perfect(g){ FX.perfT = .15; for (let i=0;i<4;i++) part(g.x + g.w, bird.y + (Math.random()-.5)*20, (Math.random()-.5)*80, 20 + Math.random()*60, .6, [285,60,30], 3); tone(300,.06,'sine',.05,-180); },
+    sig(kind){ if (kind === 'pass' && PK.inkEvery && gatesPassed % PK.inkEvery === 0){ FX.sigT = .5; FX.sigK = 'ink'; } },   // the passive ink starts on this gate
+    death(){ ring(bird.x, bird.y, 150, [285,70,40], .7, 6);   // an ink cloud, slow
+      for (let i=0;i<38;i++){ const a = Math.random()*6.28, sp = 60 + Math.random()*140; part(bird.x, bird.y, Math.cos(a)*sp, Math.sin(a)*sp - 40, 1 + Math.random()*.5, i < 30 ? [285,60,24 + Math.random()*14] : [320,80,65], i < 30 ? 4 + Math.random()*4 : 2.5); } },
+    idle(dt){ if (emit(8, dt)) part(bird.x - 14 - Math.random()*24, bird.y + (Math.random()-.5)*20, -30, 10 + Math.random()*30, .6, [285,60,30], 3); },   // ink drops, falling
+    trail(){ const n = trail.length; ctx.lineCap = 'round'; ctx.lineJoin = 'round';   // the only dark trail: a wide ink band with a thin magenta core
+      ctx.strokeStyle = 'hsla(285,60%,20%,.6)'; ctx.lineWidth = dashT > 0 ? 16 : 12; ctx.beginPath(); for (let i = n >> 2; i < n; i++) ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke();
+      ctx.lineWidth = 2; for (let i=1;i<n;i++){ ctx.strokeStyle = hsl([320,80,65], i/n*.8); ctx.beginPath(); ctx.moveTo(trail[i-1].x, trail[i-1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke(); } }
+  },
+  specter: {
+    shake:8, ringCol:[[185,100,80],[185,100,80]],   // weightless: a lighter cast shake than its tier
+    opt(o){ const n = PK.phaseEvery; o.eye = phaseT > 0 || (state !== 'menu' && n > 0 && gatesPassed % n === n - 1); o.edge = phaseT > 0 && phaseT < .5; o.fade = FX.perfT > 0; },   // eyes lit one gate ahead of the passive
+    back(){   // cast and passive: the body comes apart in three and closes again within .3s (skipped with reduced motion)
+      const q = RM ? 0 : FX.castT > 0 ? 1 - (FX.castMax - FX.castT)/.3 : FX.sigK === 'phase' ? FX.sigT/.3 : 0; if (q <= 0) return;
+      for (let s=-1;s<2;s+=2){ ctx.save(); ctx.globalAlpha = .3; ctx.translate(s*28*q, 0); ctx.rotate(bird.rot); drawShape(ctx, B, .5, null, OL); ctx.restore(); }
+    },
+    sky(){ if (phaseT > 0 && state !== 'dying'){ ctx.fillStyle = 'hsla(185,60%,80%,.14)'; ctx.fillRect(-20,-20,LW+40,LH+40); } },   // a cold wash for as long as it is a ghost
+    snd(){ tone(900,.5,'sine',.08,-500); tone(1350,.6,'sine',.05,-750,.04); },
+    perfect(){ FX.perfT = .1; ghosts.push({x:bird.x - 8, y:bird.y, rot:bird.rot, life:.24}); for (let i=0;i<5;i++) part(bird.x - 10 + (Math.random()-.5)*24, bird.y + (Math.random()-.5)*20, -40 - Math.random()*40, -60 - Math.random()*60, .6, [185,60,85], 2); },
+    sig(kind){
+      if (kind === 'pass' && PK.phaseEvery && gatesPassed % PK.phaseEvery === 0){ FX.sigT = .3; FX.sigK = 'phase'; }
+      else if (kind === 'thru'){   // inside a wall: two rings where it went in, then an afterimage every .05s (at most 6 alive, 3 with reduced motion)
+        if (FX.sigK !== 'thru' || FX.sigT <= 0){ ring(bird.x, bird.y, 50, [185,100,80], .35, 3); ring(bird.x, bird.y, 80, [185,100,80], .45, 2); }
+        FX.sigT = .12; FX.sigK = 'thru'; if (ghosts.length < (RM ? 3 : 6) && !ghosts.some(q => q.life > .27)) ghosts.push({x:bird.x, y:bird.y, rot:bird.rot, life:.32}); }
+    },
+    death(){ parts.push({x:bird.x, y:bird.y, vx:-10, vy:-170, life:1.3, max:1.3, col:[185,100,80], size:8, rot:.785, vr:0, rect:true});   // one big wisp and twenty pale motes drifting up
+      for (let i=0;i<20;i++) part(bird.x + (Math.random()-.5)*36, bird.y + (Math.random()-.5)*30, (Math.random()-.5)*50, -110 - Math.random()*90, .8 + Math.random()*.4, [185,60,88], 2 + Math.random()*1.5); },
+    idle(dt){ if (phaseT > 0 && phaseT <= dt) tone(400,.12,'triangle',.08,300);   // ghosting over
+      if (emit(8, dt)) part(bird.x - 14 - Math.random()*16, bird.y + (Math.random()-.5)*16, -40, -20 - Math.random()*30, .6, [185,60,85], 2); },   // wisps
+    trail(){ const n = trail.length; ctx.save(); ctx.setLineDash([3,6]); ctx.lineCap = 'butt'; ctx.lineWidth = dashT > 0 ? 8 : 5; ctx.strokeStyle = hsl(B.col, .3);   // faint and dashed
+      ctx.beginPath(); for (let i = n >> 2; i < n; i++) ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke(); ctx.restore(); }
   }
 };
 function unitBack(d){ const f = ufx(d.id, 'back'); if (f) f(); }
@@ -3130,7 +3243,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       tierFx: () => { const L = ['epic','legendary','mythic','ultra'].map(k => TIER_FX[k]), up = (k, f) => L.every((v, i) => !i || (f ? v[k] >= L[i-1][k] : v[k] > L[i-1][k])), rad = v => v.rings[0] <= 2 ? v.rings[0]*LW : v.rings[0];
         return ['flash','shake','parts'].every(k => up(k)) && ['z','stop','sky','ban'].every(k => up(k, 1)) && L.every((v, i) => !i || (rad(v) > rad(L[i-1]) && v.rings.length >= L[i-1].rings.length)) && TIER_FX.ultra.shake < 18
           && eq([TIER_FX.common, TIER_FX.epic].map(v => [v.rings, v.flash, v.shake, v.z, v.stop, v.parts, v.sky, v.ban, v.big]), [[[180,110],.2,3,1.07,0,0,0,1,false],[[240,110],.3,5,1.07,0,0,0,1,false]]); },
-      unitFx: () => Object.keys(UNIT_ART).concat(Object.keys(UNIT_FX)).every(id => birdById(id)) && Object.values(UNIT_ART).every(f => typeof f === 'function') && ['solaris','pleiad','oracle','phoenix','zero','raijin','chrono','goliath'].every(id => UNIT_ART[id] && UNIT_FX[id])
+      unitFx: () => Object.keys(UNIT_ART).concat(Object.keys(UNIT_FX)).every(id => birdById(id)) && Object.values(UNIT_ART).every(f => typeof f === 'function') && ['solaris','pleiad','oracle','phoenix','zero','raijin','chrono','goliath','aegis','kraken','specter'].every(id => UNIT_ART[id] && UNIT_FX[id])
         && eq(['castT','castMax','sigT','sigK','perfT'].map(k => newFx()[k]), [0,0,0,'',0]) && [O0, OL].every(o => o.pose === 0 && o.vy === 0) && OL.lite && !O0.lite,
       i18n: () => Object.keys(I18N).every(l => BIRDS.every(b => ['r_','p_','sk_','sd_'].every(p => typeof I18N[l][p + b.id] === 'string' && I18N[l][p + b.id]))),
       i18nIdx: () => I18N.ja.p_pixel.startsWith('コイン2倍'),
