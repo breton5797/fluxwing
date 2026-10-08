@@ -517,7 +517,7 @@ const BIRDS = [
   { id:'mochi',   name:'MOCHI',   rarity:1, col:[350,100,90], wingCol:[340,85,78], speed:0.98, flap:430, grav:1300, maxFall:640, dash:1.00, r:13.5, window:18, bonus:0, nose:15, h:13, span:20, stats:[3,3,4,3],
     xpMul:2, magnet:95 },
   { id:'aegis',   name:'AEGIS',   rarity:3, col:[44,90,56],   wingCol:[210,25,78], speed:1.00, flap:500, grav:1600, maxFall:740, dash:1.00, r:14,   window:16, bonus:0, nose:17, h:14, span:28, stats:[3,4,2,3],
-    shieldStart:2, shieldMax:3, shieldRegen:40 },
+    shieldStart:1, shieldMax:3, shieldRegen:40 },
   { id:'phoenix', name:'PHOENIX', rarity:2, col:[14,100,56],  wingCol:[42,100,60], speed:1.06, flap:480, grav:1520, maxFall:720, dash:1.15, r:13,   window:18, bonus:1, nose:19, h:12, span:34, stats:[4,4,3,3],
     revive:1, feverAt:7 },
   { id:'zero',    name:'ZERO',    rarity:2, col:[268,35,22],  wingCol:[288,100,66],speed:1.10, flap:480, grav:1560, maxFall:740, dash:1.20, r:12.5, window:16, bonus:0, uiCol:[288,100,66], nose:21, h:11, span:26, stats:[4,3,3,5],
@@ -544,9 +544,9 @@ const BIRDS = [
   { id:'solaris', name:'SOLARIS', rarity:4, col:[45,100,62],  wingCol:[18,100,60],  speed:1.08, flap:490, grav:1550, maxFall:740, dash:1.20, r:13.5, window:18, bonus:1, nose:18, h:13, span:32, stats:[4,4,3,4],
     shieldStart:1, feverMul:3, comboGuard:true, coinMul:2, xpMul:2, gemMul:2 },
   { id:'aurora',  name:'AURORA',  rarity:4, col:[160,90,58],  wingCol:[280,90,72],  speed:1.04, flap:470, grav:1420, maxFall:680, dash:1.10, r:13,   window:20, bonus:1, nose:17, h:12, span:34, stats:[3,3,4,3], comboKeep:.5, veil:3, veilStart:3 },
-  { id:'tempest', name:'TEMPEST', rarity:4, col:[215,75,52],  wingCol:[185,100,70], speed:1.15, flap:490, grav:1600, maxFall:760, dash:1.40, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,3,2,5], dashPts:2, dashRefund:.3, gust:.33, gustLock:4 },
-  { id:'pleiad',  name:'PLEIAD',  rarity:4, col:[232,65,62],  wingCol:[50,100,72],  speed:1.00, flap:480, grav:1500, maxFall:700, dash:1.10, r:13.5, window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3], shieldStart:2, shieldMax:2, shieldRegen:60, shieldBurst:true },
-  { id:'pulsar',  name:'PULSAR',  rarity:4, col:[320,100,62], wingCol:[180,100,66], speed:1.06, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:19, bonus:2, nose:19, h:12, span:28, stats:[4,3,3,3], perfCharge:.08, feverAt:8, ping:.34, pingFull:1 },
+  { id:'tempest', name:'TEMPEST', rarity:4, col:[215,75,52],  wingCol:[185,100,70], speed:1.15, flap:490, grav:1600, maxFall:760, dash:1.40, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,3,2,5], dashPts:2, dashRefund:.3, gust:.33, gustLock:8 },
+  { id:'pleiad',  name:'PLEIAD',  rarity:4, col:[232,65,62],  wingCol:[50,100,72],  speed:1.00, flap:480, grav:1500, maxFall:700, dash:1.10, r:13.5, window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3], shieldStart:1, shieldMax:2, shieldRegen:60, shieldBurst:true },
+  { id:'pulsar',  name:'PULSAR',  rarity:4, col:[320,100,62], wingCol:[180,100,66], speed:1.06, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:19, bonus:2, nose:19, h:12, span:28, stats:[4,3,3,3], perfCharge:.08, feverAt:8, ping:.34 },
   // ---- season reward: never sold, never the free trial (season). Legendary rank for power, cast scale and hangar order; its own label and badge colour ----
   { id:'monarch', name:'MONARCH', rarity:2, season:true, col:[48,70,93], wingCol:[46,100,58], uiCol:[46,100,60], speed:1.00, flap:480, grav:1500, maxFall:720, dash:1.10, r:13.5, window:17, bonus:0, nose:19, h:13, span:32, stats:[3,3,3,3], shieldStart:1, shieldRegen:25 }
 ];
@@ -578,7 +578,7 @@ function perks(){
     bonus: d ? Math.min(1, B.bonus||0) : (B.bonus||0), comboKeep: d ? 0 : (B.comboKeep||0), dashRefund: d ? 0 : (B.dashRefund||0), shieldBurst: d ? false : !!B.shieldBurst, perfCharge: d ? .06 : (B.perfCharge||.06), gemMul: B.gemMul||1,
     gust: d ? 0 : (B.gust||0), gustLock: d ? 0 : (B.gustLock||0),   // TEMPEST gust reflex: the share of the dash meter that arms it (0 = no reflex) and the gates it stays locked for: stage mode only
     veil: d ? 0 : (B.veil||0), veilStart: d ? 0 : (B.veilStart||0),   // AURORA veil: Perfects per thread of light (three threads make a veil) and the threads a run starts with: stage mode only
-    ping: d ? 0 : (B.ping||0), pingFull: d ? 0 : (B.pingFull||0),   // PULSAR echo: skill charge one echo costs, and the charge a resonant break (a deeper gate hit) costs (0 = none): stage mode only
+    ping: d ? 0 : (B.ping||0),   // PULSAR echo: skill charge one echo costs (0 = no echo): stage mode only
     inkSlip: d ? 0 : (B.inkSlip||0),   // KRAKEN ink cloak: scored gates before it can arm again after a save (0 = no cloak): stage mode only
     foresee: d ? 0 : (B.foresee||0)   // ORACLE premonition: the Perfect combo from which a gate hit is foreseen (0 = never): stage mode only
   };
@@ -600,16 +600,16 @@ const I18N_D_KEYS = ['r_common','r_epic','r_mythic','r_legendary','r_mochi','r_a
   'shop','testBuild','pass','passDesc','starter','starterDesc','gemPack','owned','trial','trialUsed','passOnly','needMore','unlocked','granted','levelUp','rewards','trialRun','rebirth','fairNote','soldOut'];
 const I18N_D = {
 ko:['기본','에픽','미식','레전더리','힐링형','철벽형','불사형','암살형',
- '경험치 2배. 가까운 오브를 자동으로 끌어당긴다.','실드 2개를 달고 출발(최대 3개). 게이트 40개마다 실드 1개 재충전.','한 판에 한 번 불꽃 속에서 부활한다. 피버가 7콤보에서 시작된다.','대시 게이지가 가득 찬 채 출발. 대시가 1.5배 길고 대시 관통 점수 2배.',
+ '경험치 2배. 가까운 오브를 자동으로 끌어당긴다.','실드 1개를 달고 출발(최대 3개). 게이트 40개마다 실드 1개 재충전.','한 판에 한 번 불꽃 속에서 부활한다. 피버가 7콤보에서 시작된다.','대시 게이지가 가득 찬 채 출발. 대시가 1.5배 길고 대시 관통 점수 2배.',
  '상점','테스트 빌드: 실제 결제 없이 바로 지급됩니다.','플럭스 패스 · 시즌 1','ZERO 유닛 + 젬 150 + 크레딧 2,000 · 4주','스타터 팩','MOCHI + 젬 100 · 첫 7일 한 번만','젬 {n}개','보유 중','체험하기 (오늘 1회)','오늘 체험을 이미 사용했어요','플럭스 패스 전용','재화가 부족해요','{u} 해금!','지급 완료','레벨 업!','획득 보상','체험 중','부활!','오늘의 챌린지에서는 프리미엄 능력이 일부 제한됩니다','구매 완료'],
 en:['Common','Epic','Mythic','Legendary','Healer','Fortress','Undying','Assassin',
- 'Double XP. Pulls nearby orbs in on its own.','Starts with 2 shields (max 3). Recharges 1 shield every 40 gates.','Rises from the flames once per run. Fever starts at a 7 combo.','Starts with a full dash meter. Dashes last 1.5x longer and score double.',
+ 'Double XP. Pulls nearby orbs in on its own.','Starts with 1 shield (max 3). Recharges 1 shield every 40 gates.','Rises from the flames once per run. Fever starts at a 7 combo.','Starts with a full dash meter. Dashes last 1.5x longer and score double.',
  'Shop','Test build: items are granted instantly with no real payment.','Flux Pass · Season 1','ZERO unit + 150 gems + 2,000 credits · 4 weeks','Starter Pack','MOCHI + 100 gems · once, first 7 days','{n} gems','Owned','Try it (1 free run today)','Free run already used today','Flux Pass exclusive','Not enough currency','{u} unlocked!','Granted','LEVEL UP!','Rewards','TRIAL RUN','REBIRTH!','Premium perks are partly limited in the Daily Challenge','Purchased'],
 ja:['ノーマル','エピック','ミシック','レジェンダリー','ヒーラー型','鉄壁型','不死型','暗殺型',
- '経験値2倍。近くのオーブを自動で引き寄せる。','シールド2枚で出発(最大3枚)。ゲート40個ごとに1枚回復。','1プレイに1回、炎の中から復活する。フィーバーが7コンボで始まる。','ダッシュゲージ満タンで出発。ダッシュが1.5倍長く、貫通スコア2倍。',
+ '経験値2倍。近くのオーブを自動で引き寄せる。','シールド1枚で出発(最大3枚)。ゲート40個ごとに1枚回復。','1プレイに1回、炎の中から復活する。フィーバーが7コンボで始まる。','ダッシュゲージ満タンで出発。ダッシュが1.5倍長く、貫通スコア2倍。',
  'ショップ','テストビルド:実際の決済なしですぐに付与されます。','フラックスパス · シーズン1','ZEROユニット + ジェム150 + クレジット2,000 · 4週間','スターターパック','MOCHI + ジェム100 · 最初の7日間に1回','ジェム{n}個','所持中','体験する(今日1回)','今日の体験は使用済み','フラックスパス限定','通貨が足りません','{u} 解放!','付与しました','レベルアップ!','獲得報酬','体験中','復活!','デイリーチャレンジではプレミアム能力が一部制限されます','購入済み'],
 zh:['普通','史诗','神话','传说','治愈型','铁壁型','不死型','刺客型',
- '经验2倍。自动吸附附近的能量球。','开局自带2层护盾(最多3层)。每通过40个关卡恢复1层。','每局可在烈焰中复活一次。连击7次即进入狂热。','开局冲刺能量全满。冲刺时间1.5倍,冲刺穿越得分翻倍。',
+ '经验2倍。自动吸附附近的能量球。','开局自带1层护盾(最多3层)。每通过40个关卡恢复1层。','每局可在烈焰中复活一次。连击7次即进入狂热。','开局冲刺能量全满。冲刺时间1.5倍,冲刺穿越得分翻倍。',
  '商店','测试版本:无需真实付款,立即发放。','通量通行证 · 第1赛季','ZERO机体 + 宝石150 + 信用点2,000 · 4周','新手礼包','MOCHI + 宝石100 · 前7天限购一次','宝石{n}个','已拥有','免费试玩(今日1次)','今日试玩已用完','通行证专属','货币不足','{u} 已解锁!','已发放','升级!','获得奖励','试玩中','涅槃重生!','每日挑战中高级能力会受到部分限制','已购买']
 };
 const NEW_U = ['pixel','neko','buzz','kraken','specter','oracle','raijin','chrono','goliath','solaris'];
@@ -650,10 +650,10 @@ I18N_F_KEYS.forEach((k,i) => { for (const l in I18N) I18N[l][k] = (I18N_F[l] || 
 // Unit skills: [name, description] per unit id
 const SK_IDS = ['volt','blitz','nimbus','titan','mochi','aegis','phoenix','zero','pixel','neko','buzz','kraken','specter','oracle','raijin','chrono','goliath','solaris'];
 const SK_TXT = {
-ko:[['오버드라이브','{n}초간 퍼펙트 판정이 넓어진다'],['블링크','바로 앞 게이트 너머로 순간이동. 대시 게이지를 모두 쓴다'],['활공','{n}초간 중력이 약해져 둥실 뜬다'],['강철 몸','{n}초간 무적. 이후 몸이 무거워져 잠시 느려진다'],['말랑 방울','{n}초간 게이트 중앙을 자동으로 난다'],['강철 방벽','{n}초간 무적'],['불사','{n}초간 죽지 않는다'],['그림자 분신','{n}초간 분신이 충돌 1번을 대신 맞는다'],['코인 러시','{n}초간 코인 2배와 강력 자석'],['고양이 감각','{n}초간 시간이 느려진다'],['벌떼 소환','앞에 파워업 {n}개를 부른다(무적 질주 제외)'],['먹물 폭발','{n}초간 모든 게이트 틈이 넓어진다'],['영체화','{n}초간 벽을 통과한다'],['예지','{n}초간 퍼펙트가 쉬워지고 경로가 보인다'],['천둥','앞 게이트 {n}개를 번개로 부순다'],['시간 정지','{n}초간 세상이 멈춘다'],['타이탄폴','{n}초간 거대화해 게이트를 부순다'],['초신성','즉시 피버 돌입 + {n}초 무적']],
-en:[['Overdrive','Perfect window widened for {n}s'],['Blink','Teleport past the next gate. Uses up your dash meter'],['Glide','Weaker gravity for {n}s'],['Iron Body','Invincible for {n}s, then heavy and slower for a moment'],['Bubble Ride','Auto-flies through gate centers for {n}s'],['Iron Barrier','Invincible for {n}s'],['Undying','Can’t die for {n}s'],['Shadow Clone','A clone takes one hit for you ({n}s)'],['Coin Rush','2x coins and a strong magnet for {n}s'],['Cat Sense','Time slows for {n}s'],['Swarm Call','Summons {n} power-ups ahead (never Unstoppable)'],['Ink Blast','All gaps widen for {n}s'],['Phase Out','Pass through walls for {n}s'],['Foresight','Easy Perfects and a path guide for {n}s'],['Thunder','Lightning smashes the next {n} gates'],['Time Stop','The world freezes for {n}s'],['Titanfall','Go giant and smash gates for {n}s'],['Supernova','Instant Fever + {n}s invincible']],
-ja:[['オーバードライブ','{n}秒間パーフェクト判定が大きく広がる'],['ブリンク','目の前のゲートの先へ瞬間移動。ダッシュゲージを使い切る'],['滑空','{n}秒間重力が弱まる'],['鋼の体','{n}秒間無敵。その後しばらく重くなり遅くなる'],['もちもちバブル','{n}秒間ゲート中央を自動飛行'],['鋼の防壁','{n}秒間無敵'],['不死','{n}秒間死なない'],['影分身','{n}秒間分身が衝突を1回肩代わり'],['コインラッシュ','{n}秒間コイン2倍+強力マグネット'],['猫の感覚','{n}秒間時間が遅くなる'],['蜂の群れ','前方にパワーアップを{n}つ呼ぶ(無敵ダッシュを除く)'],['墨爆発','{n}秒間すべての隙間が広がる'],['霊体化','{n}秒間壁をすり抜ける'],['予知','{n}秒間パーフェクトが簡単+ルート表示'],['雷撃','前方のゲート{n}つを雷で破壊'],['時間停止','{n}秒間世界が止まる'],['タイタンフォール','{n}秒間巨大化してゲートを破壊'],['超新星','即フィーバー+{n}秒無敵']],
-zh:[['超速驱动','{n}秒内完美判定大幅放宽'],['闪现','瞬移穿过前方关卡,并耗尽冲刺能量'],['滑翔','{n}秒内重力减弱'],['钢铁之躯','无敌{n}秒,随后身体变重、短暂减速'],['麻薯泡泡','{n}秒内自动沿关卡中央飞行'],['钢铁屏障','无敌{n}秒'],['不死','{n}秒内不会死亡'],['影分身','{n}秒内分身替你承受1次碰撞'],['金币冲刺','{n}秒内金币2倍+强力磁铁'],['猫之感知','时间减慢{n}秒'],['蜂群召唤','在前方召唤{n}个道具(不含无敌冲刺)'],['墨汁爆发','{n}秒内所有缝隙变宽'],['灵体化','{n}秒内穿墙'],['预知','{n}秒内轻松完美+显示路线'],['雷霆','闪电击碎前方{n}个关卡'],['时间停止','世界静止{n}秒'],['泰坦降临','巨大化{n}秒撞碎关卡'],['超新星','立即进入狂热+无敌{n}秒']]
+ko:[['오버드라이브','{n}초간 퍼펙트 판정이 넓어진다'],['블링크','바로 앞 게이트 너머로 순간이동. 대시 게이지를 모두 쓴다'],['활공','{n}초간 중력이 약해져 둥실 뜬다'],['강철 몸','{n}초간 무적. 이후 몸이 무거워져 잠시 느려진다'],['말랑 방울','{n}초간 게이트 중앙을 자동으로 난다'],['강철 방벽','{n}초간 무적, 실드 1개 회복'],['불사','{n}초간 죽지 않는다'],['그림자 분신','{n}초간 분신이 충돌 1번을 대신 맞는다'],['코인 러시','{n}초간 코인 2배와 강력 자석'],['고양이 감각','{n}초간 시간이 느려진다'],['벌떼 소환','앞에 파워업 {n}개를 부른다(무적 질주 제외)'],['먹물 폭발','{n}초간 모든 게이트 틈이 넓어지고 움직이는 게이트가 멈춘다. 먹물 은신 즉시 재무장'],['영체화','{n}초간 벽을 통과한다. 통과한 게이트는 모두 퍼펙트'],['예지','{n}초간 다음 게이트 4개가 내 높이로 모이고 퍼펙트가 쉬워지며 경로가 보인다'],['천둥','앞 게이트 {n}개를 번개로 부순다'],['시간 정지','{n}초간 세상이 멈춘다'],['타이탄폴','{n}초간 거대화해 게이트를 부순다'],['초신성','즉시 피버 돌입 + {n}초 무적, 코인 자석']],
+en:[['Overdrive','Perfect window widened for {n}s'],['Blink','Teleport past the next gate. Uses up your dash meter'],['Glide','Weaker gravity for {n}s'],['Iron Body','Invincible for {n}s, then heavy and slower for a moment'],['Bubble Ride','Auto-flies through gate centers for {n}s'],['Iron Barrier','Invincible for {n}s and restores 1 shield'],['Undying','Can’t die for {n}s'],['Shadow Clone','A clone takes one hit for you ({n}s)'],['Coin Rush','2x coins and a strong magnet for {n}s'],['Cat Sense','Time slows for {n}s'],['Swarm Call','Summons {n} power-ups ahead (never Unstoppable)'],['Ink Blast','All gaps widen for {n}s, moving gates hold still and the Ink Cloak is ready again'],['Phase Out','Pass through walls for {n}s. Every gate passed is a Perfect'],['Foresight','For {n}s the next 4 gates line up with you, Perfects are easy and the path shows'],['Thunder','Lightning smashes the next {n} gates'],['Time Stop','The world freezes for {n}s'],['Titanfall','Go giant and smash gates for {n}s'],['Supernova','Instant Fever + {n}s invincible with a coin magnet']],
+ja:[['オーバードライブ','{n}秒間パーフェクト判定が大きく広がる'],['ブリンク','目の前のゲートの先へ瞬間移動。ダッシュゲージを使い切る'],['滑空','{n}秒間重力が弱まる'],['鋼の体','{n}秒間無敵。その後しばらく重くなり遅くなる'],['もちもちバブル','{n}秒間ゲート中央を自動飛行'],['鋼の防壁','{n}秒間無敵+シールド1枚回復'],['不死','{n}秒間死なない'],['影分身','{n}秒間分身が衝突を1回肩代わり'],['コインラッシュ','{n}秒間コイン2倍+強力マグネット'],['猫の感覚','{n}秒間時間が遅くなる'],['蜂の群れ','前方にパワーアップを{n}つ呼ぶ(無敵ダッシュを除く)'],['墨爆発','{n}秒間すべての隙間が広がり、動くゲートが止まる。墨隠れも即再装填'],['霊体化','{n}秒間壁をすり抜ける。通ったゲートはすべてパーフェクト'],['予知','{n}秒間、次のゲート4つが自分の高さに揃い、パーフェクトが簡単+ルート表示'],['雷撃','前方のゲート{n}つを雷で破壊'],['時間停止','{n}秒間世界が止まる'],['タイタンフォール','{n}秒間巨大化してゲートを破壊'],['超新星','即フィーバー+{n}秒無敵+コインマグネット']],
+zh:[['超速驱动','{n}秒内完美判定大幅放宽'],['闪现','瞬移穿过前方关卡,并耗尽冲刺能量'],['滑翔','{n}秒内重力减弱'],['钢铁之躯','无敌{n}秒,随后身体变重、短暂减速'],['麻薯泡泡','{n}秒内自动沿关卡中央飞行'],['钢铁屏障','无敌{n}秒,并恢复1个护盾'],['不死','{n}秒内不会死亡'],['影分身','{n}秒内分身替你承受1次碰撞'],['金币冲刺','{n}秒内金币2倍+强力磁铁'],['猫之感知','时间减慢{n}秒'],['蜂群召唤','在前方召唤{n}个道具(不含无敌冲刺)'],['墨汁爆发','{n}秒内所有缝隙变宽,移动的关卡静止,墨隐立即重新就绪'],['灵体化','{n}秒内穿墙,穿过的关卡全部算作完美'],['预知','{n}秒内接下来4个关卡对齐到你的高度,轻松完美+显示路线'],['雷霆','闪电击碎前方{n}个关卡'],['时间停止','世界静止{n}秒'],['泰坦降临','巨大化{n}秒撞碎关卡'],['超新星','立即进入狂热+无敌{n}秒,附带金币磁铁']]
 };
 SK_IDS.forEach((id,i) => { for (const l in I18N){ const tx = (SK_TXT[l] || SK_TXT.en)[i]; I18N[l]['sk_' + id] = tx[0]; I18N[l]['sd_' + id] = tx[1]; } });
 // Key-based additions (ko/en, with ja/zh for the cost labels, the newer unit texts, the versus ranking, its seasons and the season unit; anything a language lacks falls back to en). The index arrays above keep their length and order.
@@ -669,10 +669,10 @@ ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 �
  vsM1:'1v1', vsM2:'2v2', searching2:'2v2 플레이어 찾는 중… {s}초 · {n}/4', vsIn:'2v2 · {n}/4 참가', vsFillBtn:'빈 자리는 AI로 시작 (연습전)', vsAiFill:'빈 자리는 AI가 채워요 · 연습전(RP 변동 없음)', vs2Rules:'2v2 · 두 사람 점수의 합이 높은 팀이 이겨요 · 팀은 자동 배정 · AI가 한 자리라도 끼면 연습전', vsUs:'우리', vsThem:'상대', vsMate:'팀', vsPracTag:'연습',
  nCoin:'코인\u00a0{n}', nDia:'다이아몬드\u00a0{n}', nGem:'젬\u00a0{n}', diaP:'다이아몬드 +{n}', rwScore:'점수', rwField:'필드', rwLevel:'레벨업', rwClear:'첫 클리어', rwDaily:'오늘의 첫 판',
  fx_slip:'먹물 은신!', fx_fore:'예감!',
- r_aurora:'극광형', p_aurora:'콤보가 끊겨도 절반이 남는다. 퍼펙트 판정이 넓고 퍼펙트마다 +1점. 극광 장막: 퍼펙트 3번마다 빛의 실 1개(최대 3개). 실 3개가 차면 게이트 충돌 1번을 막고 다음 게이트 2개를 내 높이로 모은다. 스테이지는 실 3개가 찬 채로 시작한다.', fx_veil:'극광 장막!', sk_aurora:'극광 회랑', sd_aurora:'다음 게이트 {n}개가 내 높이로 모이고 멈추며 틈이 넓어진다',
- r_tempest:'폭풍형', p_tempest:'대시 관통 점수 2배. 대시로 게이트를 부수면 게이지 30% 환급(대시당 1회). 돌풍 반사: 게이지가 3분의 1 이상 차 있으면 게이트에 부딪혀도 죽지 않고 짧은 자동 대시가 나간다(게이지 전부 소모, 게이트 4개를 지나야 재무장).', fx_gust:'돌풍 반사!', sk_tempest:'태풍의 눈', sd_tempest:'게이지를 쓰지 않는 1.5배 길이 대시를 즉시 발동',
- r_pleiad:'성단형', p_pleiad:'실드 2개로 출발(최대 2개), 게이트 60개마다 1개 재충전. 실드가 깨지면 그 게이트도 부서진다.', sk_pleiad:'궤도 포격', sd_pleiad:'앞 게이트 {n}개를 차례로 부순다',
- r_pulsar:'맥동형', p_pulsar:'퍼펙트마다 +2점, 스킬이 더 빨리 찬다. 피버가 8콤보에서 시작된다. 공명 반향: 게이트 모서리를 얕게 스치면 스킬 충전 34%를 쓰고 튕겨 나온다. 스킬 충전이 가득 차 있으면 더 깊은 충돌도 그 게이트를 깨뜨리고 살아남는다(충전 전부 소모).', fx_break:'공명 파쇄!', fx_ping:'PING', sk_pulsar:'공명', sd_pulsar:'{n}초간 퍼펙트 점수 2배, 판정이 넓어진다',
+ r_aurora:'극광형', p_aurora:'콤보가 끊겨도 절반이 남는다. 퍼펙트 판정이 넓고 퍼펙트마다 +1점. 극광 장막: 퍼펙트 3번마다 빛의 실 1개(최대 3개). 실 3개가 차면 게이트 충돌 1번을 막고 다음 게이트 2개를 내 높이로 모은다. 스테이지는 실 3개가 찬 채로 시작한다.', fx_veil:'극광 장막!', sk_aurora:'극광 회랑', sd_aurora:'다음 게이트 {n}개가 내 높이로 모이고 멈추며 틈이 넓어진다. 통과하면 모두 퍼펙트',
+ r_tempest:'폭풍형', p_tempest:'대시 관통 점수 2배. 대시로 게이트를 부수면 게이지 30% 환급(대시당 1회). 돌풍 반사: 게이지가 3분의 1 이상 차 있으면 게이트에 부딪혀도 죽지 않고 짧은 자동 대시가 나간다(게이지 전부 소모, 게이트 8개를 지나야 재무장).', fx_gust:'돌풍 반사!', sk_tempest:'태풍의 눈', sd_tempest:'게이지를 쓰지 않는 폭풍 대시로 다음 게이트 {n}개를 뚫고, 끝나면 잠깐 무적',
+ r_pleiad:'성단형', p_pleiad:'실드 1개로 출발(최대 2개), 게이트 60개마다 1개 재충전. 실드가 깨지면 그 게이트도 부서진다.', sk_pleiad:'궤도 포격', sd_pleiad:'앞 게이트 {n}개를 차례로 부수고 실드 1개 회복',
+ r_pulsar:'맥동형', p_pulsar:'퍼펙트마다 +2점, 스킬이 더 빨리 찬다. 피버가 8콤보에서 시작된다. 공명 반향: 게이트 모서리를 얕게 스치면 스킬 충전 34%를 쓰고 튕겨 나온다.', fx_break:'공명 파쇄!', fx_ping:'PING', sk_pulsar:'공명', sd_pulsar:'{n}초간 퍼펙트 점수 3배. 얕은 충돌은 충전 소모 없이 튕겨내고, 깊은 충돌 2번까지 게이트를 깨뜨린다',
  r_season:'시즌 한정', seaOnly:'시즌 보상 · 대전 시즌 상위 10명', r_monarch:'군주형', p_monarch:'근위대: 실드 1개로 출발(최대 1개). 게이트 25개마다 실드를 되찾는다.', sk_monarch:'대관식', sd_monarch:'{n}초간 무적, 4초간 퍼펙트 판정이 넓어진다'},
 en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', tierRule2:'Narrower gaps · 0.5s haze', tierRule3:'Narrowest gaps · 2s haze · tap within 2s',
  idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/{m}',
@@ -685,10 +685,10 @@ en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', 
  vsM1:'1v1', vsM2:'2v2', searching2:'Finding 2v2 players… {s}s · {n}/4', vsIn:'2v2 · {n}/4 in', vsFillBtn:'Start with AI in the empty seats (practice)', vsAiFill:'AI fills the empty seats · practice (no RP)', vs2Rules:'2v2 · the team with the higher sum of both scores wins · teams are assigned · any AI seat makes it practice', vsUs:'US', vsThem:'THEM', vsMate:'TEAM', vsPracTag:'PRACTICE',
  nCoin:'Coins\u00a0{n}', nDia:'Diamonds\u00a0{n}', nGem:'Gems\u00a0{n}', diaP:'DIAMOND +{n}', rwScore:'Score', rwField:'Field', rwLevel:'Level up', rwClear:'First clear', rwDaily:'Daily',
  fx_slip:'INK CLOAK!', fx_fore:'FORESEEN!',
- r_aurora:'Skyweaver', p_aurora:'A broken combo keeps half. Wide Perfect window, +1 on every Perfect. Aurora Veil: every 3 Perfects weave a thread of light (max 3). With all 3, the veil takes one gate hit for you and lines up the next 2 gates. Every stage starts with all 3 threads woven.', fx_veil:'AURORA VEIL!', sk_aurora:'Aurora Lane', sd_aurora:'The next {n} gates slide to your height, stop moving and widen',
- r_tempest:'Stormbreaker', p_tempest:'Dash-through points x2. Smashing a gate with a dash refunds 30% meter (once per dash). Gust Reflex: with the meter at least a third full, hitting a gate fires a short automatic dash instead of a crash (spends the whole meter, re-arms after 4 gates).', fx_gust:'GUST REFLEX!', sk_tempest:'Eye of the Storm', sd_tempest:'Fires a free dash that lasts 1.5x longer',
- r_pleiad:'Star Guard', p_pleiad:'Starts with 2 shields (max 2), recharges 1 every 60 gates. A breaking shield also breaks that gate.', sk_pleiad:'Orbital Barrage', sd_pleiad:'Smashes the next {n} gates one by one',
- r_pulsar:'Resonator', p_pulsar:'+2 on every Perfect and faster skill charge. Fever starts at an 8 combo. Echo Ping: a shallow graze on a gate edge bounces you back for 34% skill charge. With a full skill charge, a deeper hit shatters the gate instead of killing you (uses all of it).', fx_break:'RESONANT BREAK!', fx_ping:'PING', sk_pulsar:'Resonance', sd_pulsar:'Perfects score double and the window widens for {n}s',
+ r_aurora:'Skyweaver', p_aurora:'A broken combo keeps half. Wide Perfect window, +1 on every Perfect. Aurora Veil: every 3 Perfects weave a thread of light (max 3). With all 3, the veil takes one gate hit for you and lines up the next 2 gates. Every stage starts with all 3 threads woven.', fx_veil:'AURORA VEIL!', sk_aurora:'Aurora Lane', sd_aurora:'The next {n} gates slide to your height, stop, widen and count as Perfects',
+ r_tempest:'Stormbreaker', p_tempest:'Dash-through points x2. Smashing a gate with a dash refunds 30% meter (once per dash). Gust Reflex: with the meter at least a third full, hitting a gate fires a short automatic dash instead of a crash (spends the whole meter, re-arms after 8 gates).', fx_gust:'GUST REFLEX!', sk_tempest:'Eye of the Storm', sd_tempest:'A free storm dash through the next {n} gates, then a moment of invincibility',
+ r_pleiad:'Star Guard', p_pleiad:'Starts with 1 shield (max 2), recharges 1 every 60 gates. A breaking shield also breaks that gate.', sk_pleiad:'Orbital Barrage', sd_pleiad:'Smashes the next {n} gates one by one and restores 1 shield',
+ r_pulsar:'Resonator', p_pulsar:'+2 on every Perfect and faster skill charge. Fever starts at an 8 combo. Echo Ping: a shallow graze on a gate edge bounces you back for 34% skill charge.', fx_break:'RESONANT BREAK!', fx_ping:'PING', sk_pulsar:'Resonance', sd_pulsar:'For {n}s Perfects score x3, grazes bounce off for free and 2 deeper hits shatter the gate',
  r_season:'Season', seaOnly:'Season reward · top 10 of a versus season', r_monarch:'Sovereign', p_monarch:'Royal Guard: starts with 1 shield (max 1) and wins it back every 25 gates.', sk_monarch:'Coronation', sd_monarch:'Invincible for {n}s, and the Perfect window stays wide for 4s'},
 ja:{nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0{n}',
  fx_slip:'墨隠れ!', fx_fore:'予感!',
@@ -698,9 +698,10 @@ ja:{nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0
  seaClaim:'報酬を受け取る', seaOk:'OK', seaGot:'報酬を受け取りました!', seaUnit:'限定ユニット {u}', seaDup:'{u}は所持済み → ジェム+{n}', seaFail:'サーバーに接続できません。もう一度お試しください', seaGone:'この報酬は今は受け取れません',
  seaNow:'今シーズン', seaLast:'前シーズン', seaFirst:'最初のシーズンが進行中です。終了すると最終順位がここに表示されます', seaNone:'前シーズンはランクインしたプレイヤーがいません', seaMine:'あなたの結果 {n}位 · {rp} RP · {w}勝 {l}敗', seaMineU:'あなたの結果 ランク外 · {rp} RP · {w}勝 {l}敗',
  searching2:'2v2のプレイヤーを検索中… {s}秒 · {n}/4', vsIn:'2v2 · {n}/4 参加', vsFillBtn:'空席をAIで埋めて開始(練習)', vsAiFill:'空席はAIが入ります · 練習試合(RP変動なし)', vs2Rules:'2v2 · 2人のスコア合計が高いチームの勝ち · チームは自動で決まる · AIが1席でも入ると練習試合', vsUs:'味方', vsThem:'相手', vsMate:'味方', vsPracTag:'練習',
+ sk_aurora:'オーロラレーン', sd_aurora:'次のゲート{n}つが自分の高さに揃って止まり、隙間が広がる。通ればすべてパーフェクト', sk_tempest:'嵐の目', sd_tempest:'ゲージ不要のストームダッシュで次のゲート{n}つを突き抜け、最後に一瞬無敵', sk_pleiad:'軌道砲撃', sd_pleiad:'前方のゲート{n}つを順に破壊し、シールド1枚回復', sk_pulsar:'共鳴', sd_pulsar:'{n}秒間パーフェクト得点3倍。浅い接触はチャージ消費なしで弾き、深い衝突も2回までゲートを砕く',
  p_aurora:'コンボが途切れても半分残る。パーフェクト判定が広く、パーフェクトごとに+1点。オーロラヴェール:パーフェクト3回ごとに光の糸を1本紡ぐ(最大3本)。3本そろうとゲートへの衝突を1回防ぎ、次の2ゲートを自分の高さにそろえる。ステージは糸3本がそろった状態で始まる。', fx_veil:'オーロラヴェール!',
- p_tempest:'ダッシュ貫通スコア2倍。ダッシュでゲートを壊すとゲージが30%戻る(1回のダッシュにつき1度)。突風リフレックス:ゲージが3分の1以上あれば、ゲートにぶつかっても死なず短い自動ダッシュが出る(ゲージを全消費、ゲート4個通過で再装填)。', fx_gust:'突風リフレックス!',
- p_pulsar:'パーフェクトごとに+2点、スキルが早く溜まる。フィーバーが8コンボで始まる。エコーピン:ゲートのふちを浅くかすめると、スキルチャージ34%を使って弾き返される。スキルチャージが満タンなら、もっと深い衝突でもそのゲートを砕いて生き残る(チャージを全消費)。', fx_ping:'PING', fx_break:'共鳴破砕!',
+ p_tempest:'ダッシュ貫通スコア2倍。ダッシュでゲートを壊すとゲージが30%戻る(1回のダッシュにつき1度)。突風リフレックス:ゲージが3分の1以上あれば、ゲートにぶつかっても死なず短い自動ダッシュが出る(ゲージを全消費、ゲート8個通過で再装填)。', fx_gust:'突風リフレックス!',
+ p_pulsar:'パーフェクトごとに+2点、スキルが早く溜まる。フィーバーが8コンボで始まる。エコーピン:ゲートのふちを浅くかすめると、スキルチャージ34%を使って弾き返される。', fx_ping:'PING', fx_break:'共鳴破砕!',
  r_season:'シーズン限定', seaOnly:'シーズン報酬 · 対戦シーズン上位10名', r_monarch:'君主型', p_monarch:'ロイヤルガード:シールド1枚で出発(最大1枚)。ゲート25個ごとにシールドを取り戻す。', sk_monarch:'戴冠式', sd_monarch:'{n}秒間無敵、4秒間パーフェクト判定が広がる'},
 zh:{nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
  fx_slip:'墨隐!', fx_fore:'预感!',
@@ -710,9 +711,10 @@ zh:{nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
  seaClaim:'领取奖励', seaOk:'确定', seaGot:'奖励已领取!', seaUnit:'限定机体 {u}', seaDup:'已拥有{u} → 宝石+{n}', seaFail:'无法连接服务器,请重试', seaGone:'该奖励暂时无法领取',
  seaNow:'本赛季', seaLast:'上赛季', seaFirst:'首个赛季进行中,结束后将在此显示最终排名', seaNone:'上赛季没有玩家上榜', seaMine:'我的结果 第{n}名 · {rp} RP · {w}胜 {l}负', seaMineU:'我的结果 未上榜 · {rp} RP · {w}胜 {l}负',
  searching2:'正在寻找2v2玩家… {s}秒 · {n}/4', vsIn:'2v2 · 已加入 {n}/4', vsFillBtn:'空位由AI补上并开始(练习)', vsAiFill:'空位由AI补上 · 练习赛(RP不变)', vs2Rules:'2v2 · 两人得分之和更高的队伍获胜 · 队伍自动分配 · 只要有AI上场即为练习赛', vsUs:'我方', vsThem:'对方', vsMate:'队友', vsPracTag:'练习',
+ sk_aurora:'极光回廊', sd_aurora:'接下来{n}个关卡对齐到你的高度并静止、缝隙变宽,通过即算完美', sk_tempest:'风暴之眼', sd_tempest:'不耗能量的风暴冲刺,连穿接下来{n}个关卡,结束时短暂无敌', sk_pleiad:'轨道炮击', sd_pleiad:'依次击碎前方{n}个关卡,并恢复1个护盾', sk_pulsar:'共鸣', sd_pulsar:'{n}秒内完美得分3倍,浅擦免费弹回,并可震碎2次更深的撞击',
  p_aurora:'连击中断时保留一半。完美判定更宽,每次完美+1分。极光帷幕:每完成3次完美织出1根光丝(最多3根)。集齐3根后可抵挡1次撞击关卡,并让后2个关卡对齐到自身高度。每关开局时3根光丝已织好。', fx_veil:'极光帷幕!',
- p_tempest:'冲刺穿越得分翻倍。用冲刺撞碎关卡返还30%能量(每次冲刺1次)。疾风反射:能量达到三分之一以上时,撞上关卡不会死亡,而是自动发动一次短冲刺(耗尽全部能量,再通过4个关卡后重新就绪)。', fx_gust:'疾风反射!',
- p_pulsar:'每次完美+2分,技能充能更快。连击8次即进入狂热。共鸣回响:浅擦关卡边缘时,消耗34%技能充能将你弹回。技能充能全满时,更深的撞击也会震碎该关卡而不致死亡(耗尽全部充能)。', fx_ping:'PING', fx_break:'共振破碎!',
+ p_tempest:'冲刺穿越得分翻倍。用冲刺撞碎关卡返还30%能量(每次冲刺1次)。疾风反射:能量达到三分之一以上时,撞上关卡不会死亡,而是自动发动一次短冲刺(耗尽全部能量,再通过8个关卡后重新就绪)。', fx_gust:'疾风反射!',
+ p_pulsar:'每次完美+2分,技能充能更快。连击8次即进入狂热。共鸣回响:浅擦关卡边缘时,消耗34%技能充能将你弹回。', fx_ping:'PING', fx_break:'共振破碎!',
  r_season:'赛季限定', seaOnly:'赛季奖励 · 对战赛季前10名', r_monarch:'君主型', p_monarch:'王室卫队:开局自带1层护盾(最多1层)。每通过25个关卡恢复护盾。', sk_monarch:'加冕', sd_monarch:'无敌{n}秒,4秒内完美判定放宽'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
@@ -886,7 +888,11 @@ const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:
   gustLock:0,   // TEMPEST: scored gates left before the gust reflex can arm again
   threads:0, threadP:0,   // AURORA: threads of light woven (0..3; reset() starts a run at PK.veilStart) and Perfects toward the next one
   pingT:0,   // PULSAR: seconds before the next echo can fire
-  inkLock:0 });   // KRAKEN: scored gates left before the ink cloak can arm again
+  inkLock:0,   // KRAKEN: scored gates left before the ink cloak can arm again
+  hold:false, still:0,   // KRAKEN skill ink: moving and pulsing gates hold still while it is out; still = seconds the gate clock (gY / gGap read T - still) has been held back so far, so they start again from where they stopped
+  phaseP:false, laneP:false,   // SPECTER / AURORA skill: gates passed while ghosting / aligned by the skill count as Perfects (g.sure)
+  stormN:0,   // TEMPEST skill: gates the storm chain still has to carry through
+  resoBrk:0 });   // PULSAR skill: resonant breaks left in this Resonance
 let FX = newFx(); const TMAX = {};
 
 function reset(){
@@ -957,11 +963,11 @@ function laneApply(g){
   if (FX.laneN <= 0) return;
   const k = FX.laneN === 1 ? .25 : 1, gb = skv('gap'), m = 70 + (g.gap + gb)/2;
   const c = g.base + Math.max(-140, Math.min(140, FX.laneY - g.base)) * k;
-  g.off = Math.max(m, Math.min(GROUND - m, c)) - g.base; g.lane = 1; g.laneGap = gb; g.flash = 1; FX.laneN--;
+  g.off = Math.max(m, Math.min(GROUND - m, c)) - g.base; g.lane = 1; g.laneGap = gb; g.sure = FX.laneP; g.flash = 1; FX.laneN--;
 }
-const gY = g => g.lane ? g.base + g.off : g.base + (g.type === 'move' ? Math.sin(T*1.7 + g.ph) * g.amp : 0);
-const perfWin = () => B.window + PK.windowBonus + (boostT > 0 ? 10 : 0) + (FX.resoT > 0 ? 10 : 0) + (foreT > 0 ? 20 : 0);   // Perfect window right now (px of clearance): scoring and the on-gate marks read the same number
-const gGap = g => g.gap + (g.lane ? g.laneGap : g.type === 'pulse' ? Math.sin(T*2.3 + g.ph) * Math.min(26, g.gap - 112) : 0) + (inkT > 0 ? 46 * Math.min(1, inkT, (TMAX.ink - inkT) * 3) : 0);
+const gY = g => g.lane ? g.base + g.off : g.base + (g.type === 'move' ? Math.sin((T - FX.still)*1.7 + g.ph) * g.amp : 0);
+const perfWin = () => B.window + PK.windowBonus + (boostT > 0 ? 10 : 0) + (FX.resoT > 0 ? 10 : 0) + (foreT > 0 ? skv('win') : 0);   // Perfect window right now (px of clearance): scoring and the on-gate marks read the same number
+const gGap = g => g.gap + (g.lane ? g.laneGap : g.type === 'pulse' ? Math.sin((T - FX.still)*2.3 + g.ph) * Math.min(26, g.gap - 112) : 0) + (inkT > 0 ? 46 * Math.min(1, inkT, (TMAX.ink - inkT) * 3) : 0);
 
 /* ---------- stages: per-zone background art, gate skins, music ---------- */
 // 50 stages in 4 tiers (10/15/15/10). A tier picks the zone art, gap scale, gate mix and rules; the stage sets the head start and goal.
@@ -1212,13 +1218,15 @@ function toMenu(){
 
 /* ---------- unit skills ---------- */
 // One row per unit: cd (s) tuned per unit from bot runs (base by rarity: common 16, epic 16, legendary 20, mythic 18, ultra 22), effect values, and f = overrides for fair modes (daily / versus, cd 18 for all)
+// Mythic and ultra skills carry a second effect that only stage mode has (each one is 0 in f): sh shields a cast restores · still: held gates · arm: the cast readies KRAKEN's ink cloak again · perf: gates passed count as Perfects · n / gap / win (ORACLE): gates aligned, their extra gap, the Perfect window in px
+// · mag: coin magnet for the skill's length · n / inv (TEMPEST): gates the storm chain carries through, seconds invincible after it · brk: resonant breaks one Resonance holds
 const SK = {
  volt:{cd:16,dur:3,f:{cd:18,dur:2}}, blitz:{cd:16,n:1,f:{cd:18}}, nimbus:{cd:16,dur:2.5,f:{cd:18,dur:2}}, titan:{cd:16,dur:1,heavy:2.5,f:{cd:18}},
  mochi:{cd:16,dur:2,f:{cd:18,dur:1.5}}, pixel:{cd:16,dur:5,f:{cd:18,dur:3}}, neko:{cd:16,dur:3,f:{cd:18,dur:2}}, buzz:{cd:16,n:2,f:{cd:18,n:1}},
- aegis:{cd:34,dur:3,sh:0,f:{cd:18,dur:1,sh:0}}, kraken:{cd:10,dur:5,f:{cd:18,dur:2}}, specter:{cd:10,dur:4,f:{cd:18,dur:1.2}}, oracle:{cd:18,dur:6,f:{cd:18,dur:3}},
+ aegis:{cd:28,dur:4,sh:1,f:{cd:18,dur:1,sh:0}}, kraken:{cd:10,dur:6,still:1,arm:1,f:{cd:18,dur:2,still:0,arm:0}}, specter:{cd:12,dur:5,perf:1,f:{cd:18,dur:1.2,perf:0}}, oracle:{cd:10,dur:6,n:4,gap:0,win:30,f:{cd:18,dur:3,n:0,gap:0,win:20}},
  phoenix:{cd:20,dur:4,f:{cd:18,dur:1}}, zero:{cd:11,dur:8,f:{cd:18,dur:4}}, raijin:{cd:16,n:3,f:{cd:18,n:1}}, chrono:{cd:20,dur:3,f:{cd:18,dur:1.2}}, goliath:{cd:13,dur:5,f:{cd:18,dur:1.5}},
- solaris:{cd:22,dur:4.5,fever:1,f:{cd:18,dur:1,fever:0}}, aurora:{cd:9,n:6,gap:40,f:{cd:18,n:1,gap:0}}, tempest:{cd:22,len:1.5,f:{cd:18,len:1}},
- pleiad:{cd:40,n:2,sh:0,f:{cd:18,n:1,sh:0}}, pulsar:{cd:22,dur:4,mul:2,f:{cd:18,dur:2,mul:1}},
+ solaris:{cd:15,dur:6,fever:1,mag:1,f:{cd:18,dur:1,fever:0,mag:0}}, aurora:{cd:12,n:8,gap:40,perf:1,f:{cd:18,n:1,gap:0,perf:0}}, tempest:{cd:12,len:1.5,n:5,inv:1,f:{cd:18,len:1,n:0,inv:0}},
+ pleiad:{cd:24,n:4,sh:1,f:{cd:18,n:1,sh:0}}, pulsar:{cd:11,dur:6,mul:3,brk:2,f:{cd:18,dur:2,mul:1,brk:0}},
  monarch:{cd:26,dur:1,win:4,f:{cd:18,dur:1,win:0}}   // dur: seconds invincible; win: seconds of the wide Perfect window (VOLT's +10px), none in fair modes
 };
 const fairMode = () => mode === 'daily' || mode === 'versus';
@@ -1258,6 +1266,7 @@ function summonPowers(){
   for (let i=0;i<skv('n');i++) orbs.push({x: bird.x + 170 + i*110, y: Math.max(80, Math.min(GROUND - 80, bird.y + (i ? 40 : -40))), k: kinds[Math.random()*3|0], got:false, t:0});
   for (let i=0;i<14;i++) part(bird.x, bird.y, 60 + Math.random()*240, (Math.random()-.5)*200, .7, [46,100,60], 3);
 }
+function castShield(){ if (!skv('sh') || shields >= PK.shieldMax) return; shields++; popT = 0; pop(t('shieldP') + ' +1', bird.x, bird.y - 34, [190,100,70], true); sigFx(B.id, 'regen'); }   // AEGIS / PLEIAD: the cast gives one shield back, up to the unit's maximum (stage mode only)
 function useSkill(){
   if (state !== 'play' || skillCharge < 1) return;
   skillCharge = 0; const id = B.id, c = B.uiCol || B.col, fxv = TIER_FX[unitTier(B)], U = UNIT_FX[id] || O0, rc = U.ringCol || [c, [45,100,72]], cut = RM && fxv.stop > 0;   // reduced motion (legendary and up): half the rings and particles
@@ -1273,29 +1282,29 @@ function useSkill(){
     case 'nimbus': lowGravT = TMAX.glide = skv('dur'); break;
     case 'titan': setGod(skv('dur')); FX.heavyT = TMAX.heavy = skv('heavy'); break;
     case 'mochi': autoT = TMAX.auto = skv('dur'); break;
-    case 'aegis': setGod(skv('dur')); if (skv('sh') && shields === 0){ shields = 1; popT = 0; } break;
+    case 'aegis': setGod(skv('dur')); castShield(); break;
     case 'phoenix': setGod(skv('dur')); break;
     case 'zero': cloneT = skv('dur'); break;
     case 'pixel': rushT = TMAX.rush = skv('dur'); break;
     case 'neko': slowT = Math.max(slowT, skv('dur')); TMAX.slow = slowT; break;
     case 'buzz': summonPowers(); break;
-    case 'kraken': inkT = TMAX.ink = skv('dur'); break;
-    case 'specter': phaseT = TMAX.phase = skv('dur'); break;
-    case 'oracle': foreT = TMAX.fore = skv('dur'); break;
+    case 'kraken': inkT = TMAX.ink = skv('dur'); FX.hold = !!skv('still'); if (skv('arm')) FX.inkLock = 0; break;
+    case 'specter': phaseT = TMAX.phase = skv('dur'); FX.phaseP = !!skv('perf'); break;
+    case 'oracle': foreT = TMAX.fore = skv('dur'); if (skv('n')){ FX.laneN = skv('n'); FX.laneY = bird.y; FX.laneP = false; invuln = Math.max(invuln, .3); for (const g of gates) if (!g.scored && !g.broken) laneApply(g); } break;   // the next gates line up through AURORA's lane (no extra gap, no automatic Perfect)
     case 'raijin': FX.strikeN = skv('n'); FX.strikeT = 0; break;
     case 'chrono': freezeT = TMAX.freeze = skv('dur'); break;
     case 'goliath': giantT = TMAX.giant = skv('dur'); break;
     case 'solaris':
-      setGod(skv('dur'));
+      setGod(skv('dur')); if (skv('mag') && magnetT < skv('dur')) magnetT = TMAX.magnet = skv('dur');   // the coin magnet runs for as long as the invincibility
       if (skv('fever')){
         combo = Math.max(combo, PK.feverAt);
         if (tier < 2){ tier = 2; guardUsed = false; banner(t('fever').replace('2', PK.feverMul), [300,100,68], 1.4, false); SFX.fever(); }   // small slot: the skill name holds the big one
       }
       break;
-    case 'aurora': FX.laneN = skv('n'); FX.laneY = bird.y; invuln = Math.max(invuln, .3); for (const g of gates) if (!g.scored && !g.broken) laneApply(g); break;
-    case 'tempest': dashT = Math.max(dashT, .55 * skv('len')); bird.vy = 0; FX.stormDash = true; SFX.dash(); break;
-    case 'pleiad': FX.strikeN = skv('n'); FX.strikeT = 0; if (skv('sh')) shields = Math.min(PK.shieldMax, shields + 1); break;
-    case 'pulsar': FX.resoT = TMAX.reso = skv('dur'); FX.resoMul = skv('mul'); break;
+    case 'aurora': FX.laneN = skv('n'); FX.laneY = bird.y; FX.laneP = !!skv('perf'); invuln = Math.max(invuln, .3); for (const g of gates) if (!g.scored && !g.broken) laneApply(g); break;
+    case 'tempest': dashT = Math.max(dashT, .55 * skv('len')); bird.vy = 0; FX.stormDash = true; FX.stormN = skv('n'); SFX.dash(); break;   // stormN > 0: update holds the dash until that many gates are behind (the storm chain)
+    case 'pleiad': FX.strikeN = skv('n'); FX.strikeT = 0; castShield(); break;
+    case 'pulsar': FX.resoT = TMAX.reso = skv('dur'); FX.resoMul = skv('mul'); FX.resoBrk = skv('brk'); break;
     case 'monarch': setGod(skv('dur')); if (skv('win')) boostT = TMAX.boost = skv('win'); break;
   }
 }
@@ -1460,7 +1469,7 @@ function update(rdt){
   const target = slowT > 0 ? POW.slowScale : 1;
   timeScale += (target - timeScale) * Math.min(1, rdt*6);
   const dt = rdt * (state === 'dying' ? .35 : timeScale);
-  T += dt * (freezeT > 0 && state === 'play' ? .03 : 1);
+  T += dt * (freezeT > 0 && state === 'play' ? .03 : 1); if (FX.hold && state === 'play') FX.still += dt;   // KRAKEN's held gates: their clock falls behind by exactly what T gains (KRAKEN has no time stop)
   shake = Math.max(0, shake - rdt*40); flash = Math.max(0, flash - rdt*1.8); FX.amb = Math.max(0, FX.amb - rdt*12);
   FX.castT = Math.max(0, FX.castT - rdt); FX.sigT = Math.max(0, FX.sigT - rdt); FX.perfT = Math.max(0, FX.perfT - rdt);   // up here so they also run out while dying
   zoneBanner = Math.max(0, zoneBanner - rdt); banDrop += (Math.max(0, pillBot + 32 - LH*.27) - banDrop) * Math.min(1, rdt*12);
@@ -1501,6 +1510,7 @@ function update(rdt){
   }
   if (state !== 'play') return;
 
+  if (FX.stormN > 0 && dashT < .15) dashT = .15;   // TEMPEST storm chain: the dash does not run out between its gates
   if (dashT > 0){ dashT -= dt; ghostT -= dt; if (ghostT <= 0){ ghostT = .035; ghosts.push({x:bird.x, y:bird.y, rot:bird.rot, life:.32}); }
     if (dashT <= 0){ if (PK.dashRefund && FX.dashHit && !FX.stormDash){ dashMeter = Math.min(1, dashMeter + PK.dashRefund); sigFx(B.id, 'refund'); } FX.dashHit = false; FX.stormDash = false; sigFx(B.id, 'dashEnd'); } }
   if (invuln > 0) invuln -= dt;
@@ -1511,7 +1521,7 @@ function update(rdt){
   if (skillCharge >= 1 && !skillWasReady){ skillWasReady = true; tone(660,.08,'sine',.08); tone(990,.12,'sine',.08,0,.07); haptic('ready'); }
   if (skillCharge < 1) skillWasReady = false;
   { const f = ufx(B.id, 'idle'); if (f) f(dt); }   // standing particles: every legendary-and-up unit has its own recipe (selfTest: unitFx)
-  if (phaseT > 0) phaseT -= dt; if (giantT > 0) giantT -= dt; if (inkT > 0) inkT -= dt;
+  if (phaseT > 0) phaseT -= dt; else FX.phaseP = false; if (giantT > 0) giantT -= dt; if (inkT > 0) inkT -= dt; else FX.hold = false;
   for (const bo of bolts) bo.life -= rdt; bolts = bolts.filter(bo => bo.life > 0);
   if (magnetT > 0) magnetT -= dt;
   if (slowT > 0) slowT -= rdt;
@@ -1556,7 +1566,7 @@ function update(rdt){
     const cy = gY(g), gp = gGap(g), top = cy - gp/2, bot = cy + gp/2;
     const overX = bird.x + bird.r > g.x && bird.x - bird.r < g.x + g.w;
     if (overX){
-      if (g.broken || phaseT > 0){ g.dashed = true; if (!g.broken && (bird.y - bird.r*.82 < top || bird.y + bird.r*.82 > bot)) sigFx(B.id, 'thru', g); }
+      if (g.broken || phaseT > 0){ g.dashed = true; if (FX.phaseP && !g.broken) g.sure = true; if (!g.broken && (bird.y - bird.r*.82 < top || bird.y + bird.r*.82 > bot)) sigFx(B.id, 'thru', g); }
       else if (dashT > 0 || giantT > 0){ if (!g.dashed){ g.dashed = true; g.flash = 1; if (dashT > 0) FX.dashHit = true; shards(g.x + g.w/2, bird.y, g.type === 'move' ? pal.b : g.type === 'pulse' ? pal.a : pal.gate, 28); ring(g.x + g.w/2, bird.y, 130, B.wingCol, .4, 5); shake = Math.max(shake, 10); haptic('shatter'); SFX.shatter(); sigFx(B.id, giantT > 0 ? 'smash' : 'crash', g); } }
       else {
         const hr = bird.r * .82;   // slightly forgiving hitbox
@@ -1575,14 +1585,14 @@ function update(rdt){
             dashMeter = 0; dashT = .55 * .6; bird.vy = 0; FX.stormDash = true; FX.gustLock = PK.gustLock; invuln = .8; g.dashed = g.gust = true; g.flash = 1; combo = 0; tier = 0;
             hitstop = Math.max(hitstop, .12); banner(t('fx_gust'), [185,100,70], 1, false); haptic('shatter'); sigFx(B.id, 'gust', g); }
           else if (PK.veil && FX.threads >= 3){   // AURORA veil: three threads take one fatal gate hit. All three are spent, the gate breaks (scored as a broken gate, never a Perfect, so it weaves nothing) and the next two gates line up through laneApply (g.off / g.lane / g.laneGap only)
-            FX.threads = 0; FX.threadP = 0; g.broken = true; g.flash = 1; invuln = .6; FX.laneN = Math.max(FX.laneN, 2); FX.laneY = bird.y; for (const q of gates) if (!q.scored && !q.broken && !q.lane) laneApply(q);
+            FX.threads = 0; FX.threadP = 0; g.broken = true; g.flash = 1; invuln = .6; if (FX.laneN <= 0) FX.laneP = false; FX.laneN = Math.max(FX.laneN, 2); FX.laneY = bird.y; for (const q of gates) if (!q.scored && !q.broken && !q.lane) laneApply(q);
             combo = Math.floor(combo * PK.comboKeep); tier = combo >= Math.min(5, PK.feverAt - 3) ? 1 : 0;
             hitstop = Math.max(hitstop, .12); banner(t('fx_veil'), [160,100,70], 1.4); haptic('fever'); sigFx(B.id, 'veil', g); }
-          else if (PK.ping && skillCharge >= PK.ping && FX.pingT <= 0 && bird.y > top && bird.y < bot && Math.max(top - (bird.y - hr), (bird.y + hr) - bot) <= 8){   // PULSAR echo: a graze no deeper than 8px, centre still inside the gap, is bounced back for PK.ping skill charge. The gate can no longer be a Perfect (g.pinged), so an echo only ever lowers the charge
-            const up = bird.y - hr < top; skillCharge -= PK.ping; bird.y = up ? top + hr + 1 : bot - hr - 1; bird.vy = up ? 160 : -200; invuln = .3; FX.pingT = .5; g.pinged = true;
+          else if (PK.ping && (FX.resoT > 0 || skillCharge >= PK.ping) && FX.pingT <= 0 && bird.y > top && bird.y < bot && Math.max(top - (bird.y - hr), (bird.y + hr) - bot) <= 8){   // PULSAR echo: a graze no deeper than 8px, centre still inside the gap, is bounced back for PK.ping skill charge, or for nothing while Resonance is on. The gate can no longer be a Perfect (g.pinged), so an echo only ever lowers the charge
+            const up = bird.y - hr < top; if (FX.resoT <= 0) skillCharge -= PK.ping; bird.y = up ? top + hr + 1 : bot - hr - 1; bird.vy = up ? 160 : -200; invuln = .3; FX.pingT = .5; g.pinged = true;
             hitstop = Math.max(hitstop, .06); pop(t('fx_ping'), bird.x, bird.y - 34, [320,100,70], true); haptic('perfect'); sigFx(B.id, 'ping', g); }
-          else if (PK.pingFull && skillCharge >= PK.pingFull && FX.pingT <= 0){   // PULSAR resonant break: a gate hit too deep for an echo, met with PK.pingFull skill charge, shatters the gate instead. That charge is spent, the gate is scored as a broken gate (never a Perfect, so it charges nothing) and the combo is lost
-            skillCharge -= PK.pingFull; g.broken = g.pinged = true; g.flash = 1; invuln = .6; FX.pingT = .5; combo = 0; tier = 0;
+          else if (FX.resoBrk > 0 && FX.resoT > 0 && FX.pingT <= 0){   // PULSAR resonant break: while Resonance is on, a gate hit too deep for an echo shatters the gate instead, SK.pulsar.brk times a cast. It belongs to the skill (it used to cost a full, unspent charge, which made pressing the skill worse than keeping it). The gate is scored as a broken gate (never a Perfect) and the combo is lost
+            FX.resoBrk--; g.broken = g.pinged = true; g.flash = 1; invuln = .6; FX.pingT = .5; combo = 0; tier = 0;
             hitstop = Math.max(hitstop, .12); banner(t('fx_break'), [320,100,70], 1, false); haptic('shatter'); sigFx(B.id, 'break', g); }
           else { die(); if (state !== 'play') return; }
         }
@@ -1590,6 +1600,8 @@ function update(rdt){
     }
     if (!g.scored && bird.x - bird.r > g.x + g.w){
       g.scored = true; gatesPassed++; sigFx(B.id, 'pass', g); FX.gustLock = Math.max(0, FX.gustLock - 1); if (!g.slip) FX.inkLock = Math.max(0, FX.inkLock - 1);
+      const sure = g.sure && !g.broken && g.minClear > -5;   // a skill made this gate a Perfect (SPECTER ghosting, AURORA's lane): it scores and builds the combo like one, but charges no skill and weaves no thread (bot runs: with either, the skill feeds itself and the veil)
+      if (FX.stormN > 0){ if (--FX.stormN > 0) sigFx(B.id, 'chain', g); else { dashT = Math.min(dashT, .1); invuln = Math.max(invuln, skv('inv')); sigFx(B.id, 'calm', g); } }   // TEMPEST storm chain: one gate done; after the last the dash ends in a moment of invincibility
       if (mode === 'endless' && !FX.clearDone && gatesPassed >= stGoal(curStage)){
         FX.clearDone = true; const first = !stg.clr[curStage]; stg.clr[curStage] = 1; stg.open = Math.max(stg.open, Math.min(ST_N-1, curStage+1));
         if (first){ FX.clearCoin = (100 + 10*(curStage+1))*INCOME_X; FX.clearDia = diaClear(curStage); W.coins += FX.clearCoin; W.dia += FX.clearDia; saveW(); }
@@ -1600,9 +1612,9 @@ function update(rdt){
         if (tr) FX.amb = Math.min(6, Math.max(FX.amb, tr + 1));
         if (fn && gatesPassed % fn === 0){ FX.fogT = FX.fogDur = tr === 3 ? 2 : .5; FX.amb = Math.min(6, Math.max(FX.amb, tr === 3 ? 6 : 5)); tone(300,.12,'sine',.08); }
       }
-      if (g.dashed){
+      if (g.dashed && !sure){
         const dp = g.gust ? 1 : 2 * PK.dashPts; addScore(dp); pop(t('phase') + ' +' + dp, bird.x, bird.y-30, pal.b, true);
-      } else if (g.minClear < perfWin() && g.minClear > -5 && !g.pinged){
+      } else if (sure || (g.minClear < perfWin() && g.minClear > -5 && !g.pinged)){
         combo++; perfects++; maxCombo = Math.max(maxCombo, combo);
         const nt = combo >= PK.feverAt ? 2 : combo >= Math.min(5, PK.feverAt - 3) ? 1 : 0;
         if (nt > tier){
@@ -1614,8 +1626,8 @@ function update(rdt){
         if (PK.boltEvery && ++perfCount % PK.boltEvery === 0){
           strikeNext();
         }
-        dashMeter = Math.min(1, dashMeter + .34*B.dash); skillCharge = Math.min(1, skillCharge + (FX.resoT > 0 ? 0 : PK.perfCharge));
-        if (PK.veil && FX.threads < 3 && ++FX.threadP >= PK.veil){ FX.threadP = 0; FX.threads++; sigFx(B.id, 'thread', g); }   // AURORA: every PK.veil Perfects weave one thread, three at most; a full set stops counting
+        dashMeter = Math.min(1, dashMeter + .34*B.dash); skillCharge = Math.min(1, skillCharge + (FX.resoT > 0 || sure ? 0 : PK.perfCharge));
+        if (PK.veil && !sure && FX.threads < 3 && ++FX.threadP >= PK.veil){ FX.threadP = 0; FX.threads++; sigFx(B.id, 'thread', g); }   // AURORA: every PK.veil Perfects weave one thread, three at most; a full set stops counting
         SFX.perfect(combo); perfectFx(B.id, g); flash = Math.max(flash, .18); hitstop = .06; shake = Math.max(shake, 4);
         g.flash = 1; cam.z = Math.max(cam.z, 1.035);
         { const cy2 = gY(g), gp2 = gGap(g); ring(g.x + g.w, bird.y < cy2 ? cy2 - gp2/2 : cy2 + gp2/2, 95, tier === 2 ? [300,100,68] : pal.a, .45, 3); }
@@ -1632,8 +1644,9 @@ function update(rdt){
         dashMeter = Math.min(1, dashMeter + .08*B.dash);
       }
       if (PK.shieldRegen && gatesPassed % PK.shieldRegen === 0 && shields < PK.shieldMax){ shields++; popT = 0; ring(bird.x, bird.y, 120, [190,100,70], .5, 5); pop(t('shieldP') + ' +1', bird.x, bird.y-34, [190,100,70], true); haptic('power'); SFX.power(); sigFx(B.id, 'regen', g); }
-      if (PK.inkEvery && gatesPassed % PK.inkEvery === 0){ inkT = TMAX.ink = 4; banner(t('fx_ink'), [285,80,70], .9, false); for (let i=0;i<40;i++){ const a = Math.random()*6.28, sp = 60 + Math.random()*260; part(bird.x, bird.y, Math.cos(a)*sp, Math.sin(a)*sp, 1, [285,60,25 + Math.random()*20], 4 + Math.random()*4); } ring(bird.x, bird.y, LW, [285,70,55], .8, 10); haptic('power'); tone(160, .4, 'sine', .2, -80); }
-      if (PK.phaseEvery && gatesPassed % PK.phaseEvery === 0){ phaseT = TMAX.phase = 1.6; banner(t('fx_phase'), [185,100,80], .9, false); ring(bird.x, bird.y, 160, [185,100,80], .6, 5); haptic('ready'); tone(900, .5, 'sine', .08, -500); }
+      // passive ink and passive ghosting never cut a longer skill effect short, and ink that is already out does not swell in again
+      if (PK.inkEvery && gatesPassed % PK.inkEvery === 0){ { const on = inkT > 0; if (inkT < 4) inkT = 4; TMAX.ink = on ? Math.max(TMAX.ink, inkT + .34) : 4; } banner(t('fx_ink'), [285,80,70], .9, false); for (let i=0;i<40;i++){ const a = Math.random()*6.28, sp = 60 + Math.random()*260; part(bird.x, bird.y, Math.cos(a)*sp, Math.sin(a)*sp, 1, [285,60,25 + Math.random()*20], 4 + Math.random()*4); } ring(bird.x, bird.y, LW, [285,70,55], .8, 10); haptic('power'); tone(160, .4, 'sine', .2, -80); }
+      if (PK.phaseEvery && gatesPassed % PK.phaseEvery === 0){ if (phaseT < 1.6) phaseT = TMAX.phase = 1.6; banner(t('fx_phase'), [185,100,80], .9, false); ring(bird.x, bird.y, 160, [185,100,80], .6, 5); haptic('ready'); tone(900, .5, 'sine', .08, -500); }
       if (PK.giantEvery && gatesPassed % PK.giantEvery === 0){ giantT = TMAX.giant = 3; banner(t('fx_giant'), [25,100,60], 1.1); ring(bird.x, bird.y, LW, [25,100,60], .8, 12); shake = Math.max(shake, 14); haptic('fever'); tone(70, .6, 'sawtooth', .22, 40); noise(.5, .2); }
       const nz = mode === 'endless' ? zoneIdx : Math.min(ZONES.length-1, Math.floor(gatesPassed/12));
       if (nz !== zoneIdx){ zoneIdx = nz; zoneBanner = 2.4; SFX.zone(); haptic('zone'); flash = Math.max(flash, .55); ring(bird.x, bird.y, LW*1.4, ZONES[nz].b, 1, 12); }
@@ -2389,7 +2402,7 @@ function drawBird(){
    perfect(g)       Perfect pass, after SFX.perfect.   death()  final death, replaces the 46 shared particles (the red ring stays)
    sig(kind, g)     passive moments: 'pass' every scored gate · 'guard' combo guard · 'regen' shield regen · 'burst' shield-burst gate · 'rebirth' revive spent · 'rewind' before the rewind is applied (hist still full)
                     · 'clone' the clone took the hit · 'smash' giant form broke gate g · 'dashEnd' · 'block' a wall met the invincible bird at gate g (every frame of it) · 'thru' inside gate g's wall while ghosting (every frame of it)
-                    · 'crash' a dash broke gate g · 'refund' part of the dash came back · 'keep' a miss cut the combo but some of it stayed.  'gust' TEMPEST's reflex dash fired at gate g · 'thread' AURORA wove a thread · 'veil' its veil took the hit at gate g · 'ping' PULSAR's echo bounced it off gate g's edge · 'slip' KRAKEN's ink cloak dissolved gate g · 'fore' ORACLE's premonition shattered gate g · 'break' PULSAR's resonant break shattered gate g.
+                    · 'crash' a dash broke gate g · 'refund' part of the dash came back · 'keep' a miss cut the combo but some of it stayed.  'gust' TEMPEST's reflex dash fired at gate g · 'thread' AURORA wove a thread · 'veil' its veil took the hit at gate g · 'ping' PULSAR's echo bounced it off gate g's edge · 'slip' KRAKEN's ink cloak dissolved gate g · 'fore' ORACLE's premonition shattered gate g · 'break' PULSAR's resonant break shattered gate g · 'chain' TEMPEST's storm chain passed gate g and goes on · 'calm' it passed its last gate. 'regen' also fires when a cast restores a shield (no g).
                     Legendary rows time their cast shape with FX.castT themselves (their tier has no sky event)
    idle(dt)         update, play only: the unit's standing particles; keep it ≤ 20 a second. Every legendary-and-up unit has one (an empty one for a unit without particles)
    trail()          render: replaces the shared trail.   strike(x, y)  strikeNext: the unit's ray and sound.   feverHue: fixed hue for the fever border */
@@ -2410,6 +2423,7 @@ const UNIT_FX = {
     back(){   // skill active: a wide halo at 2.6 r; combo guard: the halo flashes
       const gd = FX.sigK === 'guard' ? FX.sigT/.3 : 0; if (godT <= 0 && gd <= 0) return;
       ctx.strokeStyle = `hsla(45,100%,${70 + gd*20}%,${.55 + gd*.4})`; ctx.lineWidth = 2 + gd*4; ctx.beginPath(); ctx.arc(0,0,bird.r*(godT > 0 ? 2.6 : 1.9) + (RM ? 0 : Math.sin(T*8)*3),0,6.28); ctx.stroke();
+      if (godT > 0 && magnetT > 0 && skv('mag')){ ctx.strokeStyle = 'hsla(48,100%,72%,.4)'; ctx.lineWidth = 2; ctx.setLineDash([4,10]); ctx.lineDashOffset = RM ? 0 : T*70; ctx.beginPath(); ctx.arc(0,0,190,0,6.28); ctx.stroke(); ctx.setLineDash([]); }   // the skill's coin magnet: a dashed ring at its reach, running inward
     },
     sky(k, e){   // eclipse (.25s of dark with a corona ring) → sunrise (gold glow and 16 beams fading out); 8 faint beams stay while the skill is on
       if (k <= 0){ if (godT > 0 && state === 'play') fanBeams(8, .06, 48); return; }
@@ -2492,6 +2506,8 @@ const UNIT_FX = {
       ctx.fillStyle = '#0b0718'; ctx.beginPath(); for (const g of nx) ctx.rect(g.x + g.w/2 - 1, gY(g) - 1, 2, 2); ctx.fill();
       { const g = nx[0], cy = gY(g), gp = gGap(g), wn = Math.min(perfWin(), gp/2); ctx.fillStyle = 'hsla(48,100%,66%,.9)'; ctx.beginPath(); ctx.rect(g.x - 5, cy - gp/2, 2, wn); ctx.rect(g.x - 5, cy + gp/2 - wn, 2, wn); ctx.fill(); }
       if (PK.foresee && combo >= PK.foresee){ const g = nx[0], cy = gY(g), gp = gGap(g); ctx.strokeStyle = 'hsla(55,100%,72%,.95)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.rect(g.x - 3, cy - gp/2 - 10, g.w + 6, 10); ctx.rect(g.x - 3, cy + gp/2, g.w + 6, 10); ctx.stroke(); }   // premonition holds: both lips of the next gate boxed in gold
+      if (act && gates.some(g => g.lane && !g.scored)){ ctx.strokeStyle = 'hsla(55,100%,72%,.95)'; ctx.lineWidth = 2.5; ctx.beginPath();   // skill: the gates it has lined up wear a gold line on both lips (one path)
+        for (const g of gates){ if (!g.lane || g.scored || g.broken || g.x > LW) continue; const cy = gY(g), gp = gGap(g); ctx.moveTo(g.x - 4, cy - gp/2); ctx.lineTo(g.x + g.w + 4, cy - gp/2); ctx.moveTo(g.x - 4, cy + gp/2); ctx.lineTo(g.x + g.w + 4, cy + gp/2); } ctx.stroke(); }
       if (act){ let y = bird.y, v = bird.vy; const gr = B.grav*(lowGravT > 0 ? .5 : 1), mf = B.maxFall*(lowGravT > 0 ? .6 : 1); ctx.fillStyle = 'hsla(50,100%,88%,.9)'; ctx.beginPath();
         for (let j=1;j<=8;j++){ for (let q=0;q<4;q++){ v = Math.min(v + gr/64, mf); y += v/64; } ctx.rect(bird.x + speed*j/16 - 1.5, y - 1.5, 3, 3); } ctx.fill(); }
       ctx.restore();
@@ -2634,6 +2650,8 @@ const UNIT_FX = {
     marks(){   // ink out: the strip each wall has pulled back by, as a dark violet band on both lips of the next three gates (one path)
       if (inkT <= 0) return; const ad = 23*Math.min(1, inkT, (TMAX.ink - inkT)*3); let n = 0; ctx.fillStyle = 'hsla(285,80%,62%,.3)'; ctx.beginPath();
       for (const g of gates){ if (g.scored || g.broken || g.x > LW || n++ >= 3) continue; const cy = gY(g), gp = gGap(g); ctx.rect(g.x, cy - gp/2, g.w, ad); ctx.rect(g.x, cy + gp/2 - ad, g.w, ad); } ctx.fill();
+      if (!FX.hold) return; ctx.strokeStyle = 'hsla(320,90%,72%,.95)'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.beginPath();   // skill ink: every moving or pulsing gate it holds still wears a clamp on both lips (one path)
+      for (const g of gates){ if (g.scored || g.broken || g.lane || g.type === 'static' || g.x > LW) continue; const cy = gY(g), gp = gGap(g); for (let s=-1;s<2;s+=2){ const y = cy + s*gp/2; ctx.moveTo(g.x - 6, y + s*12); ctx.lineTo(g.x - 6, y); ctx.lineTo(g.x + g.w + 6, y); ctx.lineTo(g.x + g.w + 6, y + s*12); } } ctx.stroke();
     },
     snd(){ tone(140,.5,'sine',.22,-90); noise(.5,.22); },
     perfect(g){ FX.perfT = .15; for (let i=0;i<4;i++) part(g.x + g.w, bird.y + (Math.random()-.5)*20, (Math.random()-.5)*80, 20 + Math.random()*60, .6, [285,60,30], 3); tone(300,.06,'sine',.05,-180); },
@@ -2655,6 +2673,9 @@ const UNIT_FX = {
       for (let s=-1;s<2;s+=2){ ctx.save(); ctx.globalAlpha = .3; ctx.translate(s*28*q, 0); ctx.rotate(bird.rot); drawShape(ctx, B, .5, null, OL); ctx.restore(); }
     },
     sky(){ if (phaseT > 0 && state !== 'dying'){ ctx.fillStyle = 'hsla(185,60%,80%,.14)'; ctx.fillRect(-20,-20,LW+40,LH+40); } },   // a cold wash for as long as it is a ghost
+    marks(){   // skill ghosting: every gate ahead carries a pale diamond at the bird's height: it will pass there, and that pass is a Perfect (one path)
+      if (phaseT <= 0 || !FX.phaseP) return; ctx.fillStyle = `hsla(185,100%,88%,${phaseT < .5 ? .4 : .9})`; ctx.beginPath();
+      for (const g of gates){ if (g.scored || g.broken || g.x > LW) continue; const x = g.x + g.w/2, y = bird.y; ctx.moveTo(x, y - 10); ctx.lineTo(x + 6, y); ctx.lineTo(x, y + 10); ctx.lineTo(x - 6, y); ctx.closePath(); } ctx.fill(); },
     snd(){ tone(900,.5,'sine',.08,-500); tone(1350,.6,'sine',.05,-750,.04); },
     perfect(){ FX.perfT = .1; ghosts.push({x:bird.x - 8, y:bird.y, rot:bird.rot, life:.24}); for (let i=0;i<5;i++) part(bird.x - 10 + (Math.random()-.5)*24, bird.y + (Math.random()-.5)*20, -40 - Math.random()*40, -60 - Math.random()*60, .6, [185,60,85], 2); },
     sig(kind){
@@ -2682,6 +2703,7 @@ const UNIT_FX = {
       ctx.fillStyle = 'hsla(160,100%,70%,.07)'; ctx.beginPath(); for (const g of lane){ const gp = gGap(g); ctx.rect(g.x, gY(g) - gp/2, g.w, gp); } ctx.fill();
       ctx.strokeStyle = 'hsla(160,100%,75%,.22)'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); let x0 = lane[0].x - 50, y0 = gY(lane[0]); ctx.moveTo(x0, y0);
       for (const g of lane){ const x1 = g.x + g.w/2, y1 = gY(g); ctx.quadraticCurveTo((x0 + x1)/2, y0, x1, y1); x0 = x1; y0 = y1; } ctx.lineTo(x0 + 50, y0); ctx.stroke();
+      ctx.fillStyle = 'hsla(0,0%,100%,.45)'; ctx.beginPath(); for (const g of lane){ if (!g.sure || g.scored) continue; const x = g.x + g.w/2, y = gY(g); ctx.moveTo(x, y - 9); ctx.lineTo(x + 6, y); ctx.lineTo(x, y + 9); ctx.lineTo(x - 6, y); ctx.closePath(); } ctx.fill();   // a white diamond in every gap the skill has made a sure Perfect (one path)
     },
     snd(){ tone(440,.9,'sine',.1,440); tone(660,.9,'sine',.07,660,.05); },
     perfect(){ FX.perfT = .35; const k = bird.r/13; for (let i=0;i<6;i++) part(bird.x - (14 + Math.random()*40)*k, bird.y + (Math.random()-.5)*20, -30, -50 - Math.random()*40, .9, [[150,100,70],[190,100,70],[280,90,72]][i % 3], 1.6); },   // a bead of light runs down the ribbons (the body draws it from o.bead)
@@ -2719,6 +2741,8 @@ const UNIT_FX = {
         for (let i=0;i<12;i++) parts.push({x:g.x + g.w/2, y:bird.y + (Math.random()-.5)*60, vx:-400 - Math.random()*200, vy:(Math.random()-.5)*300, life:.7, max:.7, col:[185,100,70], size:3 + Math.random()*4, rot:Math.random()*6, vr:(Math.random()-.5)*18, rect:true}); }
       else if (kind === 'refund'){ pop('+' + Math.round(PK.dashRefund*100) + '%', bird.x, bird.y + 36, [185,100,70], true);   // part of the dash comes back: eight motes spiral into the bird
         for (let i=0;i<8;i++){ const a = i*.785; part(bird.x + Math.cos(a)*44, bird.y + Math.sin(a)*44, -Math.cos(a)*150 + Math.sin(a)*90, -Math.sin(a)*150 - Math.cos(a)*90 - 40, .28, [185,100,75], 2.5); } }
+      else if (kind === 'chain'){ ring(bird.x, bird.y, 150, [185,100,70], .4, 5); windStreaks(14); pop('×' + FX.stormN, bird.x + 10, bird.y - 54, [185,100,75], true); SFX.dash(); }   // storm chain: the next link fires, with the gates still to go
+      else if (kind === 'calm'){ ring(bird.x, bird.y, 110, [200,60,90], .5, 4); ring(bird.x, bird.y, 60, [185,100,80], .35, 3); tone(520,.3,'sine',.1,260); }   // the chain is through: the eye of the storm, a moment of calm
       else if (kind === 'gust'){ FX.sigT = .3; FX.sigK = 'gust'; ring(bird.x, bird.y, 220, [185,100,70], .5, 6); ring(bird.x, bird.y, 120, [205,90,66], .4, 4); flash = Math.max(flash, .5); windStreaks(30);   // the gust reflex's look (the rule is in update's collision branch): the funnel doubles for .3s
         tone(300,.25,'sawtooth',.14,900); noise(.2,.2); }
     },
@@ -2729,13 +2753,15 @@ const UNIT_FX = {
   },
   pulsar: {
     tint:0, rings:[1.4,1.05,.7,.35], ringCol:[[320,100,66],[180,100,66]],   // four evenly spaced rings, magenta / cyan: a concentric wave
-    opt(o){ o.charge = state === 'menu' || (PK.pingFull && skillCharge >= PK.pingFull) ? 3 : Math.min(3, Math.floor(PK.ping ? skillCharge/PK.ping + .001 : skillCharge*3 + .001)); o.jet = FX.resoT > 0 ? 2 : 1; o.flash = Math.min(1, FX.perfT/.2); },   // charge gauge: the echoes the skill charge can pay for right now, all three arcs once it can pay for a resonant break; thirds of the charge in fair modes, where the echo is off
+    opt(o){ o.charge = state === 'menu' || (PK.ping && FX.resoT > 0) ? 3 : Math.min(3, Math.floor(PK.ping ? skillCharge/PK.ping + .001 : skillCharge*3 + .001)); o.jet = FX.resoT > 0 ? 2 : 1; o.flash = Math.min(1, FX.perfT/.2); },   // charge gauge: the echoes the skill charge can pay for right now, all three arcs while Resonance makes them free; thirds of the charge in fair modes, where the echo is off
     sky(k, e){   // concentric wave: six circles running out from the bird (one path) and a waveform across the screen at the bird's height (one path); both stay faintly while the resonance is on. Death: the beam shoots across the whole screen for .15s. Reduced motion: three fixed circles, a still wave
       if (FX.sigK === 'nova' && FX.sigT > 0){ const cs = Math.cos(-.611)*LW, sn = Math.sin(-.611)*LW; ctx.strokeStyle = `hsla(180,100%,75%,${.45*FX.sigT/.15})`; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(bird.x - cs, bird.y - sn); ctx.lineTo(bird.x + cs, bird.y + sn); ctx.stroke(); }
       const a = k > 0 ? (RM ? .8 : Math.min(1, k*3, e*8)) : 0, f = Math.max(a, FX.resoT > 0 && state === 'play' ? .5 : 0); if (f <= 0) return;
       ctx.strokeStyle = `hsla(320,100%,72%,${.2*f})`; ctx.lineWidth = 2.5; ctx.beginPath(); for (let i=0, n = RM ? 3 : 6; i<n; i++){ const r = RM ? 80 + i*150 : (T*220 + i*90) % 540; ctx.moveTo(bird.x + r, bird.y); ctx.arc(bird.x, bird.y, r, 0, 6.28); } ctx.stroke();
       ctx.strokeStyle = `hsla(180,100%,72%,${.25*f})`; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.beginPath(); for (let i=0;i<24;i++) ctx.lineTo(-10 + i*(LW + 20)/23, bird.y + Math.sin(i*1.25 - (RM ? 0 : T*8))*14*(i % 2 ? 1 : .55)); ctx.stroke();
     },
+    back(){   // Resonance on with a resonant break in hand: two thin magenta rings round the body; they go when the break is spent
+      if (state !== 'play' || FX.resoT <= 0 || FX.resoBrk <= 0) return; const R = bird.r; ctx.strokeStyle = `hsla(320,100%,72%,${RM ? .8 : .65 + .25*Math.sin(T*10)})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, R*1.9, 0, 6.283); ctx.moveTo(R*2.5, 0); ctx.arc(0, 0, R*2.5, 0, 6.283); ctx.stroke(); },
     marks(){   // resonance on: the widened Perfect zone of the next gate as two magenta bars
       if (FX.resoT <= 0) return; const g = gates.find(q => !q.scored && !q.broken && q.x + q.w > bird.x); if (!g) return;
       const cy = gY(g), gp = gGap(g), wn = Math.min(perfWin(), gp/2); ctx.fillStyle = 'hsla(320,100%,70%,.9)'; ctx.beginPath(); ctx.rect(g.x - 6, cy - gp/2, 3, wn); ctx.rect(g.x - 6, cy + gp/2 - wn, 3, wn); ctx.fill();
@@ -3984,12 +4010,22 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       coinTbl: () => eq(ST_SCOIN, [30,40,55,67]) && eq(ST_ORBP, [.3,.4,.5,.67]) && INCOME_X === 5 && eq([0,49,50,99,100,275].map(s => scoreCoins(s, 0)), [0,0,150,150,300,750]) && eq([1,2,3].map(tr => scoreCoins(120, tr)), [400,550,670]),
       dia: () => eq([0,9,10,24,25,39,40,49].map(diaClear), [0,0,1,1,2,2,3,3].map(i => DIA_CLEAR[i])) && [DIA_LEVEL, DIA_DAILY, ...DIA_CLEAR].every(n => Number.isInteger(n) && n > 0),
       mech: () => { const pk = (id, m) => { const b0 = B, m0 = mode; B = birdById(id); mode = m; const p = perks(); B = b0; mode = m0; return p; }, fx = newFx();   // new mechanics: their numbers, their zeroing in both fair modes, their per-run state
-        return eq(SK.raijin, {cd:16,n:3,f:{cd:18,n:1}}) && SK.aegis.sh === 0 && SK.pleiad.sh === 0 && SK.specter.cd === 10 && !/shield|실드|シールド|护盾/.test(['ko','en','ja','zh'].map(l => I18N[l].sd_aegis + I18N[l].sd_pleiad).join('')) && eq(['endless','daily','versus'].map(m => [pk('tempest', m).gust, pk('tempest', m).gustLock]), [[.33,4],[0,0],[0,0]]) && pk('volt', 'endless').gust === 0 && fx.gustLock === 0
+        return eq(SK.raijin, {cd:16,n:3,f:{cd:18,n:1}}) && eq(['endless','daily','versus'].map(m => [pk('tempest', m).gust, pk('tempest', m).gustLock]), [[.33,8],[0,0],[0,0]]) && pk('volt', 'endless').gust === 0 && fx.gustLock === 0
           && eq(['endless','daily','versus'].map(m => [pk('aurora', m).veil, pk('aurora', m).veilStart]), [[3,3],[0,0],[0,0]]) && pk('volt', 'endless').veil === 0 && pk('volt', 'endless').veilStart === 0 && fx.threads === 0 && fx.threadP === 0 && ['ko','en','ja','zh'].every(l => I18N[l].fx_veil && (I18N[l].p_aurora.match(/3/g) || []).length === 4 && (l === 'en' || (I18N[l].fx_veil !== I18N.en.fx_veil && I18N[l].p_aurora !== I18N.en.p_aurora)))
-          && eq(['endless','daily','versus'].map(m => [pk('pulsar', m).ping, pk('pulsar', m).pingFull]), [[.34,1],[0,0],[0,0]]) && pk('volt', 'endless').ping === 0 && pk('volt', 'endless').pingFull === 0 && fx.pingT === 0 && ['ko','en','ja','zh'].every(l => I18N[l].fx_ping && I18N[l].p_pulsar.includes('34%') && I18N[l].fx_break !== 'fx_break' && (l === 'en' || (I18N[l].fx_break !== I18N.en.fx_break && I18N[l].p_pulsar !== I18N.en.p_pulsar)))
-          && ['ko','en','ja','zh'].every(l => I18N[l].fx_gust && I18N[l].p_tempest.includes('4') && I18N[l].p_tempest.includes('30%') && !I18N[l].p_tempest.includes('6') && (l === 'en' || (I18N[l].fx_gust !== I18N.en.fx_gust && I18N[l].p_tempest !== I18N.en.p_tempest)))
+          && eq(['endless','daily','versus'].map(m => pk('pulsar', m).ping), [.34,0,0]) && pk('volt', 'endless').ping === 0 && !('pingFull' in pk('pulsar', 'endless')) && fx.pingT === 0 && ['ko','en','ja','zh'].every(l => I18N[l].fx_ping && I18N[l].p_pulsar.includes('34%') && I18N[l].fx_break !== 'fx_break' && (l === 'en' || (I18N[l].fx_break !== I18N.en.fx_break && I18N[l].p_pulsar !== I18N.en.p_pulsar)))
+          && ['ko','en','ja','zh'].every(l => I18N[l].fx_gust && I18N[l].p_tempest.includes('8') && I18N[l].p_tempest.includes('30%') && !I18N[l].p_tempest.includes('4') && (l === 'en' || (I18N[l].fx_gust !== I18N.en.fx_gust && I18N[l].p_tempest !== I18N.en.p_tempest)))
           && eq(['endless','daily','versus'].map(m => pk('kraken', m).inkSlip), [10,0,0]) && pk('volt', 'endless').inkSlip === 0 && fx.inkLock === 0 && ['ko','en','ja','zh'].every(l => I18N[l].fx_slip !== 'fx_slip' && I18N[l].p_kraken.includes('10') && (l === 'en' || I18N[l].fx_slip !== I18N.en.fx_slip))
           && eq(['endless','daily','versus'].map(m => pk('oracle', m).foresee), [2,0,0]) && pk('volt', 'endless').foresee === 0 && ['ko','en','ja','zh'].every(l => I18N[l].p_oracle.includes('2') && I18N[l].fx_fore !== 'fx_fore' && (l === 'en' || I18N[l].fx_fore !== I18N.en.fx_fore)); },
+      skill: () => { const sv = (id, m, k) => { const b0 = B, m0 = mode; B = birdById(id); mode = m; const v = skv(k); B = b0; mode = m0; return v; }, fx = newFx(), L = ['ko','en','ja','zh'], tx = (k, re) => L.every(l => re.test(I18N[l][k])), pk = id => { const b0 = B, m0 = mode; B = birdById(id); mode = 'endless'; const p = perks(); B = b0; mode = m0; return p; };   // tiered skills (mythic, ultra): stage rows, fair rows exactly as before the tiers, every stage-only part 0 in both fair modes, per-run state, the numbers in the texts
+        return eq([SK.aegis, SK.kraken, SK.specter, SK.oracle], [{cd:28,dur:4,sh:1,f:{cd:18,dur:1,sh:0}}, {cd:10,dur:6,still:1,arm:1,f:{cd:18,dur:2,still:0,arm:0}}, {cd:12,dur:5,perf:1,f:{cd:18,dur:1.2,perf:0}}, {cd:10,dur:6,n:4,gap:0,win:30,f:{cd:18,dur:3,n:0,gap:0,win:20}}])
+          && eq([SK.solaris, SK.aurora, SK.tempest, SK.pleiad, SK.pulsar], [{cd:15,dur:6,fever:1,mag:1,f:{cd:18,dur:1,fever:0,mag:0}}, {cd:12,n:8,gap:40,perf:1,f:{cd:18,n:1,gap:0,perf:0}}, {cd:12,len:1.5,n:5,inv:1,f:{cd:18,len:1,n:0,inv:0}}, {cd:24,n:4,sh:1,f:{cd:18,n:1,sh:0}}, {cd:11,dur:6,mul:3,brk:2,f:{cd:18,dur:2,mul:1,brk:0}}])
+          && eq([SK.phoenix, SK.zero, SK.chrono, SK.goliath, SK.monarch], [{cd:20,dur:4,f:{cd:18,dur:1}}, {cd:11,dur:8,f:{cd:18,dur:4}}, {cd:20,dur:3,f:{cd:18,dur:1.2}}, {cd:13,dur:5,f:{cd:18,dur:1.5}}, {cd:26,dur:1,win:4,f:{cd:18,dur:1,win:0}}])   // the legendary rows are not part of this
+          && ['daily','versus'].every(m => eq([['aegis','sh'],['pleiad','sh'],['kraken','still'],['kraken','arm'],['specter','perf'],['aurora','perf'],['oracle','n'],['oracle','gap'],['solaris','mag'],['solaris','fever'],['tempest','n'],['tempest','inv'],['pulsar','brk']].map(([id, k]) => sv(id, m, k)), Array(13).fill(0))
+            && eq([sv('aegis', m, 'dur'), sv('kraken', m, 'dur'), sv('specter', m, 'dur'), sv('oracle', m, 'dur'), sv('oracle', m, 'win'), sv('solaris', m, 'dur'), sv('aurora', m, 'n'), sv('aurora', m, 'gap'), sv('tempest', m, 'len'), sv('pleiad', m, 'n'), sv('pulsar', m, 'dur'), sv('pulsar', m, 'mul')], [1,2,1.2,3,20,1,1,0,1,1,2,1]))
+          && eq([fx.hold, fx.still, fx.phaseP, fx.laneP, fx.stormN, fx.resoBrk], [false,0,false,false,0,0]) && eq([pk('aegis').shieldStart, pk('aegis').shieldMax, pk('pleiad').shieldStart, pk('pleiad').shieldMax], [1,3,1,2])
+          && eq(['aegis','kraken','specter','oracle','solaris','aurora','tempest','pleiad','pulsar'].map(skN), [4,6,5,6,6,8,5,4,6]) && L.every(l => ['aegis','kraken','specter','oracle','solaris','aurora','tempest','pleiad','pulsar'].every(id => I18N[l]['sd_' + id].includes('{n}')))
+          && tx('sd_aegis', /shield|실드|シールド|护盾/) && tx('sd_pleiad', /shield|실드|シールド|护盾/) && tx('sd_aegis', /1/) && tx('sd_pleiad', /1/) && tx('p_aegis', /1.*3.*40/) && L.every(l => I18N[l].sd_oracle.includes(String(SK.oracle.n)) && I18N[l].sd_pulsar.includes(String(SK.pulsar.mul)) && I18N[l].sd_pulsar.includes(String(SK.pulsar.brk)) && !/2 shields|실드 2개|シールド2枚|2层护盾/.test(I18N[l].p_aegis + I18N[l].p_pleiad))
+          && ['ja','zh'].every(l => ['aurora','tempest','pleiad','pulsar'].every(id => I18N[l]['sd_' + id] !== I18N.en['sd_' + id] && I18N[l]['sk_' + id] !== I18N.en['sk_' + id])); },
       vsRank: () => { const u = ['00000000-0000-4000-8000-00000000000a','00000000-0000-4000-8000-00000000000b','00000000-0000-4000-8000-00000000000c','00000000-0000-4000-8000-00000000000d'], [a, b, c, d] = u;   // server-held ranking: tier table, +50 / -45 / floor, match id, AI = practice
         const rk0 = vs.rk, ai0 = vs.ai; vs.ai = {}; vs.rk = {}; vsRankStart(); const prac = vs.rk === null; vs.ai = ai0; vs.rk = rk0;
         return eq(TIERS, [0,400,1000,2000,3600]) && eq([0,399,400,999,1000,1999,2000,3599,3600,99999].map(tierOf), [0,0,1,1,2,2,3,3,4,4]) && TIER_COL.length === 5 && RP_WIN === 50 && RP_LOSS === 45
