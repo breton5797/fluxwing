@@ -92,6 +92,9 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .abtn:focus-visible{outline:2px solid var(--cool);outline-offset:3px}
 #dashBtn{right:14px}
 #skillBtn{right:102px;--ring:var(--gold)}
+#ultBtn{right:190px;--ring:hsl(300,100%,74%)}   /* third button, ultra units in stage mode only */
+#ultBtn.ready{animation:pulse3 .9s infinite}
+@keyframes pulse3{50%{box-shadow:0 0 44px var(--ring),0 0 0 3px var(--ring)}}
 @keyframes pulse2{50%{box-shadow:0 0 38px var(--ring)}}
 #topBtns{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:8px}
 .ib{position:relative;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:rgba(14,10,30,.55);color:var(--ink);font:700 15px var(--body);cursor:pointer}
@@ -173,6 +176,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .hg-stats{grid-template-columns:auto 1fr auto!important}
 .hg-skill{margin:0;font-size:12.5px;line-height:1.45;color:var(--gold);text-wrap:pretty}
 .hg-skill b{color:var(--ink)}
+.hg-skill.ult{color:hsl(300,100%,82%)}
 #over:not([hidden]) .card{animation:cardIn .5s cubic-bezier(.2,1.5,.4,1) both}
 @keyframes cardIn{from{opacity:0;transform:translateY(40px) scale(.88)}to{opacity:1;transform:none}}
 .rank.stamp{animation:stamp .42s cubic-bezier(.3,1.6,.5,1) both}
@@ -276,6 +280,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     <button class="ib" id="muteBtn" aria-label="Sound">♪</button>
     <button class="ib" id="pauseBtn" aria-label="Pause" hidden>II</button>
   </div>
+  <button class="abtn" id="ultBtn" aria-label="Ultimate" hidden><span>ULT<small id="ultName"></small></span></button>
   <button class="abtn" id="skillBtn" aria-label="Skill" hidden><span>SKILL<small id="skillName"></small></span></button>
   <button class="abtn" id="dashBtn" aria-label="Dash" hidden><span>DASH<small id="dashPct">0%</small></span></button>
   <div id="tip" hidden></div>
@@ -297,7 +302,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="hg-role" id="hgRole"></div>
       <div class="hg-chips" id="hgChips"></div>
       <div class="hg-stats" id="hgStats"></div>
-      <div class="hg-info" id="hgInfo"><p class="hg-skill" id="hgSkill"></p><p class="hg-passive" id="hgPassive"></p></div>
+      <div class="hg-info" id="hgInfo"><p class="hg-skill" id="hgSkill"></p><p class="hg-skill ult" id="hgUlt" hidden></p><p class="hg-passive" id="hgPassive"></p></div>
       <div class="hg-lock" id="hgLock"></div>
       <div class="hg-dots" id="hgDots"></div>
     </div>
@@ -316,6 +321,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <b>TAP · SPACE</b><span data-i18n="flap"></span>
       <b>SHIFT · DASH</b><span data-i18n="dashK"></span>
       <b>S · SKILL</b><span data-i18n="skillLbl"></span>
+      <b>A · ULT</b><span data-i18n="ultK"></span>
       <b>P · ESC</b><span data-i18n="pauseK"></span>
     </div>
   </div>
@@ -362,7 +368,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
   <div class="overlay" id="helpScr" hidden>
     <div class="card helpcard">
       <div class="lbhead"><h2 class="mtitle" data-i18n="help"></h2><button class="ghost" id="helpClose" data-i18n="close"></button></div>
-      <p data-i18n="hControls"></p><p data-i18n="hScore"></p><p data-i18n="hMoney"></p><p data-i18n="hUnits"></p>
+      <p data-i18n="hControls"></p><p data-i18n="hUlt"></p><p data-i18n="hScore"></p><p data-i18n="hMoney"></p><p data-i18n="hUnits"></p>
     </div>
   </div>
 
@@ -673,6 +679,7 @@ ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 �
  r_tempest:'폭풍형', p_tempest:'대시 관통 점수 2배. 대시로 게이트를 부수면 게이지 30% 환급(대시당 1회). 돌풍 반사: 게이지가 3분의 1 이상 차 있으면 게이트에 부딪혀도 죽지 않고 짧은 자동 대시가 나간다(게이지 전부 소모, 게이트 8개를 지나야 재무장).', fx_gust:'돌풍 반사!', sk_tempest:'태풍의 눈', sd_tempest:'게이지를 쓰지 않는 폭풍 대시로 다음 게이트 {n}개를 뚫고, 끝나면 잠깐 무적',
  r_pleiad:'성단형', p_pleiad:'실드 1개로 출발(최대 2개), 게이트 60개마다 1개 재충전. 실드가 깨지면 그 게이트도 부서진다.', sk_pleiad:'궤도 포격', sd_pleiad:'앞 게이트 {n}개를 차례로 부수고 실드 1개 회복',
  r_pulsar:'맥동형', p_pulsar:'퍼펙트마다 +2점, 스킬이 더 빨리 찬다. 피버가 8콤보에서 시작된다. 공명 반향: 게이트 모서리를 얕게 스치면 스킬 충전 34%를 쓰고 튕겨 나온다.', fx_break:'공명 파쇄!', fx_ping:'PING', sk_pulsar:'공명', sd_pulsar:'{n}초간 퍼펙트 점수 3배. 얕은 충돌은 충전 소모 없이 튕겨내고, 깊은 충돌 2번까지 게이트를 깨뜨린다',
+ ultK:'궁극기', ultReady:'궁극기 준비 완료!', hUlt:'궁극기 — 울트라 유닛에는 세 번째 버튼 ULT(A)가 있어요. 게이트를 지날 때마다 게이지가 차고 퍼펙트면 더 빨리 차요. 가득 차면 눌러서 그 유닛의 궁극기를 써요. 스테이지 전용이에요.',
  r_season:'시즌 한정', seaOnly:'시즌 보상 · 대전 시즌 상위 10명', r_monarch:'군주형', p_monarch:'근위대: 실드 1개로 출발(최대 1개). 게이트 25개마다 실드를 되찾는다.', sk_monarch:'대관식', sd_monarch:'{n}초간 무적, 4초간 퍼펙트 판정이 넓어진다'},
 en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', tierRule2:'Narrower gaps · 0.5s haze', tierRule3:'Narrowest gaps · 2s haze · tap within 2s',
  idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/{m}',
@@ -689,6 +696,7 @@ en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', 
  r_tempest:'Stormbreaker', p_tempest:'Dash-through points x2. Smashing a gate with a dash refunds 30% meter (once per dash). Gust Reflex: with the meter at least a third full, hitting a gate fires a short automatic dash instead of a crash (spends the whole meter, re-arms after 8 gates).', fx_gust:'GUST REFLEX!', sk_tempest:'Eye of the Storm', sd_tempest:'A free storm dash through the next {n} gates, then a moment of invincibility',
  r_pleiad:'Star Guard', p_pleiad:'Starts with 1 shield (max 2), recharges 1 every 60 gates. A breaking shield also breaks that gate.', sk_pleiad:'Orbital Barrage', sd_pleiad:'Smashes the next {n} gates one by one and restores 1 shield',
  r_pulsar:'Resonator', p_pulsar:'+2 on every Perfect and faster skill charge. Fever starts at an 8 combo. Echo Ping: a shallow graze on a gate edge bounces you back for 34% skill charge.', fx_break:'RESONANT BREAK!', fx_ping:'PING', sk_pulsar:'Resonance', sd_pulsar:'For {n}s Perfects score x3, grazes bounce off for free and 2 deeper hits shatter the gate',
+ ultK:'Ultimate', ultReady:'ULT READY!', hUlt:'Ultimate — Ultra units have a third button, ULT (A). Its gauge fills with every gate you pass, faster with Perfects; when it is full, press it for that unit’s ultimate. Stage mode only.',
  r_season:'Season', seaOnly:'Season reward · top 10 of a versus season', r_monarch:'Sovereign', p_monarch:'Royal Guard: starts with 1 shield (max 1) and wins it back every 25 gates.', sk_monarch:'Coronation', sd_monarch:'Invincible for {n}s, and the Perfect window stays wide for 4s'},
 ja:{nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0{n}',
  fx_slip:'墨隠れ!', fx_fore:'予感!',
@@ -702,6 +710,7 @@ ja:{nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0
  p_aurora:'コンボが途切れても半分残る。パーフェクト判定が広く、パーフェクトごとに+1点。オーロラヴェール:パーフェクト3回ごとに光の糸を1本紡ぐ(最大3本)。3本そろうとゲートへの衝突を1回防ぎ、次の2ゲートを自分の高さにそろえる。ステージは糸3本がそろった状態で始まる。', fx_veil:'オーロラヴェール!',
  p_tempest:'ダッシュ貫通スコア2倍。ダッシュでゲートを壊すとゲージが30%戻る(1回のダッシュにつき1度)。突風リフレックス:ゲージが3分の1以上あれば、ゲートにぶつかっても死なず短い自動ダッシュが出る(ゲージを全消費、ゲート8個通過で再装填)。', fx_gust:'突風リフレックス!',
  p_pulsar:'パーフェクトごとに+2点、スキルが早く溜まる。フィーバーが8コンボで始まる。エコーピン:ゲートのふちを浅くかすめると、スキルチャージ34%を使って弾き返される。', fx_ping:'PING', fx_break:'共鳴破砕!',
+ ultK:'アルティメット', ultReady:'ULT 発動可能!', hUlt:'アルティメット — ウルトラユニットには3つ目のボタンULT(A)がある。ゲートを通るたびにゲージが溜まり、パーフェクトならさらに速い。満タンで押すとそのユニットのアルティメットが発動。ステージ専用。',
  r_season:'シーズン限定', seaOnly:'シーズン報酬 · 対戦シーズン上位10名', r_monarch:'君主型', p_monarch:'ロイヤルガード:シールド1枚で出発(最大1枚)。ゲート25個ごとにシールドを取り戻す。', sk_monarch:'戴冠式', sd_monarch:'{n}秒間無敵、4秒間パーフェクト判定が広がる'},
 zh:{nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
  fx_slip:'墨隐!', fx_fore:'预感!',
@@ -715,6 +724,7 @@ zh:{nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
  p_aurora:'连击中断时保留一半。完美判定更宽,每次完美+1分。极光帷幕:每完成3次完美织出1根光丝(最多3根)。集齐3根后可抵挡1次撞击关卡,并让后2个关卡对齐到自身高度。每关开局时3根光丝已织好。', fx_veil:'极光帷幕!',
  p_tempest:'冲刺穿越得分翻倍。用冲刺撞碎关卡返还30%能量(每次冲刺1次)。疾风反射:能量达到三分之一以上时,撞上关卡不会死亡,而是自动发动一次短冲刺(耗尽全部能量,再通过8个关卡后重新就绪)。', fx_gust:'疾风反射!',
  p_pulsar:'每次完美+2分,技能充能更快。连击8次即进入狂热。共鸣回响:浅擦关卡边缘时,消耗34%技能充能将你弹回。', fx_ping:'PING', fx_break:'共振破碎!',
+ ultK:'终极技', ultReady:'终极技就绪!', hUlt:'终极技 — 究极机体拥有第三个按钮ULT(A)。每通过一个关卡都会充能,完美通过充得更快;充满后按下即可释放该机体的终极技。仅限关卡模式。',
  r_season:'赛季限定', seaOnly:'赛季奖励 · 对战赛季前10名', r_monarch:'君主型', p_monarch:'王室卫队:开局自带1层护盾(最多1层)。每通过25个关卡恢复护盾。', sk_monarch:'加冕', sd_monarch:'无敌{n}秒,4秒内完美判定放宽'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
@@ -877,7 +887,7 @@ let gates = [], orbs = [], parts = [], pops = [], trail = [];
 let rings = [], ghosts = [], banners = [], scorePunch = 0, popT = -1, squash = 0, tier = 0, newBestShown = false, runBestRef = 0, wasReady = false, ghostT = 0, feverGlow = 0;
 const cam = { z:1, tz:1, fx:180, fy:320 };
 let shields = 0, reviveLeft = 0, orbsGot = 0, runTrial = false, PK = null;
-let lastWarnT = 0, pillBot = 0, banDrop = 0; const hudCache = {d:'', s:'', sl:''};   // pillBot: bottom of the status-pill band this frame (0 = none); banDrop slides big banners below it
+let lastWarnT = 0, pillBot = 0, banDrop = 0; const hudCache = {d:'', s:'', sl:'', u:'', ul:''};   // pillBot: bottom of the status-pill band this frame (0 = none); banDrop slides big banners below it
 let skillCharge = 0, skillWasReady = false, boostT = 0, lowGravT = 0, autoT = 0, cloneT = 0, rushT = 0, foreT = 0, freezeT = 0, potionT = 0, godT = 0, hurtT = 0, danger = 0, contUsed = false;
 let bounceLeft = 0, rewindLeft = 0, perfCount = 0, phaseT = 0, giantT = 0, inkT = 0, guardUsed = false, travel = 0, hist = [], bolts = [];
 let score, gatesPassed, combo, maxCombo, perfects, speed, dashMeter, dashT, invuln, magnetT, slowT, zoneIdx, zoneBanner, deathT, spawnIdx, runDay;
@@ -892,7 +902,11 @@ const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:
   hold:false, still:0,   // KRAKEN skill ink: moving and pulsing gates hold still while it is out; still = seconds the gate clock (gY / gGap read T - still) has been held back so far, so they start again from where they stopped
   phaseP:false, laneP:false,   // SPECTER / AURORA skill: gates passed while ghosting / aligned by the skill count as Perfects (g.sure)
   stormN:0,   // TEMPEST skill: gates the storm chain still has to carry through
-  resoBrk:0 });   // PULSAR skill: resonant breaks left in this Resonance
+  resoBrk:0,   // PULSAR skill: resonant breaks left in this Resonance
+  ult:0, ultRdy:false,   // ultimate gauge 0..1 (kept across a continue, like the rest of this object) and whether its ready notice has been given
+  ultT:0, ultN:0, ultMax:0, ultS:0, ultE:0,   // a running ultimate: seconds left / gates left (ultMax: what it started with), strikes still to fall, its emitter clock
+  ultC:0, ultCM:0, ultA:0,   // its cast sky event (s) and length, and how much of its look is up right now (0..1, eased)
+  ultSlow:0, ultLane:0, carry:false });   // PULSAR: world time scale while its ultimate runs · AURORA: extra gap of its ultimate's lane (laneApply then also drops the ±140 reach) · TEMPEST: the storm chain steers the bird itself
 let FX = newFx(); const TMAX = {};
 
 function reset(){
@@ -961,8 +975,8 @@ let GEM_P = .01;   // gem drop chance per gate (stage mode)
 // AURORA lane: a laned gate sits still at base + off and is laneGap wider; g.base itself never changes, so course layout is untouched
 function laneApply(g){
   if (FX.laneN <= 0) return;
-  const k = FX.laneN === 1 ? .25 : 1, gb = skv('gap'), m = 70 + (g.gap + gb)/2;
-  const c = g.base + Math.max(-140, Math.min(140, FX.laneY - g.base)) * k;
+  const k = FX.laneN === 1 ? .25 : 1, gb = FX.ultLane || skv('gap'), m = 70 + (g.gap + gb)/2;
+  const c = g.base + (FX.ultLane ? FX.laneY - g.base : Math.max(-140, Math.min(140, FX.laneY - g.base))) * k;
   g.off = Math.max(m, Math.min(GROUND - m, c)) - g.base; g.lane = 1; g.laneGap = gb; g.sure = FX.laneP; g.flash = 1; FX.laneN--;
 }
 const gY = g => g.lane ? g.base + g.off : g.base + (g.type === 'move' ? Math.sin((T - FX.still)*1.7 + g.ph) * g.amp : 0);
@@ -1165,6 +1179,7 @@ function dash(){
 cv.addEventListener('pointerdown', e => { e.preventDefault(); flap(); });
 $('dashBtn').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); dash(); });
 $('skillBtn').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); useSkill(); });
+$('ultBtn').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); useUlt(); });
 addEventListener('keydown', e => {
   if (e.repeat) return;
   const tag = e.target && e.target.tagName;
@@ -1174,6 +1189,7 @@ addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){ e.preventDefault(); if (state==='paused') togglePause(); else flap(); }
   else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyD' || e.code === 'KeyE'){ e.preventDefault(); dash(); }
   else if (e.code === 'KeyS' || e.code === 'KeyQ'){ e.preventDefault(); useSkill(); }
+  else if (e.code === 'KeyA' || e.code === 'KeyF'){ e.preventDefault(); useUlt(); }
   else if (e.code === 'KeyP' || e.code === 'Escape'){ togglePause(); }
 });
 $('startBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); SFX.click(); startFromMenu(); });
@@ -1205,8 +1221,8 @@ function startGame(m){
   $('wallet').hidden = true; $('shopScr').hidden = true;
   mode = m; reset(); state = 'play';
   $('menu').hidden = true; $('over').hidden = true; $('pauseScr').hidden = true;
-  $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false;
-  $('skillBtn').style.setProperty('--ring', hsl(B.uiCol || B.col)); hudCache.d = hudCache.s = hudCache.sl = '';
+  $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false; $('ultBtn').hidden = !ultOn();
+  $('skillBtn').style.setProperty('--ring', hsl(B.uiCol || B.col)); hudCache.d = hudCache.s = hudCache.sl = hudCache.u = hudCache.ul = '';
   flap(); banner(t('go'), B.col, .75); SFX.go();
   if (mode === 'endless' && stTier(curStage) === 3) banner(t('idleRule'), [0,100,62], 1.6, false);
 }
@@ -1301,12 +1317,44 @@ function useSkill(){
         if (tier < 2){ tier = 2; guardUsed = false; banner(t('fever').replace('2', PK.feverMul), [300,100,68], 1.4, false); SFX.fever(); }   // small slot: the skill name holds the big one
       }
       break;
-    case 'aurora': FX.laneN = skv('n'); FX.laneY = bird.y; FX.laneP = !!skv('perf'); invuln = Math.max(invuln, .3); for (const g of gates) if (!g.scored && !g.broken) laneApply(g); break;
+    case 'aurora': FX.laneN = Math.max(FX.laneN, skv('n')); FX.laneY = bird.y; FX.laneP = !!skv('perf'); invuln = Math.max(invuln, .3); for (const g of gates) if (!g.scored && !g.broken) laneApply(g); break;
     case 'tempest': dashT = Math.max(dashT, .55 * skv('len')); bird.vy = 0; FX.stormDash = true; FX.stormN = skv('n'); SFX.dash(); break;   // stormN > 0: update holds the dash until that many gates are behind (the storm chain)
     case 'pleiad': FX.strikeN = skv('n'); FX.strikeT = 0; castShield(); break;
     case 'pulsar': FX.resoT = TMAX.reso = skv('dur'); FX.resoMul = skv('mul'); FX.resoBrk = skv('brk'); break;
     case 'monarch': setGod(skv('dur')); if (skv('win')) boostT = TMAX.boost = skv('win'); break;
   }
+}
+/* ---------- ultimates: the third button of the ultra units, stage mode only ---------- */
+// gate / perf: the gauge gains `gate` for every gate passed and `perf` more when the player made it a Perfect (a skill-made one adds nothing extra); nothing is gained while an ultimate runs, so one never pays for the next.
+// inv: seconds invincible at the cast, while the sky event owns the screen. One row per unit: dur (s) or n (gates) plus the effect's own numbers. A unit without a row has no ultimate.
+// Fair modes (daily / versus) have none of this: ultOn() is the one predicate, and with it false there is no button, no gauge and no effect.
+const ULT = { gate:.045, perf:.03, inv:1/*ULT-ROWS*/ };
+// The cast sits one step above TIER_FX.ultra everywhere; its shake still stays under the death shake (18). sky: seconds of FX.ultC for the unit's ultSky
+const ULT_FX = {rings:[1.8,1.4,1,260,120], w:14, flash:1, shake:17, z:1.16, stop:.14, parts:90, sky:1.1, ban:1.6};
+const ultOn = () => !!ULT[B.id] && !fairMode();
+const ultLive = () => FX.ultT > 0 || FX.ultN > 0;
+const ultGain = p => ULT.gate + (p ? ULT.perf : 0);
+function ultFill(p, live){ if (!live && ultOn()) FX.ult = Math.min(1, FX.ult + ultGain(p)); }   // live: an ultimate was running when this gate was scored
+function useUlt(){
+  if (state !== 'play' || !ultOn() || FX.ult < 1) return;
+  FX.ult = 0; const id = B.id, u = ULT[id], c = B.uiCol || B.col, v = ULT_FX, U = UNIT_FX[id] || O0, rc = U.ringCol || [c, [45,100,72]];   // reduced motion: half the rings and particles, the hitstop capped as for a skill
+  v.rings.forEach((r, i, a) => { if (!RM || i < Math.ceil(a.length/2)) ring(bird.x, bird.y, r <= 2 ? r*LW : r, rc[i % rc.length], i ? .55 : .8, i ? (i === a.length-1 ? 4 : 7) : v.w); });
+  for (let i = 0, n = v.parts >> (RM ? 1 : 0); i < n; i++){ const a = i/n*6.283 + Math.random()*.3, sp = 140 + Math.random()*340; part(bird.x, bird.y, Math.cos(a)*sp, Math.sin(a)*sp, .6 + Math.random()*.5, rc[i % rc.length], 3); }
+  flash = Math.max(flash, v.flash); cam.z = Math.max(cam.z, v.z); shake = Math.max(shake, v.shake); haptic('fever'); hitstop = Math.max(hitstop, RM ? .04 : v.stop);
+  FX.ultC = FX.ultCM = v.sky; invuln = Math.max(invuln, ULT.inv); FX.idleT = 0; FX.idleWarn = false;
+  banner(t('ul_' + id), c, v.ban); banners[banners.length - 1].ult = 1;   // the big slot, drawn larger (render)
+  switch (id){/*ULT-CASES*/
+  }
+  { const f = U.ultCast; if (f) f(); } (U.ultSnd || SFX.skill)();
+}
+function ultTick(dt, rdt){   // every frame of play while an ultimate runs: its clock (real seconds when it slows the world, game seconds otherwise) and its own per-frame work
+  const id = B.id, u = ULT[id];
+  if (FX.ultT > 0 && (FX.ultT -= FX.ultSlow ? rdt : dt) <= 0){ ultEnd(); return; }/*ULT-TICKS*/
+}
+function ultEnd(){   // an ultimate is over: its state goes back to nothing; one soft ring and a falling note mark the end
+  if (FX.ultLane){ FX.ultLane = 0; FX.laneN = 1; }   // AURORA: one more gate, eased a quarter of the way, leads back onto the course
+  if (FX.carry){ FX.carry = false; if (ULT.tempest.arm){ dashMeter = 1; FX.gustLock = 0; } }   // TEMPEST: set down with the dash meter full and the gust reflex armed
+  FX.ultT = FX.ultN = FX.ultS = FX.ultSlow = 0; ring(bird.x, bird.y, 220, B.uiCol || B.col, .6, 5); ring(bird.x, bird.y, 110, [0,0,100], .4, 3); tone(660,.4,'sine',.09,-330); haptic('ready');
 }
 // Aura behind each unit. The glow scales with rank; the motif follows the tier's name: common glow → epic sparkles → legendary flames → mythic runes → ultra prism
 function drawAura(c, d, R, tt){
@@ -1371,7 +1419,7 @@ function die(){
   shake = 18; flash = .6; hitstop = .14;
   cam.fx = bird.x; cam.fy = bird.y; cam.tz = 1.32; ring(bird.x, bird.y, LW, [0,100,62], .8, 10); banners = [];
   if (!deathFx(B.id)) for (let i=0;i<46;i++){ const a = Math.random()*6.28, s = 80+Math.random()*360; part(bird.x, bird.y, Math.cos(a)*s, Math.sin(a)*s, .9+Math.random()*.6, Math.random()<.5?pal.a:pal.b, 2+Math.random()*3); }
-  $('dashBtn').hidden = true; $('skillBtn').hidden = true; $('pauseBtn').hidden = true;
+  $('dashBtn').hidden = true; $('skillBtn').hidden = true; $('pauseBtn').hidden = true; $('ultBtn').hidden = true;
 }
 /* ---------- continue (rewarded ad or coins), once per run, stage mode only ---------- */
 let contTimer = 0, contLeft = 0, adTimer = 0;
@@ -1394,7 +1442,7 @@ function closeCont(go){
   contUsed = true; state = 'play'; FX.fogT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; setGod(2.5); hurtT = 0;
   cam.tz = 1; cam.fx = LW/2; cam.fy = LH/2;
   for (const g of gates) if (Math.abs(g.x + g.w/2 - bird.x) < 140) g.broken = true;
-  $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false;
+  $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false; $('ultBtn').hidden = !ultOn();
   banner(t('go'), [45,100,62], .8); SFX.go(); haptic('power'); ring(bird.x, bird.y, LW, [45,100,62], .8, 10);
 }
 $('contAd').addEventListener('click', e => {
@@ -1466,12 +1514,13 @@ function showOver(){
 /* ---------- update ---------- */
 function update(rdt){
   if (hitstop > 0){ hitstop -= rdt; rdt *= .05; }
-  const target = slowT > 0 ? POW.slowScale : 1;
+  const target = Math.min(slowT > 0 ? POW.slowScale : 1, FX.ultSlow || 1);   // PULSAR's ultimate slows the world further than the slow power-up
   timeScale += (target - timeScale) * Math.min(1, rdt*6);
   const dt = rdt * (state === 'dying' ? .35 : timeScale);
   T += dt * (freezeT > 0 && state === 'play' ? .03 : 1); if (FX.hold && state === 'play') FX.still += dt;   // KRAKEN's held gates: their clock falls behind by exactly what T gains (KRAKEN has no time stop)
   shake = Math.max(0, shake - rdt*40); flash = Math.max(0, flash - rdt*1.8); FX.amb = Math.max(0, FX.amb - rdt*12);
   FX.castT = Math.max(0, FX.castT - rdt); FX.sigT = Math.max(0, FX.sigT - rdt); FX.perfT = Math.max(0, FX.perfT - rdt);   // up here so they also run out while dying
+  if (FX.ultC > 0) FX.ultC = Math.max(0, FX.ultC - rdt); { const on = state === 'play' && ultLive() ? 1 : 0; if (on || FX.ultA > 0){ FX.ultA += (on - FX.ultA) * Math.min(1, rdt*6); if (!on && FX.ultA < .01) FX.ultA = 0; } }   // the ultimate's look eases in and out with it
   zoneBanner = Math.max(0, zoneBanner - rdt); banDrop += (Math.max(0, pillBot + 32 - LH*.27) - banDrop) * Math.min(1, rdt*12);
 
   const z = ZONES[zoneIdx], k = Math.min(1, rdt*1.6);
@@ -1520,6 +1569,8 @@ function update(rdt){
   skillCharge = Math.min(1, skillCharge + dt / skillCd());
   if (skillCharge >= 1 && !skillWasReady){ skillWasReady = true; tone(660,.08,'sine',.08); tone(990,.12,'sine',.08,0,.07); haptic('ready'); }
   if (skillCharge < 1) skillWasReady = false;
+  if (FX.ult >= 1 && !FX.ultRdy){ FX.ultRdy = true; pop(t('ultReady'), bird.x + 24, bird.y - 58, RARITY_COL[4], true); tone(523,.1,'triangle',.1); tone(784,.1,'triangle',.1,0,.09); tone(1047,.22,'triangle',.11,0,.18); haptic('ready'); }   // said once, as a line of text over the bird: no bar across the gates
+  if (FX.ult < 1) FX.ultRdy = false; if (ultLive()) ultTick(dt, rdt);
   { const f = ufx(B.id, 'idle'); if (f) f(dt); }   // standing particles: every legendary-and-up unit has its own recipe (selfTest: unitFx)
   if (phaseT > 0) phaseT -= dt; else FX.phaseP = false; if (giantT > 0) giantT -= dt; if (inkT > 0) inkT -= dt; else FX.hold = false;
   for (const bo of bolts) bo.life -= rdt; bolts = bolts.filter(bo => bo.life > 0);
@@ -1538,7 +1589,7 @@ function update(rdt){
 
   const nextG = gates.find(q => !q.scored && q.x + q.w > bird.x - bird.r);
   if (freezeT > 0){ bird.vy *= .85; }
-  else if (autoT > 0 && nextG){ const ty = gY(nextG); bird.vy += ((ty - bird.y) * 5 - bird.vy) * Math.min(1, dt*8); }
+  else if ((autoT > 0 || FX.carry) && nextG){ const ty = gY(nextG); bird.vy += ((ty - bird.y) * 5 - bird.vy) * Math.min(1, dt*8); }
   else if (dashT > 0){ bird.vy *= .85; part(bird.x-10, bird.y+(Math.random()-.5)*14, -300, 0, .3, pal.b, 2.5); }
   else bird.vy += B.grav * (lowGravT > 0 ? .5 : 1) * dt;
   bird.vy = Math.min(bird.vy, B.maxFall * (lowGravT > 0 ? .6 : 1));
@@ -1600,8 +1651,9 @@ function update(rdt){
     }
     if (!g.scored && bird.x - bird.r > g.x + g.w){
       g.scored = true; gatesPassed++; sigFx(B.id, 'pass', g); FX.gustLock = Math.max(0, FX.gustLock - 1); if (!g.slip) FX.inkLock = Math.max(0, FX.inkLock - 1);
-      const sure = g.sure && !g.broken && g.minClear > -5;   // a skill made this gate a Perfect (SPECTER ghosting, AURORA's lane): it scores and builds the combo like one, but charges no skill and weaves no thread (bot runs: with either, the skill feeds itself and the veil)
-      if (FX.stormN > 0){ if (--FX.stormN > 0) sigFx(B.id, 'chain', g); else { dashT = Math.min(dashT, .1); invuln = Math.max(invuln, skv('inv')); sigFx(B.id, 'calm', g); } }   // TEMPEST storm chain: one gate done; after the last the dash ends in a moment of invincibility
+      const live = ultLive(), bang = FX.ultSlow > 0 && FX.ultT > 0, sure = (g.sure || bang) && !g.broken && g.minClear > -5;   // a skill made this gate a Perfect (SPECTER ghosting, AURORA's lane): it scores and builds the combo like one, but charges no skill and weaves no thread (bot runs: with either, the skill feeds itself and the veil)
+      if (FX.stormN > 0){ if (--FX.stormN > 0) sigFx(B.id, 'chain', g); else { dashT = Math.min(dashT, .1); invuln = Math.max(invuln, FX.carry ? ULT.tempest.inv : skv('inv')); sigFx(B.id, 'calm', g); } }   // TEMPEST storm chain: one gate done; after the last the dash ends in a moment of invincibility
+      if (FX.ultN > 0 && (g.ult || FX.carry) && --FX.ultN === 0) ultEnd();   // an ultimate counted in gates: this was one of them
       if (mode === 'endless' && !FX.clearDone && gatesPassed >= stGoal(curStage)){
         FX.clearDone = true; const first = !stg.clr[curStage]; stg.clr[curStage] = 1; stg.open = Math.max(stg.open, Math.min(ST_N-1, curStage+1));
         if (first){ FX.clearCoin = (100 + 10*(curStage+1))*INCOME_X; FX.clearDia = diaClear(curStage); W.coins += FX.clearCoin; W.dia += FX.clearDia; saveW(); }
@@ -1613,7 +1665,7 @@ function update(rdt){
         if (fn && gatesPassed % fn === 0){ FX.fogT = FX.fogDur = tr === 3 ? 2 : .5; FX.amb = Math.min(6, Math.max(FX.amb, tr === 3 ? 6 : 5)); tone(300,.12,'sine',.08); }
       }
       if (g.dashed && !sure){
-        const dp = g.gust ? 1 : 2 * PK.dashPts; addScore(dp); pop(t('phase') + ' +' + dp, bird.x, bird.y-30, pal.b, true);
+        const dp = g.gust ? 1 : 2 * PK.dashPts; addScore(dp); pop(t('phase') + ' +' + dp, bird.x, bird.y-30, pal.b, true); ultFill(0, live);
       } else if (sure || (g.minClear < perfWin() && g.minClear > -5 && !g.pinged)){
         combo++; perfects++; maxCombo = Math.max(maxCombo, combo);
         const nt = combo >= PK.feverAt ? 2 : combo >= Math.min(5, PK.feverAt - 3) ? 1 : 0;
@@ -1622,7 +1674,7 @@ function update(rdt){
           if (nt === 2){ guardUsed = false; banner(t('fever').replace('2', PK.feverMul), [300,100,68], 1.7); SFX.fever(); haptic('fever'); flash = .5; ring(bird.x, bird.y, LW*1.2, [300,100,68], .8, 8); }
           else { banner(t('hot'), [28,100,60], 1.2); SFX.hot(); haptic('combo5'); ring(bird.x, bird.y, LW*.8, [28,100,60], .6, 6); }
         } else haptic('perfect');
-        const pts = (1 + combo + PK.bonus) * (tier === 2 ? PK.feverMul : 1) * (FX.resoT > 0 ? FX.resoMul : 1); addScore(pts);
+        const pts = (1 + combo + PK.bonus) * (tier === 2 ? PK.feverMul : 1) * (FX.resoT > 0 ? FX.resoMul : bang ? ULT.pulsar.mul : 1); addScore(pts); ultFill(!sure, live);
         if (PK.boltEvery && ++perfCount % PK.boltEvery === 0){
           strikeNext();
         }
@@ -1641,7 +1693,7 @@ function update(rdt){
           if (tier === 2) banner(t('feverEnd'), [0,0,78], .9, false);
           combo = PK.comboKeep ? Math.floor(combo * PK.comboKeep) : 0; tier = combo >= Math.min(5, PK.feverAt - 3) ? 1 : 0; addScore(1); SFX.pass(); if (combo > 0) sigFx(B.id, 'keep', g);
         }
-        dashMeter = Math.min(1, dashMeter + .08*B.dash);
+        dashMeter = Math.min(1, dashMeter + .08*B.dash); ultFill(0, live);
       }
       if (PK.shieldRegen && gatesPassed % PK.shieldRegen === 0 && shields < PK.shieldMax){ shields++; popT = 0; ring(bird.x, bird.y, 120, [190,100,70], .5, 5); pop(t('shieldP') + ' +1', bird.x, bird.y-34, [190,100,70], true); haptic('power'); SFX.power(); sigFx(B.id, 'regen', g); }
       // passive ink and passive ghosting never cut a longer skill effect short, and ink that is already out does not swell in again
@@ -1667,7 +1719,7 @@ function update(rdt){
   }
   if (danger > .55 && T - lastWarnT > .6){ lastWarnT = T; tone(880, .06, 'square', .05); tone(660, .08, 'square', .05, 0, .07); }
   for (const o of orbs){
-    o.x -= vx*dt; o.t += dt;
+    o.x -= vx*dt; o.t += dt; if (o.vy) o.y += o.vy*dt;   // vy: a coin of SOLARIS's rain, falling
     if (o.gate) { o.x = o.gate.x + o.gate.w/2; o.y = gY(o.gate); }
     if (o.got) continue;
     const dx = bird.x - o.x, dy = bird.y - o.y, d = Math.hypot(dx,dy);
@@ -1745,7 +1797,7 @@ function render(){
 
   if (state === 'menu') drawFlock(1/60);
   for (const g of gates) drawGate(g);
-  if (state === 'play'){ const f = ufx(B.id, 'marks'); if (f) f(); }   // unit judgment marks: the only unit art allowed on top of the gates
+  if (state === 'play'){ const f = ufx(B.id, 'marks'); if (f) f(); if (ultLive()){ const m = ufx(B.id, 'ultMarks'); if (m) m(); } }   // unit judgment marks: the only unit art allowed on top of the gates
   for (const bo of bolts){
     if (bo.kind === 'beam'){   // straight ray x0,y0 → x,y (width bo.w, narrowing as it fades) with a four-point burst where it lands; no shadowBlur
       const q = bo.life/bo.max, wd = 2 + (bo.w - 2)*q, dx = bo.x - bo.x0, dy = bo.y - bo.y0, L = Math.hypot(dx, dy) || 1, nx = -dy/L*wd/2, ny = dx/L*wd/2, R = 60*(1 - q*.6)*Math.min(1, bo.w/14 + .3);
@@ -1852,6 +1904,10 @@ function render(){
     const e = k < inT ? 1 - Math.pow(1 - k/inT, 3) : k > 1 - outT ? 1 - (k - (1-outT))/outT : 1;
     const x = k < inT ? LW/2 + (1-e)*LW : k > 1 - outT ? LW/2 - (1-e)*LW*.6 : LW/2, y = b.big ? LH*.27 + banDrop : LH*.5;
     ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, e*1.2)); ctx.translate(x, y); ctx.transform(1,0,-.18,1,0,0);
+    if (b.ult){   // an ultimate's name: a taller bar, 36px letters squeezed to the screen's width if they must be, a caption over them
+      ctx.fillStyle = 'rgba(7,5,15,.55)'; ctx.fillRect(-LW, -38, LW*2, 66); ctx.fillStyle = hsl(b.col); ctx.fillRect(-LW, -38, LW*2, 3); ctx.fillRect(-LW, 25, LW*2, 3);
+      ctx.textAlign = 'center'; ctx.font = `700 10px "Chakra Petch", ${SYS}`; ctx.fillStyle = hsl(b.col, 1, 16); ctx.fillText('U L T I M A T E', 0, -22);
+      ctx.font = `36px Bungee, ${SYS}`; ctx.shadowColor = hsl(b.col); ctx.shadowBlur = 20; ctx.fillStyle = '#fff'; ctx.fillText(b.text, 0, 14, LW - 30); ctx.restore(); continue; }
     ctx.fillStyle = 'rgba(7,5,15,.55)'; ctx.fillRect(-LW, -26, LW*2, 44);
     ctx.fillStyle = hsl(b.col); ctx.fillRect(-LW, -26, LW*2, 2); ctx.fillRect(-LW, 16, LW*2, 2);
     ctx.font = `${b.big ? 28 : 18}px Bungee, ${SYS}`; ctx.textAlign = 'center'; ctx.shadowColor = hsl(b.col); ctx.shadowBlur = 20;
@@ -2405,6 +2461,10 @@ function drawBird(){
                     · 'crash' a dash broke gate g · 'refund' part of the dash came back · 'keep' a miss cut the combo but some of it stayed.  'gust' TEMPEST's reflex dash fired at gate g · 'thread' AURORA wove a thread · 'veil' its veil took the hit at gate g · 'ping' PULSAR's echo bounced it off gate g's edge · 'slip' KRAKEN's ink cloak dissolved gate g · 'fore' ORACLE's premonition shattered gate g · 'break' PULSAR's resonant break shattered gate g · 'chain' TEMPEST's storm chain passed gate g and goes on · 'calm' it passed its last gate. 'regen' also fires when a cast restores a shield (no g).
                     Legendary rows time their cast shape with FX.castT themselves (their tier has no sky event)
    idle(dt)         update, play only: the unit's standing particles; keep it ≤ 20 a second. Every legendary-and-up unit has one (an empty one for a unit without particles)
+   ultSky(k, e, on) render, BEFORE the gates, right after sky(): the unit's ultimate. k = 1 → 0 across its cast (ULT_FX.sky seconds; 0 = no cast running), e = seconds since the cast, on = 0..1 how much of its running look is up (eased in and out).
+                    Same limits as sky(): no shadowBlur, at most 2 gradients a frame together with sky(), no fill or stroke over .45 alpha; with RM nothing moves
+   ultMarks()       render, after the gates and marks(), play only, while the ultimate runs: what it does to the gates, nothing decorative
+   ultCast() ultSnd()  useUlt, after the shared rings and particles; ultSnd replaces SFX.skill.   ultHit(g)  PLEIAD: a meteor broke gate g
    trail()          render: replaces the shared trail.   strike(x, y)  strikeNext: the unit's ray and sound.   feverHue: fixed hue for the fever border */
 const ufx = (id, k) => (UNIT_FX[id] || O0)[k];
 const emit = (rate, dt) => Math.random() < rate * dt * (RM ? .5 : 1);   // particle spawn roll; reduced motion halves every standing rate
@@ -2831,6 +2891,7 @@ function skyEvent(){
     ctx.fillStyle = g; ctx.fillRect(-20,-20,LW+40,LH+40);
   }
   if (U.sky) U.sky(k, FX.castMax - FX.castT);
+  if (U.ultSky && (FX.ultC > 0 || FX.ultA > 0)) U.ultSky(FX.ultC > 0 ? FX.ultC / FX.ultCM : 0, FX.ultCM - FX.ultC, FX.ultA);
 }
 
 /* ---------- hangar ---------- */
@@ -2859,6 +2920,7 @@ function renderHangar(){
     const chip = (ic, txt) => { const p = document.createElement('span'); p.className = 'wpill'; if (ic){ const i = document.createElement('i'); i.className = 'ic ' + ic; p.appendChild(i); } p.appendChild(document.createTextNode(txt)); hc.appendChild(p); };
     if (B.coinMul > 1) chip('coin', '×' + B.coinMul); if (B.xpMul > 1) chip('', 'XP ×' + B.xpMul); if (B.gemMul > 1) chip('gem', '×' + B.gemMul); }
   { const hs = $('hgSkill'); hs.textContent = ''; const b1 = document.createElement('b'); b1.textContent = `SKILL · ${t('sk_' + B.id)}`; hs.append(b1, document.createTextNode(` — ${t('sd_' + B.id, {n: skN(B.id)})} (${SK[B.id].cd}s)`)); }
+  { const hu = $('hgUlt'), u = ULT[B.id]; hu.hidden = !u; hu.textContent = ''; if (u){ const b1 = document.createElement('b'); b1.textContent = `ULT · ${t('ul_' + B.id)}`; hu.append(b1, document.createTextNode(` — ${t('ud_' + B.id, {n: u.dur ?? u.n})}`)); } }
   $('hgPassive').textContent = t('p_' + B.id) + (B.rarity ? ' ' + t('fairNote') + '.' : '');
   const st = $('hgStats'); st.textContent = '';
   B.stats.forEach((v, j) => {
@@ -3011,10 +3073,11 @@ function drawHUD(){
   ctx.textAlign = 'left'; ctx.font = `700 11px "Chakra Petch", ${SYS}`;
   if (mode === 'daily'){ ctx.fillStyle = 'rgba(79,240,255,.85)'; ctx.fillText(t('daily') + ' · ' + fmtDay(runDay), 16, LH - 30); }
   else if (mode === 'endless'){ ctx.fillStyle = hsl(pal.b, .85); ctx.fillText(t('stage', {n: curStage + 1}) + ' · ' + ZONES[stTier(curStage)].name + ' · ' + Math.min(gatesPassed, stGoal(curStage)) + '/' + stGoal(curStage), 16, LH - 30); }
-  if (runTrial){ ctx.fillStyle = 'hsla(45,100%,60%,.9)'; ctx.fillText(t('trialRun') + ' · ' + B.name, 16, LH - 46); }
+  if (runTrial){ ctx.fillStyle = 'hsla(45,100%,60%,.9)'; ctx.fillText(t('trialRun') + ' · ' + B.name, 16, ultOn() ? 44 + 14 : LH - 46); }   // with three buttons the bottom row is taken: the trial line moves under the hearts
   // Status pills: collected first, then drawn as centred rows in their own band under the score block (clear of score, combo, best bar, hearts and the top buttons)
   const pills = [], ind = (label, tv, max, c) => pills.push([label, Math.max(0, Math.min(1, tv/max)), c]);
-  if (godT > potionT + .05) ind(/^(titan|aegis|phoenix|solaris)$/.test(B.id) ? t('sk_' + B.id) : t('potionP'), godT, TMAX.god, [45,100,58]);
+  if (ultLive()) ind(t('ul_' + B.id), FX.ultT > 0 ? FX.ultT : FX.ultN, FX.ultMax, RARITY_COL[4]);
+  if (godT > potionT + .05 && !(FX.ultT > 0 && B.id === 'solaris')) ind(/^(titan|aegis|phoenix|solaris)$/.test(B.id) ? t('sk_' + B.id) : t('potionP'), godT, TMAX.god, [45,100,58]);
   if (potionT > 0) ind(t('potionP'), potionT, TMAX.potion, [320,100,66]);
   if (boostT > 0 || foreT > 0 || lowGravT > 0 || autoT > 0 || rushT > 0 || freezeT > 0 || FX.resoT > 0) ind(t('sk_' + B.id), Math.max(boostT/(TMAX.boost||1), foreT/(TMAX.fore||1), lowGravT/(TMAX.glide||1), autoT/(TMAX.auto||1), rushT/(TMAX.rush||1), freezeT/(TMAX.freeze||1), FX.resoT/(TMAX.reso||1)), 1, B.uiCol || B.col);
   if (rewindLeft > 0) ind('⟲ x' + rewindLeft, rewindLeft, PK.rewind, [40,90,62]);
@@ -3044,6 +3107,9 @@ function drawHUD(){
   { const ps = skillCharge.toFixed(2), lbl = skillCharge >= 1 ? t('sk_' + B.id) : Math.ceil((1 - skillCharge) * skillCd()) + 's';
     if (ps !== hudCache.s){ hudCache.s = ps; const el = $('skillBtn'); el.style.setProperty('--p', ps); el.classList.toggle('ready', skillCharge >= 1); }
     if (lbl !== hudCache.sl){ hudCache.sl = lbl; $('skillName').textContent = lbl; } }
+  if (ultOn()){ const pu = FX.ult.toFixed(2), lbl = FX.ult >= 1 ? t('ul_' + B.id) : Math.floor(FX.ult*100) + '%';   // the ultimate's gauge: the ring closes, then the button pulses and carries the ultimate's name
+    if (pu !== hudCache.u){ hudCache.u = pu; const el = $('ultBtn'); el.style.setProperty('--p', pu); el.classList.toggle('ready', FX.ult >= 1); }
+    if (lbl !== hudCache.ul){ hudCache.ul = lbl; $('ultName').textContent = lbl; } }
 }
 function roundRect(x,y,w,h,r){ w = Math.max(w, 0); r = Math.min(r, w/2, h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
@@ -3976,11 +4042,11 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
+if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
-  get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot}; },
+  get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot, ultCharge: FX.ult, ultLive: ultLive()}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots
-  TIER_FX, UNIT_ART, UNIT_FX, unitTier, cast(){ skillCharge = 1; useSkill(); }, kill(){ die(); }, sig(k){ sigFx(B.id, k, gates.find(g => !g.scored)); }, dbg: {render, drawBird, drawShape, skyEvent},   // QA only: fire a cast / death / passive moment, count draws
+  TIER_FX, UNIT_ART, UNIT_FX, unitTier, cast(){ skillCharge = 1; useSkill(); }, ult(){ if (ultOn()){ FX.ult = 1; useUlt(); } }, kill(){ die(); }, sig(k){ sigFx(B.id, k, gates.find(g => !g.scored)); }, dbg: {render, drawBird, drawShape, skyEvent},   // QA only: fire a cast / death / passive moment, count draws
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter, lowGravT, inkT}; },   // QA only: timers a player reads off the screen (lowGravT: the bot's flight model follows NIMBUS's glide; inkT: KRAKEN's ink cloak log)
   get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
   hold: false, step(dt, n){ for (let i = 0; i < (n || 1); i++) update(dt); },
@@ -4026,6 +4092,16 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
           && eq(['aegis','kraken','specter','oracle','solaris','aurora','tempest','pleiad','pulsar'].map(skN), [4,6,5,6,6,8,5,4,6]) && L.every(l => ['aegis','kraken','specter','oracle','solaris','aurora','tempest','pleiad','pulsar'].every(id => I18N[l]['sd_' + id].includes('{n}')))
           && tx('sd_aegis', /shield|실드|シールド|护盾/) && tx('sd_pleiad', /shield|실드|シールド|护盾/) && tx('sd_aegis', /1/) && tx('sd_pleiad', /1/) && tx('p_aegis', /1.*3.*40/) && L.every(l => I18N[l].sd_oracle.includes(String(SK.oracle.n)) && I18N[l].sd_pulsar.includes(String(SK.pulsar.mul)) && I18N[l].sd_pulsar.includes(String(SK.pulsar.brk)) && !/2 shields|실드 2개|シールド2枚|2层护盾/.test(I18N[l].p_aegis + I18N[l].p_pleiad))
           && ['ja','zh'].every(l => ['aurora','tempest','pleiad','pulsar'].every(id => I18N[l]['sd_' + id] !== I18N.en['sd_' + id] && I18N[l]['sk_' + id] !== I18N.en['sk_' + id])); },
+      ult: () => { const at = (id, m, f) => { const b0 = B, m0 = mode, f0 = FX; B = birdById(id); mode = m; FX = newFx(); const v = f(); B = b0; mode = m0; FX = f0; return v; }, U5 = BIRDS.filter(b => b.rarity === 4).map(b => b.id), rows = Object.keys(ULT).filter(k => typeof ULT[k] === 'object'), fx = newFx(), L = ['ko','en','ja','zh'];   // ultimates: rows for ultra units only, nothing in either fair mode, the gauge rule, per-run state, the cast above the ultra skill cast, texts
+        const fill = (id, m, p, live) => at(id, m, () => { ultFill(p, live); return FX.ult; });
+        return rows.every(id => U5.includes(id) && (ULT[id].dur > 0 || ULT[id].n > 0) && at(id, 'endless', ultOn) && !at(id, 'daily', ultOn) && !at(id, 'versus', ultOn) && ['ultSky','ultMarks','ultCast','ultSnd'].every(k => typeof UNIT_FX[id][k] === 'function')
+            && eq([fill(id, 'endless', 0), fill(id, 'endless', 1), fill(id, 'endless', 1, true), fill(id, 'daily', 1), fill(id, 'versus', 1)], [ULT.gate, ULT.gate + ULT.perf, 0, 0, 0])
+            && L.every(l => I18N[l]['ul_' + id] && I18N[l]['ud_' + id].includes('{n}') && (l === 'en' || (I18N[l]['ul_' + id] !== I18N.en['ul_' + id] && I18N[l]['ud_' + id] !== I18N.en['ud_' + id]))))
+          && BIRDS.every(b => rows.includes(b.id) || ['endless','daily','versus'].every(m => !at(b.id, m, ultOn) && fill(b.id, m, 1) === 0))/*ULT-TEST*/
+          && eq([ULT.gate, ULT.perf, ULT.inv], [.045,.03,1]) && eq([Math.ceil(1/ultGain(0)), Math.ceil(1/ultGain(1))], [23,14])   // gates to fill it: no Perfects / all Perfects
+          && eq([fx.ult, fx.ultRdy, fx.ultT, fx.ultN, fx.ultMax, fx.ultS, fx.ultE, fx.ultC, fx.ultCM, fx.ultA, fx.ultSlow, fx.ultLane, fx.carry], [0,false,0,0,0,0,0,0,0,0,0,0,false])
+          && ULT_FX.shake < 18 && ['flash','shake','z','stop','parts','sky','ban','w'].every(k => ULT_FX[k] > TIER_FX.ultra[k]) && ULT_FX.rings.length > TIER_FX.ultra.rings.length && ULT_FX.rings[0] > TIER_FX.ultra.rings[0]
+          && $('ultBtn') && $('ultName') && $('hgUlt') && L.every(l => ['ultK','ultReady','hUlt'].every(k => I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && /ULT/.test(I18N[l].hUlt) && /A/.test(I18N[l].hUlt)); },
       vsRank: () => { const u = ['00000000-0000-4000-8000-00000000000a','00000000-0000-4000-8000-00000000000b','00000000-0000-4000-8000-00000000000c','00000000-0000-4000-8000-00000000000d'], [a, b, c, d] = u;   // server-held ranking: tier table, +50 / -45 / floor, match id, AI = practice
         const rk0 = vs.rk, ai0 = vs.ai; vs.ai = {}; vs.rk = {}; vsRankStart(); const prac = vs.rk === null; vs.ai = ai0; vs.rk = rk0;
         return eq(TIERS, [0,400,1000,2000,3600]) && eq([0,399,400,999,1000,1999,2000,3599,3600,99999].map(tierOf), [0,0,1,1,2,2,3,3,4,4]) && TIER_COL.length === 5 && RP_WIN === 50 && RP_LOSS === 45
