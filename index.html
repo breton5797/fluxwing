@@ -1326,14 +1326,14 @@ function useSkill(){
 }
 /* ---------- ultimates: the third button of the ultra units, stage mode only ---------- */
 // gate / perf: the gauge gains `gate` for every gate passed and `perf` more when the player made it a Perfect (a skill-made one adds nothing extra); nothing is gained while an ultimate runs, so one never pays for the next.
-// start: what a run begins with (a continue keeps what there is). inv: seconds invincible at the cast, while the sky event owns the screen. One row per unit: dur (s) or n (gates) plus the effect's own numbers. A unit without a row has no ultimate.
+// start: what a run begins with (a continue keeps what there is). inv: seconds invincible at the cast, while the sky event owns the screen. One row per ultra unit: dur (s) or n (gates) plus the effect's own numbers. A unit without a row has no ultimate (selfTest: the rows are exactly the five ultras).
 // Fair modes (daily / versus) have none of this: ultOn() is the one predicate, and with it false there is no button, no gauge and no effect.
 const ULT = { gate:.045, perf:.03, start:.33, inv:1,
   solaris:{dur:8, god:3.5, coin:.14},
   aurora:{dur:6, gap:70, out:3},
   tempest:{n:7, inv:1.5, arm:1},
   pleiad:{n:6, rate:.75},
-  pulsar:{dur:9, slow:.55, mul:3}/*ULT-ROWS*/ };
+  pulsar:{dur:9, slow:.55, mul:3} };
 // The cast sits one step above TIER_FX.ultra everywhere; its shake still stays under the death shake (18). sky: seconds of FX.ultC for the unit's ultSky
 const ULT_FX = {rings:[1.8,1.4,1,260,120], w:14, flash:1, shake:17, z:1.16, stop:.14, parts:90, sky:1.1, ban:1.6};
 const ultOn = () => !!ULT[B.id] && !fairMode();
@@ -1359,7 +1359,7 @@ function useUlt(){
     case 'pleiad':   // Meteor Shower: the next u.n gates are broken by falling stars (ultTick, as each comes onto the screen); no shield comes with it (bot runs: one more shield a cast put stage 50 over both caps)
       FX.ultS = FX.ultN = FX.ultMax = u.n; FX.ultE = 0; break;
     case 'pulsar':   // Big Bang: for u.dur real seconds the world runs at u.slow (update's time scale) and every gate passed is a Perfect worth u.mul times (the scoring block reads FX.ultSlow)
-      FX.ultSlow = u.slow; FX.ultT = FX.ultMax = u.dur; break;/*ULT-CASES*/
+      FX.ultSlow = u.slow; FX.ultT = FX.ultMax = u.dur; break;
   }
   { const f = U.ultCast; if (f) f(); } (U.ultSnd || SFX.skill)();
 }
@@ -1369,7 +1369,7 @@ function ultTick(dt, rdt){   // every frame of play while an ultimate runs: its 
   if (id === 'solaris'){ if ((FX.ultE -= dt) <= 0){ FX.ultE = u.coin; orbs.push({x: bird.x + 170 + Math.random()*170, y:-12, k:'orb', got:false, t:Math.random()*6, vy:380}); }   // the rain: one coin every u.coin seconds, dropped ahead so it meets the bird's column on the way down
     for (const g of gates) if (g.ult && !g.scored && emit(12, dt)){ const cy = gY(g), gp = gGap(g), up = Math.random() < .5; part(g.x + Math.random()*g.w, up ? cy - gp/2 - Math.random()*140 : cy + gp/2 + Math.random()*140, -20, -60 - Math.random()*80, .7, [20 + Math.random()*30,100,60], 3); } }   // embers off the burnt gates
   if (FX.ultS > 0 && (FX.ultE -= rdt) <= 0){ const tg = gates.find(q => !q.scored && !q.broken && q.x + q.w/2 < LW - 4 && q.x + q.w > bird.x - bird.r);   // PLEIAD: one meteor every .09s onto the next whole gate on screen, the one the bird is in included
-    if (tg){ tg.broken = true; tg.ult = 1; tg.flash = 1; FX.ultS--; FX.ultE = .09; shake = Math.max(shake, 8); haptic('shatter'); const f = ufx(id, 'ultHit'); if (f) f(tg); } }/*ULT-TICKS*/
+    if (tg){ tg.broken = true; tg.ult = 1; tg.flash = 1; FX.ultS--; FX.ultE = .09; shake = Math.max(shake, 8); haptic('shatter'); const f = ufx(id, 'ultHit'); if (f) f(tg); } }
 }
 function ultEnd(){   // an ultimate is over: its state goes back to nothing; one soft ring and a falling note mark the end
   if (FX.ultLane){ FX.ultOut = ULT.aurora.out; FX.laneN = FX.ultOut; }   // AURORA: the lane does not stop at a wall — the next `out` gates step back toward their own places (3/4, 1/2, 1/4 of the way), still wide and still Perfects
@@ -3175,7 +3175,7 @@ function drawHUD(){
   // Status pills: collected first, then drawn as centred rows in their own band under the score block (clear of score, combo, best bar, hearts and the top buttons)
   const pills = [], ind = (label, tv, max, c) => pills.push([label, Math.max(0, Math.min(1, tv/max)), c]);
   if (ultLive()) ind(t('ul_' + B.id), FX.ultT > 0 ? FX.ultT : FX.ultN, FX.ultMax, RARITY_COL[4]);
-  if (godT > potionT + .05 && !(FX.ultT > 0 && B.id === 'solaris')) ind(/^(titan|aegis|phoenix|solaris)$/.test(B.id) ? t('sk_' + B.id) : t('potionP'), godT, TMAX.god, [45,100,58]);
+  if (godT > potionT + .05) ind(/^(titan|aegis|phoenix|solaris)$/.test(B.id) && !(FX.ultT > 0) ? t('sk_' + B.id) : t('potionP'), godT, TMAX.god, [45,100,58]);
   if (potionT > 0) ind(t('potionP'), potionT, TMAX.potion, [320,100,66]);
   if (boostT > 0 || foreT > 0 || lowGravT > 0 || autoT > 0 || rushT > 0 || freezeT > 0 || FX.resoT > 0) ind(t('sk_' + B.id), Math.max(boostT/(TMAX.boost||1), foreT/(TMAX.fore||1), lowGravT/(TMAX.glide||1), autoT/(TMAX.auto||1), rushT/(TMAX.rush||1), freezeT/(TMAX.freeze||1), FX.resoT/(TMAX.reso||1)), 1, B.uiCol || B.col);
   if (rewindLeft > 0) ind('⟲ x' + rewindLeft, rewindLeft, PK.rewind, [40,90,62]);
@@ -4195,7 +4195,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
         return rows.every(id => U5.includes(id) && (ULT[id].dur > 0 || ULT[id].n > 0) && at(id, 'endless', ultOn) && !at(id, 'daily', ultOn) && !at(id, 'versus', ultOn) && ['ultSky','ultMarks','ultCast','ultSnd'].every(k => typeof UNIT_FX[id][k] === 'function')
             && eq([fill(id, 'endless', 0), fill(id, 'endless', 1), fill(id, 'endless', 1, true), fill(id, 'daily', 1), fill(id, 'versus', 1)], [ULT.gate, ULT.gate + ULT.perf, 0, 0, 0].map(x => x*(ULT[id].rate || 1)))
             && L.every(l => I18N[l]['ul_' + id] && I18N[l]['ud_' + id].includes('{n}') && (l === 'en' || (I18N[l]['ul_' + id] !== I18N.en['ul_' + id] && I18N[l]['ud_' + id] !== I18N.en['ud_' + id]))))
-          && BIRDS.every(b => rows.includes(b.id) || ['endless','daily','versus'].every(m => !at(b.id, m, ultOn) && fill(b.id, m, 1) === 0))/*ULT-TEST*/
+          && BIRDS.every(b => rows.includes(b.id) || ['endless','daily','versus'].every(m => !at(b.id, m, ultOn) && fill(b.id, m, 1) === 0)) && eq([...rows].sort(), [...U5].sort())
           && eq([ULT.gate, ULT.perf, ULT.start, ULT.inv], [.045,.03,.33,1]) && eq([Math.ceil((1 - ULT.start)/ULT.gate), Math.ceil((1 - ULT.start)/(ULT.gate + ULT.perf)), Math.ceil(1/ULT.gate), Math.ceil(1/(ULT.gate + ULT.perf))], [15,9,23,14])   // gates to fill it, first time and after a use: no Perfects / all Perfects
           && eq([fx.ult, fx.ultRdy, fx.ultT, fx.ultN, fx.ultMax, fx.ultS, fx.ultE, fx.ultC, fx.ultCM, fx.ultA, fx.ultSlow, fx.ultLane, fx.ultOut, fx.carry], [0,false,0,0,0,0,0,0,0,0,0,0,0,false])
           && ULT_FX.shake < 18 && ['flash','shake','z','stop','parts','sky','ban','w'].every(k => ULT_FX[k] > TIER_FX.ultra[k]) && ULT_FX.rings.length > TIER_FX.ultra.rings.length && ULT_FX.rings[0] > TIER_FX.ultra.rings[0]
