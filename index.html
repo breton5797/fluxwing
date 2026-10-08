@@ -3108,7 +3108,8 @@ function unlockBird(b){
   if (shortOf(p).length) return toast(t('needMore') + ' · ' + costList(p, ' · ', k => miss[k] || 0));
   confirmDlg(t('confirmUnlock', {u:b.name, list: costList(p, ' + ')}), () => { if (isOwned(b) || shortOf(p).length) return; CUR.forEach(([k, w]) => { W[w] -= p[k]; }); owned.add(b.id); saveW(); celebrate(b); });
 }
-const SHOP_ON = false;
+let SHOP_ON = false;   // closed for players. It opens only on a link that carries the owner's key (?shop=<key>): this file holds the key's SHA-256, never the key
+const SHOP_KEY = '2309ffe9bca98431cee391101e958ad34effe868490c6256a0061d42ab8a25d8';
 // 재가격 필요: SHOP_ON = true 전에 3재화 경제(유닛 = 코인 + 다이아몬드 + 젬 동시 지불, 젬 15/25/40/100) 기준으로 젬 팩·패스·스타터 수량을 다시 정할 것.
 // 아래 수량은 옛 60젬 경제 그대로이고, passDesc/starterDesc 문구(옛 '크레딧' 표기 포함)와 다이아몬드 상품 여부도 그때 함께 정리한다.
 // buy()는 W.gems / W.coins에 정수만 더하므로 dia가 추가된 지갑에서도 NaN이나 예외가 나지 않는다.
@@ -3135,6 +3136,8 @@ function renderShop(){
 function openShop(){ renderShop(); $('shopScr').hidden = false; lbOpen = true; }
 function closeShop(){ $('shopScr').hidden = true; lbOpen = !$('lbScr').hidden; }
 $('shopBtn').hidden = !SHOP_ON;
+{ const k = new URLSearchParams(location.search).get('shop');   // the owner's link: the shop opens once the key's digest matches; no key, a wrong key or no Web Crypto leaves it closed
+  if (k && window.crypto && crypto.subtle) crypto.subtle.digest('SHA-256', new TextEncoder().encode(k)).then(d => { if ([...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('') === SHOP_KEY){ SHOP_ON = true; $('shopBtn').hidden = false; } }, () => {}); }
 $('shopBtn').addEventListener('click', e => { if (!SHOP_ON) return; e.stopPropagation(); openShop(); });
 $('wGemBtn').addEventListener('click', e => { if (!SHOP_ON) return; e.stopPropagation(); openShop(); });
 $('shopClose').addEventListener('click', closeShop);
