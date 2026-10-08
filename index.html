@@ -335,7 +335,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     <div class="card">
       <div class="modetag" id="oMode"></div>
       <div class="trialtag" id="oTrial" hidden></div>
-      <div class="over-title" id="oTitle" data-i18n="over"></div>
+      <div class="over-title" id="oTitle" hidden></div>
       <div class="big" id="oScore">0</div>
       <div class="rank" id="oRank"></div>
       <div class="newbest" id="oNew" data-i18n="newBest" hidden></div>
@@ -1496,7 +1496,7 @@ function showOver(){
   $('oGates').textContent = gatesPassed; $('oPerf').textContent = perfects; $('oCombo').textContent = maxCombo;
   const rank = score >= 150 ? 'S' : score >= 80 ? 'A' : score >= 35 ? 'B' : 'C';
   $('oRank').textContent = t('rank') + ' ' + rank;
-  $('oPlace').textContent = ''; $('oTeams').hidden = true; $('oTitle').textContent = t('over'); $('oTitle').style.color = '';
+  $('oPlace').textContent = ''; $('oTeams').hidden = true; $('oTitle').textContent = ''; $('oTitle').hidden = true; $('oTitle').style.color = '';   // no title on a normal result card (the old "SIGNAL LOST" read like a network error); versus fills and shows it
   $('over').hidden = false; vsFillOver(); if (mode === 'versus') vsResolve();
   if (mode !== 'versus') submitScore(score, gatesPassed, mode, runDay);
   // rewards
@@ -4069,7 +4069,7 @@ function vsFinish(res, forfeit){
 }
 function vsFillOver(){
   if (mode !== 'versus') return;
-  const ttl = $('oTitle'); if (!ttl) return;
+  const ttl = $('oTitle'); if (!ttl) return; ttl.hidden = false;
   const [a, b] = vsSides(), duo = vs.sz === 2;
   if (vs.result){
     ttl.textContent = vs.result === 'win' ? t('youWin') : vs.result === 'lose' ? t('youLose') : t('drawR');
