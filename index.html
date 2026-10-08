@@ -1285,6 +1285,7 @@ function summonPowers(){
 function castShield(){ if (!skv('sh') || shields >= PK.shieldMax) return; shields++; popT = 0; pop(t('shieldP') + ' +1', bird.x, bird.y - 34, [190,100,70], true); sigFx(B.id, 'regen'); }   // AEGIS / PLEIAD: the cast gives one shield back, up to the unit's maximum (stage mode only)
 function useSkill(){
   if (state !== 'play' || skillCharge < 1) return;
+  if (ultLive() || FX.ultOut) return;   // not while an ultimate runs (or AURORA's lane steps back): the skill would cut Hurricane's chain short or re-anchor Polar Night's lane; the charge is kept
   skillCharge = 0; const id = B.id, c = B.uiCol || B.col, fxv = TIER_FX[unitTier(B)], U = UNIT_FX[id] || O0, rc = U.ringCol || [c, [45,100,72]], cut = RM && fxv.stop > 0;   // reduced motion (legendary and up): half the rings and particles
   (U.rings || fxv.rings).forEach((v, i, a) => { if (!cut || i < Math.ceil(a.length/2)) ring(bird.x, bird.y, v <= 2 ? v*LW : v, rc[i % rc.length], i ? .45 : .6, i ? (i === a.length-1 ? 4 : 6) : fxv.w); });
   for (let i = 0, n = fxv.parts >> (cut ? 1 : 0); i < n; i++){ const a = i/n*6.283 + Math.random()*.3, s = 120 + Math.random()*260; part(bird.x, bird.y, Math.cos(a)*s, Math.sin(a)*s, .5 + Math.random()*.4, rc[i % rc.length], 2.5); }
