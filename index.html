@@ -50,6 +50,9 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .modetag{font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--cool)}
 .big{font-family:"Bungee",Impact,sans-serif;font-size:60px;line-height:1;font-variant-numeric:tabular-nums}
 .rank{font-family:var(--display);font-size:20px;color:var(--gold)}
+.rank,.tierline{display:flex;align-items:center;justify-content:center;gap:8px}
+.tierline{font-family:var(--display);font-size:15px;letter-spacing:.06em;margin:-6px 0 2px}
+.ptbadge{width:64px;height:38px}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .stat{display:flex;flex-direction:column;gap:2px;padding:8px;border-radius:10px;background:rgba(243,238,252,.05)}
 .stat span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
@@ -291,6 +294,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="year">2027</div>
     </div>
     <p class="tag" data-i18n="tag"></p>
+    <div class="tierline" id="menuTier"></div>
     <div class="hangar" id="hangar">
       <div class="hg-top"><span data-i18n="hangar"></span><span id="hgCount">1 / 4</span></div>
       <div class="hg-row">
@@ -550,8 +554,8 @@ const BIRDS = [
   { id:'solaris', name:'SOLARIS', rarity:4, col:[45,100,62],  wingCol:[18,100,60],  speed:1.08, flap:490, grav:1550, maxFall:740, dash:1.20, r:13.5, window:18, bonus:1, nose:18, h:13, span:32, stats:[4,4,3,4],
     shieldStart:1, feverMul:3, comboGuard:true, coinMul:2, xpMul:2, gemMul:2 },
   { id:'aurora',  name:'AURORA',  rarity:4, col:[160,90,58],  wingCol:[280,90,72],  speed:1.04, flap:470, grav:1420, maxFall:680, dash:1.10, r:13,   window:20, bonus:1, nose:17, h:12, span:34, stats:[3,3,4,3], comboKeep:.5, veil:3, veilStart:3 },
-  { id:'tempest', name:'TEMPEST', rarity:4, col:[215,75,52],  wingCol:[185,100,70], speed:1.15, flap:490, grav:1600, maxFall:760, dash:1.40, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,3,2,5], dashPts:2, dashRefund:.3, gust:.33, gustLock:16 },
-  { id:'pleiad',  name:'PLEIAD',  rarity:4, col:[232,65,62],  wingCol:[50,100,72],  speed:1.00, flap:480, grav:1500, maxFall:700, dash:1.10, r:13.5, window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3], shieldStart:1, shieldMax:2, shieldRegen:60, shieldBurst:true },
+  { id:'tempest', name:'TEMPEST', rarity:4, hidden:true, col:[215,75,52],  wingCol:[185,100,70], speed:1.15, flap:490, grav:1600, maxFall:760, dash:1.40, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,3,2,5], dashPts:2, dashRefund:.3, gust:.33, gustLock:16 },
+  { id:'pleiad',  name:'PLEIAD',  rarity:4, hidden:true, col:[232,65,62],  wingCol:[50,100,72],  speed:1.00, flap:480, grav:1500, maxFall:700, dash:1.10, r:13.5, window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3], shieldStart:1, shieldMax:2, shieldRegen:60, shieldBurst:true },
   { id:'pulsar',  name:'PULSAR',  rarity:4, col:[320,100,62], wingCol:[180,100,66], speed:1.06, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:19, bonus:2, nose:19, h:12, span:28, stats:[4,3,3,3], perfCharge:.08, feverAt:8, ping:.34 },
   // ---- season reward: never sold, never the free trial (season). Legendary rank for power, cast scale and hangar order; its own label and badge colour ----
   { id:'monarch', name:'MONARCH', rarity:2, season:true, col:[48,70,93], wingCol:[46,100,58], uiCol:[46,100,60], speed:1.00, flap:480, grav:1500, maxFall:720, dash:1.10, r:13.5, window:17, bonus:0, nose:19, h:13, span:32, stats:[3,3,3,3], shieldStart:1, shieldRegen:25 }
@@ -664,7 +668,8 @@ zh:[['超速驱动','{n}秒内完美判定大幅放宽'],['闪现','瞬移穿过
 SK_IDS.forEach((id,i) => { for (const l in I18N){ const tx = (SK_TXT[l] || SK_TXT.en)[i]; I18N[l]['sk_' + id] = tx[0]; I18N[l]['sd_' + id] = tx[1]; } });
 // Key-based additions (ko/en, with ja/zh for the cost labels, the newer unit texts, the versus ranking, its seasons and the season unit; anything a language lacks falls back to en). The index arrays above keep their length and order.
 const I18N_N = {
-ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 틈', tierRule2:'더 좁은 틈 · 0.5초 안개', tierRule3:'가장 좁은 틈 · 2초 안개 · 2초 안에 탭',
+ko:{pt_bronze:'브론즈', pt_silver:'실버', pt_gold:'골드', pt_platinum:'플래티넘', pt_diamond:'다이아', pt_transcend:'넘사', pt_demigod:'반신', ptUp:'티어 승급! {t}',
+ stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 틈', tierRule2:'더 좁은 틈 · 0.5초 안개', tierRule3:'가장 좁은 틈 · 2초 안개 · 2초 안에 탭',
  idleRule:'2초 안에 탭!', idleStall:'엔진 정지!', heavyP:'무거움', gemP:'젬 +1', gemHint:'젬은 스테이지 플레이 중 1% 확률로 나와요 · {n}/{m}',
  lbRetry:'기록을 올리지 못했어요. 곧 다시 시도합니다', lbRate:'전송이 너무 잦아요. 잠시 후 다시 올립니다', lbReject:'서버가 이 기록을 받지 않았어요', vsStranded:'상대가 들어오지 않았어요. 다시 찾는 중…',
  tabVs:'대전', vsRules:'승리 +50 RP · 패배 −45 RP · AI전은 연습(RP 변동 없음)', vsPractice:'연습전 · RP 변동 없음', vsPend:'집계 중', vsNoRank:'랭크에 반영되지 않은 판이에요', vsCap:'미반영 · 같은 상대와는 하루 5판까지',
@@ -681,7 +686,8 @@ ko:{stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 �
  r_pulsar:'맥동형', p_pulsar:'퍼펙트마다 +2점, 스킬이 더 빨리 찬다. 피버가 8콤보에서 시작된다. 공명 반향: 게이트 모서리를 얕게 스치면 스킬 충전 34%를 쓰고 튕겨 나온다.', fx_break:'공명 파쇄!', fx_ping:'PING', sk_pulsar:'공명', sd_pulsar:'{n}초간 퍼펙트 점수 3배. 얕은 충돌은 충전 소모 없이 튕겨내고, 깊은 충돌 2번까지 게이트를 깨뜨린다',
  ul_solaris:'천지개벽', ud_solaris:'화면의 모든 게이트가 불타 사라지고 3.5초간 무적, {n}초간 코인 비가 내린다', ul_aurora:'극야', ud_aurora:'{n}초간 모든 게이트가 내 높이의 곧고 넓은 회랑으로 열리고, 통과하면 모두 퍼펙트', ul_tempest:'허리케인', ud_tempest:'폭풍이 되어 다음 게이트 {n}개를 무적으로 휩쓸고, 대시 게이지가 가득 찬 채 안전하게 내려앉는다', ul_pleiad:'유성우', ud_pleiad:'별똥별이 쏟아져 다음 게이트 {n}개를 한꺼번에 부순다', ul_pulsar:'빅뱅', ud_pulsar:'{n}초간 세상이 느려지고 통과한 게이트는 모두 퍼펙트, 점수 3배', ultK:'궁극기', ultReady:'궁극기 준비 완료!', hUlt:'궁극기 — 울트라 유닛에는 세 번째 버튼 ULT(A)가 있어요. 게이트를 지날 때마다 게이지가 차고 퍼펙트면 더 빨리 차요. 가득 차면 눌러서 그 유닛의 궁극기를 써요. 스테이지 전용이에요.',
  r_season:'시즌 한정', seaOnly:'시즌 보상 · 대전 시즌 상위 10명', r_monarch:'군주형', p_monarch:'근위대: 실드 1개로 출발(최대 1개). 게이트 25개마다 실드를 되찾는다.', sk_monarch:'대관식', sd_monarch:'{n}초간 무적, 4초간 퍼펙트 판정이 넓어진다'},
-en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', tierRule2:'Narrower gaps · 0.5s haze', tierRule3:'Narrowest gaps · 2s haze · tap within 2s',
+en:{pt_bronze:'Bronze', pt_silver:'Silver', pt_gold:'Gold', pt_platinum:'Platinum', pt_diamond:'Diamond', pt_transcend:'Transcendent', pt_demigod:'Demigod', ptUp:'TIER UP! {t}',
+ stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', tierRule2:'Narrower gaps · 0.5s haze', tierRule3:'Narrowest gaps · 2s haze · tap within 2s',
  idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/{m}',
  lbRetry:"Couldn't post your score. Retrying soon", lbRate:'Posting too fast. It will be sent in a moment', lbReject:'The server did not accept this score', vsStranded:"Opponent didn't show up. Searching again…",
  tabVs:'Versus', vsRules:'Win +50 RP · Loss −45 RP · AI matches are practice (no RP)', vsPractice:'Practice · no RP change', vsPend:'pending', vsNoRank:'This match was not ranked', vsCap:'Not ranked · 5 a day per rival',
@@ -698,7 +704,8 @@ en:{stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', 
  r_pulsar:'Resonator', p_pulsar:'+2 on every Perfect and faster skill charge. Fever starts at an 8 combo. Echo Ping: a shallow graze on a gate edge bounces you back for 34% skill charge.', fx_break:'RESONANT BREAK!', fx_ping:'PING', sk_pulsar:'Resonance', sd_pulsar:'For {n}s Perfects score x3, grazes bounce off for free and 2 deeper hits shatter the gate',
  ul_solaris:'Genesis', ud_solaris:'Every gate on screen burns away, 3.5s invincible, and coins rain for {n}s', ul_aurora:'Polar Night', ud_aurora:'For {n}s every gate opens into one straight, wide lane at your height, each one a Perfect', ul_tempest:'Hurricane', ud_tempest:'Become the storm: carried through the next {n} gates, invincible, then set down safely with a full dash meter', ul_pleiad:'Meteor Shower', ud_pleiad:'Falling stars destroy the next {n} gates, all at once', ul_pulsar:'Big Bang', ud_pulsar:'For {n}s the world runs slow and every gate you pass is a Perfect worth x3', ultK:'Ultimate', ultReady:'ULT READY!', hUlt:'Ultimate — Ultra units have a third button, ULT (A). Its gauge fills with every gate you pass, faster with Perfects; when it is full, press it for that unit’s ultimate. Stage mode only.',
  r_season:'Season', seaOnly:'Season reward · top 10 of a versus season', r_monarch:'Sovereign', p_monarch:'Royal Guard: starts with 1 shield (max 1) and wins it back every 25 gates.', sk_monarch:'Coronation', sd_monarch:'Invincible for {n}s, and the Perfect window stays wide for 4s'},
-ja:{nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0{n}',
+ja:{pt_bronze:'ブロンズ', pt_silver:'シルバー', pt_gold:'ゴールド', pt_platinum:'プラチナ', pt_diamond:'ダイヤ', pt_transcend:'超越', pt_demigod:'半神', ptUp:'ティア昇格!{t}',
+ nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0{n}',
  fx_slip:'墨隠れ!', fx_fore:'予感!',
  tabVs:'対戦', vsRules:'勝利 +50 RP · 敗北 −45 RP · AI戦は練習(RP変動なし)', vsPractice:'練習試合 · RP変動なし', vsPend:'集計中', vsNoRank:'ランクに反映されない試合です', vsCap:'対象外 · 同じ相手とは1日5回まで',
  vsMyRank:'あなたの順位 {n}位 · {rp} RP · {w}勝 {l}敗', vsNoRow:'ランク戦を1試合終えると順位がつきます',
@@ -712,7 +719,8 @@ ja:{nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0
  p_pulsar:'パーフェクトごとに+2点、スキルが早く溜まる。フィーバーが8コンボで始まる。エコーピン:ゲートのふちを浅くかすめると、スキルチャージ34%を使って弾き返される。', fx_ping:'PING', fx_break:'共鳴破砕!',
  ul_solaris:'天地開闢', ud_solaris:'画面上のゲートをすべて焼き払い、3.5秒間無敵。{n}秒間コインの雨が降る', ul_aurora:'極夜', ud_aurora:'{n}秒間、すべてのゲートが自分の高さでまっすぐ広い回廊になり、通ればすべてパーフェクト', ul_tempest:'ハリケーン', ud_tempest:'嵐となって次のゲート{n}つを無敵で突き抜け、ダッシュゲージ満タンで安全に降り立つ', ul_pleiad:'流星群', ud_pleiad:'流れ星が降り注ぎ、次のゲート{n}つをまとめて破壊する', ul_pulsar:'ビッグバン', ud_pulsar:'{n}秒間世界がスローになり、通ったゲートはすべてパーフェクトで得点3倍', ultK:'アルティメット', ultReady:'ULT 発動可能!', hUlt:'アルティメット — ウルトラユニットには3つ目のボタンULT(A)がある。ゲートを通るたびにゲージが溜まり、パーフェクトならさらに速い。満タンで押すとそのユニットのアルティメットが発動。ステージ専用。',
  r_season:'シーズン限定', seaOnly:'シーズン報酬 · 対戦シーズン上位10名', r_monarch:'君主型', p_monarch:'ロイヤルガード:シールド1枚で出発(最大1枚)。ゲート25個ごとにシールドを取り戻す。', sk_monarch:'戴冠式', sd_monarch:'{n}秒間無敵、4秒間パーフェクト判定が広がる'},
-zh:{nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
+zh:{pt_bronze:'青铜', pt_silver:'白银', pt_gold:'黄金', pt_platinum:'铂金', pt_diamond:'钻石', pt_transcend:'超凡', pt_demigod:'半神', ptUp:'段位晋升!{t}',
+ nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
  fx_slip:'墨隐!', fx_fore:'预感!',
  tabVs:'对战', vsRules:'胜利 +50 RP · 失败 −45 RP · AI对战为练习(RP不变)', vsPractice:'练习赛 · RP不变', vsPend:'结算中', vsNoRank:'本局未计入段位', vsCap:'未计入 · 同一对手每天最多5局',
  vsMyRank:'我的排名 第{n}名 · {rp} RP · {w}胜 {l}负', vsNoRow:'完成一局排位赛后即可上榜',
@@ -751,7 +759,11 @@ const diaClear = i => DIA_CLEAR[stTier(i)];
 const shortOf = p => CUR.map(([k, w]) => [k, Math.max(0, p[k] - W[w])]).filter(x => x[1] > 0);   // [price field, missing amount] for each currency the wallet cannot cover
 const saveW = () => { store.set('fw27_wallet2', W); store.set('fw27_owned', [...owned]); store.set('fw27_pass', hasPass); store.set('fw27_starter', starterBought); };
 const isOwned = b => !b.rarity || owned.has(b.id);
+// Hidden units (not yet opened) stay in BIRDS for art/skills/tests but leave the hangar, the shop and the flock.
+// A legacy save that already owns one keeps it. Computed once: ownership of a hidden unit cannot change in-session (buying is blocked).
+const ROSTER = BIRDS.filter(b => !b.hidden || owned.has(b.id));
 if (B.season && !isOwned(B)) B = BIRDS[0];   // the season unit can be looked at unowned but never flown: a saved pick of it falls back to the first unit
+if (!ROSTER.includes(B)) B = ROSTER[0];      // a saved pick of a hidden unit falls back the same way
 function grantXP(n){ let ups = 0; W.xp += n; while (W.xp >= XP_PER_LEVEL){ W.xp -= XP_PER_LEVEL; W.lvl++; W.coins += 50*INCOME_X; W.dia += DIA_LEVEL; if (W.lvl % 5 === 0) W.gems += 1; ups++; } return ups; }
 
 function detectLang(){
@@ -871,6 +883,43 @@ const pal = { sky0:[262,62,8], sky1:[318,70,22], a:[338,100,62], b:[190,100,62],
 const lerpH = (h1,h2,k) => { const d = ((h2-h1+540)%360)-180; return (h1 + d*k + 360) % 360; };
 function lerpC(c, tgt, k){ c[0]=lerpH(c[0],tgt[0],k); c[1]+=(tgt[1]-c[1])*k; c[2]+=(tgt[2]-c[2])*k; }
 const hsl = (c, a=1, dl=0) => `hsla(${c[0].toFixed(1)},${c[1].toFixed(1)}%,${Math.min(100,c[2]+dl).toFixed(1)}%,${a})`;
+
+/* ---------- player tier (from the all-time best score, endless + daily) ---------- */
+// 'ptier' naming: 'tier' already means stage difficulty (tierRule0-3, stTier). Thresholds are score floors.
+const PTIERS = [['bronze',0],['silver',50],['gold',120],['platinum',220],['diamond',350],['transcend',500],['demigod',700]];
+const PTIER_COL = [[22,55,50],[210,12,76],[45,100,58],[172,80,62],[215,95,64],[275,90,68],[46,100,78]];
+const ptierOf = s => { let i = 0; for (let j = 0; j < PTIERS.length; j++) if (s >= PTIERS[j][1]) i = j; return i; };
+const ptierName = i => t('pt_' + PTIERS[i][0]);
+// The badge from the tier sheet, drawn in code: feathered wings, a broken ring, a cut gem. Higher tiers grow wings and glow.
+function drawPtierBadge(c, x, y, s, ti){
+  const col = PTIER_COL[ti], wings = 3 + Math.min(3, ti);
+  c.save(); c.translate(x, y);
+  if (ti >= 5){ c.shadowColor = hsl(col, .85); c.shadowBlur = s*.4; }
+  c.lineCap = 'round';
+  for (const dir of [-1, 1]) for (let w = 0; w < wings; w++){
+    const len = s*(.98 - w*.14), lift = (-.1 - w*.26)*s;
+    c.strokeStyle = hsl(col, .95 - w*.1, 10 - w*7); c.lineWidth = s*.1;
+    c.beginPath(); c.moveTo(dir*s*.18, s*.06);
+    c.quadraticCurveTo(dir*len*.55, lift - s*.12, dir*len, lift);
+    c.stroke();
+  }
+  c.strokeStyle = hsl(col, .5); c.lineWidth = s*.05;
+  c.beginPath(); c.arc(0, 0, s*.44, -2.6, -.54); c.stroke();
+  c.beginPath(); c.arc(0, 0, s*.44, .54, 2.6); c.stroke();
+  const g = c.createLinearGradient(0, -s*.38, 0, s*.38);
+  g.addColorStop(0, hsl(col, 1, 26)); g.addColorStop(.55, hsl(col, 1, 6)); g.addColorStop(1, hsl(col, 1, -14));
+  c.fillStyle = g;
+  c.beginPath(); c.moveTo(0, -s*.4); c.lineTo(s*.17, 0); c.lineTo(0, s*.4); c.lineTo(-s*.17, 0); c.closePath(); c.fill();
+  c.strokeStyle = hsl(col, .9, 22); c.lineWidth = 1; c.stroke();
+  c.restore();
+}
+function ptierStamp(el, ti){   // badge canvas + tier name, into a .rank / .tierline element
+  el.textContent = '';
+  const cv = document.createElement('canvas'); cv.width = 128; cv.height = 76; cv.className = 'ptbadge';
+  drawPtierBadge(cv.getContext('2d'), 64, 42, 30, ti);
+  const sp = document.createElement('span'); sp.textContent = ptierName(ti); sp.style.color = hsl(PTIER_COL[ti], 1, 12);
+  el.append(cv, sp);
+}
 
 /* ---------- background ---------- */
 let stars = [], sky1 = [], sky2 = [], bgOff = 0;
@@ -1185,7 +1234,7 @@ addEventListener('keydown', e => {
   const tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' && (e.code === 'Space' || e.code === 'Enter')) return;
   if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else closeLB(); } return; }
-  if (state === 'menu' && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')){ e.preventDefault(); pickBird(BIRDS.indexOf(B) + (e.code === 'ArrowRight' ? 1 : -1)); return; }
+  if (state === 'menu' && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')){ e.preventDefault(); pickBird(ROSTER.indexOf(B) + (e.code === 'ArrowRight' ? 1 : -1)); return; }
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){ e.preventDefault(); if (state==='paused') togglePause(); else flap(); }
   else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyD' || e.code === 'KeyE'){ e.preventDefault(); dash(); }
   else if (e.code === 'KeyS' || e.code === 'KeyQ'){ e.preventDefault(); useSkill(); }
@@ -1475,6 +1524,7 @@ $('contCoin').addEventListener('click', e => { e.stopPropagation(); if (W.coins 
 $('contNo').addEventListener('click', e => { e.stopPropagation(); closeCont(false); });
 function showOver(){
   state = 'over'; overAt = performance.now();
+  const ptPrev = ptierOf(best);   // before this run's score lands in best: a rise means a tier-up stamp
   let nb, shownBest;
   if (mode === 'daily'){
     const prev = dailyBestLocal(runDay); nb = score > prev;
@@ -1494,8 +1544,8 @@ function showOver(){
   if (mode === 'endless'){ stg.gates[curStage] = Math.max(stg.gates[curStage], gatesPassed); stg.score[curStage] = Math.max(stg.score[curStage], score); store.set('fw27_stg2', stg); $('oMode').textContent = B.name + ' · ' + t('stage', {n: curStage + 1}) + ' ' + ZONES[stTier(curStage)].name; }
   $('oBest').textContent = shownBest;
   $('oGates').textContent = gatesPassed; $('oPerf').textContent = perfects; $('oCombo').textContent = maxCombo;
-  const rank = score >= 150 ? 'S' : score >= 80 ? 'A' : score >= 35 ? 'B' : 'C';
-  $('oRank').textContent = t('rank') + ' ' + rank;
+  const pti = ptierOf(best), ptUp = pti > ptPrev;   // best already holds this run's score (non-versus)
+  ptierStamp($('oRank'), pti);
   $('oPlace').textContent = ''; $('oTeams').hidden = true; $('oTitle').textContent = ''; $('oTitle').hidden = true; $('oTitle').style.color = '';   // no title on a normal result card (the old "SIGNAL LOST" read like a network error); versus fills and shows it
   $('over').hidden = false; vsFillOver(); if (mode === 'versus') vsResolve();
   if (mode !== 'versus') submitScore(score, gatesPassed, mode, runDay);
@@ -1526,6 +1576,7 @@ function showOver(){
     if (v !== shown){ shown = v; oS.textContent = v; if (v > 0 && v % every === 0) tone(480 + v/Math.max(1,target)*700, .03, 'square', .04); }
     if (k < 1){ requestAnimationFrame(step); return; }
     rk.style.visibility = ''; void rk.offsetWidth; rk.classList.add('stamp'); SFX.stamp(); haptic('stamp');
+    if (ptUp){ toast(t('ptUp', {t: ptierName(pti)})); confetti(LW/2, LH*.42, 90); }
     if (nb && target > 0){ $('oNew').hidden = false; confetti(LW/2, LH*.32, 70); SFX.fanfare(); haptic('newBest'); }
     else if (ups){ confetti(LW/2, LH*.5, 40); SFX.fanfare(); }
   };
@@ -2997,8 +3048,9 @@ function skyEvent(){
 const hcv = $('hgCv'), hctx = hcv.getContext('2d');
 const STAT_KEYS = ['stSpeed','stJump','stFloat','stDash'];
 function renderHangar(){
-  const i = BIRDS.indexOf(B);
-  $('hgCount').textContent = `${i+1} / ${BIRDS.length}`;
+  ptierStamp($('menuTier'), ptierOf(best));
+  const i = ROSTER.indexOf(B);
+  $('hgCount').textContent = `${i+1} / ${ROSTER.length}`;
   $('hgName').textContent = B.name; $('hgName').style.color = hsl(B.rarity ? rarCol(B) : B.col, 1, 6);
   $('hgName').parentElement.classList.toggle('ultra', B.rarity === 4);
   const rar = $('hgRar'); rar.hidden = !B.rarity; rar.classList.toggle('ultra', B.rarity === 4); if (B.rarity){ rar.textContent = t(rarKey(B)); rar.style.background = hsl(rarCol(B)); }
@@ -3030,9 +3082,9 @@ function renderHangar(){
     st.append(l, p, em);
   });
   const dots = $('hgDots'); dots.textContent = '';
-  BIRDS.forEach((b, j) => {
+  ROSTER.forEach((b, j) => {
     const d = document.createElement('button'), c = j === i ? hsl(b.rarity ? rarCol(b) : b.col) : (b.rarity ? hsl(rarCol(b), .45) : '');
-    if (c) d.style.setProperty('--c', c); if (j && (b.rarity || 0) !== (BIRDS[j-1].rarity || 0)) d.className = 'grp';
+    if (c) d.style.setProperty('--c', c); if (j && (b.rarity || 0) !== (ROSTER[j-1].rarity || 0)) d.className = 'grp';
     d.setAttribute('aria-label', b.name); d.setAttribute('aria-current', j === i);
     d.addEventListener('click', e => { e.stopPropagation(); pickBird(j); });
     dots.appendChild(d);
@@ -3057,13 +3109,13 @@ function fitMenuBox(){
 }
 addEventListener('resize', fitMenu); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitMenu);
 function pickBird(i){
-  B = BIRDS[(i + BIRDS.length) % BIRDS.length];
+  B = ROSTER[(i + ROSTER.length) % ROSTER.length];
   store.set('fw27_bird', B.id); bird.r = B.r;
-  if (ac) tone(400 + BIRDS.indexOf(B)*90, .08, 'triangle', .1, 120);
+  if (ac) tone(400 + ROSTER.indexOf(B)*90, .08, 'triangle', .1, 120);
   renderHangar();
 }
-$('hgPrev').addEventListener('click', e => { e.stopPropagation(); audioInit(); pickBird(BIRDS.indexOf(B) - 1); });
-$('hgNext').addEventListener('click', e => { e.stopPropagation(); audioInit(); pickBird(BIRDS.indexOf(B) + 1); });
+$('hgPrev').addEventListener('click', e => { e.stopPropagation(); audioInit(); pickBird(ROSTER.indexOf(B) - 1); });
+$('hgNext').addEventListener('click', e => { e.stopPropagation(); audioInit(); pickBird(ROSTER.indexOf(B) + 1); });
 $('hangar').addEventListener('pointerdown', e => e.stopPropagation());
 function drawHangarPreview(){
   if ($('menu').hidden) return;
@@ -3103,6 +3155,7 @@ const COST_KEY = {coin:'nCoin', dia:'nDia', gem:'nGem'};
 const costList = (p, sep, amt = k => p[k]) => CUR.filter(([k]) => amt(k) > 0).map(([k]) => t(COST_KEY[k], {n: amt(k).toLocaleString()})).join(sep);
 // A unit costs all three currencies at once: refuse and name every shortfall, or confirm and deduct all three together (re-checked inside the confirm)
 function unlockBird(b){
+  if (b.hidden && !owned.has(b.id)) return;   // not yet opened: cannot be bought even by a stray call
   const p = priceOf(b); if (!p) return;   // no price: not for sale (the season unit)
   const miss = Object.fromEntries(shortOf(p));
   if (shortOf(p).length) return toast(t('needMore') + ' · ' + costList(p, ' · ', k => miss[k] || 0));
@@ -3496,8 +3549,8 @@ setInterval(updateDaily, 1000);
 const flock = Array.from({length:7}, (_, i) => ({i, x: Math.random()*400, y: 60 + Math.random()*380, sp: 30 + Math.random()*50, sc: .7 + Math.random()*.9, ph: Math.random()*6}));
 function drawFlock(dt){
   for (const f of flock){
-    f.x += f.sp*dt; if (f.x > LW + 60){ f.x = -60; f.y = 60 + Math.random()*380; f.i = (f.i + 3) % BIRDS.length; }
-    const d = BIRDS[f.i % BIRDS.length];
+    f.x += f.sp*dt; if (f.x > LW + 60){ f.x = -60; f.y = 60 + Math.random()*380; f.i = (f.i + 3) % ROSTER.length; }
+    const d = ROSTER[f.i % ROSTER.length];
     ctx.save(); ctx.globalAlpha = .28; ctx.translate(f.x, f.y + Math.sin(T*2 + f.ph)*10); ctx.scale(f.sc, f.sc); ctx.rotate(Math.sin(T*2 + f.ph)*.1);
     drawShape(ctx, d, (Math.sin(T*10 + f.ph) + 1)/2, null); ctx.restore();
   }
@@ -4162,6 +4215,10 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       pow: () => eq([0,.19,.2,.59,.6,.79,.8,.99].map(powKind), ['shield','shield','magnet','magnet','slow','slow','potion','potion']),
       sk23: () => BIRDS.length === 23 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
       ultra5: () => BIRDS.filter(b => b.rarity === 4).length === 5,
+      hiddenU: () => eq(BIRDS.filter(b => b.hidden).map(b => b.id).sort(), ['pleiad','tempest']) && ROSTER.every(b => !b.hidden || owned.has(b.id)) && ROSTER.includes(birdById('solaris')) && ROSTER.includes(birdById('pulsar')) && ROSTER[0] === birdById('volt'),
+      ptier: () => eq([0,49,50,119,120,219,220,349,350,499,500,699,700,9999].map(ptierOf), [0,0,1,1,2,2,3,3,4,4,5,5,6,6]) && PTIERS.length === 7 && PTIER_COL.length === 7
+        && eq(PTIERS.map(p => p[0]), ['bronze','silver','gold','platinum','diamond','transcend','demigod'])
+        && Object.keys(I18N).every(l => PTIERS.every(([k]) => typeof I18N[l]['pt_' + k] === 'string' && I18N[l]['pt_' + k]) && typeof I18N[l].ptUp === 'string'),
       tiers: () => eq(['volt','mochi','zero','aegis','solaris'].map(id => unitTier(birdById(id))), ['common','epic','legendary','mythic','ultra']) && eq(Object.keys(TIER_FX), RARITY_KEY.map(k => k.slice(2))),
       tierFx: () => { const L = ['epic','legendary','mythic','ultra'].map(k => TIER_FX[k]), up = (k, f) => L.every((v, i) => !i || (f ? v[k] >= L[i-1][k] : v[k] > L[i-1][k])), rad = v => v.rings[0] <= 2 ? v.rings[0]*LW : v.rings[0];
         return ['flash','shake','parts'].every(k => up(k)) && ['z','stop','sky','ban'].every(k => up(k, 1)) && L.every((v, i) => !i || (rad(v) > rad(L[i-1]) && v.rings.length >= L[i-1].rings.length)) && TIER_FX.ultra.shake < 18
