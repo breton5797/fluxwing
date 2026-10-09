@@ -733,7 +733,13 @@ zh:{pt_bronze:'青铜', pt_silver:'白银', pt_gold:'黄金', pt_platinum:'铂�
  p_tempest:'冲刺穿越得分翻倍。用冲刺撞碎关卡返还30%能量(每次冲刺1次)。疾风反射:能量达到三分之一以上时,撞上关卡不会死亡,而是自动发动一次短冲刺(耗尽全部能量,再通过16个关卡或风暴之眼结束后重新就绪)。', fx_gust:'疾风反射!',
  p_pulsar:'每次完美+2分,技能充能更快。连击8次即进入狂热。共鸣回响:浅擦关卡边缘时,消耗34%技能充能将你弹回。', fx_ping:'PING', fx_break:'共振破碎!',
  ul_solaris:'开天辟地', ud_solaris:'屏幕上的关卡全部焚毁,无敌3.5秒,并降下{n}秒金币雨', ul_aurora:'极夜', ud_aurora:'{n}秒内所有关卡在你的高度连成一条笔直宽阔的回廊,通过即算完美', ul_tempest:'飓风', ud_tempest:'化身风暴,无敌地卷过接下来{n}个关卡,随后带着满格冲刺能量安全落下', ul_pleiad:'流星雨', ud_pleiad:'流星倾泻而下,一举击毁接下来{n}个关卡', ul_pulsar:'大爆炸', ud_pulsar:'{n}秒内世界变慢,通过的关卡全部算作完美且得分3倍', ultK:'终极技', ultReady:'终极技就绪!', hUlt:'终极技 — 究极机体拥有第三个按钮ULT(A)。每通过一个关卡都会充能,完美通过充得更快;充满后按下即可释放该机体的终极技。仅限关卡模式。',
- r_season:'赛季限定', seaOnly:'赛季奖励 · 对战赛季前10名', r_monarch:'君主型', p_monarch:'王室卫队:开局自带1层护盾(最多1层)。每通过25个关卡恢复护盾。', sk_monarch:'加冕', sd_monarch:'无敌{n}秒,4秒内完美判定放宽'}
+ r_season:'赛季限定', seaOnly:'赛季奖励 · 对战赛季前10名', r_monarch:'君主型', p_monarch:'王室卫队:开局自带1层护盾(最多1层)。每通过25个关卡恢复护盾。', sk_monarch:'加冕', sd_monarch:'无敌{n}秒,4秒内完美判定放宽'},
+es:{pt_bronze:'Bronce', pt_silver:'Plata', pt_gold:'Oro', pt_platinum:'Platino', pt_diamond:'Diamante', pt_transcend:'Trascendente', pt_demigod:'Semidiós', ptUp:'¡ASCENSO! {t}'},
+pt:{pt_bronze:'Bronze', pt_silver:'Prata', pt_gold:'Ouro', pt_platinum:'Platina', pt_diamond:'Diamante', pt_transcend:'Transcendente', pt_demigod:'Semideus', ptUp:'NOVO TIER! {t}'},
+fr:{pt_bronze:'Bronze', pt_silver:'Argent', pt_gold:'Or', pt_platinum:'Platine', pt_diamond:'Diamant', pt_transcend:'Transcendant', pt_demigod:'Demi-dieu', ptUp:'RANG SUPÉRIEUR ! {t}'},
+de:{pt_bronze:'Bronze', pt_silver:'Silber', pt_gold:'Gold', pt_platinum:'Platin', pt_diamond:'Diamant', pt_transcend:'Transzendent', pt_demigod:'Halbgott', ptUp:'AUFSTIEG! {t}'},
+id:{pt_bronze:'Perunggu', pt_silver:'Perak', pt_gold:'Emas', pt_platinum:'Platina', pt_diamond:'Berlian', pt_transcend:'Transenden', pt_demigod:'Setengah Dewa', ptUp:'NAIK TIER! {t}'},
+vi:{pt_bronze:'Đồng', pt_silver:'Bạc', pt_gold:'Vàng', pt_platinum:'Bạch kim', pt_diamond:'Kim cương', pt_transcend:'Siêu việt', pt_demigod:'Bán thần', ptUp:'THĂNG HẠNG! {t}'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
 const birdById = id => BIRDS.find(b => b.id === id);
@@ -4225,7 +4231,8 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       hiddenU: () => eq(BIRDS.filter(b => b.hidden).map(b => b.id).sort(), ['pleiad','tempest']) && ROSTER.every(b => !b.hidden || owned.has(b.id)) && ROSTER.includes(birdById('solaris')) && ROSTER.includes(birdById('pulsar')) && ROSTER[0] === birdById('volt'),
       ptier: () => eq([0,34,35,89,90,179,180,349,350,499,500,699,700,9999].map(ptierOf), [0,0,1,1,2,2,3,3,4,4,5,5,6,6]) && PTIERS.length === 7 && PTIER_COL.length === 7
         && eq(PTIERS.map(p => p[0]), ['bronze','silver','gold','platinum','diamond','transcend','demigod'])
-        && Object.keys(I18N).every(l => PTIERS.every(([k]) => typeof I18N[l]['pt_' + k] === 'string' && I18N[l]['pt_' + k]) && typeof I18N[l].ptUp === 'string'),
+        && Object.keys(I18N).every(l => PTIERS.every(([k]) => typeof I18N[l]['pt_' + k] === 'string' && I18N[l]['pt_' + k]) && typeof I18N[l].ptUp === 'string'
+          && (l === 'en' || (I18N[l].pt_transcend !== I18N.en.pt_transcend && I18N[l].ptUp !== I18N.en.ptUp))),   // every language is translated, not the en fallback (pt_gold can legitimately match en: de/fr 'Gold'/'Or' aside, 'Bronze' repeats)
       tiers: () => eq(['volt','mochi','zero','aegis','solaris'].map(id => unitTier(birdById(id))), ['common','epic','legendary','mythic','ultra']) && eq(Object.keys(TIER_FX), RARITY_KEY.map(k => k.slice(2))),
       tierFx: () => { const L = ['epic','legendary','mythic','ultra'].map(k => TIER_FX[k]), up = (k, f) => L.every((v, i) => !i || (f ? v[k] >= L[i-1][k] : v[k] > L[i-1][k])), rad = v => v.rings[0] <= 2 ? v.rings[0]*LW : v.rings[0];
         return ['flash','shake','parts'].every(k => up(k)) && ['z','stop','sky','ban'].every(k => up(k, 1)) && L.every((v, i) => !i || (rad(v) > rad(L[i-1]) && v.rings.length >= L[i-1].rings.length)) && TIER_FX.ultra.shake < 18
