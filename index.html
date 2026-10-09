@@ -53,6 +53,8 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .rank,.tierline{display:flex;align-items:center;justify-content:center;gap:8px}
 .tierline{font-family:var(--display);font-size:15px;letter-spacing:.06em;margin:-6px 0 2px}
 .ptbadge{width:44px;height:auto;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45))}
+.ptbadge.sm{width:18px;vertical-align:-4px;margin-right:4px;filter:none}
+.tierbadge.img{background:none!important;padding:0}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .stat{display:flex;flex-direction:column;gap:2px;padding:8px;border-radius:10px;background:rgba(243,238,252,.05)}
 .stat span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
@@ -77,7 +79,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .lbrow .sc{font-family:"Bungee",Impact,sans-serif;font-variant-numeric:tabular-nums}
 .lbrow.me{background:rgba(79,240,255,.14);box-shadow:inset 0 0 0 1px rgba(79,240,255,.5)}
 .lbrow .me-tag{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--cool);margin-left:6px}
-.lbrow .tb{font:normal 9px "Bungee",Impact,sans-serif;padding:2px 6px;border-radius:999px;color:#0b0718;margin-right:6px;vertical-align:1px}
+.lbrow .tb{margin-right:6px;vertical-align:-3px}   /* the versus tier mark is a badge image now, not a text pill */
 .lbrow .wl{font:600 11px var(--body);color:var(--dim);margin-left:8px;letter-spacing:.02em}
 .lbempty{padding:22px 8px;text-align:center;color:var(--dim);font-size:14px}
 .lbstatus{font-size:12px;color:var(--dim);min-height:1.2em}
@@ -553,7 +555,7 @@ const BIRDS = [
     giantEvery:20 },
   { id:'solaris', name:'SOLARIS', rarity:4, col:[45,100,62],  wingCol:[18,100,60],  speed:1.08, flap:490, grav:1550, maxFall:740, dash:1.20, r:13.5, window:18, bonus:1, nose:18, h:13, span:32, stats:[4,4,3,4],
     shieldStart:1, feverMul:3, comboGuard:true, coinMul:2, xpMul:2, gemMul:2 },
-  { id:'aurora',  name:'AURORA',  rarity:4, col:[160,90,58],  wingCol:[280,90,72],  speed:1.04, flap:470, grav:1420, maxFall:680, dash:1.10, r:13,   window:20, bonus:1, nose:17, h:12, span:34, stats:[3,3,4,3], comboKeep:.5, veil:3, veilStart:3 },
+  { id:'aurora',  name:'AURORA',  rarity:4, hidden:true, col:[160,90,58],  wingCol:[280,90,72],  speed:1.04, flap:470, grav:1420, maxFall:680, dash:1.10, r:13,   window:20, bonus:1, nose:17, h:12, span:34, stats:[3,3,4,3], comboKeep:.5, veil:3, veilStart:3 },
   { id:'tempest', name:'TEMPEST', rarity:4, hidden:true, col:[215,75,52],  wingCol:[185,100,70], speed:1.15, flap:490, grav:1600, maxFall:760, dash:1.40, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,3,2,5], dashPts:2, dashRefund:.3, gust:.33, gustLock:16 },
   { id:'pleiad',  name:'PLEIAD',  rarity:4, hidden:true, col:[232,65,62],  wingCol:[50,100,72],  speed:1.00, flap:480, grav:1500, maxFall:700, dash:1.10, r:13.5, window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3], shieldStart:1, shieldMax:2, shieldRegen:60, shieldBurst:true },
   { id:'pulsar',  name:'PULSAR',  rarity:4, col:[320,100,62], wingCol:[180,100,66], speed:1.06, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:19, bonus:2, nose:19, h:12, span:28, stats:[4,3,3,3], perfCharge:.08, feverAt:8, ping:.34 },
@@ -3490,7 +3492,7 @@ function renderLB(){
     const n = document.createElement('span'); n.className = 'n'; n.textContent = r.rk || (vsT ? rows.findIndex(x => x.sc === r.sc) + 1 : i + 1);   // versus: equal RP, equal rank; last season: the archived rank
     const f = document.createElement('span'); f.textContent = flag(r.cc);
     const nm = document.createElement('span'); nm.className = 'nm';
-    if (vsT){ const ti = r.ti != null ? r.ti : tierOf(Number(r.sc) || 0), tb = document.createElement('i'); tb.className = 'tb'; tb.textContent = t('t' + ti); tb.style.background = hsl(TIER_COL[ti]); nm.appendChild(tb); }
+    if (vsT){ const ti = r.ti != null ? r.ti : tierOf(Number(r.sc) || 0), tb = vtBadgeImg(ti, true); tb.classList.add('tb'); nm.appendChild(tb); }
     const bd = birdById(r.bird); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
     nm.appendChild(document.createTextNode(cleanNick(r.nick || '') || '—'));
     if (me){ const tg = document.createElement('span'); tg.className = 'me-tag'; tg.textContent = t('you'); nm.appendChild(tg); }
@@ -3570,13 +3572,16 @@ $('helpScr').addEventListener('click', e => { if (e.target === $('helpScr')) $('
 // Rank points are held by the server (supabase/schema.sql): win +50, loss -45, never below 0, one value for 1v1 and 2v2. Matches against the AI
 // are practice and never move them. rp is only the cache of the last server answer, shown while offline (fw27_rp2: the old fw27_rp is not read).
 const TIERS = [0, 400, 1000, 2000, 3600], TIER_COL = [[25,60,55],[210,15,78],[45,100,58],[190,100,65],[290,100,72]], RP_WIN = 50, RP_LOSS = 45;
+const VT_BADGE = [0, 1, 2, 4, 6];   // the 5 versus RP tiers (bronze/silver/gold/diamond/master) on the 7-badge art sheet — master wears the demigod badge
+function vtBadgeImg(ti, sm){ const img = document.createElement('img'); img.src = PTIER_IMG[VT_BADGE[ti]]; img.alt = img.title = t('t' + ti); img.className = 'ptbadge' + (sm ? ' sm' : ''); return img; }
 let rp = clampI(store.get('fw27_rp2', 0), 0, 1e9);
 const tierOf = p => { let i = 0; TIERS.forEach((v, k) => { if (p >= v) i = k; }); return i; };
 const rpAfter = (p, res) => Math.max(0, p + (res === 'win' ? RP_WIN : res === 'lose' ? -RP_LOSS : 0));   // what the server will do: shown until it answers
 function setRp(v){ rp = clampI(v, 0, 1e9); store.set('fw27_rp2', rp); renderVsBadge(); }
 function renderVsBadge(){
-  const ti = tierOf(rp), b = $('vsTier'); b.textContent = t('t' + ti); b.style.background = hsl(TIER_COL[ti]);
-  $('vsRp').textContent = `${rp} RP`; $('vsSub').textContent = `${t('t' + ti)} · ${rp} RP`;
+  const ti = tierOf(rp), b = $('vsTier'); b.textContent = ''; b.classList.add('img'); b.appendChild(vtBadgeImg(ti));
+  $('vsRp').textContent = `${rp} RP`;
+  const sub = $('vsSub'); sub.textContent = ''; sub.append(vtBadgeImg(ti, true), document.createTextNode(` ${rp} RP`));
   const se = seaNow(); $('vsSeason').textContent = t('seaLine', {m: se.id % 100, t: seaLeft(se.end - Date.now())});
 }
 /* Seasons (server: supabase/schema.sql, SEASONS). A season is one calendar month in Korea time (UTC+9, no daylight saving), id YYYYMM; the
@@ -3634,7 +3639,7 @@ function seaPills(g){
 function seaOpen(r){
   seaCur = r; seaBusy = false; seaDone = false;
   $('seaTitle').textContent = t('seaTitle', {m: r.season % 100});
-  const b = $('seaTier'); b.textContent = t('t' + r.tier); b.style.background = hsl(TIER_COL[r.tier]);
+  const b = $('seaTier'); b.textContent = ''; b.classList.add('img'); b.appendChild(vtBadgeImg(r.tier));
   $('seaRank').textContent = r.reward ? t('seaRank', {n: r.rank}) : ''; $('seaStat').textContent = t('seaStat', {rp: r.rp, w: r.wins, l: r.losses});
   $('seaMsg').textContent = r.reward ? '' : t('seaUnranked', {n: (vsMe && vsMe.need) | 0 || 10});
   $('seaRw').hidden = !r.reward; if (r.reward) seaPills({dia: r.reward.dia, gems: r.reward.gems, unit: r.reward.unit});
@@ -4213,7 +4218,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       pow: () => eq([0,.19,.2,.59,.6,.79,.8,.99].map(powKind), ['shield','shield','magnet','magnet','slow','slow','potion','potion']),
       sk23: () => BIRDS.length === 23 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
       ultra5: () => BIRDS.filter(b => b.rarity === 4).length === 5,
-      hiddenU: () => eq(BIRDS.filter(b => b.hidden).map(b => b.id).sort(), ['pleiad','tempest']) && ROSTER.every(b => !b.hidden || owned.has(b.id)) && ROSTER.includes(birdById('solaris')) && ROSTER.includes(birdById('pulsar')) && ROSTER[0] === birdById('volt'),
+      hiddenU: () => eq(BIRDS.filter(b => b.hidden).map(b => b.id).sort(), ['aurora','pleiad','tempest']) && ROSTER.every(b => !b.hidden || owned.has(b.id)) && ROSTER.includes(birdById('solaris')) && ROSTER.includes(birdById('pulsar')) && ROSTER[0] === birdById('volt'),
       ptier: () => eq([0,150,151,500,501,1500,1501,3000,3001,5500,5501,9999,10000,9999999].map(ptierOf), [0,0,1,1,2,2,3,3,4,4,5,5,6,6])
         && PTIERS.length === 7 && PTIER_COL.length === 7 && PTIER_IMG.length === 7 && PTIER_IMG.every(u => u.startsWith('data:image/webp;base64,'))
         && eq(PTIERS.map(p => p[0]), ['bronze','silver','gold','platinum','diamond','transcend','demigod'])
