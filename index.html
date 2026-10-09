@@ -3789,6 +3789,7 @@ function vsReset(){ vsLeave(); vs.tok++; Object.assign(vs, {phase: 'idle', seed:
 async function vsAuto(keep, skip, sz){
   await netInit(); if (netKind === 'none'){ toast(t('onlineNA')); return; }
   vsReset(); const tok = vs.tok, duo = (vs.sz = sz || vs.md) === 2; vs.phase = 'search'; vsShow(false); $('vsCode').textContent = ''; vs.waitT = keep > 0 ? keep : 60; vs.skip = skip || new Set();
+  $('vsScr').hidden = false; lbOpen = true; $('menu').hidden = false; $('wallet').hidden = false;   // a requeue after the instant match switch: bring the search panel (and the menu behind it) back
   $('vsStatus').textContent = duo ? t('searching2', {s: vs.waitT, n: 1}) : t('searching', {s: vs.waitT});
   let lb; try { lb = await netJoin(duo ? 'm-lobby-2v2' : 'fw-lobby'); } catch(e){ if (tok === vs.tok){ toast(t('onlineNA')); vsShow(true); vs.phase = 'idle'; } return; }
   if (tok !== vs.tok){ lb.leave(); return; }
@@ -3889,7 +3890,11 @@ async function vsJoinCode(){
 }
 async function vsEnterRoom(name, code){
   const tok = vs.tok, duo = vs.sz === 2;
-  vs.phase = 'room'; vsShow(false); $('vsCode').textContent = code; $('vsStatus').textContent = code ? t('shareCode') + ' · ' + (duo ? t('vsIn', {n: 1}) : t('waitingOpp')) : t('matchFound');
+  vs.phase = 'room'; vsShow(false); $('vsCode').textContent = code;
+  // Quick match: the pairing IS the match — switch to the play screen at once (menu and overlay down, the banner on the
+  // stage) and let the room handshake finish behind the countdown. Code rooms keep the panel: the code must stay readable.
+  if (code) $('vsStatus').textContent = t('shareCode') + ' · ' + (duo ? t('vsIn', {n: 1}) : t('waitingOpp'));
+  else { closeVsScr(); $('menu').hidden = true; $('wallet').hidden = true; banner(t('matchFound'), [140,80,62], 1.1); }
   let rm; try { rm = await netJoin(name); } catch(e){ if (tok !== vs.tok) return; if (!code) return vsRequeue(); toast(t('onlineNA')); vsShow(true); vs.phase = 'idle'; return; }
   if (tok !== vs.tok){ rm.leave(); return; }
   vs.room = rm; rm.set({nick, bird: B.id, rp, ready: 1, al: 1, u: sb && uid ? uid : ''});   // u: the ranking identity the rival registers the match against
@@ -3990,7 +3995,7 @@ function vsSeat(ro, lv){
   }).filter(Boolean);
 }
 function vsCountdown(){
-  vs.phase = 'count'; closeVsScr();
+  vs.phase = 'count'; closeVsScr(); $('menu').hidden = true; $('wallet').hidden = true;   // straight to the play screen: the countdown runs over the stage, never behind the menu
   if (vs.sz === 2){ vsSeat(vs.qr.ro, vs.qr.lv); if (vs.ai) toast(t('vsAiFill')); }
   else {
     const o = vs.room && vs.room.peers().find(p => p.id === vs.oppId), st = (o && o.st) || {};
@@ -4055,7 +4060,7 @@ function vsBegin(){
 }
 // Practice against the AI alone: one AI rival (1v1), or an AI teammate and two AI opponents (2v2).
 function vsStartAi(sz){
-  vsLeave(); closeVsScr();
+  vsLeave(); closeVsScr(); $('menu').hidden = true; $('wallet').hidden = true;   // same instant switch as a found match: the AI countdown runs on the play screen
   const ti = tierOf(rp); vs.sz = sz === 2 ? 2 : 1; vs.qr = null; vs.myId = myPeer;
   vs.seed = (Math.random()*4294967296) >>> 0 || 9;
   if (vs.sz === 2) vsSeat([{id: vs.myId, u: ''}], ti);
