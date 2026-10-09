@@ -886,7 +886,9 @@ const hsl = (c, a=1, dl=0) => `hsla(${c[0].toFixed(1)},${c[1].toFixed(1)}%,${Mat
 
 /* ---------- player tier (from the all-time best score, endless + daily) ---------- */
 // 'ptier' naming: 'tier' already means stage difficulty (tierRule0-3, stTier). Thresholds are score floors.
-const PTIERS = [['bronze',0],['silver',50],['gold',120],['platinum',220],['diamond',350],['transcend',500],['demigod',700]];
+// Floors tuned by Monte Carlo over the versus-AI player model (perf .18-.36): silver lands in a beginner's
+// first sessions (old B-rank anchor), gold sits just over the expert-AI p99 (74), demigod = one flawless 26-perfect chain.
+const PTIERS = [['bronze',0],['silver',35],['gold',90],['platinum',180],['diamond',350],['transcend',500],['demigod',700]];
 const PTIER_COL = [[22,55,50],[210,12,76],[45,100,58],[172,80,62],[215,95,64],[275,90,68],[46,100,78]];
 const ptierOf = s => { let i = 0; for (let j = 0; j < PTIERS.length; j++) if (s >= PTIERS[j][1]) i = j; return i; };
 const ptierName = i => t('pt_' + PTIERS[i][0]);
@@ -4216,7 +4218,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       sk23: () => BIRDS.length === 23 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
       ultra5: () => BIRDS.filter(b => b.rarity === 4).length === 5,
       hiddenU: () => eq(BIRDS.filter(b => b.hidden).map(b => b.id).sort(), ['pleiad','tempest']) && ROSTER.every(b => !b.hidden || owned.has(b.id)) && ROSTER.includes(birdById('solaris')) && ROSTER.includes(birdById('pulsar')) && ROSTER[0] === birdById('volt'),
-      ptier: () => eq([0,49,50,119,120,219,220,349,350,499,500,699,700,9999].map(ptierOf), [0,0,1,1,2,2,3,3,4,4,5,5,6,6]) && PTIERS.length === 7 && PTIER_COL.length === 7
+      ptier: () => eq([0,34,35,89,90,179,180,349,350,499,500,699,700,9999].map(ptierOf), [0,0,1,1,2,2,3,3,4,4,5,5,6,6]) && PTIERS.length === 7 && PTIER_COL.length === 7
         && eq(PTIERS.map(p => p[0]), ['bronze','silver','gold','platinum','diamond','transcend','demigod'])
         && Object.keys(I18N).every(l => PTIERS.every(([k]) => typeof I18N[l]['pt_' + k] === 'string' && I18N[l]['pt_' + k]) && typeof I18N[l].ptUp === 'string'),
       tiers: () => eq(['volt','mochi','zero','aegis','solaris'].map(id => unitTier(birdById(id))), ['common','epic','legendary','mythic','ultra']) && eq(Object.keys(TIER_FX), RARITY_KEY.map(k => k.slice(2))),
