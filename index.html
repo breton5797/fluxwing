@@ -374,7 +374,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
   <div class="overlay" id="helpScr" hidden>
     <div class="card helpcard">
       <div class="lbhead"><h2 class="mtitle" data-i18n="help"></h2><button class="ghost" id="helpClose" data-i18n="close"></button></div>
-      <p data-i18n="hControls"></p><p data-i18n="hUlt"></p><p data-i18n="hScore"></p><p data-i18n="hMoney"></p><p data-i18n="hUnits"></p>
+      <p data-i18n="hControls"></p><p data-i18n="hUlt"></p><p data-i18n="hScore"></p><p data-i18n="hHaz"></p><p data-i18n="hMoney"></p><p data-i18n="hUnits"></p>
     </div>
   </div>
 
@@ -687,7 +687,8 @@ ko:{pt_bronze:'브론즈', pt_silver:'실버', pt_gold:'골드', pt_platinum:'�
  r_pleiad:'성단형', p_pleiad:'실드 1개로 출발(최대 2개), 게이트 60개마다 1개 재충전. 실드가 깨지면 그 게이트도 부서진다.', sk_pleiad:'궤도 포격', sd_pleiad:'앞 게이트 {n}개를 차례로 부수고 실드 1개 회복',
  r_pulsar:'맥동형', p_pulsar:'퍼펙트마다 +2점, 스킬이 더 빨리 찬다. 피버가 8콤보에서 시작된다. 공명 반향: 게이트 모서리를 얕게 스치면 스킬 충전 34%를 쓰고 튕겨 나온다.', fx_break:'공명 파쇄!', fx_ping:'PING', sk_pulsar:'공명', sd_pulsar:'{n}초간 퍼펙트 점수 3배. 얕은 충돌은 충전 소모 없이 튕겨내고, 깊은 충돌 2번까지 게이트를 깨뜨린다',
  ul_solaris:'천지개벽', ud_solaris:'화면의 모든 게이트가 불타 사라지고 3.5초간 무적, {n}초간 코인 비가 내린다', ul_aurora:'극야', ud_aurora:'{n}초간 모든 게이트가 내 높이의 곧고 넓은 회랑으로 열리고, 통과하면 모두 퍼펙트', ul_tempest:'허리케인', ud_tempest:'폭풍이 되어 다음 게이트 {n}개를 무적으로 휩쓸고, 대시 게이지가 가득 찬 채 안전하게 내려앉는다', ul_pleiad:'유성우', ud_pleiad:'별똥별이 쏟아져 다음 게이트 {n}개를 한꺼번에 부순다', ul_pulsar:'빅뱅', ud_pulsar:'{n}초간 세상이 느려지고 통과한 게이트는 모두 퍼펙트, 점수 3배', ultK:'궁극기', ultReady:'궁극기 준비 완료!', hUlt:'궁극기 — 울트라 유닛에는 세 번째 버튼 ULT(A)가 있어요. 게이트를 지날 때마다 게이지가 차고 퍼펙트면 더 빨리 차요. 가득 차면 눌러서 그 유닛의 궁극기를 써요. 스테이지 전용이에요.',
- r_season:'시즌 한정', seaOnly:'시즌 보상 · 대전 시즌 상위 10명', r_monarch:'군주형', p_monarch:'근위대: 실드 1개로 출발(최대 1개). 게이트 25개마다 실드를 되찾는다.', sk_monarch:'대관식', sd_monarch:'{n}초간 무적, 4초간 퍼펙트 판정이 넓어진다'},
+ r_season:'시즌 한정', seaOnly:'시즌 보상 · 대전 시즌 상위 10명', r_monarch:'군주형', p_monarch:'근위대: 실드 1개로 출발(최대 1개). 게이트 25개마다 실드를 되찾는다.', sk_monarch:'대관식', sd_monarch:'{n}초간 무적, 4초간 퍼펙트 판정이 넓어진다',
+ hz_over:'과속', hz_weight:'무게추', hz_smoke:'연막', hz_drain:'방전', hHaz:'방해 아이템 — 스테이지 11부터 게이트 사이에 붉은 테두리의 검은 가시 원반이 나와요. 닿으면 과속(3초간 빨라짐)·무게추(3초간 무거워짐)·연막(2.5초 안개)·방전(대시 게이지·스킬 충전·콤보가 0) 중 하나에 걸려요. 실드가 있거나 대시·무적 중이면 아무 일 없이 터져요. 스테이지 전용이에요.'},
 en:{pt_bronze:'Bronze', pt_silver:'Silver', pt_gold:'Gold', pt_platinum:'Platinum', pt_diamond:'Diamond', pt_transcend:'Transcendent', pt_demigod:'Demigod', ptUp:'TIER UP! {t}',
  stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', tierRule2:'Narrower gaps · 0.5s haze', tierRule3:'Narrowest gaps · 2s haze · tap within 2s',
  idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/{m}',
@@ -705,7 +706,8 @@ en:{pt_bronze:'Bronze', pt_silver:'Silver', pt_gold:'Gold', pt_platinum:'Platinu
  r_pleiad:'Star Guard', p_pleiad:'Starts with 1 shield (max 2), recharges 1 every 60 gates. A breaking shield also breaks that gate.', sk_pleiad:'Orbital Barrage', sd_pleiad:'Smashes the next {n} gates one by one and restores 1 shield',
  r_pulsar:'Resonator', p_pulsar:'+2 on every Perfect and faster skill charge. Fever starts at an 8 combo. Echo Ping: a shallow graze on a gate edge bounces you back for 34% skill charge.', fx_break:'RESONANT BREAK!', fx_ping:'PING', sk_pulsar:'Resonance', sd_pulsar:'For {n}s Perfects score x3, grazes bounce off for free and 2 deeper hits shatter the gate',
  ul_solaris:'Genesis', ud_solaris:'Every gate on screen burns away, 3.5s invincible, and coins rain for {n}s', ul_aurora:'Polar Night', ud_aurora:'For {n}s every gate opens into one straight, wide lane at your height, each one a Perfect', ul_tempest:'Hurricane', ud_tempest:'Become the storm: carried through the next {n} gates, invincible, then set down safely with a full dash meter', ul_pleiad:'Meteor Shower', ud_pleiad:'Falling stars destroy the next {n} gates, all at once', ul_pulsar:'Big Bang', ud_pulsar:'For {n}s the world runs slow and every gate you pass is a Perfect worth x3', ultK:'Ultimate', ultReady:'ULT READY!', hUlt:'Ultimate — Ultra units have a third button, ULT (A). Its gauge fills with every gate you pass, faster with Perfects; when it is full, press it for that unit’s ultimate. Stage mode only.',
- r_season:'Season', seaOnly:'Season reward · top 10 of a versus season', r_monarch:'Sovereign', p_monarch:'Royal Guard: starts with 1 shield (max 1) and wins it back every 25 gates.', sk_monarch:'Coronation', sd_monarch:'Invincible for {n}s, and the Perfect window stays wide for 4s'},
+ r_season:'Season', seaOnly:'Season reward · top 10 of a versus season', r_monarch:'Sovereign', p_monarch:'Royal Guard: starts with 1 shield (max 1) and wins it back every 25 gates.', sk_monarch:'Coronation', sd_monarch:'Invincible for {n}s, and the Perfect window stays wide for 4s',
+ hz_over:'OVERSPEED', hz_weight:'WEIGHT', hz_smoke:'SMOKE', hz_drain:'DISCHARGE', hHaz:'Hazards — from stage 11, dark spiked discs with a red rim sit between the gates. Touch one and you get Overspeed (faster for 3s), Weight (heavier for 3s), Smoke (2.5s of fog) or Discharge (dash meter, skill charge and combo back to zero). With a shield, during a dash or while invincible they pop harmlessly. Stage mode only.'},
 ja:{pt_bronze:'ブロンズ', pt_silver:'シルバー', pt_gold:'ゴールド', pt_platinum:'プラチナ', pt_diamond:'ダイヤ', pt_transcend:'超越', pt_demigod:'半神', ptUp:'ティア昇格!{t}',
  nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0{n}',
  fx_slip:'墨隠れ!', fx_fore:'予感!',
@@ -720,7 +722,8 @@ ja:{pt_bronze:'ブロンズ', pt_silver:'シルバー', pt_gold:'ゴールド', 
  p_tempest:'ダッシュ貫通スコア2倍。ダッシュでゲートを壊すとゲージが30%戻る(1回のダッシュにつき1度)。突風リフレックス:ゲージが3分の1以上あれば、ゲートにぶつかっても死なず短い自動ダッシュが出る(ゲージを全消費、ゲート16個通過、または嵐の目の終了で再装填)。', fx_gust:'突風リフレックス!',
  p_pulsar:'パーフェクトごとに+2点、スキルが早く溜まる。フィーバーが8コンボで始まる。エコーピン:ゲートのふちを浅くかすめると、スキルチャージ34%を使って弾き返される。', fx_ping:'PING', fx_break:'共鳴破砕!',
  ul_solaris:'天地開闢', ud_solaris:'画面上のゲートをすべて焼き払い、3.5秒間無敵。{n}秒間コインの雨が降る', ul_aurora:'極夜', ud_aurora:'{n}秒間、すべてのゲートが自分の高さでまっすぐ広い回廊になり、通ればすべてパーフェクト', ul_tempest:'ハリケーン', ud_tempest:'嵐となって次のゲート{n}つを無敵で突き抜け、ダッシュゲージ満タンで安全に降り立つ', ul_pleiad:'流星群', ud_pleiad:'流れ星が降り注ぎ、次のゲート{n}つをまとめて破壊する', ul_pulsar:'ビッグバン', ud_pulsar:'{n}秒間世界がスローになり、通ったゲートはすべてパーフェクトで得点3倍', ultK:'アルティメット', ultReady:'ULT 発動可能!', hUlt:'アルティメット — ウルトラユニットには3つ目のボタンULT(A)がある。ゲートを通るたびにゲージが溜まり、パーフェクトならさらに速い。満タンで押すとそのユニットのアルティメットが発動。ステージ専用。',
- r_season:'シーズン限定', seaOnly:'シーズン報酬 · 対戦シーズン上位10名', r_monarch:'君主型', p_monarch:'ロイヤルガード:シールド1枚で出発(最大1枚)。ゲート25個ごとにシールドを取り戻す。', sk_monarch:'戴冠式', sd_monarch:'{n}秒間無敵、4秒間パーフェクト判定が広がる'},
+ r_season:'シーズン限定', seaOnly:'シーズン報酬 · 対戦シーズン上位10名', r_monarch:'君主型', p_monarch:'ロイヤルガード:シールド1枚で出発(最大1枚)。ゲート25個ごとにシールドを取り戻す。', sk_monarch:'戴冠式', sd_monarch:'{n}秒間無敵、4秒間パーフェクト判定が広がる',
+ hz_over:'暴走', hz_weight:'重り', hz_smoke:'煙幕', hz_drain:'放電', hHaz:'妨害アイテム — ステージ11から、ゲートの間に赤いふちの黒いトゲ円盤が出る。触れると暴走(3秒間加速)・重り(3秒間重くなる)・煙幕(2.5秒の霧)・放電(ダッシュゲージ・スキルチャージ・コンボが0)のどれかを受ける。シールドがあるとき、ダッシュ中、無敵中は何も起きずに弾ける。ステージ専用。'},
 zh:{pt_bronze:'青铜', pt_silver:'白银', pt_gold:'黄金', pt_platinum:'铂金', pt_diamond:'钻石', pt_transcend:'超凡', pt_demigod:'半神', ptUp:'段位晋升!{t}',
  nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
  fx_slip:'墨隐!', fx_fore:'预感!',
@@ -735,13 +738,14 @@ zh:{pt_bronze:'青铜', pt_silver:'白银', pt_gold:'黄金', pt_platinum:'铂�
  p_tempest:'冲刺穿越得分翻倍。用冲刺撞碎关卡返还30%能量(每次冲刺1次)。疾风反射:能量达到三分之一以上时,撞上关卡不会死亡,而是自动发动一次短冲刺(耗尽全部能量,再通过16个关卡或风暴之眼结束后重新就绪)。', fx_gust:'疾风反射!',
  p_pulsar:'每次完美+2分,技能充能更快。连击8次即进入狂热。共鸣回响:浅擦关卡边缘时,消耗34%技能充能将你弹回。', fx_ping:'PING', fx_break:'共振破碎!',
  ul_solaris:'开天辟地', ud_solaris:'屏幕上的关卡全部焚毁,无敌3.5秒,并降下{n}秒金币雨', ul_aurora:'极夜', ud_aurora:'{n}秒内所有关卡在你的高度连成一条笔直宽阔的回廊,通过即算完美', ul_tempest:'飓风', ud_tempest:'化身风暴,无敌地卷过接下来{n}个关卡,随后带着满格冲刺能量安全落下', ul_pleiad:'流星雨', ud_pleiad:'流星倾泻而下,一举击毁接下来{n}个关卡', ul_pulsar:'大爆炸', ud_pulsar:'{n}秒内世界变慢,通过的关卡全部算作完美且得分3倍', ultK:'终极技', ultReady:'终极技就绪!', hUlt:'终极技 — 究极机体拥有第三个按钮ULT(A)。每通过一个关卡都会充能,完美通过充得更快;充满后按下即可释放该机体的终极技。仅限关卡模式。',
- r_season:'赛季限定', seaOnly:'赛季奖励 · 对战赛季前10名', r_monarch:'君主型', p_monarch:'王室卫队:开局自带1层护盾(最多1层)。每通过25个关卡恢复护盾。', sk_monarch:'加冕', sd_monarch:'无敌{n}秒,4秒内完美判定放宽'},
-es:{pt_bronze:'Bronce', pt_silver:'Plata', pt_gold:'Oro', pt_platinum:'Platino', pt_diamond:'Diamante', pt_transcend:'Trascendente', pt_demigod:'Semidiós', ptUp:'¡ASCENSO! {t}'},
-pt:{pt_bronze:'Bronze', pt_silver:'Prata', pt_gold:'Ouro', pt_platinum:'Platina', pt_diamond:'Diamante', pt_transcend:'Transcendente', pt_demigod:'Semideus', ptUp:'NOVO TIER! {t}'},
-fr:{pt_bronze:'Bronze', pt_silver:'Argent', pt_gold:'Or', pt_platinum:'Platine', pt_diamond:'Diamant', pt_transcend:'Transcendant', pt_demigod:'Demi-dieu', ptUp:'RANG SUPÉRIEUR ! {t}'},
-de:{pt_bronze:'Bronze', pt_silver:'Silber', pt_gold:'Gold', pt_platinum:'Platin', pt_diamond:'Diamant', pt_transcend:'Transzendent', pt_demigod:'Halbgott', ptUp:'AUFSTIEG! {t}'},
-id:{pt_bronze:'Perunggu', pt_silver:'Perak', pt_gold:'Emas', pt_platinum:'Platina', pt_diamond:'Berlian', pt_transcend:'Transenden', pt_demigod:'Setengah Dewa', ptUp:'NAIK TIER! {t}'},
-vi:{pt_bronze:'Đồng', pt_silver:'Bạc', pt_gold:'Vàng', pt_platinum:'Bạch kim', pt_diamond:'Kim cương', pt_transcend:'Siêu việt', pt_demigod:'Bán thần', ptUp:'THĂNG HẠNG! {t}'}
+ r_season:'赛季限定', seaOnly:'赛季奖励 · 对战赛季前10名', r_monarch:'君主型', p_monarch:'王室卫队:开局自带1层护盾(最多1层)。每通过25个关卡恢复护盾。', sk_monarch:'加冕', sd_monarch:'无敌{n}秒,4秒内完美判定放宽',
+ hz_over:'超速', hz_weight:'负重', hz_smoke:'烟幕', hz_drain:'放电', hHaz:'干扰道具 — 从第11关起,关卡之间会出现红边的黑色尖刺圆盘。碰到会中其中一种:超速(加速3秒)、负重(变重3秒)、烟幕(2.5秒雾气)、放电(冲刺能量、技能充能和连击归零)。持有护盾、冲刺中或无敌时,它只会无害地碎掉。仅限关卡模式。'},
+es:{pt_bronze:'Bronce', pt_silver:'Plata', pt_gold:'Oro', pt_platinum:'Platino', pt_diamond:'Diamante', pt_transcend:'Trascendente', pt_demigod:'Semidiós', ptUp:'¡ASCENSO! {t}', hz_over:'SOBREVELOCIDAD', hz_weight:'LASTRE', hz_smoke:'HUMO', hz_drain:'DESCARGA', hHaz:'Peligros — desde STAGE 11 aparecen entre las puertas discos oscuros con púas y borde rojo. Si tocas uno recibes Sobrevelocidad (más rápido 3 s), Lastre (más pesado 3 s), Humo (2,5 s de niebla) o Descarga (barra de dash, carga de habilidad y combo a cero). Con un escudo, durante un dash o siendo invencible estallan sin efecto. Solo en el modo por fases.'},
+pt:{pt_bronze:'Bronze', pt_silver:'Prata', pt_gold:'Ouro', pt_platinum:'Platina', pt_diamond:'Diamante', pt_transcend:'Transcendente', pt_demigod:'Semideus', ptUp:'NOVO TIER! {t}', hz_over:'SOBREVELOCIDADE', hz_weight:'LASTRO', hz_smoke:'FUMAÇA', hz_drain:'DESCARGA', hHaz:'Perigos — a partir do STAGE 11 surgem entre os portões discos escuros com espinhos e borda vermelha. Ao tocar em um você recebe Sobrevelocidade (mais rápido por 3 s), Lastro (mais pesado por 3 s), Fumaça (2,5 s de névoa) ou Descarga (barra de dash, carga da habilidade e combo zerados). Com um escudo, durante um dash ou invencível, eles estouram sem efeito. Só no modo de fases.'},
+fr:{pt_bronze:'Bronze', pt_silver:'Argent', pt_gold:'Or', pt_platinum:'Platine', pt_diamond:'Diamant', pt_transcend:'Transcendant', pt_demigod:'Demi-dieu', ptUp:'RANG SUPÉRIEUR ! {t}', hz_over:'SURVITESSE', hz_weight:'LEST', hz_smoke:'FUMÉE', hz_drain:'DÉCHARGE', hHaz:'Dangers — dès le STAGE 11, des disques sombres à pointes, cerclés de rouge, apparaissent entre les portes. En toucher un inflige Survitesse (plus rapide pendant 3 s), Lest (plus lourd pendant 3 s), Fumée (2,5 s de brouillard) ou Décharge (jauge de dash, charge de compétence et combo à zéro). Avec un bouclier, pendant un dash ou en étant invincible, ils éclatent sans effet. Mode par niveaux uniquement.'},
+de:{pt_bronze:'Bronze', pt_silver:'Silber', pt_gold:'Gold', pt_platinum:'Platin', pt_diamond:'Diamant', pt_transcend:'Transzendent', pt_demigod:'Halbgott', ptUp:'AUFSTIEG! {t}', hz_over:'ÜBERTEMPO', hz_weight:'GEWICHT', hz_smoke:'RAUCH', hz_drain:'ENTLADUNG', hHaz:'Gefahren — ab STAGE 11 liegen zwischen den Toren dunkle Stachelscheiben mit rotem Rand. Wer eine berührt, bekommt Übertempo (3 s schneller), Gewicht (3 s schwerer), Rauch (2,5 s Nebel) oder Entladung (Dash-Leiste, Skill-Ladung und Combo auf null). Mit einem Schild, im Dash oder unverwundbar zerplatzen sie wirkungslos. Nur im Stage-Modus.'},
+id:{pt_bronze:'Perunggu', pt_silver:'Perak', pt_gold:'Emas', pt_platinum:'Platina', pt_diamond:'Berlian', pt_transcend:'Transenden', pt_demigod:'Setengah Dewa', ptUp:'NAIK TIER! {t}', hz_over:'NGEBUT', hz_weight:'PEMBERAT', hz_smoke:'ASAP', hz_drain:'DAYA HABIS', hHaz:'Bahaya — mulai STAGE 11, cakram gelap berduri dengan tepi merah muncul di antara gerbang. Jika tersentuh, kamu terkena Ngebut (lebih cepat 3 detik), Pemberat (lebih berat 3 detik), Asap (kabut 2,5 detik), atau Daya Habis (meteran dash, isi skill, dan combo jadi nol). Saat punya perisai, sedang dash, atau kebal, cakram itu pecah tanpa efek. Hanya di mode stage.'},
+vi:{pt_bronze:'Đồng', pt_silver:'Bạc', pt_gold:'Vàng', pt_platinum:'Bạch kim', pt_diamond:'Kim cương', pt_transcend:'Siêu việt', pt_demigod:'Bán thần', ptUp:'THĂNG HẠNG! {t}', hz_over:'QUÁ TỐC', hz_weight:'TẠ NẶNG', hz_smoke:'KHÓI MÙ', hz_drain:'XẢ ĐIỆN', hHaz:'Vật cản — từ STAGE 11, những đĩa gai màu tối viền đỏ xuất hiện giữa các cổng. Chạm vào sẽ dính một trong số: Quá tốc (nhanh hơn trong 3 giây), Tạ nặng (nặng hơn trong 3 giây), Khói mù (2,5 giây sương mù) hoặc Xả điện (thanh lướt, năng lượng kỹ năng và combo về 0). Khi có khiên, đang lướt hoặc bất tử, chúng vỡ tan mà không gây hại. Chỉ có ở chế độ stage.'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
 const birdById = id => BIRDS.find(b => b.id === id);
@@ -954,11 +958,11 @@ let FX = newFx(); const TMAX = {};
 function reset(){
   T = 0; timeScale = 1; hitstop = 0; shake = 0; flash = 0;
   bird.x = Math.min(LW*.3, 150); bird.y = 280; bird.vy = 0; bird.rot = 0;
-  gates = []; orbs = []; parts = []; pops = []; trail = [];
+  gates = []; orbs = []; hazs = []; parts = []; pops = []; trail = [];
   score = 0; gatesPassed = 0; combo = 0; maxCombo = 0; perfects = 0;
   bird.r = B.r;
   PK = perks(); FX = newFx(); FX.threads = PK.veilStart; if (ultOn()) FX.ult = ULT.start;   // AURORA starts a stage with its veil woven (0 for every other unit and in fair modes); a continue does not weave it again
-  skillCharge = .35; skillWasReady = false; boostT = lowGravT = autoT = cloneT = rushT = foreT = freezeT = potionT = godT = hurtT = 0; danger = 0; contUsed = false;
+  skillCharge = .35; skillWasReady = false; boostT = lowGravT = autoT = cloneT = rushT = foreT = freezeT = potionT = godT = hurtT = overT = weightT = 0; danger = 0; contUsed = false;
   bounceLeft = PK.bounce; rewindLeft = PK.rewind; perfCount = 0; phaseT = 0; giantT = 0; inkT = 0; guardUsed = false; travel = 0; hist = []; bolts = [];
   speed = 190; dashMeter = PK.dashFull ? 1 : 0; dashT = 0; invuln = 0; shields = PK.shieldStart; reviveLeft = PK.revive; orbsGot = 0; magnetT = 0; slowT = 0;
   zoneIdx = 0; zoneBanner = 2.2; deathT = 0; spawnIdx = 0;
@@ -978,6 +982,22 @@ const diff = () => runD(gatesPassed);
 const POW = { potion:3, potionSpeed:1.2, slow:3, slowScale:.7, magnet:7, shieldInv:.8 };
 const powKind = p => p < .20 ? 'shield' : p < .60 ? 'magnet' : p < .80 ? 'slow' : 'potion';
 function setGod(s){ if (s > godT){ godT = s; TMAX.god = s; } }
+// Hazards (stage mode, stage tiers 1-3 = stage 11 and up): bad pick-ups between the gates, four kinds at equal chance. p: chance per spawned gate by
+// stage tier. over: world speed x overSpeed for `over` s · weight: gravity x weightGrav for `weight` s · smoke: `smoke` s of the stage fog · drain:
+// dash meter, skill charge and combo to 0 (the ultimate gauge is kept). The two timers do not stack: a second pick-up starts the same timer again.
+const HAZ = { p:[0,.06,.10,.14], kinds:['over','weight','smoke','drain'], over:3, overSpeed:1.25, weight:3, weightGrav:1.4, smoke:2.5 }, HAZ_COL = [0,95,62];
+let hazs = [], overT = 0, weightT = 0;   // hazards on the field ({x, y, k, got, t}: their own list, the orb code never sees them) and the two running timers
+const hazP = () => mode === 'endless' ? HAZ.p[stTier(curStage)] : 0;   // 0 in both fair modes: spawnGate then makes no roll at all
+const hazSafe = () => shields > 0 || dashT > 0 || invuln > 0 || godT > 0 || phaseT > 0 || giantT > 0 || freezeT > 0 || cloneT > 0;   // nothing gets through a shield (it is not spent), a dash, invincibility, or a skill that makes the bird untouchable (ghosting, giant, time stop, the shadow clone)
+function hazHit(h){
+  if (hazSafe()){ shards(h.x, h.y, [350,25,32], RM ? 5 : 10); ring(h.x, h.y, 46, [0,0,72], .3, 2); tone(520,.06,'triangle',.05,-200); return; }   // pops harmlessly
+  if (h.k === 'over') overT = TMAX.over = HAZ.over;
+  else if (h.k === 'weight') weightT = TMAX.weight = HAZ.weight;
+  else if (h.k === 'smoke'){ const on = FX.fogT > 0; if (FX.fogT < HAZ.smoke){ FX.fogT = HAZ.smoke; FX.fogDur = on ? HAZ.smoke + 1 : HAZ.smoke; } }   // a longer fog is left alone; fog that is already up does not fade in again
+  else { dashMeter = 0; skillCharge = 0; combo = 0; tier = 0; }
+  banner(t('hz_' + h.k), HAZ_COL, 1, false); ring(bird.x, bird.y, 150, HAZ_COL, .5, 6); if (!RM) ring(bird.x, bird.y, 70, HAZ_COL, .35, 3);
+  hurtT = Math.max(hurtT, .35); shake = Math.max(shake, 6); haptic('shieldBreak'); tone(110,.3,'sawtooth',.16,-50); noise(.12,.1);   // the red edge flash of a hit, a small shake, a low harsh tone
+}
 // Course layout depends only on the seed and gate index, never on screen size or play timing.
 function spawnGate(x){
   const idx = spawnIdx++;
@@ -1012,6 +1032,11 @@ function spawnGate(x){
   }
   if (FX.laneN > 0) laneApply(g);
   if (mode === 'endless' && idx > 4 && Math.random() < GEM_P * (B.gemMul || 1)) orbs.push({ x: x + g.w + 90, y: base, k:'gem', got:false, t:0 });
+  if (idx > 4 && hazP() && Math.random() < hazP()){   // hazard: rolled outside the seeded rng, like the gem. Halfway between the gate before and this one, on the line between the two gap centres, pushed 40-70px to one side: off the straight path but close to it. The coin row of this gate crosses that spot, so the side (then the reach) that stays clear of the row is taken
+    const pg = gates[gates.length - 2], my = (pg.base + base)/2, o = 40 + Math.random()*30, s = Math.random() < .5 ? -1 : 1;
+    const hy = [my + s*o, my - s*o, my + s*70, my - s*70].find(y => Math.abs(y - (base - 13)) >= 43);   // the row lies between base - 26 and base: 43 from its middle keeps the two apart
+    hazs.push({ x: (pg.x + pg.w + x)/2, y: Math.max(40, Math.min(GROUND - 40, hy)), k: HAZ.kinds[Math.random()*HAZ.kinds.length | 0], got:false, t:0 });
+  }
 }
 let GEM_P = .01;   // gem drop chance per gate (stage mode)
 // AURORA lane: a laned gate sits still at base + off and is laneGap wider; g.base itself never changes, so course layout is untouched
@@ -1318,7 +1343,7 @@ function strikeNext(){
 function blink(){
   const g = gates.find(q => !q.scored && q.x + q.w > bird.x - bird.r); if (!g) return;
   const dx = (g.x + g.w + bird.r + 26) - bird.x, oldY = bird.y;
-  for (const q of gates) q.x -= dx; for (const o of orbs) if (!o.gate) o.x -= dx; travel += dx; bgOff += dx;
+  for (const q of gates) q.x -= dx; for (const o of orbs) if (!o.gate) o.x -= dx; for (const h of hazs) h.x -= dx; travel += dx; bgOff += dx;
   g.dashed = true; bird.y = Math.max(40, Math.min(GROUND - 60, gY(g))); bird.vy = -120; invuln = Math.max(invuln, .5);
   for (let i=0;i<14;i++){ const k = i/14; ghosts.push({x: bird.x - dx*(1-k), y: oldY + (bird.y - oldY)*k, rot:0, life:.08 + .26*k}); }
   for (let i=0;i<20;i++) part(bird.x - dx, oldY, (Math.random()-.5)*260, (Math.random()-.5)*260, .5, B.wingCol, 2.5);
@@ -1477,6 +1502,7 @@ function die(){
     rewindLeft--; FX.idleT = 0; FX.idleWarn = false; const e = hist[0], dx = travel - e.d; sigFx(B.id, 'rewind');
     for (const g of gates) g.x += dx;
     for (const o of orbs) if (!o.gate) o.x += dx;
+    for (const h of hazs) h.x += dx;
     travel = e.d; bird.y = e.y; bird.vy = Math.min(e.vy, 0) - 120; invuln = 1.1; trail = []; hist = [];
     hitstop = .2; flash = .7; cam.z = Math.max(cam.z, 1.1); ring(bird.x, bird.y, LW, [40,90,62], .9, 10); ring(bird.x, bird.y, 80, [40,90,62], .5, 4);
     banner(t('fx_rewind'), [40,90,62], 1.1); haptic('fever'); tone(1400, .5, 'sine', .14, -1200); tone(300, .5, 'triangle', .1, 900, .05);
@@ -1506,7 +1532,7 @@ function openCont(){
 function closeCont(go){
   clearInterval(contTimer); clearInterval(adTimer); adTimer = 0; $('contScr').hidden = true;
   if (!go){ showOver(); return; }
-  contUsed = true; state = 'play'; FX.fogT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; setGod(2.5); hurtT = 0;
+  contUsed = true; state = 'play'; FX.fogT = 0; overT = weightT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; setGod(2.5); hurtT = 0;
   cam.tz = 1; cam.fx = LW/2; cam.fy = LH/2;
   for (const g of gates) if (Math.abs(g.x + g.w/2 - bird.x) < 140) g.broken = true;
   $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false; $('ultBtn').hidden = !ultOn();
@@ -1592,7 +1618,7 @@ function update(rdt){
   const z = ZONES[zoneIdx], k = Math.min(1, rdt*1.6);
   lerpC(pal.sky0, z.sky[0], k); lerpC(pal.sky1, z.sky[1], k); lerpC(pal.a, z.a, k); lerpC(pal.b, z.b, k); lerpC(pal.gate, z.gate, k);
 
-  const vx = state === 'play' ? (freezeT > 0 ? 0 : speed * (dashT > 0 ? 2.6 : 1) * (potionT > 0 ? POW.potionSpeed : 1) * (FX.heavyT > 0 ? .8 : 1)) : state === 'menu' ? 120 : 30;
+  const vx = state === 'play' ? (freezeT > 0 ? 0 : speed * (dashT > 0 ? 2.6 : 1) * (potionT > 0 ? POW.potionSpeed : 1) * (FX.heavyT > 0 ? .8 : 1) * (overT > 0 ? HAZ.overSpeed : 1)) : state === 'menu' ? 120 : 30;
   bgOff += vx * dt;
   scorePunch = Math.max(0, scorePunch - rdt*4);
   squash = Math.max(0, squash - rdt*6);
@@ -1642,6 +1668,7 @@ function update(rdt){
   for (const bo of bolts) bo.life -= rdt; bolts = bolts.filter(bo => bo.life > 0);
   if (magnetT > 0) magnetT -= dt;
   if (slowT > 0) slowT -= rdt;
+  if (overT > 0) overT -= dt; if (weightT > 0) weightT -= dt;
   if (FX.fogT > 0) FX.fogT -= rdt; if (FX.heavyT > 0) FX.heavyT -= dt; if (FX.resoT > 0) FX.resoT -= dt; if (FX.pingT > 0) FX.pingT -= dt;
   if (FX.strikeN > 0){ FX.strikeT -= rdt; if (FX.strikeT <= 0 && strikeNext()){ FX.strikeN--; FX.strikeT = .18; } }
   // Hard tier: go 2s (game time) without a tap and the engine stalls — invincibility, glide and combo are lost
@@ -1657,7 +1684,7 @@ function update(rdt){
   if (freezeT > 0){ bird.vy *= .85; }
   else if ((autoT > 0 || FX.carry) && nextG){ const ty = gY(nextG); bird.vy += ((ty - bird.y) * 5 - bird.vy) * Math.min(1, dt*8); }
   else if (dashT > 0){ bird.vy *= .85; part(bird.x-10, bird.y+(Math.random()-.5)*14, -300, 0, .3, pal.b, 2.5); }
-  else bird.vy += B.grav * (lowGravT > 0 ? .5 : 1) * dt;
+  else bird.vy += B.grav * (lowGravT > 0 ? .5 : 1) * (weightT > 0 ? HAZ.weightGrav : 1) * dt;
   bird.vy = Math.min(bird.vy, B.maxFall * (lowGravT > 0 ? .6 : 1));
   if (potionT > 0 && Math.random() < .7) part(bird.x - 10, bird.y, -200, (Math.random()-.5)*80, .4, [(T*400)%360,100,65], 3);
   bird.y += bird.vy*dt;
@@ -1728,7 +1755,7 @@ function update(rdt){
       if (mode === 'endless'){
         const tr = stTier(curStage), fn = stFogN(curStage);
         if (tr) FX.amb = Math.min(6, Math.max(FX.amb, tr + 1));
-        if (fn && gatesPassed % fn === 0){ FX.fogT = FX.fogDur = tr === 3 ? 2 : .5; FX.amb = Math.min(6, Math.max(FX.amb, tr === 3 ? 6 : 5)); tone(300,.12,'sine',.08); }
+        if (fn && gatesPassed % fn === 0){ const fd = tr === 3 ? 2 : .5; if (FX.fogT < fd) FX.fogT = FX.fogDur = fd; FX.amb = Math.min(6, Math.max(FX.amb, tr === 3 ? 6 : 5)); tone(300,.12,'sine',.08); }
       }
       if (g.dashed && !sure){
         const dp = g.gust ? 1 : 2 * PK.dashPts; addScore(dp); pop(t('phase') + ' +' + dp, bird.x, bird.y-30, pal.b, true); ultFill(0, live);
@@ -1806,6 +1833,11 @@ function update(rdt){
     }
   }
   orbs = orbs.filter(o => o.x > -40 && !o.got);
+  for (const h of hazs){   // hazards: never pulled by a magnet; the reach of a power-up
+    h.x -= vx*dt; h.t += dt;
+    if (!h.got && Math.hypot(bird.x - h.x, bird.y - h.y) < bird.r + 16){ h.got = true; hazHit(h); }
+  }
+  hazs = hazs.filter(h => h.x > -40 && !h.got);
   if (dashMeter >= 1 && !wasReady){ wasReady = true; SFX.ready(); haptic('ready'); }
   if (dashMeter < 1) wasReady = false;
 }
@@ -1892,6 +1924,7 @@ function render(){
       ctx.restore();
     } else drawPower(o, bob);
   }
+  for (const h of hazs) drawHazard(h);
 
   ctx.fillStyle = hsl(pal.sky0,1,-2); ctx.fillRect(-20,GROUND,LW+40,LH-GROUND+20);
   ctx.strokeStyle = hsl(pal.a,.9); ctx.lineWidth = 2; ctx.shadowColor = hsl(pal.a); ctx.shadowBlur = 12;
@@ -1940,8 +1973,8 @@ function render(){
 
   if (state === 'play' && mode === 'endless' && stTier(curStage) >= 2){
     const hard = stTier(curStage) === 3, vt = ctx.createRadialGradient(LW/2,LH/2,LH*.3,LW/2,LH/2,LH*.8); vt.addColorStop(0,'rgba(0,0,0,0)'); vt.addColorStop(1, hard ? 'rgba(120,0,30,.22)' : 'rgba(0,0,0,.12)'); ctx.fillStyle = vt; ctx.fillRect(0,0,LW,LH);
-    if (FX.fogT > 0){ const fi = hard ? .25 : .1; ctx.fillStyle = `rgba(205,214,235,${(hard ? .42 : .28) * (RM ? 1 : Math.max(0, Math.min(1, (FX.fogDur - FX.fogT)/fi, FX.fogT/fi)))})`; ctx.fillRect(0,0,LW,LH); }
   }
+  if (state === 'play' && mode === 'endless' && FX.fogT > 0){ const hard = stTier(curStage) === 3, fi = hard ? .25 : .1; ctx.fillStyle = `rgba(205,214,235,${(hard ? .42 : .28) * (RM ? 1 : Math.max(0, Math.min(1, (FX.fogDur - FX.fogT)/fi, FX.fogT/fi)))})`; ctx.fillRect(0,0,LW,LH); }   // the fog of stage tiers 2-3 and the smoke hazard (from tier 1)
   if (inkT > 0){ const vg2 = ctx.createRadialGradient(LW/2,LH/2,LH*.25,LW/2,LH/2,LH*.8); vg2.addColorStop(0,'rgba(0,0,0,0)'); vg2.addColorStop(1, `hsla(285,70%,18%,${Math.min(.55, inkT*.3)})`); ctx.fillStyle = vg2; ctx.fillRect(0,0,LW,LH); }
   if (freezeT > 0){ ctx.fillStyle = `hsla(200,80%,70%,${Math.min(.22, freezeT*.15)})`; ctx.fillRect(0,0,LW,LH); }   // the countdown dial is CHRONO's own (UNIT_FX.chrono.back)
   if (hurtT > 0){ const vh = ctx.createRadialGradient(LW/2,LH/2,LH*.2,LW/2,LH/2,LH*.75); vh.addColorStop(0,'rgba(0,0,0,0)'); vh.addColorStop(1, `rgba(255,30,60,${hurtT})`); ctx.fillStyle = vh; ctx.fillRect(0,0,LW,LH); }
@@ -2035,6 +2068,19 @@ function drawPower(o, bob){
   if (o.k === 'potion'){ ctx.fillStyle = `hsl(${(o.t*200)%360},100%,70%)`; ctx.beginPath(); ctx.arc(0,3,6.5,0,6.28); ctx.fill(); ctx.fillRect(-2.5,-9,5,7); ctx.fillStyle = '#fff'; ctx.fillRect(-3.5,-10,7,2.5); }
   else ctx.fillText(o.k === 'shield' ? 'S' : o.k === 'magnet' ? 'M' : 'T', 0, 1);
   ctx.textBaseline = 'alphabetic';
+  ctx.restore();
+}
+function drawHazard(h){   // a dark spiked disc with a red rim and a glyph per kind, pulsing: told from the power-up hexagons by its shape, not only by its colour
+  const c = hsl(HAZ_COL);
+  ctx.save(); ctx.translate(h.x, h.y); if (!RM){ const pu = 1 + .09*Math.sin(h.t*8); ctx.scale(pu, pu); }
+  ctx.shadowColor = c; ctx.shadowBlur = 16;
+  ctx.fillStyle = 'hsl(350,45%,8%)'; ctx.strokeStyle = c; ctx.lineWidth = 2.5; ctx.beginPath();
+  for (let i=0;i<16;i++){ const a = i/16*6.283 + (RM ? 0 : h.t*.9), r = i % 2 ? 12.5 : 19; ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r); } ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.shadowBlur = 0; ctx.strokeStyle = ctx.fillStyle = 'hsl(0,100%,88%)'; ctx.lineWidth = 2; ctx.lineCap = ctx.lineJoin = 'round'; ctx.beginPath();
+  if (h.k === 'over'){ ctx.moveTo(-6,-5); ctx.lineTo(-1,0); ctx.lineTo(-6,5); ctx.moveTo(1,-5); ctx.lineTo(6,0); ctx.lineTo(1,5); ctx.stroke(); }   // two chevrons
+  else if (h.k === 'weight'){ ctx.moveTo(-4,-2); ctx.lineTo(4,-2); ctx.lineTo(6.5,6); ctx.lineTo(-6.5,6); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.arc(0,-4.5,2.6,0,6.283); ctx.stroke(); }   // a scale weight with its ring
+  else if (h.k === 'smoke'){ for (let j=-1;j<=1;j++){ ctx.moveTo(-6,j*4.5); ctx.quadraticCurveTo(-3,j*4.5-3,0,j*4.5); ctx.quadraticCurveTo(3,j*4.5+3,6,j*4.5); } ctx.stroke(); }   // three wavy lines
+  else { ctx.rect(-7,-4,12,8); ctx.moveTo(7.5,-1.5); ctx.lineTo(7.5,1.5); ctx.moveTo(-4,7); ctx.lineTo(3,-7); ctx.stroke(); }   // an empty battery, struck through
   ctx.restore();
 }
 function drawMochi(c, d, w, glow){
@@ -3236,6 +3282,7 @@ function drawHUD(){
   if (magnetT > 0) ind(t('magnetP'), magnetT, TMAX.magnet, [48,100,58]);
   if (slowT > 0) ind(t('slowP'), slowT, TMAX.slow, [280,100,68]);
   if (FX.heavyT > 0) ind(t('heavyP'), FX.heavyT, TMAX.heavy, [145,30,55]);
+  if (overT > 0) ind('✕ ' + t('hz_over'), overT, TMAX.over, HAZ_COL); if (weightT > 0) ind('✕ ' + t('hz_weight'), weightT, TMAX.weight, HAZ_COL);   // running hazards: marked, not only red
   { const pw = 84, ph = 18, gp = 6, per = Math.max(1, Math.min(4, Math.floor((LW - 16 + gp)/(pw + gp)))), y0 = (runBestRef > 0 && mode !== 'versus') || vsHudOn() ? 150 : 124;
     ctx.font = `700 10.5px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; if (pills.length) pillBot = y0 + Math.ceil(pills.length/per)*(ph + 4) - 4;
     pills.forEach(([label, k, c], i) => {
@@ -4201,12 +4248,13 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
-  get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
+if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
+  get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get hazards(){ return hazs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot, ultCharge: FX.ult, ultLive: ultLive()}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots
   TIER_FX, UNIT_ART, UNIT_FX, unitTier, cast(){ skillCharge = 1; useSkill(); }, ult(){ if (ultOn()){ FX.ult = 1; useUlt(); } }, kill(){ die(); }, sig(k){ sigFx(B.id, k, gates.find(g => !g.scored)); }, dbg: {render, drawBird, drawShape, skyEvent, counts: () => [parts.length, rings.length]},   // QA only: fire a cast / death / passive moment, count draws
-  get timers(){ return {godT, potionT, slowT, invuln, dashMeter, lowGravT, inkT}; },   // QA only: timers a player reads off the screen (lowGravT: the bot's flight model follows NIMBUS's glide; inkT: KRAKEN's ink cloak log)
+  get timers(){ return {godT, potionT, slowT, invuln, dashMeter, lowGravT, inkT, overT, weightT, fogT: FX.fogT}; },   // QA only: timers a player reads off the screen (lowGravT: the bot's flight model follows NIMBUS's glide; inkT: KRAKEN's ink cloak log; overT / weightT / fogT: the hazards)
+  haz(k, dx, dy){ const h = {x: bird.x + (dx || 0), y: bird.y + (dy || 0), k, got:false, t:0}; if (dx == null) hazHit(h); else hazs.push(h); },   // QA only: a hazard as if touched right now, or one placed dx / dy from the bird
   get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
   hold: false, step(dt, n){ for (let i = 0; i < (n || 1); i++) update(dt); },
   selfTest(){
@@ -4220,6 +4268,15 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
         for (let i = 1; i < ST_N; i++) if (stAcc(i) <= stAcc(i-1)) return false;
         return stAcc(0) === 1 && stAcc(ST_N - 1) === 1.5 && eq([0, 49].map(gain), [42, 63]) && S.every(st => at('endless', st, () => spdD(stD0(st)) === stD0(st) && spdD(runD(60)) >= runD(60)))
           && ['daily','versus'].every(m => [0, 24, 49].every(st => at(m, st, () => D.every(d => spdD(d) === d) && [0, 20, 45, 90].every(k => (190 + spdD(runD(k))*120) * 1.25 === (190 + runD(k)*120) * 1.25)))); },
+      hazard: () => { const put = v => { [mode, curStage, gates, orbs, hazs, spawnIdx, rng, Math.random] = v; }, s0 = [mode, curStage, gates, orbs, hazs, spawnIdx, rng, Math.random], at = (m, st, f) => { mode = m; curStage = st; return f(); };   // hazards: the chance table, stage tiers 1-3 only and none in the fair modes, where one is put, per-run state, texts
+        const lay = (m, st) => at(m, st, () => { gates = []; orbs = []; hazs = []; spawnIdx = 0; rng = mulberry32(7); Math.random = () => 0; for (let i = 0; i < 12; i++) spawnGate(400 + i*240);   // every roll made outside the course rng says yes: a hazard at every gate that can have one
+          return [hazs.length, hazs.every((h, i) => { const g = gates[i + 5], p = gates[i + 4], off = Math.abs(h.y - (p.base + g.base)/2); return HAZ.kinds.includes(h.k) && h.x > p.x + p.w + 30 && h.x < g.x - 30 && h.y >= 40 && h.y <= GROUND - 40 && off >= 40 && off <= 70 && Math.abs(h.y - (g.base - 13)) >= 43; })]; });
+        const P = S.map(st => at('endless', st, hazP)), fair = ['daily','versus'].map(m => [at(m, 49, hazP), ...lay(m, 49)]), L0 = lay('endless', 0), L49 = lay('endless', 49);
+        put(s0);
+        let fresh = true; if (state === 'menu'){ overT = weightT = 9; hazs = [{x: 0, y: 0, k: 'over', got: false, t: 0}]; reset(); fresh = overT === 0 && weightT === 0 && hazs.length === 0 && FX.fogT === 0; }   // a new run starts clean
+        return eq(HAZ.p, [0,.06,.10,.14]) && eq(P, [0,0,.06,.06,.1,.1,.14,.14]) && eq(HAZ.kinds, ['over','weight','smoke','drain']) && eq([HAZ.over, HAZ.overSpeed, HAZ.weight, HAZ.weightGrav, HAZ.smoke], [3,1.25,3,1.4,2.5])
+          && eq(fair, [[0,0,true],[0,0,true]]) && eq(L0, [0,true]) && eq(L49, [7,true]) && fresh && !!document.querySelector('#helpScr [data-i18n="hHaz"]') && eq(Object.keys(FW.timers).filter(k => /^(overT|weightT|fogT)$/.test(k)), ['overT','weightT','fogT'])
+          && Object.keys(I18N).length === 10 && Object.keys(I18N).every(l => ['hz_over','hz_weight','hz_smoke','hz_drain','hHaz'].every(k => typeof I18N[l][k] === 'string' && I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && /11/.test(I18N[l].hHaz) && /2[.,]5/.test(I18N[l].hHaz)); },
       pow: () => eq([0,.19,.2,.59,.6,.79,.8,.99].map(powKind), ['shield','shield','magnet','magnet','slow','slow','potion','potion']),
       sk23: () => BIRDS.length === 23 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
       ultra5: () => BIRDS.filter(b => b.rarity === 4).length === 5,
