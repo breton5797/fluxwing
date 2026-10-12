@@ -247,7 +247,7 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 -- =====================================================================================================
 -- VERSUS RANKING — rank points (RP) held by the server
 -- One RP per player, shared by 1v1 and 2v2. Win +50, loss -45, draw 0, never below 0. Matches against the AI are
--- practice: the client never reports them. Tiers (client, TIERS): 0 / 400 / 1,000 / 2,000 / 3,600 RP.
+-- practice: the client never reports them. Tiers (client, PTIERS): 0 / 400 / 1,000 / 2,000 / 3,600 / 5,600 / 8,000 RP.
 --
 -- There is still no referee: two (or four) clients play a seeded course and each decides the result on its own.
 -- The server only cross-checks what the participants say:
@@ -488,7 +488,7 @@ create table if not exists public.fw_vs_standing (
   player_id  uuid        not null references auth.users (id) on delete cascade,
   rank       integer,                                       -- null: fewer than min_matches ranked matches (no reward)
   rp         integer     not null,
-  tier       smallint    not null,                          -- 0..4, from rp at the rollover
+  tier       smallint    not null,                          -- 0..6, from rp at the rollover
   wins       integer     not null,
   losses     integer     not null,
   draws      integer     not null,
@@ -500,10 +500,15 @@ create table if not exists public.fw_vs_standing (
   created_at timestamptz not null default now(),            -- the rollover
   primary key (season, player_id),
   constraint fw_vs_standing_rank_chk check (rank is null or rank >= 1),
-  constraint fw_vs_standing_tier_chk check (tier between 0 and 4),
+  constraint fw_vs_standing_tier_chk check (tier between 0 and 6),
   constraint fw_vs_standing_num_chk  check (rp >= 0 and wins >= 0 and losses >= 0 and draws >= 0 and matches = wins + losses + draws)
 );
 comment on table public.fw_vs_standing is 'Flux Wing versus ranking: final standings of ended seasons. Rows written only by private.fw_vs_tick() (rollover), claimed_at only by private.fw_versus_claim().';
+-- The tier check was 0..4 while there were five tiers, and "create table if not exists" leaves a table that is already
+-- there as it is: the check is replaced on every run (rows archived under five tiers hold 0..4 and pass the new one;
+-- their first five floors and rewards are unchanged).
+alter table public.fw_vs_standing drop constraint if exists fw_vs_standing_tier_chk;
+alter table public.fw_vs_standing add constraint fw_vs_standing_tier_chk check (tier between 0 and 6);
 -- a season's ranks in order (the past-season board: rank <= 10); unique: no shared ranks
 create unique index if not exists fw_vs_standing_rank_idx on public.fw_vs_standing (season, rank) where rank is not null;
 -- one player's results (versus_me, and the cascade from auth.users)
@@ -536,8 +541,9 @@ create or replace function private.fw_vs_cfg(
 ) language sql immutable set search_path = '' as $$
   select 50, 45, interval '20 seconds', interval '4 seconds', interval '5 minutes', interval '60 seconds', interval '20 minutes', 30, 5, interval '24 hours', interval '3 days';
 $$;
--- Seasons and their rewards. Arrays are per tier, Bronze first. tier_rp MIRRORS THE CLIENT'S TIERS (index.html:
--- TIERS = [0, 400, 1000, 2000, 3600]); the server's copy decides the reward, the client's only draws the badge.
+-- Seasons and their rewards. Arrays are per tier, Bronze first (7 tiers: bronze, silver, gold, platinum, diamond,
+-- transcend, demigod). tier_rp MIRRORS THE CLIENT'S TIERS (index.html: the floors in PTIERS =
+-- [0, 400, 1000, 2000, 3600, 5600, 8000]); the server's copy decides the reward, the client's only draws the badge.
 create or replace function private.fw_vs_season_cfg(
   out tz text,                   -- a season is one calendar month in this time zone
   out min_matches integer,       -- settled ranked matches (wins + losses + draws) in the season to get a rank and a reward
@@ -548,7 +554,7 @@ create or replace function private.fw_vs_season_cfg(
   out top_unit text,             -- ... this unit (an id in private.fw_units())
   out unit_gems integer          -- what the client grants instead when the device already owns that unit
 ) language sql immutable set search_path = '' as $$
-  select 'Asia/Seoul', 10, array[0, 400, 1000, 2000, 3600], array[1000, 2500, 5000, 9000, 15000], array[0, 3, 8, 15, 30], 10, 'monarch', 30;
+  select 'Asia/Seoul', 10, array[0, 400, 1000, 2000, 3600, 5600, 8000], array[1000, 2500, 5000, 9000, 15000, 22000, 30000], array[0, 3, 8, 15, 30, 50, 80], 10, 'monarch', 30;
 $$;
 
 -- ---------- helpers (not executable by clients; they run inside the definer functions below) ----------
