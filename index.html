@@ -1037,6 +1037,7 @@ const STAGE_DKEY = ['easy','normal','hard','expert'];               // indexed b
 const stTier = i => i < 10 ? 0 : i < 25 ? 1 : i < 40 ? 2 : 3;
 const stPos  = i => { const t = stTier(i); return (i - ST_FIRST[t]) / (ST_CNT[t] - 1); };
 const stD0   = i => ST_D0[stTier(i)] + ST_SPAN * stPos(i);
+const stAcc  = i => 1 + .5 * i/(ST_N - 1);   // in-run acceleration by stage: how much of the run's difficulty gain the SPEED takes (stage 1 x1.0 ... stage 50 x1.5)
 const stGoal = i => { const t = stTier(i); return ST_G0[t] + ((i - ST_FIRST[t]) >> 1); };   // +1 every second stage, a jump at each tier
 const stGap0 = i => Math.max(128, (212 - stD0(i)*62) * ST_GM[stTier(i)]);   // gap of a stage's first gates, before jitter
 const stFogN = i => { const t = stTier(i); return t === 2 ? 10 - Math.floor((i-25)/5) : t === 3 ? 12 - Math.floor((i-40)/5) : 0; };
@@ -1045,6 +1046,9 @@ function runD(k){
   const d0 = stD0(curStage), cap = Math.min(1, d0 + .35);
   return k <= 45 ? d0 + (k/45)*(cap - d0) : Math.min(1, cap + (k - 45)*.008);
 }
+// The difficulty the speed reads. Stage mode: the gain over the stage's head start is scaled by stAcc (stage 50: +63 px/s over the first 45 gates
+// instead of +42); gaps and gate mix keep reading runD itself. Fair modes: d unchanged.
+const spdD = d => { if (mode !== 'endless') return d; const d0 = stD0(curStage); return d0 + (d - d0) * stAcc(curStage); };
 // Saves: new keys only. The old fw27_stg / fw27_stage (4-stage build) are read once to carry the unlock over, never written.
 const stg = (() => {
   const s = store.get('fw27_stg2', null);
@@ -1647,7 +1651,7 @@ function update(rdt){
     if (FX.idleT >= 2){ FX.idleT = 0; FX.idleWarn = false; godT = 0; potionT = 0; lowGravT = 0; combo = 0; tier = 0; banner(t('idleStall'), [0,100,62], .9, false); shake = Math.max(shake, 10); hurtT = .35; haptic('shieldBreak'); tone(140,.4,'sawtooth',.18,-80); }
   }
 
-  speed = (190 + diff()*120) * B.speed;
+  speed = (190 + spdD(diff())*120) * B.speed;
 
   const nextG = gates.find(q => !q.scored && q.x + q.w > bird.x - bird.r);
   if (freezeT > 0){ bird.vy *= .85; }
@@ -4197,7 +4201,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stGoal, stGap0, stFogN, runD, powKind, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
+if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot, ultCharge: FX.ult, ultLive: ultLive()}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots
@@ -4212,6 +4216,10 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
       d0: () => eq(S.map(i => +stD0(i).toFixed(2)), [0,.08,.1,.18,.2,.28,.3,.38]),
       curve: () => { for (let i = 1; i < ST_N; i++){ const b = stTier(i) !== stTier(i-1); if (stD0(i) < stD0(i-1) || stGoal(i) < stGoal(i-1) || stGap0(i) > stGap0(i-1) || (b && stGap0(i) > stGap0(i-1) - 12)) return false; }
         return [1,2,3].every(t => ST_MOVE[t] + ST_PULSE[t] >= ST_MOVE[t-1] + ST_PULSE[t-1]); },
+      accel: () => { const at = (m, st, f) => { const m0 = mode, s0 = curStage; mode = m; curStage = st; const v = f(); mode = m0; curStage = s0; return v; }, gain = st => at('endless', st, () => +((spdD(runD(45)) - spdD(runD(0))) * 120).toFixed(6)), D = [0,.2,.38,.5,.73,1];   // in-run acceleration by stage: the speed's share of the difficulty only, and nothing of it in the fair modes
+        for (let i = 1; i < ST_N; i++) if (stAcc(i) <= stAcc(i-1)) return false;
+        return stAcc(0) === 1 && stAcc(ST_N - 1) === 1.5 && eq([0, 49].map(gain), [42, 63]) && S.every(st => at('endless', st, () => spdD(stD0(st)) === stD0(st) && spdD(runD(60)) >= runD(60)))
+          && ['daily','versus'].every(m => [0, 24, 49].every(st => at(m, st, () => D.every(d => spdD(d) === d) && [0, 20, 45, 90].every(k => (190 + spdD(runD(k))*120) * 1.25 === (190 + runD(k)*120) * 1.25)))); },
       pow: () => eq([0,.19,.2,.59,.6,.79,.8,.99].map(powKind), ['shield','shield','magnet','magnet','slow','slow','potion','potion']),
       sk23: () => BIRDS.length === 23 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
       ultra5: () => BIRDS.filter(b => b.rarity === 4).length === 5,
