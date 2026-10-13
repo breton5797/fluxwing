@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BOARD_SIZE, MISSIONS, SKINS } from '../src/config.js';
+import { BOARD_SIZE, MISSIONS, SHARE_URL, SKINS } from '../src/config.js';
 import {
   activeSkin, applyRun, buySkin, defaultSave, ensureToday, missionText, normalizeSave, pickMissions,
   runShards, shareText, spend, withSetting,
@@ -174,4 +174,14 @@ test('share text reads like a result card', () => {
   assert.equal(classic.split('\n')[0], 'FLUX WING 2');
   assert.ok(classic.includes('87점') && classic.includes('RANK A') && classic.includes('x7'));
   assert.ok(shareText(runOf({ mode: 'daily' }), DAY).startsWith(`FLUX WING 2 · DAILY ${DAY}`));
+});
+
+test('share text ends on a challenge and a link back to the game', () => {
+  const classic = shareText(runOf({ score: 87 }), DAY).split('\n');
+  assert.equal(classic.at(-1), SHARE_URL);
+  assert.ok(classic.at(-2).includes('87'));
+  const daily = shareText(runOf({ mode: 'daily', score: 31 }), DAY).split('\n');
+  assert.equal(daily.at(-1), SHARE_URL);
+  assert.ok(daily.at(-2).includes('31') && daily.at(-2) !== classic.at(-2));
+  assert.equal(daily.length, classic.length);
 });

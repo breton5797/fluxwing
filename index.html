@@ -280,6 +280,32 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 #menu.tight .logo{font-size:44px}
 #menu.tight .hangar{gap:6px;padding:12px 16px}
 #menu.tight .hg-lock{gap:2px 8px}
+/* first screen: PLAY first, the global daily run right under it, everything else after */
+.startbig small{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase}
+.dailybig{position:relative;box-sizing:border-box;width:min(300px,100%);font-size:17px;padding:11px 14px;box-shadow:0 0 0 2px var(--cool),0 0 34px rgba(79,240,255,.5)}
+.dailybig small{font-size:10.5px;max-width:100%;text-wrap:balance}
+.dailybig.fresh::after{content:"NEW";position:absolute;top:-8px;right:10px;padding:2px 8px;border-radius:999px;background:var(--gold);color:var(--bg);font:700 10px var(--body);letter-spacing:.12em}
+.lbbtn{box-shadow:0 0 0 2px var(--gold),0 0 22px rgba(255,209,102,.3)!important}
+.lbbtn small{color:var(--gold)!important}
+.howto{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;width:min(300px,100%);margin:-4px 0}
+.howto span{padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:rgba(14,10,30,.5);color:var(--ink);font:700 10.5px var(--body);letter-spacing:.08em;white-space:nowrap}
+.chal{box-sizing:border-box;width:min(300px,100%);padding:9px 14px;border-radius:14px;border:1px solid var(--gold);background:rgba(14,10,30,.72);color:var(--gold);font:700 13px var(--body);line-height:1.35;text-wrap:balance}
+/* a pilot's first runs: the unit's fine print waits until the game has been played */
+#menu.rookie .hg-chips,#menu.rookie .hg-stats,#menu.rookie .hg-info{display:none}
+#menu.rookie .hangar{gap:6px;padding:10px 14px}
+#menu.rookie #hgCv{max-width:136px;height:62px}
+#menu.rookie .hg-row{grid-template-columns:34px minmax(0,1fr) 34px}
+#menu.rookie .hg-arrow{width:34px;height:34px;font-size:19px}
+#menu.rookie .hg-name{font-size:25px}
+#menu.rookie .hg-role{font-size:11px}
+#menu.rookie .hg-dots button{height:12px}
+@media (max-height:760px){#menu.rookie{gap:10px;padding-top:calc(44px + env(safe-area-inset-top,0px));padding-bottom:10px}#menu.rookie .logo{font-size:38px}#menu.rookie .year{font-size:12px;margin-top:-2px}#menu.rookie .startbig{font-size:23px;padding:13px 24px}.dailybig{padding:10px 14px}.mode2{gap:8px}.ghost{padding:8px 13px}}
+/* result card: why the run ended, the daily line, the challenge */
+.why{font-size:13.5px;font-weight:700;line-height:1.4;color:var(--ink);text-wrap:balance}
+.dailynote{font-size:11.5px;font-weight:700;letter-spacing:.06em;color:var(--cool);font-variant-numeric:tabular-nums;text-wrap:balance}
+.chalnote{font-size:13px;font-weight:700;line-height:1.35;color:var(--gold);text-wrap:balance}
+.sharebtn{width:100%;padding:12px;font-size:14px;background:rgba(79,240,255,.12);border-color:var(--cool)}
+#tip b{display:block;font:400 18px var(--display);letter-spacing:.06em;color:var(--cool);margin-bottom:3px}
 @media (prefers-reduced-motion:reduce){.abtn.ready,#over .card,.rank.stamp,.newbest,.logowrap,.logo::after,.startbig,#tip{animation:none!important}.btn{transition:none}}
 </style>
 
@@ -325,13 +351,15 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="hg-lock" id="hgLock"></div>
       <div class="hg-dots" id="hgDots"></div>
     </div>
-    <button class="btn startbig" id="startBtn"><span data-i18n="start"></span></button>
+    <div class="chal" id="chal" hidden></div>
+    <button class="btn startbig" id="startBtn"><span data-i18n="start"></span><small data-i18n="startSub"></small></button>
+    <div class="howto" id="howto" hidden><span data-i18n="k1"></span><span data-i18n="k2"></span><span data-i18n="k3"></span></div>
+    <button class="btn alt dailybig" id="dailyBtn"><span data-i18n="dailyCta"></span><small id="dailySub"></small></button>
     <div class="mode2">
-      <button class="btn alt sm" id="dailyBtn"><span data-i18n="daily"></span><small id="dailySub"></small></button>
       <button class="btn alt sm vsbtn" id="vsBtn"><span data-i18n="vs"></span><small id="vsSub"></small></button>
+      <button class="btn alt sm lbbtn" id="lbBtn"><span data-i18n="ranking"></span><small id="lbSub"></small></button>
     </div>
     <div class="row">
-      <button class="ghost" id="lbBtn" data-i18n="ranking"></button>
       <button class="ghost" id="shopBtn" data-i18n="shop"></button>
       <button class="ghost" id="helpBtn" aria-label="Help">?</button>
       <select class="ghost" id="langSel" aria-label="Language"></select>
@@ -358,7 +386,10 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="big" id="oScore">0</div>
       <div class="rank" id="oRank"></div>
       <div class="newbest" id="oNew" data-i18n="newBest" hidden></div>
+      <div class="why" id="oWhy" hidden></div>
+      <div class="dailynote" id="oDaily" hidden></div>
       <div class="place" id="oPlace"></div>
+      <div class="chalnote" id="oChal" hidden></div>
       <div class="vsteams" id="oTeams" hidden></div>
       <div class="stats">
         <div class="stat"><span id="oBestLbl" data-i18n="best"></span><strong id="oBest">0</strong></div>
@@ -369,6 +400,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="rewards" id="oRewards"></div>
       <div class="lvup" id="oLvup" hidden></div>
       <button class="btn" id="retryBtn"><span data-i18n="retry"></span></button>
+      <button class="ghost sharebtn" id="shareBtn" data-i18n="shareBtn"></button>
       <div class="row">
         <button class="ghost" id="oLbBtn" data-i18n="ranking"></button>
         <button class="ghost" id="menuBtn" data-i18n="menu"></button>
@@ -658,16 +690,16 @@ I18N_D_KEYS.forEach((k,i) => { for (const l in I18N) I18N[l][k] = (I18N_D[l] || 
 
 const I18N_F_KEYS = ['start','stageSel','stage','locked','unlockHint','bestG','vs','autoMatch','makeRoom','joinRoom','aiMatch','searching','roomCode','waitingOpp','enterCode','join','cancel','aiFallback','youWin','youLose','drawR','rankPts','forfeit','onlineNA','opp','watching','rematch','seasonNote','help','hControls','hScore','hMoney','hUnits','tut1','tut2','tut3','skillLbl','potionP','contTitle','contAd','contCoin','giveUp','adPlaying','confirmBuy','confirmUnlock','buy','danger','easy','normal','hard','expert','vsVs','shareCode','matchFound'];
 const I18N_F = {
-ko:['START','스테이지 선택','STAGE {n}','잠김','이전 스테이지를 클리어하면 열려요','최고 {n}점','대전','자동 매치','방 만들기','코드로 참가','AI와 연습전','상대 찾는 중… {s}초','방 코드','상대를 기다리는 중…','4자리 코드','참가','취소','1분 동안 상대가 없어 AI와 연습전을 합니다','승리!','패배','무승부','랭크 점수','상대가 나가서 승리했어요','온라인 대전에 연결할 수 없어요. AI와는 대전할 수 있어요.','상대','상대가 아직 날고 있어요…','다시 대전','한 달 시즌 · 랭크전 10판 이상이면 티어 보상, 상위 10명에게는 한정 유닛 MONARCH','도움말',
+ko:['PLAY NOW','스테이지 선택','STAGE {n}','잠김','이전 스테이지를 클리어하면 열려요','최고 {n}점','대전','자동 매치','방 만들기','코드로 참가','AI와 연습전','상대 찾는 중… {s}초','방 코드','상대를 기다리는 중…','4자리 코드','참가','취소','1분 동안 상대가 없어 AI와 연습전을 합니다','승리!','패배','무승부','랭크 점수','상대가 나가서 승리했어요','온라인 대전에 연결할 수 없어요. AI와는 대전할 수 있어요.','상대','상대가 아직 날고 있어요…','다시 대전','한 달 시즌 · 랭크전 10판 이상이면 티어 보상, 상위 10명에게는 한정 유닛 MONARCH','도움말',
  '조작 — 화면 탭(스페이스)으로 날갯짓. 게이지가 차면 DASH(Shift)로 벽을 뚫고, SKILL(S)로 유닛 고유 스킬을 써요.','점수 — 게이트 통과 1점. 가장자리를 아슬아슬하게 스치면 PERFECT로 콤보 점수, 10콤보부터 피버 2배.','재화 — 유닛은 코인·다이아몬드·젬 세 가지를 모두 내고 사요. 코인은 스테이지에서 50점마다(난이도가 높을수록 더 많이) 받고 필드 오브로도 모아요. 다이아몬드는 레벨업·오늘의 챌린지 첫 판·스테이지 첫 클리어 보상이에요. 젬은 스테이지 플레이 중 1% 확률로 떨어져요.','유닛 — 기본·에픽·레전더리·미식·울트라 5등급. 모두 고유 스킬과 아우라가 있고, 오늘의 챌린지와 2인 대전에서는 능력이 공정하게 제한돼요.',
  '화면을 탭해서 날아오르세요','게이트 가장자리를 아슬아슬하게 스치면 PERFECT!','게이지가 차면 DASH, SKILL 버튼으로 고유 스킬!','스킬','무적 질주!','이어서 할까요?','광고 보고 이어하기','{n} 코인으로 이어하기','그만하기','광고 재생 중 (테스트 빌드)','{item} · {price}\n구매할까요?','{u}을(를) 해금할까요?\n{list}','구매','위험!','쉬움','일반','보통','어려움','VS','친구에게 이 코드를 알려주세요','상대를 찾았어요!'],
-en:['START','Select stage','STAGE {n}','Locked','Clear the previous stage to unlock','Best {n}','Versus','Quick match','Create room','Join with code','Practice vs AI','Finding an opponent… {s}s','Room code','Waiting for an opponent…','4-digit code','Join','Cancel','No opponent in 1 minute. Practice match vs the AI.','VICTORY!','DEFEAT','DRAW','Rank points','Your opponent left. You win.','Online versus is unavailable here. You can still play the AI.','Rival','Your rival is still flying…','Rematch','Monthly seasons · tier rewards for 10+ ranked matches · the top 10 get the limited unit MONARCH','Help',
+en:['PLAY NOW','Select stage','STAGE {n}','Locked','Clear the previous stage to unlock','Best {n}','Versus','Quick match','Create room','Join with code','Practice vs AI','Finding an opponent… {s}s','Room code','Waiting for an opponent…','4-digit code','Join','Cancel','No opponent in 1 minute. Practice match vs the AI.','VICTORY!','DEFEAT','DRAW','Rank points','Your opponent left. You win.','Online versus is unavailable here. You can still play the AI.','Rival','Your rival is still flying…','Rematch','Monthly seasons · tier rewards for 10+ ranked matches · the top 10 get the limited unit MONARCH','Help',
  'Controls — tap (Space) to flap. When the meter fills, DASH (Shift) breaks walls; SKILL (S) fires your unit’s own skill.','Score — 1 point per gate. Skim an edge for a PERFECT and combo points; Fever doubles points from a 10 combo.','Currencies — a unit costs coins, diamonds and gems together. Coins: paid for every 50 score in stage play (more on harder tiers), plus field orbs. Diamonds: level-ups, your first Daily run of the day and first stage clears. Gems: a 1% drop chance during stage play.','Units — Common, Epic, Legendary, Mythic, Ultra. Every unit has a skill and an aura; Daily Challenge and Versus cap abilities for fairness.',
  'Tap the screen to fly up','Skim a gate edge for a PERFECT!','Meter full? DASH. Then fire your SKILL!','Skill','UNSTOPPABLE!','Continue?','Watch an ad to continue','Continue for {n} coins','Give up','Ad playing (test build)','{item} · {price}\nBuy now?','Unlock {u}?\n{list}','Buy','DANGER!','Easy','Normal','Hard','Expert','VS','Share this code with your friend','Opponent found!'],
-ja:['START','ステージ選択','STAGE {n}','ロック中','前のステージをクリアすると解放','ベスト {n}','対戦','オートマッチ','ルーム作成','コードで参加','AIと練習試合','対戦相手を検索中… {s}秒','ルームコード','相手を待っています…','4桁のコード','参加','キャンセル','1分間相手がいないためAIと練習試合をします','勝利!','敗北','引き分け','ランクポイント','相手が退出したため勝利','オンライン対戦に接続できません。AI対戦は可能です。','相手','相手はまだ飛んでいます…','再戦','月間シーズン · ランク戦10試合以上でティア報酬、上位10名に限定ユニットMONARCH','ヘルプ',
+ja:['PLAY NOW','ステージ選択','STAGE {n}','ロック中','前のステージをクリアすると解放','ベスト {n}','対戦','オートマッチ','ルーム作成','コードで参加','AIと練習試合','対戦相手を検索中… {s}秒','ルームコード','相手を待っています…','4桁のコード','参加','キャンセル','1分間相手がいないためAIと練習試合をします','勝利!','敗北','引き分け','ランクポイント','相手が退出したため勝利','オンライン対戦に接続できません。AI対戦は可能です。','相手','相手はまだ飛んでいます…','再戦','月間シーズン · ランク戦10試合以上でティア報酬、上位10名に限定ユニットMONARCH','ヘルプ',
  '操作 — タップ(スペース)で羽ばたく。ゲージが溜まったらDASH(Shift)で壁を突破、SKILL(S)で固有スキル。','スコア — ゲート通過で1点。ふちをかすめるとPERFECTでコンボ得点、10コンボからフィーバー2倍。','通貨 — ユニットの購入にはコイン・ダイヤ・ジェムの3つすべてが必要。コインはステージで50点ごとにもらえ(難しいほど多い)、フィールドのオーブでも集まる。ダイヤはレベルアップ・デイリー初回・ステージ初クリアの報酬。ジェムはステージプレイ中に1%の確率でドロップ。','ユニット — ノーマル〜ウルトラの5等級。全ユニットに固有スキルとオーラ。デイリーと対戦では能力を公平に制限。',
  '画面をタップして飛び上がろう','ゲートのふちをかすめるとPERFECT!','ゲージが溜まったらDASH、SKILLで固有スキル!','スキル','無敵ダッシュ!','続けますか?','広告を見て続ける','{n}コインで続ける','やめる','広告再生中(テストビルド)','{item} · {price}\n購入しますか?','{u}を解放しますか?\n{list}','購入','危険!','やさしい','ふつう','むずかしい','最上級','VS','このコードを友だちに伝えてね','相手が見つかりました!'],
-zh:['START','选择关卡','STAGE {n}','未解锁','通关上一关后解锁','最高 {n}','对战','自动匹配','创建房间','输入代码加入','与AI练习','正在寻找对手… {s}秒','房间代码','等待对手…','4位代码','加入','取消','1分钟内没有对手,改为与AI练习','胜利!','失败','平局','段位分','对手已离开,你获胜','无法连接在线对战,可以与AI对战。','对手','对手还在飞…','再战','每月赛季 · 完成10局以上排位赛可得段位奖励,前10名获得限定机体MONARCH','帮助',
+zh:['PLAY NOW','选择关卡','STAGE {n}','未解锁','通关上一关后解锁','最高 {n}','对战','自动匹配','创建房间','输入代码加入','与AI练习','正在寻找对手… {s}秒','房间代码','等待对手…','4位代码','加入','取消','1分钟内没有对手,改为与AI练习','胜利!','失败','平局','段位分','对手已离开,你获胜','无法连接在线对战,可以与AI对战。','对手','对手还在飞…','再战','每月赛季 · 完成10局以上排位赛可得段位奖励,前10名获得限定机体MONARCH','帮助',
  '操作 — 点击(空格)振翅。能量满后DASH(Shift)冲破墙壁,SKILL(S)释放专属技能。','得分 — 通过关卡得1分。擦边通过为PERFECT并累积连击,10连击起狂热2倍。','货币 — 购买机体需要同时支付金币、钻石和宝石。金币:关卡中每得50分发放一次(难度越高越多),也可拾取场上的能量球。钻石:升级、每日挑战当天首局、关卡首通的奖励。宝石:在关卡中以1%概率掉落。','机体 — 普通到究极5个等级,全部拥有专属技能和光环。每日挑战与对战会公平限制能力。',
  '点击屏幕向上飞','擦过关卡边缘即可PERFECT!','能量满了就DASH,再用SKILL释放技能!','技能','无敌冲刺!','要继续吗?','看广告继续','用{n}金币继续','放弃','广告播放中(测试版本)','{item} · {price}\n确定购买吗?','解锁{u}吗?\n{list}','购买','危险!','简单','普通','困难','极难','VS','把这个代码告诉朋友','找到对手了!']
 };
@@ -683,7 +715,12 @@ zh:[['超速驱动','{n}秒内完美判定大幅放宽'],['闪现','瞬移穿过
 SK_IDS.forEach((id,i) => { for (const l in I18N){ const tx = (SK_TXT[l] || SK_TXT.en)[i]; I18N[l]['sk_' + id] = tx[0]; I18N[l]['sd_' + id] = tx[1]; } });
 // Key-based additions (ko/en, with ja/zh for the cost labels, the newer unit texts, the versus ranking, its seasons and the season unit; anything a language lacks falls back to en). The index arrays above keep their length and order.
 const I18N_N = {
-ko:{pt_bronze:'브론즈', pt_silver:'실버', pt_gold:'골드', pt_platinum:'플래티넘', pt_diamond:'다이아', pt_transcend:'넘사', pt_demigod:'반신', ptUp:'티어 승급! {t}',
+ko:{startSub:'탭 한 번이면 출발', dailyCta:'글로벌 데일리 런', dailyPlayed:'{d} · 오늘 최고 {n} · {t} 후 교체', dailyFresh:'연속 {s}일 도전 · 첫 판 보상 +{c}코인 +{g}젬', dailyDone:'연속 {s}일 유지 중 · 내일 보상까지 {t}', dailyStreak:'데일리 연속 {s}일!', k1:'탭해서 날기', k2:'가장자리 스치면 PERFECT', k3:'게이지가 차면 DASH', tapNow:'탭!',
+ whyGround0:'첫 게이트 전에 떨어졌어요 · 시작하자마자 짧게 여러 번 탭!', whyGround:'너무 낮았어요 · 바닥에 닿았어요. 조금 더 일찍 탭', whyTop:'너무 높았어요 · 위쪽 벽에 닿았어요. 게이트 앞에서는 탭을 쉬세요', whyBot:'너무 낮았어요 · 아래쪽 벽에 닿았어요. 조금 더 일찍 탭', whyGate:'게이트에 부딪혔어요 · 틈 가운데를 노리세요',
+ shareBtn:'친구에게 도전장 보내기', share:'Flux Wing에서 {n}점! 넘을 수 있어?', shareDaily:'Flux Wing 데일리 {d}: {n}점 · 게이트 {g} · 콤보 x{c}. 전 세계 같은 코스, 넘을 수 있어?', shared:'공유했어요', copied:'복사했어요. 친구에게 붙여넣기 하세요', shareManual:'아래 문구를 복사해서 보내세요',
+ oDailyLine:'글로벌 데일리 · {d} · 전 세계 같은 코스 · {t} 후 교체', dNew:'오늘 최고 기록! 친구에게 {n}점 도전장을 보내세요', dShort:'오늘 최고 {b}점까지 {n}점 남았어요. 한 번 더?',
+ chMenuDaily:'친구가 오늘의 데일리에서 {n}점! 넘어 보세요', chMenuOld:'친구가 {d} 데일리에서 {n}점을 냈어요. 오늘은 새 코스예요', chMenu:'친구 기록 {n}점. 넘어 보세요!', chBeat:'도전 성공! {n} vs {c}. 되돌려 보내세요', chShort:'도전 기록 {c}점까지 {n}점 부족',
+ pt_bronze:'브론즈', pt_silver:'실버', pt_gold:'골드', pt_platinum:'플래티넘', pt_diamond:'다이아', pt_transcend:'넘사', pt_demigod:'반신', ptUp:'티어 승급! {t}',
  stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 틈', tierRule2:'더 좁은 틈 · 0.5초 안개', tierRule3:'가장 좁은 틈 · 2초 안개 · 2초 안에 탭',
  idleRule:'2초 안에 탭!', idleStall:'엔진 정지!', heavyP:'무거움', gemP:'젬 +1', gemHint:'젬은 스테이지 플레이 중 1% 확률로 나와요 · {n}/{m}',
  lbRetry:'기록을 올리지 못했어요. 곧 다시 시도합니다', lbRate:'전송이 너무 잦아요. 잠시 후 다시 올립니다', lbReject:'서버가 이 기록을 받지 않았어요', vsStranded:'상대가 들어오지 않았어요. 다시 찾는 중…',
@@ -702,7 +739,12 @@ ko:{pt_bronze:'브론즈', pt_silver:'실버', pt_gold:'골드', pt_platinum:'�
  ul_solaris:'천지개벽', ud_solaris:'화면의 모든 게이트가 불타 사라지고 3.5초간 무적, {n}초간 코인 비가 내린다', ul_aurora:'극야', ud_aurora:'{n}초간 모든 게이트가 내 높이의 곧고 넓은 회랑으로 열리고, 통과하면 모두 퍼펙트', ul_tempest:'허리케인', ud_tempest:'폭풍이 되어 다음 게이트 {n}개를 무적으로 휩쓸고, 대시 게이지가 가득 찬 채 안전하게 내려앉는다', ul_pleiad:'유성우', ud_pleiad:'별똥별이 쏟아져 다음 게이트 {n}개를 한꺼번에 부순다', ul_pulsar:'빅뱅', ud_pulsar:'{n}초간 세상이 느려지고 통과한 게이트는 모두 퍼펙트, 점수 3배', ultK:'궁극기', ultReady:'궁극기 준비 완료!', hUlt:'궁극기 — 울트라 유닛에는 세 번째 버튼 ULT(A)가 있어요. 게이트를 지날 때마다 게이지가 차고 퍼펙트면 더 빨리 차요. 가득 차면 눌러서 그 유닛의 궁극기를 써요. 스테이지 전용이에요.',
  r_season:'시즌 한정', seaOnly:'시즌 보상 · 대전 시즌 상위 10명', r_monarch:'군주형', p_monarch:'근위대: 실드 1개로 출발(최대 1개). 게이트 25개마다 실드를 되찾는다.', sk_monarch:'대관식', sd_monarch:'{n}초간 무적, 4초간 퍼펙트 판정이 넓어진다',
  hz_over:'과속', hz_weight:'무게추', hz_smoke:'연막', hz_drain:'방전', hHaz:'방해 아이템 — 스테이지 11부터 게이트 사이에 붉은 테두리의 검은 가시 원반이 나와요. 닿으면 과속(3초간 빨라짐)·무게추(3초간 무거워짐)·연막(2.5초 안개)·방전(대시 게이지·스킬 충전·콤보가 0) 중 하나에 걸려요. 실드가 있거나 대시·무적 중이면 아무 일 없이 터져요. 스테이지 전용이에요.'},
-en:{pt_bronze:'Bronze', pt_silver:'Silver', pt_gold:'Gold', pt_platinum:'Platinum', pt_diamond:'Diamond', pt_transcend:'Transcendent', pt_demigod:'Demigod', ptUp:'TIER UP! {t}',
+en:{startSub:'One tap run', dailyCta:'GLOBAL DAILY RUN', dailyPlayed:'{d} · today best {n} · new in {t}', dailyFresh:'Day {s} streak run · first-run reward +{c} coins +{g} gems', dailyDone:'Day {s} streak locked · next reward in {t}', dailyStreak:'Daily streak day {s}!', k1:'TAP TO FLAP', k2:'SKIM EDGE = PERFECT', k3:'DASH WHEN FULL', tapNow:'TAP!',
+ whyGround0:'Fell before the first gate · tap right away, in short quick taps', whyGround:'Too low · you hit the ground. Tap sooner', whyTop:'Too high · you hit the top wall. Let it drop before the gate', whyBot:'Too low · you hit the bottom wall. Tap earlier', whyGate:'Hit the gate · aim for the middle of the gap',
+ shareBtn:'CHALLENGE A FRIEND', share:'I scored {n} in Flux Wing. Can you beat me?', shareDaily:'Flux Wing Daily {d}: I scored {n} ({g} gates, combo x{c}). Same course worldwide. Can you beat me?', shared:'Shared', copied:'Copied. Paste it to a friend', shareManual:'Copy this line and send it',
+ oDailyLine:'GLOBAL DAILY · {d} · same course worldwide · new in {t}', dNew:'New daily best! Dare a friend to beat {n}', dShort:'{n} short of your best today ({b}). One more run?',
+ chMenuDaily:"A friend scored {n} on today's Daily. Beat it!", chMenuOld:'A friend scored {n} on the {d} Daily. Today has a new course', chMenu:'A friend scored {n}. Beat it!', chBeat:'Challenge beaten! {n} vs {c}. Send it back', chShort:'{n} short of the challenge ({c})',
+ pt_bronze:'Bronze', pt_silver:'Silver', pt_gold:'Gold', pt_platinum:'Platinum', pt_diamond:'Diamond', pt_transcend:'Transcendent', pt_demigod:'Demigod', ptUp:'TIER UP! {t}',
  stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', tierRule2:'Narrower gaps · 0.5s haze', tierRule3:'Narrowest gaps · 2s haze · tap within 2s',
  idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/{m}',
  lbRetry:"Couldn't post your score. Retrying soon", lbRate:'Posting too fast. It will be sent in a moment', lbReject:'The server did not accept this score', vsStranded:"Opponent didn't show up. Searching again…",
@@ -721,7 +763,12 @@ en:{pt_bronze:'Bronze', pt_silver:'Silver', pt_gold:'Gold', pt_platinum:'Platinu
  ul_solaris:'Genesis', ud_solaris:'Every gate on screen burns away, 3.5s invincible, and coins rain for {n}s', ul_aurora:'Polar Night', ud_aurora:'For {n}s every gate opens into one straight, wide lane at your height, each one a Perfect', ul_tempest:'Hurricane', ud_tempest:'Become the storm: carried through the next {n} gates, invincible, then set down safely with a full dash meter', ul_pleiad:'Meteor Shower', ud_pleiad:'Falling stars destroy the next {n} gates, all at once', ul_pulsar:'Big Bang', ud_pulsar:'For {n}s the world runs slow and every gate you pass is a Perfect worth x3', ultK:'Ultimate', ultReady:'ULT READY!', hUlt:'Ultimate — Ultra units have a third button, ULT (A). Its gauge fills with every gate you pass, faster with Perfects; when it is full, press it for that unit’s ultimate. Stage mode only.',
  r_season:'Season', seaOnly:'Season reward · top 10 of a versus season', r_monarch:'Sovereign', p_monarch:'Royal Guard: starts with 1 shield (max 1) and wins it back every 25 gates.', sk_monarch:'Coronation', sd_monarch:'Invincible for {n}s, and the Perfect window stays wide for 4s',
  hz_over:'OVERSPEED', hz_weight:'WEIGHT', hz_smoke:'SMOKE', hz_drain:'DISCHARGE', hHaz:'Hazards — from stage 11, dark spiked discs with a red rim sit between the gates. Touch one and you get Overspeed (faster for 3s), Weight (heavier for 3s), Smoke (2.5s of fog) or Discharge (dash meter, skill charge and combo back to zero). With a shield, during a dash or while invincible they pop harmlessly. Stage mode only.'},
-ja:{pt_bronze:'ブロンズ', pt_silver:'シルバー', pt_gold:'ゴールド', pt_platinum:'プラチナ', pt_diamond:'ダイヤ', pt_transcend:'超越', pt_demigod:'半神', ptUp:'ティア昇格!{t}',
+ja:{startSub:'ワンタップでスタート', dailyCta:'グローバルデイリーラン', dailyPlayed:'{d} · 今日のベスト {n} · あと{t}で更新', k1:'タップで飛ぶ', k2:'ふちをかすめて PERFECT', k3:'満タンで DASH', tapNow:'タップ!',
+ whyGround0:'最初のゲートの前に落ちました · スタート直後から短く連続タップ!', whyGround:'低すぎました · 地面に接触。もう少し早くタップ', whyTop:'高すぎました · 上の壁に接触。ゲートの手前ではタップを休もう', whyBot:'低すぎました · 下の壁に接触。もう少し早くタップ', whyGate:'ゲートに接触 · すき間の真ん中を狙おう',
+ shareBtn:'友だちに挑戦状を送る', share:'Flux Wingで{n}点!超えられる?', shareDaily:'Flux Wing デイリー {d}: {n}点 · ゲート{g} · コンボx{c}。全世界共通コース、超えられる?', shared:'シェアしました', copied:'コピーしました。友だちに貼り付けよう', shareManual:'この文をコピーして送ってください',
+ oDailyLine:'グローバルデイリー · {d} · 全世界共通コース · あと{t}で更新', dNew:'今日のベスト更新!友だちに{n}点の挑戦状を送ろう', dShort:'今日のベスト{b}点まであと{n}点。もう一回?',
+ chMenuDaily:'友だちが今日のデイリーで{n}点!超えてみよう', chMenuOld:'友だちが{d}のデイリーで{n}点。今日は新しいコースです', chMenu:'友だちの記録は{n}点。超えてみよう!', chBeat:'挑戦成功!{n} vs {c}。送り返そう', chShort:'挑戦記録{c}点まであと{n}点',
+ pt_bronze:'ブロンズ', pt_silver:'シルバー', pt_gold:'ゴールド', pt_platinum:'プラチナ', pt_diamond:'ダイヤ', pt_transcend:'超越', pt_demigod:'半神', ptUp:'ティア昇格!{t}',
  nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0{n}',
  fx_slip:'墨隠れ!', fx_fore:'予感!',
  tabVs:'対戦', vsRules:'勝利 +50 RP · 敗北 −45 RP · AI戦は練習(RP変動なし)', vsPractice:'練習試合 · RP変動なし', vsPend:'集計中', vsNoRank:'ランクに反映されない試合です', vsCap:'対象外 · 同じ相手とは1日5回まで',
@@ -737,7 +784,12 @@ ja:{pt_bronze:'ブロンズ', pt_silver:'シルバー', pt_gold:'ゴールド', 
  ul_solaris:'天地開闢', ud_solaris:'画面上のゲートをすべて焼き払い、3.5秒間無敵。{n}秒間コインの雨が降る', ul_aurora:'極夜', ud_aurora:'{n}秒間、すべてのゲートが自分の高さでまっすぐ広い回廊になり、通ればすべてパーフェクト', ul_tempest:'ハリケーン', ud_tempest:'嵐となって次のゲート{n}つを無敵で突き抜け、ダッシュゲージ満タンで安全に降り立つ', ul_pleiad:'流星群', ud_pleiad:'流れ星が降り注ぎ、次のゲート{n}つをまとめて破壊する', ul_pulsar:'ビッグバン', ud_pulsar:'{n}秒間世界がスローになり、通ったゲートはすべてパーフェクトで得点3倍', ultK:'アルティメット', ultReady:'ULT 発動可能!', hUlt:'アルティメット — ウルトラユニットには3つ目のボタンULT(A)がある。ゲートを通るたびにゲージが溜まり、パーフェクトならさらに速い。満タンで押すとそのユニットのアルティメットが発動。ステージ専用。',
  r_season:'シーズン限定', seaOnly:'シーズン報酬 · 対戦シーズン上位10名', r_monarch:'君主型', p_monarch:'ロイヤルガード:シールド1枚で出発(最大1枚)。ゲート25個ごとにシールドを取り戻す。', sk_monarch:'戴冠式', sd_monarch:'{n}秒間無敵、4秒間パーフェクト判定が広がる',
  hz_over:'暴走', hz_weight:'重り', hz_smoke:'煙幕', hz_drain:'放電', hHaz:'妨害アイテム — ステージ11から、ゲートの間に赤いふちの黒いトゲ円盤が出る。触れると暴走(3秒間加速)・重り(3秒間重くなる)・煙幕(2.5秒の霧)・放電(ダッシュゲージ・スキルチャージ・コンボが0)のどれかを受ける。シールドがあるとき、ダッシュ中、無敵中は何も起きずに弾ける。ステージ専用。'},
-zh:{pt_bronze:'青铜', pt_silver:'白银', pt_gold:'黄金', pt_platinum:'铂金', pt_diamond:'钻石', pt_transcend:'超凡', pt_demigod:'半神', ptUp:'段位晋升!{t}',
+zh:{startSub:'一键起飞', dailyCta:'全球每日挑战', dailyPlayed:'{d} · 今日最高 {n} · {t} 后更新', k1:'点击飞行', k2:'擦边 = PERFECT', k3:'能量满了就 DASH', tapNow:'点击!',
+ whyGround0:'还没到第一个关卡就坠落了 · 一开始就短促连点!', whyGround:'飞得太低 · 撞到地面。再早一点点击', whyTop:'飞得太高 · 撞到上方墙壁。到关卡前先停一下', whyBot:'飞得太低 · 撞到下方墙壁。再早一点点击', whyGate:'撞到关卡 · 瞄准缺口中间',
+ shareBtn:'向好友发起挑战', share:'我在 Flux Wing 拿到 {n} 分,你能超过我吗?', shareDaily:'Flux Wing 每日挑战 {d}:{n} 分 · 关卡 {g} · 连击 x{c}。全球同一赛道,你能超过我吗?', shared:'已分享', copied:'已复制,粘贴发给好友吧', shareManual:'复制这段文字发给好友',
+ oDailyLine:'全球每日挑战 · {d} · 全球同一赛道 · {t} 后更新', dNew:'今日新纪录!向好友发起 {n} 分的挑战', dShort:'距今日最高 {b} 分还差 {n} 分。再来一局?',
+ chMenuDaily:'好友在今天的每日挑战拿到 {n} 分,超过它!', chMenuOld:'好友在 {d} 的每日挑战拿到 {n} 分。今天是新赛道', chMenu:'好友的纪录是 {n} 分,超过它!', chBeat:'挑战成功!{n} 对 {c}。发回去吧', chShort:'距挑战纪录 {c} 分还差 {n} 分',
+ pt_bronze:'青铜', pt_silver:'白银', pt_gold:'黄金', pt_platinum:'铂金', pt_diamond:'钻石', pt_transcend:'超凡', pt_demigod:'半神', ptUp:'段位晋升!{t}',
  nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
  fx_slip:'墨隐!', fx_fore:'预感!',
  tabVs:'对战', vsRules:'胜利 +50 RP · 失败 −45 RP · AI对战为练习(RP不变)', vsPractice:'练习赛 · RP不变', vsPend:'结算中', vsNoRank:'本局未计入段位', vsCap:'未计入 · 同一对手每天最多5局',
@@ -753,12 +805,18 @@ zh:{pt_bronze:'青铜', pt_silver:'白银', pt_gold:'黄金', pt_platinum:'铂�
  ul_solaris:'开天辟地', ud_solaris:'屏幕上的关卡全部焚毁,无敌3.5秒,并降下{n}秒金币雨', ul_aurora:'极夜', ud_aurora:'{n}秒内所有关卡在你的高度连成一条笔直宽阔的回廊,通过即算完美', ul_tempest:'飓风', ud_tempest:'化身风暴,无敌地卷过接下来{n}个关卡,随后带着满格冲刺能量安全落下', ul_pleiad:'流星雨', ud_pleiad:'流星倾泻而下,一举击毁接下来{n}个关卡', ul_pulsar:'大爆炸', ud_pulsar:'{n}秒内世界变慢,通过的关卡全部算作完美且得分3倍', ultK:'终极技', ultReady:'终极技就绪!', hUlt:'终极技 — 究极机体拥有第三个按钮ULT(A)。每通过一个关卡都会充能,完美通过充得更快;充满后按下即可释放该机体的终极技。仅限关卡模式。',
  r_season:'赛季限定', seaOnly:'赛季奖励 · 对战赛季前10名', r_monarch:'君主型', p_monarch:'王室卫队:开局自带1层护盾(最多1层)。每通过25个关卡恢复护盾。', sk_monarch:'加冕', sd_monarch:'无敌{n}秒,4秒内完美判定放宽',
  hz_over:'超速', hz_weight:'负重', hz_smoke:'烟幕', hz_drain:'放电', hHaz:'干扰道具 — 从第11关起,关卡之间会出现红边的黑色尖刺圆盘。碰到会中其中一种:超速(加速3秒)、负重(变重3秒)、烟幕(2.5秒雾气)、放电(冲刺能量、技能充能和连击归零)。持有护盾、冲刺中或无敌时,它只会无害地碎掉。仅限关卡模式。'},
-es:{pt_bronze:'Bronce', pt_silver:'Plata', pt_gold:'Oro', pt_platinum:'Platino', pt_diamond:'Diamante', pt_transcend:'Trascendente', pt_demigod:'Semidiós', ptUp:'¡ASCENSO! {t}', hz_over:'SOBREVELOCIDAD', hz_weight:'LASTRE', hz_smoke:'HUMO', hz_drain:'DESCARGA', hHaz:'Peligros — desde STAGE 11 aparecen entre las puertas discos oscuros con púas y borde rojo. Si tocas uno recibes Sobrevelocidad (más rápido 3 s), Lastre (más pesado 3 s), Humo (2,5 s de niebla) o Descarga (barra de dash, carga de habilidad y combo a cero). Con un escudo, durante un dash o siendo invencible estallan sin efecto. Solo en el modo por fases.'},
-pt:{pt_bronze:'Bronze', pt_silver:'Prata', pt_gold:'Ouro', pt_platinum:'Platina', pt_diamond:'Diamante', pt_transcend:'Transcendente', pt_demigod:'Semideus', ptUp:'NOVO TIER! {t}', hz_over:'SOBREVELOCIDADE', hz_weight:'LASTRO', hz_smoke:'FUMAÇA', hz_drain:'DESCARGA', hHaz:'Perigos — a partir do STAGE 11 surgem entre os portões discos escuros com espinhos e borda vermelha. Ao tocar em um você recebe Sobrevelocidade (mais rápido por 3 s), Lastro (mais pesado por 3 s), Fumaça (2,5 s de névoa) ou Descarga (barra de dash, carga da habilidade e combo zerados). Com um escudo, durante um dash ou invencível, eles estouram sem efeito. Só no modo de fases.'},
-fr:{pt_bronze:'Bronze', pt_silver:'Argent', pt_gold:'Or', pt_platinum:'Platine', pt_diamond:'Diamant', pt_transcend:'Transcendant', pt_demigod:'Demi-dieu', ptUp:'RANG SUPÉRIEUR ! {t}', hz_over:'SURVITESSE', hz_weight:'LEST', hz_smoke:'FUMÉE', hz_drain:'DÉCHARGE', hHaz:'Dangers — dès le STAGE 11, des disques sombres à pointes, cerclés de rouge, apparaissent entre les portes. En toucher un inflige Survitesse (plus rapide pendant 3 s), Lest (plus lourd pendant 3 s), Fumée (2,5 s de brouillard) ou Décharge (jauge de dash, charge de compétence et combo à zéro). Avec un bouclier, pendant un dash ou en étant invincible, ils éclatent sans effet. Mode par niveaux uniquement.'},
-de:{pt_bronze:'Bronze', pt_silver:'Silber', pt_gold:'Gold', pt_platinum:'Platin', pt_diamond:'Diamant', pt_transcend:'Transzendent', pt_demigod:'Halbgott', ptUp:'AUFSTIEG! {t}', hz_over:'ÜBERTEMPO', hz_weight:'GEWICHT', hz_smoke:'RAUCH', hz_drain:'ENTLADUNG', hHaz:'Gefahren — ab STAGE 11 liegen zwischen den Toren dunkle Stachelscheiben mit rotem Rand. Wer eine berührt, bekommt Übertempo (3 s schneller), Gewicht (3 s schwerer), Rauch (2,5 s Nebel) oder Entladung (Dash-Leiste, Skill-Ladung und Combo auf null). Mit einem Schild, im Dash oder unverwundbar zerplatzen sie wirkungslos. Nur im Stage-Modus.'},
-id:{pt_bronze:'Perunggu', pt_silver:'Perak', pt_gold:'Emas', pt_platinum:'Platina', pt_diamond:'Berlian', pt_transcend:'Transenden', pt_demigod:'Setengah Dewa', ptUp:'NAIK TIER! {t}', hz_over:'NGEBUT', hz_weight:'PEMBERAT', hz_smoke:'ASAP', hz_drain:'DAYA HABIS', hHaz:'Bahaya — mulai STAGE 11, cakram gelap berduri dengan tepi merah muncul di antara gerbang. Jika tersentuh, kamu terkena Ngebut (lebih cepat 3 detik), Pemberat (lebih berat 3 detik), Asap (kabut 2,5 detik), atau Daya Habis (meteran dash, isi skill, dan combo jadi nol). Saat punya perisai, sedang dash, atau kebal, cakram itu pecah tanpa efek. Hanya di mode stage.'},
-vi:{pt_bronze:'Đồng', pt_silver:'Bạc', pt_gold:'Vàng', pt_platinum:'Bạch kim', pt_diamond:'Kim cương', pt_transcend:'Siêu việt', pt_demigod:'Bán thần', ptUp:'THĂNG HẠNG! {t}', hz_over:'QUÁ TỐC', hz_weight:'TẠ NẶNG', hz_smoke:'KHÓI MÙ', hz_drain:'XẢ ĐIỆN', hHaz:'Vật cản — từ STAGE 11, những đĩa gai màu tối viền đỏ xuất hiện giữa các cổng. Chạm vào sẽ dính một trong số: Quá tốc (nhanh hơn trong 3 giây), Tạ nặng (nặng hơn trong 3 giây), Khói mù (2,5 giây sương mù) hoặc Xả điện (thanh lướt, năng lượng kỹ năng và combo về 0). Khi có khiên, đang lướt hoặc bất tử, chúng vỡ tan mà không gây hại. Chỉ có ở chế độ stage.'}
+es:{startSub:'Un toque y a volar', dailyCta:'RETO DIARIO GLOBAL', shareBtn:'RETA A UN AMIGO', share:'Hice {n} puntos en Flux Wing. ¿Puedes superarme?', shareDaily:'Flux Wing Diario {d}: hice {n} puntos ({g} puertas, combo x{c}). El mismo recorrido en todo el mundo. ¿Puedes superarme?',
+ pt_bronze:'Bronce', pt_silver:'Plata', pt_gold:'Oro', pt_platinum:'Platino', pt_diamond:'Diamante', pt_transcend:'Trascendente', pt_demigod:'Semidiós', ptUp:'¡ASCENSO! {t}', hz_over:'SOBREVELOCIDAD', hz_weight:'LASTRE', hz_smoke:'HUMO', hz_drain:'DESCARGA', hHaz:'Peligros — desde STAGE 11 aparecen entre las puertas discos oscuros con púas y borde rojo. Si tocas uno recibes Sobrevelocidad (más rápido 3 s), Lastre (más pesado 3 s), Humo (2,5 s de niebla) o Descarga (barra de dash, carga de habilidad y combo a cero). Con un escudo, durante un dash o siendo invencible estallan sin efecto. Solo en el modo por fases.'},
+pt:{startSub:'Um toque e voe', dailyCta:'DESAFIO DIÁRIO GLOBAL', shareBtn:'DESAFIE UM AMIGO', share:'Fiz {n} pontos no Flux Wing. Consegue me superar?', shareDaily:'Flux Wing Diário {d}: fiz {n} pontos ({g} portões, combo x{c}). O mesmo percurso no mundo todo. Consegue me superar?',
+ pt_bronze:'Bronze', pt_silver:'Prata', pt_gold:'Ouro', pt_platinum:'Platina', pt_diamond:'Diamante', pt_transcend:'Transcendente', pt_demigod:'Semideus', ptUp:'NOVO TIER! {t}', hz_over:'SOBREVELOCIDADE', hz_weight:'LASTRO', hz_smoke:'FUMAÇA', hz_drain:'DESCARGA', hHaz:'Perigos — a partir do STAGE 11 surgem entre os portões discos escuros com espinhos e borda vermelha. Ao tocar em um você recebe Sobrevelocidade (mais rápido por 3 s), Lastro (mais pesado por 3 s), Fumaça (2,5 s de névoa) ou Descarga (barra de dash, carga da habilidade e combo zerados). Com um escudo, durante um dash ou invencível, eles estouram sem efeito. Só no modo de fases.'},
+fr:{startSub:'Un tap et ça décolle', dailyCta:'DÉFI MONDIAL DU JOUR', shareBtn:'DÉFIER UN AMI', share:"J'ai fait {n} points sur Flux Wing. Tu peux me battre ?", shareDaily:"Flux Wing du jour {d} : {n} points ({g} portes, combo x{c}). Même parcours pour tous. Tu peux me battre ?",
+ pt_bronze:'Bronze', pt_silver:'Argent', pt_gold:'Or', pt_platinum:'Platine', pt_diamond:'Diamant', pt_transcend:'Transcendant', pt_demigod:'Demi-dieu', ptUp:'RANG SUPÉRIEUR ! {t}', hz_over:'SURVITESSE', hz_weight:'LEST', hz_smoke:'FUMÉE', hz_drain:'DÉCHARGE', hHaz:'Dangers — dès le STAGE 11, des disques sombres à pointes, cerclés de rouge, apparaissent entre les portes. En toucher un inflige Survitesse (plus rapide pendant 3 s), Lest (plus lourd pendant 3 s), Fumée (2,5 s de brouillard) ou Décharge (jauge de dash, charge de compétence et combo à zéro). Avec un bouclier, pendant un dash ou en étant invincible, ils éclatent sans effet. Mode par niveaux uniquement.'},
+de:{startSub:'Ein Tipp und los', dailyCta:'GLOBALE TAGES-CHALLENGE', shareBtn:'FREUND HERAUSFORDERN', share:'Ich habe {n} Punkte in Flux Wing. Schaffst du mehr?', shareDaily:'Flux Wing Tages-Challenge {d}: {n} Punkte ({g} Tore, Combo x{c}). Weltweit dieselbe Strecke. Schaffst du mehr?',
+ pt_bronze:'Bronze', pt_silver:'Silber', pt_gold:'Gold', pt_platinum:'Platin', pt_diamond:'Diamant', pt_transcend:'Transzendent', pt_demigod:'Halbgott', ptUp:'AUFSTIEG! {t}', hz_over:'ÜBERTEMPO', hz_weight:'GEWICHT', hz_smoke:'RAUCH', hz_drain:'ENTLADUNG', hHaz:'Gefahren — ab STAGE 11 liegen zwischen den Toren dunkle Stachelscheiben mit rotem Rand. Wer eine berührt, bekommt Übertempo (3 s schneller), Gewicht (3 s schwerer), Rauch (2,5 s Nebel) oder Entladung (Dash-Leiste, Skill-Ladung und Combo auf null). Mit einem Schild, im Dash oder unverwundbar zerplatzen sie wirkungslos. Nur im Stage-Modus.'},
+id:{startSub:'Satu ketukan, terbang', dailyCta:'TANTANGAN HARIAN GLOBAL', shareBtn:'TANTANG TEMAN', share:'Aku dapat {n} poin di Flux Wing. Bisa kalahkan aku?', shareDaily:'Flux Wing Harian {d}: {n} poin ({g} gerbang, combo x{c}). Jalur yang sama di seluruh dunia. Bisa kalahkan aku?',
+ pt_bronze:'Perunggu', pt_silver:'Perak', pt_gold:'Emas', pt_platinum:'Platina', pt_diamond:'Berlian', pt_transcend:'Transenden', pt_demigod:'Setengah Dewa', ptUp:'NAIK TIER! {t}', hz_over:'NGEBUT', hz_weight:'PEMBERAT', hz_smoke:'ASAP', hz_drain:'DAYA HABIS', hHaz:'Bahaya — mulai STAGE 11, cakram gelap berduri dengan tepi merah muncul di antara gerbang. Jika tersentuh, kamu terkena Ngebut (lebih cepat 3 detik), Pemberat (lebih berat 3 detik), Asap (kabut 2,5 detik), atau Daya Habis (meteran dash, isi skill, dan combo jadi nol). Saat punya perisai, sedang dash, atau kebal, cakram itu pecah tanpa efek. Hanya di mode stage.'},
+vi:{startSub:'Một chạm là bay', dailyCta:'THỬ THÁCH TOÀN CẦU HÔM NAY', shareBtn:'THÁCH ĐẤU BẠN BÈ', share:'Mình đạt {n} điểm trong Flux Wing. Bạn vượt được không?', shareDaily:'Flux Wing hằng ngày {d}: {n} điểm ({g} cổng, combo x{c}). Cả thế giới chung đường bay. Bạn vượt được không?',
+ pt_bronze:'Đồng', pt_silver:'Bạc', pt_gold:'Vàng', pt_platinum:'Bạch kim', pt_diamond:'Kim cương', pt_transcend:'Siêu việt', pt_demigod:'Bán thần', ptUp:'THĂNG HẠNG! {t}', hz_over:'QUÁ TỐC', hz_weight:'TẠ NẶNG', hz_smoke:'KHÓI MÙ', hz_drain:'XẢ ĐIỆN', hHaz:'Vật cản — từ STAGE 11, những đĩa gai màu tối viền đỏ xuất hiện giữa các cổng. Chạm vào sẽ dính một trong số: Quá tốc (nhanh hơn trong 3 giây), Tạ nặng (nặng hơn trong 3 giây), Khói mù (2,5 giây sương mù) hoặc Xả điện (thanh lướt, năng lượng kỹ năng và combo về 0). Khi có khiên, đang lướt hoặc bất tử, chúng vỡ tan mà không gây hại. Chỉ có ở chế độ stage.'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
 const birdById = id => BIRDS.find(b => b.id === id);
@@ -866,6 +924,45 @@ const nickBad = s => {
   return NICK_RX.raw.test(a) || NICK_RX.rawAll.test(a) || NICK_RX.sub.test(b) || NICK_RX.whole.test(p) || /[a-z]/.test(p) && !NICK_GAP.test(p) && NICK_RX.wholeAll.test(b);
 };
 /* nick-filter:end */
+/* hit-loop:start — the first-run easing, the retry hint of a death, share lines and challenge links: pure rules, no state. tests/hitloop.test.js runs this block as it stands (tests/helpers/hitloop.js). */
+const SHARE_URL = 'https://breton5797.github.io/fluxwing/';
+// A pilot's first `runs` stage-1 runs: the first `gates` gates are `gap` px wider and pulled toward the start height (pull 1 = where the course put them), the first gate comes `lead` px later, and the ground gives `bounces` before it kills.
+const ROOKIE = { runs: 3, gates: 3, gap: [44, 30, 16], pull: [.3, .55, .8], lead: 110, bounces: 2 };
+// First Daily run of a UTC day pays once. The course stays fair; only the wallet/streak loop changes.
+const DAILY_REWARD = { coin: 300, dia: 100, gem: 1, streakCoin: 50, cap: 7, bonus3: 1, bonus7: 3 };
+const dayIndex = key => { const t = Date.parse(String(key) + 'T00:00:00Z'); return Number.isFinite(t) ? Math.floor(t / 864e5) : -1; };
+function dailyStreakNext(rec, today){
+  const last = rec && /^\d{4}-\d{2}-\d{2}$/.test(rec.last || '') ? rec.last : '', li = dayIndex(last), ti = dayIndex(today), prev = Math.max(0, Math.floor(rec && rec.streak || 0));
+  if (ti < 0) return { last: today, streak: 1, claimed: false };
+  if (last === today) return { last: today, streak: Math.max(1, prev), claimed: true };
+  return { last: today, streak: li >= 0 && ti - li === 1 ? prev + 1 : 1, claimed: false };
+}
+function dailyReward(streak){
+  const s = Math.max(1, Math.min(DAILY_REWARD.cap, Math.floor(streak || 1)));
+  return { coin: DAILY_REWARD.coin + s * DAILY_REWARD.streakCoin, dia: DAILY_REWARD.dia, gem: DAILY_REWARD.gem + (s >= 7 ? DAILY_REWARD.bonus7 : s >= 3 ? DAILY_REWARD.bonus3 : 0) };
+}
+const rookieRun = (mode, stage, runs) => mode === 'endless' && stage === 0 && runs < ROOKIE.runs;   // never the daily or a versus course: those are the same for everyone
+const rookieGate = (idx, on) => on && idx < ROOKIE.gates ? { gap: ROOKIE.gap[idx], pull: ROOKIE.pull[idx] } : { gap: 0, pull: 1 };
+// why: 'ground' | 'top' | 'bot' (which wall of the gate) | anything else. Returns the i18n key of the hint on the result card
+const deathHint = (why, gates) => why === 'ground' ? (gates > 0 ? 'whyGround' : 'whyGround0') : why === 'top' ? 'whyTop' : why === 'bot' ? 'whyBot' : 'whyGate';
+// r: {mode, score, gates, combo, day}. The link carries the score to beat (c) and, for a daily run, its day (d)
+function shareUrl(r){ const q = [r.mode === 'daily' ? 'd=' + r.day : '', r.score > 0 ? 'c=' + r.score : ''].filter(Boolean).join('&'); return SHARE_URL + (q ? '?' + q : ''); }
+function shareMsg(T, r){ const v = { n: r.score, g: r.gates, c: r.combo, d: r.day }; return (r.mode === 'daily' ? T.shareDaily : T.share).replace(/\{([ngcd])\}/g, (m, k) => v[k]) + ' ' + shareUrl(r); }
+// A challenge link read back: null unless c is a plain score and d, when there is one, a day. live: the challenge can still be answered (a daily one only on its day)
+function readChallenge(search, today){
+  const p = new URLSearchParams(search), c = p.get('c'), d = p.get('d');
+  if (!/^[1-9]\d{0,6}$/.test(c || '') || (d !== null && !/^\d{4}-\d{2}-\d{2}$/.test(d))) return null;
+  return { score: +c, day: d || '', daily: d !== null, live: d === null || d === today };
+}
+// A finished run against the challenge it answers: a daily challenge by a daily run, an open one by a stage run; null when the run does not answer it
+function challengeResult(ch, mode, score){
+  if (!ch || !ch.live || mode !== (ch.daily ? 'daily' : 'endless')) return null;
+  return { beat: score > ch.score, by: Math.abs(score - ch.score) };
+}
+/* hit-loop:end */
+const rookieRuns = () => clampI(store.get('fw27_rookie_runs', 0), 0, 999);
+const rookieOn = () => rookieRun(mode, curStage, rookieRuns());
+const challenge = readChallenge(location.search, dayKey());
 let nick = store.get('fw27_nick', null);
 if (!nick || nickBad(nick)){ nick = 'Pilot-' + String(Math.floor(1000 + Math.random()*9000)); store.set('fw27_nick', nick); }
 const cleanNick = s => String(s).replace(/[\u0000-\u001f\u007f<>]/g,'').replace(/\s+/g,' ').trim().slice(0,14);
@@ -987,7 +1084,7 @@ let shields = 0, reviveLeft = 0, orbsGot = 0, runTrial = false, PK = null;
 let lastWarnT = 0, pillBot = 0, banDrop = 0; const hudCache = {d:'', s:'', sl:'', u:'', ul:''};   // pillBot: bottom of the status-pill band this frame (0 = none); banDrop slides big banners below it
 let skillCharge = 0, skillWasReady = false, boostT = 0, lowGravT = 0, autoT = 0, cloneT = 0, rushT = 0, foreT = 0, freezeT = 0, potionT = 0, godT = 0, hurtT = 0, danger = 0, contUsed = false;
 let bounceLeft = 0, rewindLeft = 0, perfCount = 0, phaseT = 0, giantT = 0, inkT = 0, guardUsed = false, travel = 0, hist = [], bolts = [];
-let score, gatesPassed, combo, maxCombo, perfects, speed, dashMeter, dashT, invuln, magnetT, slowT, zoneIdx, zoneBanner, deathT, spawnIdx, runDay;
+let score, gatesPassed, combo, maxCombo, perfects, speed, dashMeter, dashT, invuln, magnetT, slowT, zoneIdx, zoneBanner, deathT, spawnIdx, runDay, deathWhy, lastShare = '';
 // Per-run state for stage rules and the newer skills; TMAX remembers each timer's value when it was set (render/HUD read it).
 const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:0, clearDone:false, clearCoin:0, clearDia:0, gemsRun:0,
   laneN:0, laneY:0, strikeN:0, strikeT:0, stormDash:false, dashHit:false, resoT:0, resoMul:1,
@@ -1014,9 +1111,9 @@ function reset(){
   bird.r = B.r;
   PK = perks(); FX = newFx(); FX.threads = PK.veilStart; if (ultOn()) FX.ult = ULT.start;   // AURORA starts a stage with its veil woven (0 for every other unit and in fair modes); a continue does not weave it again
   skillCharge = .35; skillWasReady = false; boostT = lowGravT = autoT = cloneT = rushT = foreT = freezeT = potionT = godT = hurtT = overT = weightT = 0; danger = 0; contUsed = false;
-  bounceLeft = PK.bounce; rewindLeft = PK.rewind; perfCount = 0; phaseT = 0; giantT = 0; inkT = 0; guardUsed = false; travel = 0; hist = []; bolts = [];
+  bounceLeft = PK.bounce + (rookieOn() ? ROOKIE.bounces : 0); rewindLeft = PK.rewind; perfCount = 0; phaseT = 0; giantT = 0; inkT = 0; guardUsed = false; travel = 0; hist = []; bolts = [];
   speed = 190; dashMeter = PK.dashFull ? 1 : 0; dashT = 0; invuln = 0; shields = PK.shieldStart; reviveLeft = PK.revive; orbsGot = 0; magnetT = 0; slowT = 0;
-  zoneIdx = 0; zoneBanner = 2.2; deathT = 0; spawnIdx = 0;
+  zoneIdx = 0; zoneBanner = 2.2; deathT = 0; deathWhy = 'gate'; spawnIdx = 0;
   rings = []; ghosts = []; banners = []; scorePunch = 0; popT = -1; squash = 0; tier = 0; newBestShown = false; wasReady = false; feverGlow = 0;
   cam.z = cam.tz = 1; cam.fx = LW/2; cam.fy = LH/2;
   runDay = dayKey();
@@ -1025,7 +1122,7 @@ function reset(){
   rng = mode === 'daily' ? mulberry32(hashStr('fluxwing27:' + runDay)) : mode === 'versus' ? mulberry32(vs.seed >>> 0) : mulberry32((Math.random()*4294967296)>>>0);
   zoneIdx = mode === 'endless' ? stTier(curStage) : 0;
   { const Z = ZONES[zoneIdx]; Object.assign(pal, JSON.parse(JSON.stringify({ sky0:Z.sky[0], sky1:Z.sky[1], a:Z.a, b:Z.b, gate:Z.gate }))); }
-  spawnGate(LW + 80);
+  spawnGate(LW + 80 + (rookieOn() ? ROOKIE.lead : 0));
 }
 
 const diff = () => runD(gatesPassed);
@@ -1054,8 +1151,8 @@ function spawnGate(x){
   const idx = spawnIdx++;
   const d = runD(Math.max(idx - 2, 0));
   const stIx = Math.min(3, Math.floor(idx / 12));
-  const jit = rng()*14 - 7; const tr = stTier(curStage), inSt = mode === 'endless';
-  const gap = inSt ? Math.max(128, (212 - d*62) * ST_GM[tr]) + jit : 212 - d*62 + jit;
+  const jit = rng()*14 - 7; const tr = stTier(curStage), inSt = mode === 'endless', ease = rookieGate(idx, rookieOn());
+  const gap = (inSt ? Math.max(128, (212 - d*62) * ST_GM[tr]) + jit : 212 - d*62 + jit) + ease.gap;
   const mv = inSt ? ST_MOVE[tr] : ZONE_MOVE[stIx], pu = inSt ? ST_PULSE[tr] : ZONE_PULSE[stIx];
   let type = 'static';
   const r = rng();
@@ -1069,6 +1166,7 @@ function spawnGate(x){
   let base = margin + rng() * (GROUND - 2*margin);
   const maxJump = 170 + d*60;
   base = Math.max(prev - maxJump, Math.min(prev + maxJump, base));
+  base = base * ease.pull + 300 * (1 - ease.pull);
   base = Math.max(margin, Math.min(GROUND - margin, base));
   const g = { x, w:68, base, gap, type, amp, d, ph:rng()*6.28, scored:false, minClear:1e9, dashed:false };
   gates.push(g);
@@ -1318,6 +1416,11 @@ $('startBtn').addEventListener('click', e => { e.stopPropagation(); audioInit();
 $('dailyBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); startGame('daily'); });
 $('retryBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); if (mode === 'versus'){ toMenu(); openVs(); } else startGame(mode); });
 $('menuBtn').addEventListener('click', e => { e.stopPropagation(); toMenu(); });
+$('shareBtn').addEventListener('click', async e => {
+  e.stopPropagation(); const text = lastShare || shareMsg(I18N[lang], {mode, score:score||0, gates:gatesPassed||0, combo:maxCombo||0, day:runDay||dayKey()});
+  try { if (navigator.share) await navigator.share({text, url: shareUrl({mode, score:score||0, day:runDay||dayKey()})}); else if (navigator.clipboard) await navigator.clipboard.writeText(text); toast(navigator.share ? t('shared') : t('copied')); }
+  catch { prompt(t('shareManual'), text); }
+});
 $('over').addEventListener('click', e => { if (e.target === $('over')) flap(); });
 $('resumeBtn').addEventListener('click', togglePause);
 $('pauseBtn').addEventListener('click', e => { e.stopPropagation(); togglePause(); });
@@ -1540,8 +1643,9 @@ function addScore(p){
   }
 }
 
-function die(){
+function die(why = 'gate'){
   if (state !== 'play') return;
+  deathWhy = why;
   if (reviveLeft > 0){
     reviveLeft--; FX.idleT = 0; FX.idleWarn = false; invuln = 2.2; bird.vy = -B.flap * 1.1; bird.y = Math.min(Math.max(bird.y, 120), GROUND - 120);
     combo = 0; tier = 0; hitstop = .18; shake = 16; flash = .8; cam.z = Math.max(cam.z, 1.12);
@@ -1614,7 +1718,11 @@ function showOver(){
     $('oMode').textContent = B.name + ' · ' + t('modeEndless');
   }
   if (score > best && mode !== 'versus'){ best = score; store.set('fw27_best', best); store.set('fw27_bestg', gatesPassed); }
-  if (mode === 'endless'){ stg.gates[curStage] = Math.max(stg.gates[curStage], gatesPassed); stg.score[curStage] = Math.max(stg.score[curStage], score); store.set('fw27_stg2', stg); $('oMode').textContent = B.name + ' · ' + t('stage', {n: curStage + 1}) + ' ' + ZONES[stTier(curStage)].name; }
+  if (mode === 'endless'){ stg.gates[curStage] = Math.max(stg.gates[curStage], gatesPassed); stg.score[curStage] = Math.max(stg.score[curStage], score); store.set('fw27_stg2', stg); $('oMode').textContent = B.name + ' · ' + t('stage', {n: curStage + 1}) + ' ' + ZONES[stTier(curStage)].name; if (curStage === 0) store.set('fw27_rookie_runs', rookieRuns() + 1); }
+  const why = $('oWhy'); why.textContent = t(deathHint(deathWhy, gatesPassed)); why.hidden = false;
+  const dailyLine = $('oDaily'); dailyLine.hidden = mode !== 'daily'; if (mode === 'daily') dailyLine.textContent = t('oDailyLine', {d: fmtDay(runDay), t: fmtLeft(msToNextDay())});
+  const cr = challengeResult(challenge, mode, score), cn = $('oChal'); cn.hidden = !cr; if (cr) cn.textContent = t(cr.beat ? 'chBeat' : 'chShort', {n: cr.by, c: challenge.score});
+  lastShare = shareMsg(I18N[lang], {mode, score, gates:gatesPassed, combo:maxCombo, day:runDay});
   $('oBest').textContent = shownBest;
   $('oGates').textContent = gatesPassed; $('oPerf').textContent = perfects; $('oCombo').textContent = maxCombo;
   overTierStamp();   // the RP tier; a ranked result that moves it stamps again from setRp
@@ -1625,14 +1733,20 @@ function showOver(){
   // coins: field coins (orbs picked up) + score coins (stage mode, per 50 score by tier); the unit's coin multiplier applies to both
   const inSt = mode === 'endless', xpGain = Math.round((gatesPassed + perfects*2 + Math.floor(score/10)) * PK.xpMul);
   const fieldCoin = Math.round(orbsGot * INCOME_X * PK.coinMul), scoreCoin = inSt ? Math.round(scoreCoins(score, stTier(curStage)) * PK.coinMul) : 0;
-  const gems0 = W.gems, dia0 = W.dia; let dCoin = 0;
-  if (mode === 'daily' && store.get('fw27_dbonus','') !== runDay){ store.set('fw27_dbonus', runDay); dCoin = 60*INCOME_X; W.coins += dCoin; W.gems += 1; W.dia += DIA_DAILY; }
+  const gems0 = W.gems, dia0 = W.dia; let dCoin = 0, dStreak = 0;
+  if (mode === 'daily'){
+    const rec = store.get('fw27_dstreak', null);
+    const ds = store.get('fw27_dbonus','') === runDay && (!rec || rec.last !== runDay) ? { last: runDay, streak: 1, claimed: true } : dailyStreakNext(rec, runDay);
+    dStreak = ds.streak;
+    store.set('fw27_dstreak', {last: ds.last, streak: ds.streak});
+    if (!ds.claimed){ const rw = dailyReward(ds.streak); dCoin = rw.coin; W.coins += rw.coin; W.gems += rw.gem; W.dia += rw.dia; store.set('fw27_dbonus', runDay); }
+  }
   W.coins += fieldCoin + scoreCoin; const ups = grantXP(xpGain); saveW();
   const rw = $('oRewards'); rw.textContent = '';
   const pill = (cls, txt) => { const p = document.createElement('span'); p.className = 'wpill'; if (cls){ const i = document.createElement('i'); i.className = 'ic ' + cls; p.appendChild(i); } p.appendChild(document.createTextNode(txt)); rw.appendChild(p); };
   const cm = PK.coinMul > 1 ? ` ×${PK.coinMul}` : '', cpill = (k, n, x = '') => pill('coin', `${t(k)} +${n.toLocaleString()}${x}`);   // one coin pill per source
   pill('', `+${xpGain} XP` + (PK.xpMul > 1 ? ` ×${PK.xpMul}` : '')); if (inSt) cpill('rwScore', scoreCoin, cm); cpill('rwField', fieldCoin, cm);
-  if (ups) cpill('rwLevel', ups*50*INCOME_X); if (FX.clearCoin) cpill('rwClear', FX.clearCoin); if (dCoin) cpill('rwDaily', dCoin);
+  if (ups) cpill('rwLevel', ups*50*INCOME_X); if (FX.clearCoin) cpill('rwClear', FX.clearCoin); if (dCoin) cpill('rwDaily', dCoin); if (dStreak > 1) pill('', t('dailyStreak', {s: dStreak}));
   { const dn = FX.clearDia + (W.dia - dia0), gn = FX.gemsRun + (W.gems - gems0); if (dn > 0) pill('dia', '+' + dn.toLocaleString()); if (gn > 0) pill('gem', '+' + gn); }
   $('oLvup').hidden = !ups; if (ups) $('oLvup').textContent = `${t('levelUp')} Lv ${W.lvl}`;
   $('oTrial').hidden = !runTrial; if (runTrial) $('oTrial').textContent = t('trialRun') + ' · ' + B.name;
@@ -1742,7 +1856,7 @@ function update(rdt){
   bird.rot += ((dashT > 0 ? 0 : Math.max(-.55, Math.min(1.3, bird.vy/(B.maxFall*.78)))) - bird.rot) * Math.min(1, dt*10);
   bird.wing = Math.max(0, bird.wing - dt*5);
   if (bird.y < bird.r){ bird.y = bird.r; bird.vy = Math.max(0, bird.vy); }
-  if (bird.y > GROUND - bird.r){ if (invuln > 0 || godT > 0 || freezeT > 0){ bird.y = GROUND - bird.r; bird.vy = -B.flap; } else if (bounceLeft > 0){ bounceLeft--; bird.y = GROUND - bird.r; bird.vy = -B.flap * 1.15; squash = 1; ring(bird.x, GROUND, 90, B.wingCol, .45, 4); pop(t('fx_bounce'), bird.x, bird.y - 30, B.wingCol, true); haptic('perfect'); tone(700, .1, 'triangle', .1, 500); } else if (cloneT > 0){ cloneHit(); bird.vy = -520; } else if (shields > 0){ breakShield(); bird.vy = -520; } else { bird.y = GROUND - bird.r; die(); if (state !== 'play') return; } }
+  if (bird.y > GROUND - bird.r){ if (invuln > 0 || godT > 0 || freezeT > 0){ bird.y = GROUND - bird.r; bird.vy = -B.flap; } else if (bounceLeft > 0){ bounceLeft--; bird.y = GROUND - bird.r; bird.vy = -B.flap * 1.15; squash = 1; ring(bird.x, GROUND, 90, B.wingCol, .45, 4); pop(t('fx_bounce'), bird.x, bird.y - 30, B.wingCol, true); haptic('perfect'); tone(700, .1, 'triangle', .1, 500); } else if (cloneT > 0){ cloneHit(); bird.vy = -520; } else if (shields > 0){ breakShield(); bird.vy = -520; } else { bird.y = GROUND - bird.r; die('ground'); if (state !== 'play') return; } }
 
   if (B.id === 'phoenix' && Math.random() < .55) part(bird.x - 10, bird.y + (Math.random()-.5)*10, -90 - Math.random()*120, -30 - Math.random()*60, .5, [15 + Math.random()*35, 100, 60], 2.5);
   if (B.id === 'zero' && dashT <= 0 && Math.random() < .2) part(bird.x - 12, bird.y, -60, (Math.random()-.5)*30, .4, B.wingCol, 1.6);
@@ -1789,7 +1903,7 @@ function update(rdt){
           else if (FX.resoBrk > 0 && FX.resoT > 0 && FX.pingT <= 0){   // PULSAR resonant break: while Resonance is on, a gate hit too deep for an echo shatters the gate instead, SK.pulsar.brk times a cast. It belongs to the skill (it used to cost a full, unspent charge, which made pressing the skill worse than keeping it). The gate is scored as a broken gate (never a Perfect) and the combo is lost
             FX.resoBrk--; g.broken = g.pinged = true; g.flash = 1; invuln = .6; FX.pingT = .5; combo = 0; tier = 0;
             hitstop = Math.max(hitstop, .12); banner(t('fx_break'), [320,100,70], 1, false); haptic('shatter'); sigFx(B.id, 'break', g); }
-          else { die(); if (state !== 'play') return; }
+          else { die(bird.y - hr < top ? 'top' : 'bot'); if (state !== 'play') return; }
         }
       }
     }
@@ -3140,6 +3254,7 @@ const hcv = $('hgCv'), hctx = hcv.getContext('2d');
 const STAT_KEYS = ['stSpeed','stJump','stFloat','stDash'];
 function renderHangar(){
   menuTierStamp();
+  $('menu').classList.toggle('rookie', curStage === 0 && rookieRuns() < ROOKIE.runs);
   const i = ROSTER.indexOf(B);
   $('hgCount').textContent = `${i+1} / ${ROSTER.length}`;
   $('hgName').textContent = B.name; $('hgName').style.color = hsl(B.rarity ? rarCol(B) : B.col, 1, 6);
@@ -3634,7 +3749,12 @@ $('nickForm').addEventListener('submit', e => {
 function updateDaily(){
   const key = dayKey();
   if (key !== curDay){ curDay = key; subscribeDaily(); refreshBoards(); }
-  $('dailySub').textContent = `${fmtDay(key)} · ${fmtLeft(msToNextDay())}`;
+  const ds = dailyStreakNext(store.get('fw27_dstreak', null), key), rw = dailyReward(ds.streak);
+  $('dailySub').textContent = ds.claimed ? t('dailyDone', {s: ds.streak, t: fmtLeft(msToNextDay())}) : t('dailyFresh', {s: ds.streak, c: rw.coin.toLocaleString(), g: rw.gem});
+  $('dailyBtn').classList.toggle('fresh', !ds.claimed);
+  const ch = $('chal');
+  if (challenge){ ch.hidden = false; ch.textContent = challenge.daily ? t(challenge.live ? 'chMenuDaily' : 'chMenuOld', {n:challenge.score, d:challenge.day}) : t('chMenu', {n:challenge.score}); }
+  else ch.hidden = true;
   if (lbOpen && lbTab === 'daily') $('lbDay').textContent = t('dayLine', {d: fmtDay(key), t: fmtLeft(msToNextDay())});
 }
 setInterval(updateDaily, 1000);

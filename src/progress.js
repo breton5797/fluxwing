@@ -1,6 +1,6 @@
 // Meta progression: save data, daily missions, skins, records. Pure and immutable —
 // every function returns a new save instead of touching the one it was given.
-import { BOARD_SIZE, MISSION_COUNT, MISSIONS, SAVE_VERSION, SKINS } from './config.js';
+import { BOARD_SIZE, MISSION_COUNT, MISSIONS, SAVE_VERSION, SHARE_URL, SKINS } from './config.js';
 import { rankOf } from './logic.js';
 import { hashString, mulberry32 } from './rng.js';
 
@@ -165,5 +165,7 @@ export function shareText(run, dateKey) {
     head,
     `🏆 ${run.score}점 · RANK ${rankOf(run.score)}`,
     `🚪 게이트 ${run.gates} · ✨ PERFECT ${run.perfects} · 🔥 콤보 x${run.maxCombo}`,
+    run.mode === 'daily' ? `👉 오늘은 모두 같은 코스. ${run.score}점, 넘을 수 있어?` : `👉 ${run.score}점, 넘을 수 있어?`,
+    SHARE_URL,
   ].join('\n');
 }
