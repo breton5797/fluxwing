@@ -69,4 +69,5 @@ export const MISSION_COUNT = 3;
 export const BOARD_SIZE = 5;
 export const RANKS = Object.freeze([['S', 150], ['A', 80], ['B', 35], ['C', 0]]);
 export const SAVE_KEY = 'fw2_save';
+export const SHARE_URL = 'https://breton5797.github.io/fluxwing/v2.html';
 export const SAVE_VERSION = 1;
