@@ -7,8 +7,8 @@ const {
 } = loadHitLoop();
 const DAY = '2026-10-13';
 const T = {
-  share: 'I scored {n} in Flux Wing. Can you beat me?',
-  shareDaily: 'Flux Wing Daily {d}: {n} pts, {g} gates, combo x{c}. Same course worldwide. Can you beat me?',
+  share: 'I scored {n} in SWISHBY. Can you beat me?',
+  shareDaily: 'SWISHBY Daily {d}: {n} pts, {g} gates, combo x{c}. Same course worldwide. Can you beat me?',
 };
 
 test('the easing is for the first stage-1 runs only, never for a course everybody shares', () => {
@@ -52,13 +52,13 @@ test('every death hint has a Korean and an English line', () => {
 
 test('a share line carries the score and a link back to the game', () => {
   const run = { mode: 'endless', score: 42, gates: 17, combo: 6, day: DAY };
-  assert.equal(shareMsg(T, run), `I scored 42 in Flux Wing. Can you beat me? ${SHARE_URL}?c=42`);
+  assert.equal(shareMsg(T, run), `I scored 42 in SWISHBY. Can you beat me? ${SHARE_URL}?c=42`);
   assert.equal(SHARE_URL, 'https://breton5797.github.io/fluxwing/');
 });
 
 test('a daily share line names the day and links to that day\'s challenge', () => {
   const text = shareMsg(T, { mode: 'daily', score: 42, gates: 17, combo: 6, day: DAY });
-  assert.ok(text.startsWith(`Flux Wing Daily ${DAY}: 42 pts, 17 gates, combo x6.`));
+  assert.ok(text.startsWith(`SWISHBY Daily ${DAY}: 42 pts, 17 gates, combo x6.`));
   assert.ok(text.endsWith(`${SHARE_URL}?d=${DAY}&c=42`));
   assert.ok(!/[{}]/.test(text));
   assert.equal(shareUrl({ mode: 'daily', score: 0, day: DAY }), `${SHARE_URL}?d=${DAY}`);
