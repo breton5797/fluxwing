@@ -37,7 +37,7 @@ export const ALLOWED = [
   'kkkkk', 'Jo\u00E3o kkkk', '455', '717', '민수455', 'たろう455', 'Kim 455', 'Mr 717', 'Ana L', 'As U', 'Kike', 'Marica', 'Porras', 'Negre', 'Polla',
   'Blue Tit', "P'tit Loup", 'T\u00EDt', 'Maine Coon', 'Van Dyke', 'Moby Dick', 'Cum Laude', 'DMM', 'Babi', 'Asu', 'Siriporn', 'Romanko', 'Retardataire',
   'パチンコ', 'ぱちんこ', 'Pachinko', '妈妈的宝贝', '媽媽的愛', '아저씨바보', '한강간다',
-  'Pilot', 'Pilot-7175', 'Pilot-4552', 'AI 1', 'AI', '—', 'Flux Wing', 'xX_Ace_Xx', 'Player1', 'b1g b1rd', 'N0va',
+  'Pilot', 'Pilot-7175', 'Pilot-4552', 'AI 1', 'AI', '—', 'Flux Wing', 'Swishby', 'SWISHBY', 'xX_Ace_Xx', 'Player1', 'b1g b1rd', 'N0va',
   // innocent words that hold a refused one
   'class', 'bass', 'assassin', 'Cockpit', 'peacock', 'Hancock', 'Dickens', 'grape', 'Essex', 'sexy', 'spicy',
   'cucumber', 'analog', 'raccoon', 'torpedo', 'nightwatch', 'Nazir', 'therapist', 'Matsushita', 'Yamashita',

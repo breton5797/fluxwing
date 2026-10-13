@@ -52,5 +52,5 @@ const server = createServer(async (req, res) => {
 
 // Loopback only: this is a local play server, not something to expose to the network.
 server.listen(PORT, '127.0.0.1', () => {
-  process.stdout.write(`Flux Wing 2 → http://localhost:${PORT}\n`);
+  process.stdout.write(`SWISHBY → http://localhost:${PORT}\n`);
 });
