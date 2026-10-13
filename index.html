@@ -715,7 +715,7 @@ zh:[['超速驱动','{n}秒内完美判定大幅放宽'],['闪现','瞬移穿过
 SK_IDS.forEach((id,i) => { for (const l in I18N){ const tx = (SK_TXT[l] || SK_TXT.en)[i]; I18N[l]['sk_' + id] = tx[0]; I18N[l]['sd_' + id] = tx[1]; } });
 // Key-based additions (ko/en, with ja/zh for the cost labels, the newer unit texts, the versus ranking, its seasons and the season unit; anything a language lacks falls back to en). The index arrays above keep their length and order.
 const I18N_N = {
-ko:{startSub:'탭 한 번이면 출발', dailyCta:'글로벌 데일리 런', dailyPlayed:'{d} · 오늘 최고 {n} · {t} 후 교체', k1:'탭해서 날기', k2:'가장자리 스치면 PERFECT', k3:'게이지가 차면 DASH', tapNow:'탭!',
+ko:{startSub:'탭 한 번이면 출발', dailyCta:'글로벌 데일리 런', dailyPlayed:'{d} · 오늘 최고 {n} · {t} 후 교체', dailyFresh:'연속 {s}일 도전 · 첫 판 보상 +{c}코인 +{g}젬', dailyDone:'연속 {s}일 유지 중 · 내일 보상까지 {t}', dailyStreak:'데일리 연속 {s}일!', k1:'탭해서 날기', k2:'가장자리 스치면 PERFECT', k3:'게이지가 차면 DASH', tapNow:'탭!',
  whyGround0:'첫 게이트 전에 떨어졌어요 · 시작하자마자 짧게 여러 번 탭!', whyGround:'너무 낮았어요 · 바닥에 닿았어요. 조금 더 일찍 탭', whyTop:'너무 높았어요 · 위쪽 벽에 닿았어요. 게이트 앞에서는 탭을 쉬세요', whyBot:'너무 낮았어요 · 아래쪽 벽에 닿았어요. 조금 더 일찍 탭', whyGate:'게이트에 부딪혔어요 · 틈 가운데를 노리세요',
  shareBtn:'친구에게 도전장 보내기', share:'Flux Wing에서 {n}점! 넘을 수 있어?', shareDaily:'Flux Wing 데일리 {d}: {n}점 · 게이트 {g} · 콤보 x{c}. 전 세계 같은 코스, 넘을 수 있어?', shared:'공유했어요', copied:'복사했어요. 친구에게 붙여넣기 하세요', shareManual:'아래 문구를 복사해서 보내세요',
  oDailyLine:'글로벌 데일리 · {d} · 전 세계 같은 코스 · {t} 후 교체', dNew:'오늘 최고 기록! 친구에게 {n}점 도전장을 보내세요', dShort:'오늘 최고 {b}점까지 {n}점 남았어요. 한 번 더?',
@@ -739,7 +739,7 @@ ko:{startSub:'탭 한 번이면 출발', dailyCta:'글로벌 데일리 런', dai
  ul_solaris:'천지개벽', ud_solaris:'화면의 모든 게이트가 불타 사라지고 3.5초간 무적, {n}초간 코인 비가 내린다', ul_aurora:'극야', ud_aurora:'{n}초간 모든 게이트가 내 높이의 곧고 넓은 회랑으로 열리고, 통과하면 모두 퍼펙트', ul_tempest:'허리케인', ud_tempest:'폭풍이 되어 다음 게이트 {n}개를 무적으로 휩쓸고, 대시 게이지가 가득 찬 채 안전하게 내려앉는다', ul_pleiad:'유성우', ud_pleiad:'별똥별이 쏟아져 다음 게이트 {n}개를 한꺼번에 부순다', ul_pulsar:'빅뱅', ud_pulsar:'{n}초간 세상이 느려지고 통과한 게이트는 모두 퍼펙트, 점수 3배', ultK:'궁극기', ultReady:'궁극기 준비 완료!', hUlt:'궁극기 — 울트라 유닛에는 세 번째 버튼 ULT(A)가 있어요. 게이트를 지날 때마다 게이지가 차고 퍼펙트면 더 빨리 차요. 가득 차면 눌러서 그 유닛의 궁극기를 써요. 스테이지 전용이에요.',
  r_season:'시즌 한정', seaOnly:'시즌 보상 · 대전 시즌 상위 10명', r_monarch:'군주형', p_monarch:'근위대: 실드 1개로 출발(최대 1개). 게이트 25개마다 실드를 되찾는다.', sk_monarch:'대관식', sd_monarch:'{n}초간 무적, 4초간 퍼펙트 판정이 넓어진다',
  hz_over:'과속', hz_weight:'무게추', hz_smoke:'연막', hz_drain:'방전', hHaz:'방해 아이템 — 스테이지 11부터 게이트 사이에 붉은 테두리의 검은 가시 원반이 나와요. 닿으면 과속(3초간 빨라짐)·무게추(3초간 무거워짐)·연막(2.5초 안개)·방전(대시 게이지·스킬 충전·콤보가 0) 중 하나에 걸려요. 실드가 있거나 대시·무적 중이면 아무 일 없이 터져요. 스테이지 전용이에요.'},
-en:{startSub:'One tap run', dailyCta:'GLOBAL DAILY RUN', dailyPlayed:'{d} · today best {n} · new in {t}', k1:'TAP TO FLAP', k2:'SKIM EDGE = PERFECT', k3:'DASH WHEN FULL', tapNow:'TAP!',
+en:{startSub:'One tap run', dailyCta:'GLOBAL DAILY RUN', dailyPlayed:'{d} · today best {n} · new in {t}', dailyFresh:'Day {s} streak run · first-run reward +{c} coins +{g} gems', dailyDone:'Day {s} streak locked · next reward in {t}', dailyStreak:'Daily streak day {s}!', k1:'TAP TO FLAP', k2:'SKIM EDGE = PERFECT', k3:'DASH WHEN FULL', tapNow:'TAP!',
  whyGround0:'Fell before the first gate · tap right away, in short quick taps', whyGround:'Too low · you hit the ground. Tap sooner', whyTop:'Too high · you hit the top wall. Let it drop before the gate', whyBot:'Too low · you hit the bottom wall. Tap earlier', whyGate:'Hit the gate · aim for the middle of the gap',
  shareBtn:'CHALLENGE A FRIEND', share:'I scored {n} in Flux Wing. Can you beat me?', shareDaily:'Flux Wing Daily {d}: I scored {n} ({g} gates, combo x{c}). Same course worldwide. Can you beat me?', shared:'Shared', copied:'Copied. Paste it to a friend', shareManual:'Copy this line and send it',
  oDailyLine:'GLOBAL DAILY · {d} · same course worldwide · new in {t}', dNew:'New daily best! Dare a friend to beat {n}', dShort:'{n} short of your best today ({b}). One more run?',
@@ -928,6 +928,19 @@ const nickBad = s => {
 const SHARE_URL = 'https://breton5797.github.io/fluxwing/';
 // A pilot's first `runs` stage-1 runs: the first `gates` gates are `gap` px wider and pulled toward the start height (pull 1 = where the course put them), the first gate comes `lead` px later, and the ground gives `bounces` before it kills.
 const ROOKIE = { runs: 3, gates: 3, gap: [44, 30, 16], pull: [.3, .55, .8], lead: 110, bounces: 2 };
+// First Daily run of a UTC day pays once. The course stays fair; only the wallet/streak loop changes.
+const DAILY_REWARD = { coin: 300, dia: 100, gem: 1, streakCoin: 50, cap: 7, bonus3: 1, bonus7: 3 };
+const dayIndex = key => { const t = Date.parse(String(key) + 'T00:00:00Z'); return Number.isFinite(t) ? Math.floor(t / 864e5) : -1; };
+function dailyStreakNext(rec, today){
+  const last = rec && /^\d{4}-\d{2}-\d{2}$/.test(rec.last || '') ? rec.last : '', li = dayIndex(last), ti = dayIndex(today), prev = Math.max(0, Math.floor(rec && rec.streak || 0));
+  if (ti < 0) return { last: today, streak: 1, claimed: false };
+  if (last === today) return { last: today, streak: Math.max(1, prev), claimed: true };
+  return { last: today, streak: li >= 0 && ti - li === 1 ? prev + 1 : 1, claimed: false };
+}
+function dailyReward(streak){
+  const s = Math.max(1, Math.min(DAILY_REWARD.cap, Math.floor(streak || 1)));
+  return { coin: DAILY_REWARD.coin + s * DAILY_REWARD.streakCoin, dia: DAILY_REWARD.dia, gem: DAILY_REWARD.gem + (s >= 7 ? DAILY_REWARD.bonus7 : s >= 3 ? DAILY_REWARD.bonus3 : 0) };
+}
 const rookieRun = (mode, stage, runs) => mode === 'endless' && stage === 0 && runs < ROOKIE.runs;   // never the daily or a versus course: those are the same for everyone
 const rookieGate = (idx, on) => on && idx < ROOKIE.gates ? { gap: ROOKIE.gap[idx], pull: ROOKIE.pull[idx] } : { gap: 0, pull: 1 };
 // why: 'ground' | 'top' | 'bot' (which wall of the gate) | anything else. Returns the i18n key of the hint on the result card
@@ -1720,14 +1733,20 @@ function showOver(){
   // coins: field coins (orbs picked up) + score coins (stage mode, per 50 score by tier); the unit's coin multiplier applies to both
   const inSt = mode === 'endless', xpGain = Math.round((gatesPassed + perfects*2 + Math.floor(score/10)) * PK.xpMul);
   const fieldCoin = Math.round(orbsGot * INCOME_X * PK.coinMul), scoreCoin = inSt ? Math.round(scoreCoins(score, stTier(curStage)) * PK.coinMul) : 0;
-  const gems0 = W.gems, dia0 = W.dia; let dCoin = 0;
-  if (mode === 'daily' && store.get('fw27_dbonus','') !== runDay){ store.set('fw27_dbonus', runDay); dCoin = 60*INCOME_X; W.coins += dCoin; W.gems += 1; W.dia += DIA_DAILY; }
+  const gems0 = W.gems, dia0 = W.dia; let dCoin = 0, dStreak = 0;
+  if (mode === 'daily'){
+    const rec = store.get('fw27_dstreak', null);
+    const ds = store.get('fw27_dbonus','') === runDay && (!rec || rec.last !== runDay) ? { last: runDay, streak: 1, claimed: true } : dailyStreakNext(rec, runDay);
+    dStreak = ds.streak;
+    store.set('fw27_dstreak', {last: ds.last, streak: ds.streak});
+    if (!ds.claimed){ const rw = dailyReward(ds.streak); dCoin = rw.coin; W.coins += rw.coin; W.gems += rw.gem; W.dia += rw.dia; store.set('fw27_dbonus', runDay); }
+  }
   W.coins += fieldCoin + scoreCoin; const ups = grantXP(xpGain); saveW();
   const rw = $('oRewards'); rw.textContent = '';
   const pill = (cls, txt) => { const p = document.createElement('span'); p.className = 'wpill'; if (cls){ const i = document.createElement('i'); i.className = 'ic ' + cls; p.appendChild(i); } p.appendChild(document.createTextNode(txt)); rw.appendChild(p); };
   const cm = PK.coinMul > 1 ? ` ×${PK.coinMul}` : '', cpill = (k, n, x = '') => pill('coin', `${t(k)} +${n.toLocaleString()}${x}`);   // one coin pill per source
   pill('', `+${xpGain} XP` + (PK.xpMul > 1 ? ` ×${PK.xpMul}` : '')); if (inSt) cpill('rwScore', scoreCoin, cm); cpill('rwField', fieldCoin, cm);
-  if (ups) cpill('rwLevel', ups*50*INCOME_X); if (FX.clearCoin) cpill('rwClear', FX.clearCoin); if (dCoin) cpill('rwDaily', dCoin);
+  if (ups) cpill('rwLevel', ups*50*INCOME_X); if (FX.clearCoin) cpill('rwClear', FX.clearCoin); if (dCoin) cpill('rwDaily', dCoin); if (dStreak > 1) pill('', t('dailyStreak', {s: dStreak}));
   { const dn = FX.clearDia + (W.dia - dia0), gn = FX.gemsRun + (W.gems - gems0); if (dn > 0) pill('dia', '+' + dn.toLocaleString()); if (gn > 0) pill('gem', '+' + gn); }
   $('oLvup').hidden = !ups; if (ups) $('oLvup').textContent = `${t('levelUp')} Lv ${W.lvl}`;
   $('oTrial').hidden = !runTrial; if (runTrial) $('oTrial').textContent = t('trialRun') + ' · ' + B.name;
@@ -3730,7 +3749,9 @@ $('nickForm').addEventListener('submit', e => {
 function updateDaily(){
   const key = dayKey();
   if (key !== curDay){ curDay = key; subscribeDaily(); refreshBoards(); }
-  $('dailySub').textContent = `${fmtDay(key)} · ${fmtLeft(msToNextDay())}`;
+  const ds = dailyStreakNext(store.get('fw27_dstreak', null), key), rw = dailyReward(ds.streak);
+  $('dailySub').textContent = ds.claimed ? t('dailyDone', {s: ds.streak, t: fmtLeft(msToNextDay())}) : t('dailyFresh', {s: ds.streak, c: rw.coin.toLocaleString(), g: rw.gem});
+  $('dailyBtn').classList.toggle('fresh', !ds.claimed);
   const ch = $('chal');
   if (challenge){ ch.hidden = false; ch.textContent = challenge.daily ? t(challenge.live ? 'chMenuDaily' : 'chMenuOld', {n:challenge.score, d:challenge.day}) : t('chMenu', {n:challenge.score}); }
   else ch.hidden = true;

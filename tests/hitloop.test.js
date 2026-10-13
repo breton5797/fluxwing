@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { loadHitLoop, readIndex } from './helpers/hitloop.js';
 
 const {
-  SHARE_URL, ROOKIE, rookieRun, rookieGate, deathHint, shareUrl, shareMsg, readChallenge, challengeResult,
+  SHARE_URL, ROOKIE, DAILY_REWARD, rookieRun, rookieGate, deathHint, shareUrl, shareMsg, readChallenge, challengeResult, dayIndex, dailyStreakNext, dailyReward,
 } = loadHitLoop();
 const DAY = '2026-10-13';
 const T = {
@@ -93,4 +93,22 @@ test('a result is measured against the challenge it answers', () => {
   assert.equal(challengeResult(open, 'daily', 43), null);
   assert.equal(challengeResult(open, 'versus', 43), null);
   assert.equal(challengeResult(null, 'endless', 43), null);
+});
+
+test('daily streak advances once per UTC day and resets after a missed day', () => {
+  assert.equal(dayIndex('2026-10-13') + 1, dayIndex('2026-10-14'));
+  assert.deepEqual(dailyStreakNext(null, '2026-10-13'), { last: '2026-10-13', streak: 1, claimed: false });
+  assert.deepEqual(dailyStreakNext({ last: '2026-10-13', streak: 1 }, '2026-10-13'), { last: '2026-10-13', streak: 1, claimed: true });
+  assert.deepEqual(dailyStreakNext({ last: '2026-10-13', streak: 1 }, '2026-10-14'), { last: '2026-10-14', streak: 2, claimed: false });
+  assert.deepEqual(dailyStreakNext({ last: '2026-10-13', streak: 4 }, '2026-10-15'), { last: '2026-10-15', streak: 1, claimed: false });
+  assert.deepEqual(dailyStreakNext({ last: 'bad-date', streak: 99 }, '2026-10-13'), { last: '2026-10-13', streak: 1, claimed: false });
+});
+
+test('daily reward gives a meaningful return reason without changing competitive fairness', () => {
+  assert.deepEqual(DAILY_REWARD, { coin: 300, dia: 100, gem: 1, streakCoin: 50, cap: 7, bonus3: 1, bonus7: 3 });
+  assert.deepEqual(dailyReward(1), { coin: 350, dia: 100, gem: 1 });
+  assert.deepEqual(dailyReward(2), { coin: 400, dia: 100, gem: 1 });
+  assert.deepEqual(dailyReward(3), { coin: 450, dia: 100, gem: 2 });
+  assert.deepEqual(dailyReward(7), { coin: 650, dia: 100, gem: 4 });
+  assert.deepEqual(dailyReward(30), { coin: 650, dia: 100, gem: 4 });
 });
