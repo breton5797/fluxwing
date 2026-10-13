@@ -1,12 +1,12 @@
 <!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Flux Wing 2027</title>
+<title>SWISHBY 2027</title>
 <meta name="description" content="탭 한 번으로 나는 원터치 비행 게임. 게이트를 아슬아슬하게 스쳐 콤보를 쌓고, 대시로 뚫고, 랭크 대전과 시즌에 도전하세요.">
 <meta name="theme-color" content="#07050f">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Flux Wing 2027">
+<meta property="og:title" content="SWISHBY 2027">
 <meta property="og:description" content="탭 한 번으로 나는 원터치 비행 게임. 스치면 콤보, 차면 대시. 랭크 대전과 시즌.">
 <meta property="og:url" content="https://breton5797.github.io/fluxwing/">
 <meta property="og:image" content="https://breton5797.github.io/fluxwing/og.png">
@@ -122,7 +122,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 /* menu: logo animation, start button, mode pair */
 .logowrap{position:relative;animation:float 4s ease-in-out infinite}
 .logo{position:relative;background-size:100% 100%}
-.logo::after{content:"FLUX\A WING";white-space:pre;position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.85) 50%,transparent 65%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 3.2s ease-in-out infinite;pointer-events:none}
+.logo::after{content:"SWISHBY";white-space:pre;position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.85) 50%,transparent 65%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 3.2s ease-in-out infinite;pointer-events:none}
 .logo-txt{display:block}
 @keyframes shine{0%{background-position:150% 0}60%,100%{background-position:-60% 0}}
 @keyframes float{50%{transform:translateY(-6px)}}
@@ -284,7 +284,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 </style>
 
 <div id="stage">
-  <canvas id="c" aria-label="Flux Wing"></canvas>
+  <canvas id="c" aria-label="SWISHBY"></canvas>
 
   <div class="wallet" id="wallet">
     <span class="wpill" id="wLv">Lv 1 <span class="lvbar"><i id="wXp" style="width:0%"></i></span></span>
@@ -305,7 +305,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 
   <div class="overlay" id="menu">
     <div class="logowrap">
-      <div class="logo">FLUX<br>WING</div>
+      <div class="logo">SWISHBY</div>
       <div class="year">2027</div>
     </div>
     <p class="tag" data-i18n="tag"></p>
@@ -626,13 +626,13 @@ const I18N_D_KEYS = ['r_common','r_epic','r_mythic','r_legendary','r_mochi','r_a
 const I18N_D = {
 ko:['기본','에픽','미식','레전더리','힐링형','철벽형','불사형','암살형',
  '경험치 2배. 가까운 오브를 자동으로 끌어당긴다.','실드 1개를 달고 출발(최대 3개). 게이트 40개마다 실드 1개 재충전.','한 판에 한 번 불꽃 속에서 부활한다. 피버가 7콤보에서 시작된다.','대시 게이지가 가득 찬 채 출발. 대시가 1.5배 길고 대시 관통 점수 2배.',
- '상점','테스트 빌드: 실제 결제 없이 바로 지급됩니다.','플럭스 패스 · 시즌 1','ZERO 유닛 + 젬 150 + 크레딧 2,000 · 4주','스타터 팩','MOCHI + 젬 100 · 첫 7일 한 번만','젬 {n}개','보유 중','체험하기 (오늘 1회)','오늘 체험을 이미 사용했어요','플럭스 패스 전용','재화가 부족해요','{u} 해금!','지급 완료','레벨 업!','획득 보상','체험 중','부활!','오늘의 챌린지에서는 프리미엄 능력이 일부 제한됩니다','구매 완료'],
+ '상점','테스트 빌드: 실제 결제 없이 바로 지급됩니다.','스위시 패스 · 시즌 1','ZERO 유닛 + 젬 150 + 크레딧 2,000 · 4주','스타터 팩','MOCHI + 젬 100 · 첫 7일 한 번만','젬 {n}개','보유 중','체험하기 (오늘 1회)','오늘 체험을 이미 사용했어요','스위시 패스 전용','재화가 부족해요','{u} 해금!','지급 완료','레벨 업!','획득 보상','체험 중','부활!','오늘의 챌린지에서는 프리미엄 능력이 일부 제한됩니다','구매 완료'],
 en:['Common','Epic','Mythic','Legendary','Healer','Fortress','Undying','Assassin',
  'Double XP. Pulls nearby orbs in on its own.','Starts with 1 shield (max 3). Recharges 1 shield every 40 gates.','Rises from the flames once per run. Fever starts at a 7 combo.','Starts with a full dash meter. Dashes last 1.5x longer and score double.',
- 'Shop','Test build: items are granted instantly with no real payment.','Flux Pass · Season 1','ZERO unit + 150 gems + 2,000 credits · 4 weeks','Starter Pack','MOCHI + 100 gems · once, first 7 days','{n} gems','Owned','Try it (1 free run today)','Free run already used today','Flux Pass exclusive','Not enough currency','{u} unlocked!','Granted','LEVEL UP!','Rewards','TRIAL RUN','REBIRTH!','Premium perks are partly limited in the Daily Challenge','Purchased'],
+ 'Shop','Test build: items are granted instantly with no real payment.','Swish Pass · Season 1','ZERO unit + 150 gems + 2,000 credits · 4 weeks','Starter Pack','MOCHI + 100 gems · once, first 7 days','{n} gems','Owned','Try it (1 free run today)','Free run already used today','Swish Pass exclusive','Not enough currency','{u} unlocked!','Granted','LEVEL UP!','Rewards','TRIAL RUN','REBIRTH!','Premium perks are partly limited in the Daily Challenge','Purchased'],
 ja:['ノーマル','エピック','ミシック','レジェンダリー','ヒーラー型','鉄壁型','不死型','暗殺型',
  '経験値2倍。近くのオーブを自動で引き寄せる。','シールド1枚で出発(最大3枚)。ゲート40個ごとに1枚回復。','1プレイに1回、炎の中から復活する。フィーバーが7コンボで始まる。','ダッシュゲージ満タンで出発。ダッシュが1.5倍長く、貫通スコア2倍。',
- 'ショップ','テストビルド:実際の決済なしですぐに付与されます。','フラックスパス · シーズン1','ZEROユニット + ジェム150 + クレジット2,000 · 4週間','スターターパック','MOCHI + ジェム100 · 最初の7日間に1回','ジェム{n}個','所持中','体験する(今日1回)','今日の体験は使用済み','フラックスパス限定','通貨が足りません','{u} 解放!','付与しました','レベルアップ!','獲得報酬','体験中','復活!','デイリーチャレンジではプレミアム能力が一部制限されます','購入済み'],
+ 'ショップ','テストビルド:実際の決済なしですぐに付与されます。','スウィッシュパス · シーズン1','ZEROユニット + ジェム150 + クレジット2,000 · 4週間','スターターパック','MOCHI + ジェム100 · 最初の7日間に1回','ジェム{n}個','所持中','体験する(今日1回)','今日の体験は使用済み','スウィッシュパス限定','通貨が足りません','{u} 解放!','付与しました','レベルアップ!','獲得報酬','体験中','復活!','デイリーチャレンジではプレミアム能力が一部制限されます','購入済み'],
 zh:['普通','史诗','神话','传说','治愈型','铁壁型','不死型','刺客型',
  '经验2倍。自动吸附附近的能量球。','开局自带1层护盾(最多3层)。每通过40个关卡恢复1层。','每局可在烈焰中复活一次。连击7次即进入狂热。','开局冲刺能量全满。冲刺时间1.5倍,冲刺穿越得分翻倍。',
  '商店','测试版本:无需真实付款,立即发放。','通量通行证 · 第1赛季','ZERO机体 + 宝石150 + 信用点2,000 · 4周','新手礼包','MOCHI + 宝石100 · 前7天限购一次','宝石{n}个','已拥有','免费试玩(今日1次)','今日试玩已用完','通行证专属','货币不足','{u} 已解锁!','已发放','升级!','获得奖励','试玩中','涅槃重生!','每日挑战中高级能力会受到部分限制','已购买']

@@ -1,4 +1,6 @@
-# Flux Wing 2
+# SWISHBY
+
+> 이전 이름: Flux Wing. 아래 본문은 이전 버전(v2.html, src/)을 기준으로 쓰여 있다.
 
 원터치 비행 게임의 2027 버전. 탭 한 번으로 날아오르는 코어는 그대로 두고, 아슬아슬하게 스칠수록 보상이 커지는 구조를 얹었다. 빌드 단계도 의존성도 없는 정적 웹 게임이다.
 
@@ -38,7 +40,7 @@ ES 모듈을 쓰므로 `v2.html`을 파일로 직접 열면 동작하지 않는�
 ## 구조
 
 ```
-index.html               Flux Wing 2027 최종본 (단일 파일, 배포 루트)
+index.html               SWISHBY 2027 (실서비스 게임) (단일 파일, 배포 루트)
 v2.html, styles.css      Flux Wing 2 화면 뼈대와 오버레이
 src/config.js            모든 튜닝 상수
 src/rng.js               시드 RNG, 날짜 키
