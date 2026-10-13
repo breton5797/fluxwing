@@ -280,6 +280,19 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 #menu.tight .logo{font-size:44px}
 #menu.tight .hangar{gap:6px;padding:12px 16px}
 #menu.tight .hg-lock{gap:2px 8px}
+/* .snug: still too tall after .tight and the clipped unit text (fitMenuBox) */
+#menu.snug{gap:7px;padding-top:calc(40px + env(safe-area-inset-top,0px));padding-bottom:8px}
+#menu.snug .logo{font-size:34px}
+#menu.snug .year{font-size:11px;margin-top:-2px}
+#menu.snug #hgCv{max-width:124px;height:54px}
+#menu.snug .hangar{gap:4px;padding:8px 14px}
+#menu.snug .hg-name{font-size:24px}
+#menu.snug .startbig{font-size:22px;padding:10px 24px}
+#menu.snug .startbig small{display:none}
+#menu.snug .dailybig{font-size:15px;padding:7px 12px}
+#menu.snug .mode2{gap:7px}
+#menu.snug .mode2 .btn{padding-top:8px;padding-bottom:8px}
+#menu.snug .ghost{padding:7px 12px}
 /* first screen: PLAY first, the global daily run right under it, everything else after */
 .startbig small{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase}
 .dailybig{position:relative;box-sizing:border-box;width:min(300px,100%);font-size:17px;padding:11px 14px;box-shadow:0 0 0 2px var(--cool),0 0 34px rgba(79,240,255,.5)}
@@ -1418,7 +1431,10 @@ $('retryBtn').addEventListener('click', e => { e.stopPropagation(); audioInit();
 $('menuBtn').addEventListener('click', e => { e.stopPropagation(); toMenu(); });
 $('shareBtn').addEventListener('click', async e => {
   e.stopPropagation(); const text = lastShare || shareMsg(I18N[lang], {mode, score:score||0, gates:gatesPassed||0, combo:maxCombo||0, day:runDay||dayKey()});
-  try { if (navigator.share) await navigator.share({text, url: shareUrl({mode, score:score||0, day:runDay||dayKey()})}); else if (navigator.clipboard) await navigator.clipboard.writeText(text); toast(navigator.share ? t('shared') : t('copied')); }
+  // the line already ends with the link, so it goes out as text alone. Closing the share sheet is an answer, not a failure: nothing follows it.
+  // A share that fails for any other reason falls back to the clipboard, and only a device with neither gets the copy-by-hand dialog.
+  if (navigator.share){ try { await navigator.share({text}); toast(t('shared')); return; } catch (err){ if (err && err.name === 'AbortError') return; } }
+  try { await navigator.clipboard.writeText(text); toast(t('copied')); }
   catch { prompt(t('shareManual'), text); }
 });
 $('over').addEventListener('click', e => { if (e.target === $('over')) flap(); });
@@ -3307,11 +3323,12 @@ function fitMenu(){
 }
 function fitMenuBox(){
   const m = $('menu'), el = $('hgInfo'); if (m.hidden) return;
-  m.classList.remove('tight'); el.classList.remove('clip'); el.style.maxHeight = '';
+  m.classList.remove('tight', 'snug'); el.classList.remove('clip'); el.style.maxHeight = '';
   if (m.scrollHeight <= m.clientHeight) return;
   m.classList.add('tight'); const over = m.scrollHeight - m.clientHeight; if (over <= 0) return;
   const h = el.offsetHeight, keep = Math.max(Math.min(h, 40), h - over - 14);   // 14 = bottom padding of .clip + rounding
   if (keep < h){ el.style.maxHeight = keep + 'px'; el.classList.add('clip'); el.scrollTop = 0; }
+  if (m.scrollHeight > m.clientHeight) m.classList.add('snug');   // short phones: the daily row made the menu one row taller, so every row gives a little
 }
 addEventListener('resize', fitMenu); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitMenu);
 function pickBird(i){
