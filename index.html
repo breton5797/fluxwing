@@ -1404,7 +1404,7 @@ $('dailyBtn').addEventListener('click', e => { e.stopPropagation(); audioInit();
 $('retryBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); if (mode === 'versus'){ toMenu(); openVs(); } else startGame(mode); });
 $('menuBtn').addEventListener('click', e => { e.stopPropagation(); toMenu(); });
 $('shareBtn').addEventListener('click', async e => {
-  e.stopPropagation(); const text = lastShare || shareMsg(T[lang], {mode, score:score||0, gates:gatesPassed||0, combo:maxCombo||0, day:runDay||dayKey()});
+  e.stopPropagation(); const text = lastShare || shareMsg(I18N[lang], {mode, score:score||0, gates:gatesPassed||0, combo:maxCombo||0, day:runDay||dayKey()});
   try { if (navigator.share) await navigator.share({text, url: shareUrl({mode, score:score||0, day:runDay||dayKey()})}); else if (navigator.clipboard) await navigator.clipboard.writeText(text); toast(navigator.share ? t('shared') : t('copied')); }
   catch { prompt(t('shareManual'), text); }
 });
@@ -1709,7 +1709,7 @@ function showOver(){
   const why = $('oWhy'); why.textContent = t(deathHint(deathWhy, gatesPassed)); why.hidden = false;
   const dailyLine = $('oDaily'); dailyLine.hidden = mode !== 'daily'; if (mode === 'daily') dailyLine.textContent = t('oDailyLine', {d: fmtDay(runDay), t: fmtLeft(msToNextDay())});
   const cr = challengeResult(challenge, mode, score), cn = $('oChal'); cn.hidden = !cr; if (cr) cn.textContent = t(cr.beat ? 'chBeat' : 'chShort', {n: cr.by, c: challenge.score});
-  lastShare = shareMsg(T[lang], {mode, score, gates:gatesPassed, combo:maxCombo, day:runDay});
+  lastShare = shareMsg(I18N[lang], {mode, score, gates:gatesPassed, combo:maxCombo, day:runDay});
   $('oBest').textContent = shownBest;
   $('oGates').textContent = gatesPassed; $('oPerf').textContent = perfects; $('oCombo').textContent = maxCombo;
   overTierStamp();   // the RP tier; a ranked result that moves it stamps again from setRp

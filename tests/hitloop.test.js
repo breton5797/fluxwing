@@ -65,6 +65,12 @@ test('a daily share line names the day and links to that day\'s challenge', () =
   assert.equal(shareUrl({ mode: 'endless', score: 0, day: DAY }), SHARE_URL);
 });
 
+test('runtime share calls use the live I18N table, not the test-only T fixture', () => {
+  const html = readIndex();
+  assert.equal(html.includes('shareMsg(T[lang]'), false);
+  assert.equal(html.includes('shareMsg(I18N[lang]'), true);
+});
+
 test('a challenge link is read back, and anything else is refused', () => {
   assert.deepEqual(readChallenge('?c=42', DAY), { score: 42, day: '', daily: false, live: true });
   assert.deepEqual(readChallenge(`?d=${DAY}&c=42`, DAY), { score: 42, day: DAY, daily: true, live: true });
