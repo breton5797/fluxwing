@@ -28,6 +28,27 @@ test('the share image has its own SWISHBY address and the file is there', () => 
   assert.match(html, /<meta name="twitter:image" content="https:\/\/breton5797\.github\.io\/fluxwing\/og-swishby\.png">/);
 });
 
+// Browsers read the install manifest only from <head>, and link-preview crawlers may stop at </head>.
+test('page metadata sits in <head>, and the page starts dark', () => {
+  const html = read('../index.html');
+  const head = html.slice(html.indexOf('<head>'), html.indexOf('</head>'));
+  for (const tag of ['<title>SWISHBY 2027</title>', '<meta name="description"', '<link rel="manifest"', '<meta name="theme-color"',
+    '<link rel="icon"', '<link rel="apple-touch-icon"', '<meta property="og:image"', '<meta property="og:title"', '<meta name="twitter:image"'])
+    assert.ok(head.includes(tag), tag + ' is not inside <head>');
+  assert.equal(html.split('</head>').length, 2);
+  assert.doesNotMatch(head, /#faf9f5|color-scheme:light/, 'the first paint must not be the light page shell');
+});
+
+// The old game's worker (registered by src/main.js for v2.html) answered offline navigations with v2.html.
+// Browsers re-fetch sw.js on navigation; this version must only clear its caches and unregister itself.
+test('sw.js retires itself instead of serving the old game', () => {
+  const sw = read('../sw.js');
+  assert.match(sw, /registration\.unregister\(\)/);
+  assert.match(sw, /caches\.delete/);
+  assert.doesNotMatch(sw, /addEventListener\('fetch'|cache\.addAll|caches\.match|clients\.claim/);   // serves nothing, caches nothing
+  assert.doesNotMatch(read('../index.html'), /serviceWorker\.register/);
+});
+
 test('the title, the share title and the install name say SWISHBY', () => {
   const html = read('../index.html'), man = JSON.parse(read('../manifest.webmanifest'));
   assert.match(html, /<title>SWISHBY 2027<\/title>/);
