@@ -70,6 +70,13 @@ comment on table public.fw_scores is 'Flux Wing leaderboard: one row per (anonym
 create index if not exists fw_scores_best_idx  on public.fw_scores (best desc) where best > 0;
 create index if not exists fw_scores_daily_idx on public.fw_scores (daily_key, daily_score desc) where daily_score > 0;
 
+-- Moderation: a hidden row stays in the table and keeps being updated, but nobody else sees it on a board, and a
+-- hidden versus row gets no rank and no reward at the season rollover. By hand, as the database owner:
+--   update public.fw_scores set hidden = true where player_id = '<uuid>';   -- the leaderboard
+--   update public.fw_versus set hidden = true where player_id = '<uuid>';   -- the versus ranking
+--   select player_id, nick, best, gates, last_submit_at from public.fw_scores order by best desc limit 20;   -- who is on top
+alter table public.fw_scores add column if not exists hidden boolean not null default false;
+
 -- ---------- row level security + grants (read-only through the Data API) ----------
 alter table public.fw_scores enable row level security;
 
@@ -77,7 +84,8 @@ alter table public.fw_scores enable row level security;
 -- (publishable key with no user) needs nothing; leaving it out means the board cannot be read or scraped
 -- without first creating a user, which is rate limited (and can be CAPTCHA-gated).
 drop policy if exists fw_scores_read on public.fw_scores;
-create policy fw_scores_read on public.fw_scores for select to authenticated using (true);
+create policy fw_scores_read on public.fw_scores for select to authenticated
+using (not hidden or player_id = (select auth.uid()));   -- a hidden player still sees their own row
 -- No INSERT / UPDATE / DELETE policy on purpose: with RLS on, clients cannot write the table at all.
 
 revoke all on table public.fw_scores from public, anon, authenticated;
@@ -150,7 +158,15 @@ security definer
 set search_path = ''
 as $$
 declare
-  c_max_gates   constant integer  := 5000;             -- far beyond any real run
+  c_max_gates   constant integer  := 1500;             -- 13x the best real run on the board when this was set (112 gates, 2026-10)
+  -- Time budget: a run of g gates takes real time. The fastest unit (speed 1.25) at the top speed of the hardest stage,
+  -- dashing, crosses the 220 px minimum spacing in a little over 0.1 s, and the dash cannot be held; 6 gates a second
+  -- over a whole run is far above that. The budget runs from the caller's previous accepted submit (a run ends with
+  -- one) or, for a first submit, from the creation of the anonymous user. It stops a forged score sent in one call:
+  -- claiming g gates means waiting g / 6 seconds first.
+  c_gates_per_s constant numeric  := 6;
+  c_gate_grace  constant integer  := 30;
+  v_since timestamptz;
   c_legacy_cap  constant integer  := 3000;             -- a best with no gate count (made before the board existed)
   c_min_gap     constant interval := interval '2 seconds';
   c_day_cap     constant integer  := 400;              -- accepted submits per player per UTC day
@@ -221,6 +237,12 @@ begin
     raise exception 'fw_auth: unknown player' using errcode = '28000';   -- token of a deleted user: the client signs in again
   end;
   select * into strict v_row from public.fw_scores where player_id = v_uid for update;
+
+  -- time budget (see c_gates_per_s)
+  v_since := coalesce(v_row.last_submit_at, (select u.created_at from auth.users u where u.id = v_uid), v_row.created_at);
+  if p_gates > c_gate_grace + floor(extract(epoch from v_now - v_since) * c_gates_per_s) then
+    raise exception 'fw_implausible: more gates than the time since the last submit allows' using errcode = '22023';
+  end if;
 
   -- rate limit (a rejected call raises, so it is rolled back and does not count)
   if v_row.last_submit_at is not null and v_now - v_row.last_submit_at < c_min_gap then
@@ -335,7 +357,9 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 --
 -- SEASONS. A season is one calendar month in Korea time (Asia/Seoul) and has the id YYYYMM of that month
 -- (202610); it changes at 00:00 KST on the 1st. private.fw_vs_season holds, in its single row, the id of the
--- season that fw_versus currently describes. There is no cron: every one of the four functions calls
+-- season that fw_versus currently describes. A pg_cron job (end of this file, when the extension is on) calls
+-- private.fw_vs_tick() every day at 00:00 KST, so the rollover normally runs there, with no timeout; as a fallback
+-- every one of the four functions also calls
 -- private.fw_vs_tick() as soon as its arguments have been checked (a call with bad arguments is refused before
 -- it, so it can never make the server do a rollover), and the first call whose clock is in a later month than
 -- that row does the rollover, inside its own transaction, before it reads or writes anything else:
@@ -382,7 +406,7 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 --          x.rp, private.fw_vs_tier(x.rp), x.wins, x.losses, x.draws, x.n, x.nick, x.cc, x.bird
 --   from (select s.season, v.player_id, v.rp, v.wins, v.losses, v.draws, v.updated_at, v.nick, v.cc, v.bird,
 --                v.wins + v.losses + v.draws as n,
---                v.wins + v.losses + v.draws >= (select c.min_matches from private.fw_vs_season_cfg() c) as ok
+--                v.wins + v.losses + v.draws >= (select c.min_matches from private.fw_vs_season_cfg() c) and not v.hidden as ok
 --         from public.fw_versus v cross join private.fw_vs_season s
 --         where v.wins + v.losses + v.draws > 0 and s.season < private.fw_vs_season_of(now())
 --           and not exists (select 1 from public.fw_vs_standing t where t.season = s.season)) x;
@@ -449,9 +473,11 @@ create index if not exists fw_versus_rp_idx on public.fw_versus (rp desc, player
 -- (the client's filter is exactly this predicate), in the same order.
 create index if not exists fw_versus_live_idx on public.fw_versus (rp desc, player_id) where wins > 0 or losses > 0 or draws > 0;
 
+alter table public.fw_versus add column if not exists hidden boolean not null default false;   -- moderation: see fw_scores
 alter table public.fw_versus enable row level security;
 drop policy if exists fw_versus_read on public.fw_versus;
-create policy fw_versus_read on public.fw_versus for select to authenticated using (true);
+create policy fw_versus_read on public.fw_versus for select to authenticated
+using (not hidden or player_id = (select auth.uid()));
 -- No INSERT / UPDATE / DELETE policy on purpose (same model as fw_scores).
 
 revoke all on table public.fw_versus from public, anon, authenticated;
@@ -699,7 +725,7 @@ begin
            case when x.ok then (row_number() over (partition by x.ok order by x.rp desc, x.wins desc, x.updated_at, x.player_id))::integer end,
            x.rp, private.fw_vs_tier(x.rp), x.wins, x.losses, x.draws, x.n, x.nick, x.cc, x.bird
     from (select v.player_id, v.rp, v.wins, v.losses, v.draws, v.updated_at, v.nick, v.cc, v.bird,
-                 v.wins + v.losses + v.draws as n, v.wins + v.losses + v.draws >= v_min as ok
+                 v.wins + v.losses + v.draws as n, v.wins + v.losses + v.draws >= v_min and not v.hidden as ok   -- hidden: archived, no rank
           from public.fw_versus v where v.wins + v.losses + v.draws > 0) x;
   end if;
   update public.fw_versus set rp = 0, wins = 0, losses = 0, draws = 0 where rp <> 0 or wins <> 0 or losses <> 0 or draws <> 0;
@@ -1131,3 +1157,20 @@ with check (
   realtime.messages.extension in ('broadcast', 'presence')
   and (select realtime.topic()) ~ '^fw-v[0-9]+-(fw-lobby|c-[0-9]{4}|m-[a-z0-9]{1,14}-[a-z0-9]{1,14})$'
 );
+
+
+-- ---------- scheduled season rollover (pg_cron) ----------
+-- Dashboard: Database > Extensions > pg_cron ON (it is on for the production project since 2026-10-15). Without the
+-- extension this block does nothing and the rollover stays with the first versus call of a month, as before.
+-- The job runs as the database owner, so the 8 s API timeout does not apply; fw_vs_tick() is a no-op on every other
+-- day (one row read under a shared lock). pg_cron reads schedules in UTC: 15:00 UTC is 00:00 in Asia/Seoul.
+-- cron.schedule() with a job name replaces the job of that name, so re-running this file keeps exactly one job.
+-- Check:   select jobname, schedule, command, active from cron.job;
+--          select status, return_message, start_time from cron.job_run_details order by start_time desc limit 5;
+do $do$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    perform cron.schedule('fw_vs_rollover', '0 15 * * *', 'set statement_timeout = 0; select private.fw_vs_tick();');
+  end if;
+end
+$do$;

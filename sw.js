@@ -1,48 +1,12 @@
-// Offline shell. Network-first so a new deploy is picked up immediately; the cache only
-// answers when the network cannot.
-const CACHE = 'fluxwing2-v1';
-const SHELL = [
-  'v2.html', 'styles.css', 'icon.svg', 'manifest.webmanifest',
-  'src/main.js', 'src/audio.js', 'src/config.js', 'src/feedback.js', 'src/fx.js', 'src/logic.js',
-  'src/progress.js', 'src/render.js', 'src/rng.js', 'src/sim.js', 'src/storage.js', 'src/ui.js',
-];
-
-self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
-});
+// Retired. This worker belonged to the old Flux Wing 2 page (v2.html, registered by src/main.js) and answered
+// offline navigations with v2.html. The live game (index.html) registers no worker, so this version only clears
+// the caches the old one left and unregisters itself; browsers fetch it again on their next navigation.
+// It does not reload open pages: v2.html would register it again and loop.
+self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim()),
-  );
-});
-
-// Give the network a few seconds, then let the cache answer.
-function fetchWithTimeout(request, ms) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
-}
-
-self.addEventListener('fetch', event => {
-  const { request } = event;
-  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
-  event.respondWith(
-    fetchWithTimeout(request, 3000)
-      .then(response => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE).then(cache => cache.put(request, copy));
-        }
-        return response;
-      })
-      .catch(async () => {
-        const hit = await caches.match(request);
-        if (hit) return hit;
-        if (request.mode === 'navigate') return (await caches.match('v2.html')) || Response.error();
-        return Response.error();
-      }),
-  );
+  event.waitUntil((async () => {
+    for (const key of await caches.keys()) await caches.delete(key);
+    await self.registration.unregister();
+  })());
 });
