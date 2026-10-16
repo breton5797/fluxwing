@@ -91,3 +91,45 @@ test('fsPlan: adopt, merge3, pull, ask', () => {
   assert.equal(C.fsPlan({ uid: OTHER, rev: 5, base: full }, UID, remote, full), 'pull');   // another account's progress: never handed over
   assert.equal(C.fsPlan({ uid: OTHER, rev: 5, base: full }, UID, null, full), 'pull');
 });
+
+test('authUrl: errors are taken out of the URL, other parameters stay, tokens are left to the SDK', () => {
+  const base = 'https://breton5797.github.io/fluxwing/';
+  assert.deepEqual(C.authUrl(base), { cb: false, err: '', clean: base });
+  assert.deepEqual(C.authUrl(base + '#dev'), { cb: false, err: '', clean: base + '#dev' });
+  const t = C.authUrl(base + '?c=abc#error=server_error&error_code=identity_already_exists&error_description=Identity+is+already+linked');
+  assert.deepEqual(t, { cb: true, err: 'taken', clean: base + '?c=abc' });
+  assert.deepEqual(C.authUrl(base + '?error=access_denied&error_description=x&c=1'), { cb: true, err: 'other', clean: base + '?c=1' });
+  assert.equal(C.authUrl(base + '#access_token=a&refresh_token=b&type=magiclink').err, '');   // success: the SDK reads the hash
+  assert.equal(C.authUrl(base + '#access_token=a&refresh_token=b').cb, true);
+});
+
+test('authErr reads codes, then messages', () => {
+  assert.equal(C.authErr({ code: 'identity_already_exists' }), 'taken');
+  assert.equal(C.authErr({ code: 'email_exists' }), 'taken');
+  assert.equal(C.authErr({ status: 429, message: 'x' }), 'rate');
+  assert.equal(C.authErr({ code: 'over_email_send_rate_limit' }), 'rate');
+  assert.equal(C.authErr({ code: 'otp_expired' }), 'code');
+  assert.equal(C.authErr({ code: 'email_address_invalid' }), 'email');
+  assert.equal(C.authErr(null), 'other'); assert.equal(C.authErr({ message: 'boom' }), 'other');
+});
+
+test('authUi: hidden without Supabase or on a portal; Apple only when switched on; no Google inside in-app browsers', () => {
+  const on = { supabaseUrl: 'u', supabaseAnonKey: 'k' }, ua = 'Mozilla/5.0 (iPhone) Safari/604.1';
+  assert.deepEqual(C.authUi(on, ua), { show: true, google: true, apple: false, email: true, inApp: false });
+  assert.equal(C.authUi({}, ua).show, false);
+  assert.equal(C.authUi({ ...on, ads: 'poki' }, ua).show, false);
+  assert.equal(C.authUi({ ...on, ads: 'crazygames' }, ua).show, false);
+  assert.equal(C.authUi({ ...on, ads: 'stub' }, ua).show, true);
+  assert.equal(C.authUi({ ...on, auth: { apple: true } }, ua).apple, true);
+  assert.equal(C.authUi({ ...on, auth: { apple: 'yes' } }, ua).apple, false);
+  const k = C.authUi(on, 'Mozilla/5.0 (iPhone) KAKAOTALK 10.0');
+  assert.deepEqual([k.google, k.email, k.inApp], [false, true, true]);
+  assert.equal(C.authUi(on, undefined).show, true);
+});
+
+test('authEmail and authCodeOk', () => {
+  assert.equal(C.authEmail('  Me@Example.COM '), 'me@example.com');
+  for (const bad of ['', 'a@b', 'no at', 'a@b.c', null, 'x'.repeat(250) + '@a.com']) assert.equal(C.authEmail(bad), '');
+  assert.equal(C.authCodeOk(' 123 456 '), '123456');
+  for (const bad of ['12345', 'abcdef', '', null, '12345678901']) assert.equal(C.authCodeOk(bad), '');
+});
