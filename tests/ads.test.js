@@ -61,3 +61,39 @@ test('offers hide everything when no ad is ready, and anything already claimed o
   assert.deepEqual(A.adOffers(true, { coinBonus: 0, dailyBonus: null, claimed: {} }), { revive: true, coin2x: false, daily2x: false });
   assert.equal(A.adOffers(true, { ...run, claimed: { coin2x: true } }).coin2x, false);
 });
+
+const tick = () => new Promise(r => setTimeout(r, 0));
+
+test('the stub answers by its mode', async () => {
+  const mk = mode => A.adStub({ mode, wait: tick, ms: 1 });
+  assert.equal(await mk('ok').rewarded('revive'), 'granted');
+  assert.equal(await mk('skip').rewarded('revive'), 'skipped');
+  assert.equal(await mk('fail').rewarded('revive'), 'failed');
+  assert.equal(mk('none').ready(), false);
+  assert.equal(mk('ok').ready(), true);
+  assert.equal(await mk('ok').interstitial(), 'shown');
+  assert.equal(await mk('fail').interstitial(), 'failed');
+});
+
+test('the guard turns a hang, a throw or junk into failed', async () => {
+  const hang = { name: 'hang', ready: () => true, rewarded: () => new Promise(() => {}), interstitial: () => new Promise(() => {}) };
+  const boom = { name: 'boom', ready: () => { throw new Error('x'); }, rewarded: () => { throw new Error('x'); }, interstitial: async () => { throw new Error('x'); } };
+  const junk = { name: 'junk', ready: () => 1, rewarded: async () => 'yes', interstitial: async () => 42 };
+  const g = a => A.adGuard(a, tick, 5);
+  assert.equal(await g(hang).rewarded('coin2x'), 'failed');
+  assert.equal(await g(hang).interstitial(), 'failed');
+  assert.equal(g(boom).ready(), false);
+  assert.equal(await g(boom).rewarded('coin2x'), 'failed');
+  assert.equal(await g(boom).interstitial(), 'failed');
+  assert.equal(await g(junk).rewarded('coin2x'), 'failed');
+  assert.equal(await g(junk).interstitial(), 'failed');
+  assert.equal(g(junk).ready(), true);
+});
+
+test('?ads= picks a stub mode only where the stub is the provider or on localhost', () => {
+  assert.deepEqual(A.adPick('', 'breton5797.github.io', undefined), { prov: 'stub', mode: 'ok' });
+  assert.deepEqual(A.adPick('?ads=fail', 'breton5797.github.io', 'stub'), { prov: 'stub', mode: 'fail' });
+  assert.deepEqual(A.adPick('?ads=ok', 'breton5797.github.io', 'poki'), { prov: 'poki', mode: '' });
+  assert.deepEqual(A.adPick('?ads=none', 'localhost', 'poki'), { prov: 'stub', mode: 'none' });
+  assert.deepEqual(A.adPick('?ads=hack', 'localhost', 'stub'), { prov: 'stub', mode: 'ok' });
+});

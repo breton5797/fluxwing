@@ -988,6 +988,25 @@ const adCoinBonus = (field, sc) => adInt(field, 1e12) + adInt(sc, 1e12);   // th
 const adDailyBonus = rw => rw ? { coin: adInt(rw.coin, 1e12), dia: adInt(rw.dia, 1e12), gem: adInt(rw.gem, 1e9) } : null;
 const adClaim = (claimed, place) => claimed[place] ? null : { ...claimed, [place]: true };
 const adOffers = (ready, run) => ({ revive: !!ready, coin2x: !!ready && run.coinBonus > 0 && !run.claimed.coin2x, daily2x: !!ready && !!run.dailyBonus && !run.claimed.daily2x });
+// An adapter: {name, ready() sync (the UI asks while it draws), rewarded(place) -> 'granted'|'skipped'|'failed', interstitial() -> 'shown'|'failed'}. The stub stands in until a provider (Poki / CrazyGames / AdSense H5) gets its own adapter with the same shape
+function adStub(o){
+  const mode = AD_STUB_MODES.includes(o.mode) ? o.mode : 'ok', ms = o.ms == null ? AD_CFG.stubMs : o.ms;
+  return { name: 'stub:' + mode, ready: () => mode !== 'none',
+    rewarded: async () => { if (mode === 'none') return 'failed'; await o.wait(ms); return mode === 'ok' ? 'granted' : mode === 'skip' ? 'skipped' : 'failed'; },
+    interstitial: async () => { if (mode === 'none' || mode === 'fail') return 'failed'; await o.wait(ms); return 'shown'; } };
+}
+const AD_RW = ['granted', 'skipped', 'failed'], AD_IN = ['shown', 'failed'];
+// Any adapter as the game sees it: a throw, an answer outside the list or no answer within ms is a failure, so a broken provider only hides buttons
+function adGuard(a, wait, ms){
+  const safe = (f, ok) => async (...x) => { try { const r = await Promise.race([Promise.resolve().then(() => f(...x)), wait(ms).then(() => 'failed')]); return ok.includes(r) ? r : 'failed'; } catch (e){ return 'failed'; } };
+  return { name: a.name, ready: () => { try { return !!a.ready(); } catch (e){ return false; } }, rewarded: safe(a.rewarded, AD_RW), interstitial: safe(a.interstitial, AD_IN) };
+}
+// cfg: FW_CONFIG.ads ('stub' or, later, a provider name). ?ads=ok|fail|skip|none picks the stub's answer, but only where the stub is the provider or on localhost: on a real provider it would hand out free rewards
+function adPick(search, host, cfg){
+  const q = new URLSearchParams(search).get('ads'), prov = typeof cfg === 'string' && cfg ? cfg : 'stub', local = /^(localhost|127\.0\.0\.1)$/.test(host);
+  if (AD_STUB_MODES.includes(q) && (prov === 'stub' || local)) return { prov: 'stub', mode: q };
+  return prov === 'stub' ? { prov: 'stub', mode: 'ok' } : { prov, mode: '' };
+}
 /* ads:end */
 const rookieRuns = () => clampI(store.get('fw27_rookie_runs', 0), 0, 999);
 const rookieOn = () => rookieRun(mode, curStage, rookieRuns());
