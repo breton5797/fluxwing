@@ -998,10 +998,12 @@ function adStub(o){
     interstitial: async () => { if (mode === 'none' || mode === 'fail') return 'failed'; await o.wait(ms); return 'shown'; } };
 }
 const AD_RW = ['granted', 'skipped', 'failed'], AD_IN = ['shown', 'failed'];
+const AD_EVS = Object.freeze(['start', 'stop', 'happy', 'loaded']);
 // Any adapter as the game sees it: a throw, an answer outside the list or no answer within ms is a failure, so a broken provider only hides buttons
 function adGuard(a, wait, ms){
   const safe = (f, ok) => async (...x) => { try { const r = await Promise.race([Promise.resolve().then(() => f(...x)), wait(ms).then(() => 'failed')]); return ok.includes(r) ? r : 'failed'; } catch (e){ return 'failed'; } };
-  return { name: a.name, ready: () => { try { return !!a.ready(); } catch (e){ return false; } }, rewarded: safe(a.rewarded, AD_RW), interstitial: safe(a.interstitial, AD_IN) };
+  return { name: a.name, ready: () => { try { return !!a.ready(); } catch (e){ return false; } }, rewarded: safe(a.rewarded, AD_RW), interstitial: safe(a.interstitial, AD_IN),
+    ev: k => { if (!AD_EVS.includes(k) || typeof a.ev !== 'function') return; try { a.ev(k); } catch (e){} } };
 }
 // cfg: FW_CONFIG.ads ('stub' or, later, a provider name). ?ads=ok|fail|skip|none picks the stub's answer, but only where the stub is the provider or on localhost: on a real provider it would hand out free rewards
 function adPick(search, host, cfg){
@@ -1009,12 +1011,69 @@ function adPick(search, host, cfg){
   if (AD_STUB_MODES.includes(q) && (prov === 'stub' || local)) return { prov: 'stub', mode: q };
   return prov === 'stub' ? { prov: 'stub', mode: 'ok' } : { prov, mode: '' };
 }
+// One portal SDK behind the adapter contract. drv speaks the vendor (init -> ads on?, rewarded, interstitial, ev.start/stop/happy/loaded), env.load() fetches the SDK (null = blocked).
+// Before init has answered: ready() false, play/loaded wait (only the latest play state goes out). An ad never runs over a started gameplay; one ad at a time
+function adVendor(name, drv, env){
+  let st = 'loading', sdk = null, busy = false, want = false, sent = false, loadQ = false;
+  const up = () => st === 'on' || st === 'noads';
+  const fire = k => { const f = drv.ev[k]; if (!f) return; try { f(sdk); } catch (e){} };
+  const flush = () => { if (!up()) return; if (loadQ){ loadQ = false; fire('loaded'); } if (sent !== want){ sent = want; fire(want ? 'start' : 'stop'); } };
+  const run = async f => { if (st !== 'on' || busy) return 'failed'; busy = true; if (sent){ sent = false; fire('stop'); } try { return await f(sdk); } finally { busy = false; flush(); } };
+  const boot = Promise.resolve().then(() => env.load()).then(async s => {
+    if (!s){ st = 'off'; return; }
+    sdk = s; try { st = (await drv.init(s)) ? 'on' : 'noads'; } catch (e){ st = 'noads'; } flush();
+  }, () => { st = 'off'; });
+  return { name, boot, ready: () => st === 'on' && !busy,
+    rewarded: () => run(drv.rewarded), interstitial: () => run(drv.interstitial),
+    ev(k){ if (k === 'start' || k === 'stop') want = k === 'start'; else if (k === 'loaded') loadQ = true; else if (k === 'happy'){ if (up()) fire('happy'); return; } flush(); } };
+}
+const adPlayEv = (was, state) => (state === 'play') === was ? null : was ? 'stop' : 'start';
+const adVol = (muted, adOn) => muted || adOn ? 0 : .5;
+// Portal SDKs: loaded from the vendor CDN only when FW_CONFIG.ads names the portal (no SRI: the vendors ship these URLs unversioned)
+const AD_SDK = Object.freeze({ guardMs: 120000, loadMs: 10000,
+  src: Object.freeze({ crazygames: 'https://sdk.crazygames.com/crazygames-sdk-v3.js', poki: 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js' }) });
+const AD_GLOBAL = Object.freeze({ crazygames: w => (w && w.CrazyGames && w.CrazyGames.SDK) || null, poki: w => (w && w.PokiSDK) || null });
+const adCgAd = (sdk, kind, win) => new Promise(res => sdk.ad.requestAd(kind, { adStarted(){}, adFinished: () => res(win), adError: () => res('failed') }));
+const AD_DRV = Object.freeze({
+  crazygames: Object.freeze({
+    init: async sdk => { await sdk.init(); if (sdk.environment === 'disabled') return false; try { return !(await sdk.ad.hasAdblock()); } catch (e){ return true; } },
+    rewarded: sdk => adCgAd(sdk, 'rewarded', 'granted'),
+    interstitial: sdk => adCgAd(sdk, 'midgame', 'shown'),
+    ev: Object.freeze({ start: s => s.game.gameplayStart(), stop: s => s.game.gameplayStop(), happy: s => s.game.happytime() }) }),
+  poki: Object.freeze({
+    init: sdk => Promise.resolve().then(() => sdk.init()).then(() => true, () => false),
+    rewarded: async sdk => (await sdk.rewardedBreak()) === true ? 'granted' : 'skipped',
+    interstitial: async sdk => { await sdk.commercialBreak(); return 'shown'; },
+    ev: Object.freeze({ start: s => s.gameplayStart(), stop: s => s.gameplayStop(), loaded: s => s.gameLoadingFinished() }) }),
+});
+// p from adPick; env.load(prov) -> the SDK or null. A provider without a driver (or a typo) = no ads
+function adMake(p, env){
+  if (p.prov === 'stub') return adStub({ mode: p.mode, wait: env.wait });
+  return Object.hasOwn(AD_DRV, p.prov) ? adVendor(p.prov, AD_DRV[p.prov], { load: () => env.load(p.prov) }) : adStub({ mode: 'none', wait: env.wait });
+}
+const adGuardMs = prov => prov === 'stub' ? AD_CFG.timeoutMs : AD_SDK.guardMs;
 /* ads:end */
 const adWait = ms => new Promise(r => setTimeout(r, ms));
-const ADS = (() => { const p = adPick(location.search, location.hostname, (window.FW_CONFIG || {}).ads); return adGuard(p.prov === 'stub' ? adStub({ mode: p.mode, wait: adWait }) : adStub({ mode: 'none', wait: adWait }), adWait, AD_CFG.timeoutMs); })();   // a provider without an adapter yet = no ads
+// The portal SDK, fetched like loadSdk() (Supabase): any failure (blocked, timeout, missing global) = null = no ads, the game carries on
+function adLoad(prov){
+  const g = () => AD_GLOBAL[prov](window);
+  if (g()) return Promise.resolve(g());
+  return new Promise(res => {
+    const el = document.createElement('script'); let done = false;
+    const fin = ok => { if (done) return; done = true; clearTimeout(to); if (!ok) el.remove(); res(ok ? g() : null); };
+    const to = setTimeout(() => fin(false), AD_SDK.loadMs);
+    el.src = AD_SDK.src[prov]; el.async = true; el.onload = () => fin(true); el.onerror = () => fin(false);
+    document.head.appendChild(el);
+  });
+}
+const ADS = (() => { const p = adPick(location.search, location.hostname, (window.FW_CONFIG || {}).ads); return adGuard(adMake(p, { wait: adWait, load: adLoad }), adWait, adGuardMs(p.prov)); })();
 let adBusy = false;
+let adOn = false;   // an ad is on screen: the master gain stays at 0 whatever the mute button says
+function adAudio(on){ adOn = on; if (master) master.gain.value = adVol(muted, adOn); }
 let adRun = { coinBonus: 0, dailyBonus: null, claimed: {} };
-async function runAd(place){ if (adBusy) return 'failed'; adBusy = true; try { return await ADS.rewarded(place); } finally { adBusy = false; } }
+let adPlaying = false;   // what the portal was last told: gameplay on (state 'play') or off
+function adPlaySync(){ const e = adPlayEv(adPlaying, state); if (e){ adPlaying = e === 'start'; ADS.ev(e); } }
+async function runAd(place){ if (adBusy) return 'failed'; adBusy = true; adAudio(true); try { return await ADS.rewarded(place); } finally { adBusy = false; adAudio(false); } }
 const rookieRuns = () => clampI(store.get('fw27_rookie_runs', 0), 0, 999);
 const rookieOn = () => rookieRun(mode, curStage, rookieRuns());
 const challenge = readChallenge(location.search, dayKey());
@@ -1038,7 +1097,7 @@ function audioInit(){
   if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
   try {
     ac = new (window.AudioContext || window.webkitAudioContext)();
-    master = ac.createGain(); master.gain.value = muted ? 0 : .5; master.connect(ac.destination);
+    master = ac.createGain(); master.gain.value = adVol(muted, adOn); master.connect(ac.destination);
     setTimeout(musicStart, 0);
   } catch(e){ ac = null; }
 }
@@ -1473,7 +1532,7 @@ $('dailyBtn').addEventListener('click', e => { e.stopPropagation(); audioInit();
 async function adLeave(go){
   if (adBusy) return; const now = Date.now(), st = adNorm(store.get('fw27_ads', null), now);
   if (adInterDue(st, now, { mode, rewarded: FX.adSeen }) && ADS.ready()){
-    adBusy = true; let r; try { r = await ADS.interstitial(); } finally { adBusy = false; }
+    adBusy = true; adAudio(true); let r; try { r = await ADS.interstitial(); } finally { adBusy = false; adAudio(false); }
     if (r === 'shown') store.set('fw27_ads', adInterShown(st, Date.now()));
     if (state !== 'over') return;   // the card was left some other way while the ad played; don't restart over a live run
   }
@@ -1494,12 +1553,12 @@ $('resumeBtn').addEventListener('click', togglePause);
 $('pauseBtn').addEventListener('click', e => { e.stopPropagation(); togglePause(); });
 $('muteBtn').addEventListener('click', e => {
   e.stopPropagation(); audioInit(); muted = !muted; store.set('fw27_mute', muted);
-  if (master) master.gain.value = muted ? 0 : .5; $('muteBtn').style.opacity = muted ? .4 : 1;
+  if (master) master.gain.value = adVol(muted, adOn); $('muteBtn').style.opacity = muted ? .4 : 1;
 });
 $('muteBtn').style.opacity = muted ? .4 : 1;
 $('vibBtn').classList.toggle('off', !vibOn);
 $('vibBtn').addEventListener('click', e => { e.stopPropagation(); vibOn = !vibOn; store.set('fw27_vib', vibOn); $('vibBtn').classList.toggle('off', !vibOn); haptic([30,40,30]); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause(); adPlaySync(); });
 
 function togglePause(){
   if (state === 'play'){ state = 'paused'; $('pauseScr').hidden = false; }
@@ -1852,7 +1911,7 @@ function showOver(){
     if (v !== shown){ shown = v; oS.textContent = v; if (v > 0 && v % every === 0) tone(480 + v/Math.max(1,target)*700, .03, 'square', .04); }
     if (k < 1){ requestAnimationFrame(step); return; }
     rk.style.visibility = ''; void rk.offsetWidth; rk.classList.add('stamp'); SFX.stamp(); haptic('stamp');
-    if (nb && target > 0){ $('oNew').hidden = false; confetti(LW/2, LH*.32, 70); SFX.fanfare(); haptic('newBest'); }
+    if (nb && target > 0){ $('oNew').hidden = false; confetti(LW/2, LH*.32, 70); SFX.fanfare(); haptic('newBest'); ADS.ev('happy'); }
     else if (ups){ confetti(LW/2, LH*.5, 40); SFX.fanfare(); }
   };
   requestAnimationFrame(step);
@@ -2005,7 +2064,7 @@ function update(rdt){
       if (mode === 'endless' && !FX.clearDone && gatesPassed >= stGoal(curStage)){
         FX.clearDone = true; const first = !stg.clr[curStage]; stg.clr[curStage] = 1; stg.open = Math.max(stg.open, Math.min(ST_N-1, curStage+1));
         if (first){ FX.clearCoin = (100 + 10*(curStage+1))*INCOME_X; FX.clearDia = diaClear(curStage); W.coins += FX.clearCoin; W.dia += FX.clearDia; saveW(); }
-        store.set('fw27_stg2', stg); banner(t('stClear',{n:curStage+1}), [48,100,62], 1.8); if (first) banner(t('diaP', {n: FX.clearDia.toLocaleString()}), [185,100,66], 1.2, false); SFX.fanfare(); haptic('newBest'); confetti(bird.x+60, bird.y, 50); flash = Math.max(flash,.5); shake = Math.max(shake,8);
+        store.set('fw27_stg2', stg); banner(t('stClear',{n:curStage+1}), [48,100,62], 1.8); if (first) banner(t('diaP', {n: FX.clearDia.toLocaleString()}), [185,100,66], 1.2, false); SFX.fanfare(); haptic('newBest'); confetti(bird.x+60, bird.y, 50); flash = Math.max(flash,.5); shake = Math.max(shake,8); ADS.ev('happy');
       }
       if (mode === 'endless'){
         const tr = stTier(curStage), fn = stFogN(curStage);
@@ -4509,6 +4568,7 @@ function loop(now){
   const rdt = Math.min(.034, (now - last)/1000); last = now;
   if (state !== 'paused' && !(window.FW && window.FW.hold)) update(rdt);
   render(); drawHangarPreview(); musicTick(); tutTick(rdt); if (state === 'play' || state === 'dying' || state === 'over') vsTick(rdt);
+  adPlaySync();
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
@@ -4646,6 +4706,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
 resize(); reset(); state = 'menu';
 applyI18n(); renderWallet();
 requestAnimationFrame(loop);
+ADS.ev('loaded');
 online();
 })();
 </script>
