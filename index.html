@@ -998,10 +998,12 @@ function adStub(o){
     interstitial: async () => { if (mode === 'none' || mode === 'fail') return 'failed'; await o.wait(ms); return 'shown'; } };
 }
 const AD_RW = ['granted', 'skipped', 'failed'], AD_IN = ['shown', 'failed'];
+const AD_EVS = Object.freeze(['start', 'stop', 'happy', 'loaded']);
 // Any adapter as the game sees it: a throw, an answer outside the list or no answer within ms is a failure, so a broken provider only hides buttons
 function adGuard(a, wait, ms){
   const safe = (f, ok) => async (...x) => { try { const r = await Promise.race([Promise.resolve().then(() => f(...x)), wait(ms).then(() => 'failed')]); return ok.includes(r) ? r : 'failed'; } catch (e){ return 'failed'; } };
-  return { name: a.name, ready: () => { try { return !!a.ready(); } catch (e){ return false; } }, rewarded: safe(a.rewarded, AD_RW), interstitial: safe(a.interstitial, AD_IN) };
+  return { name: a.name, ready: () => { try { return !!a.ready(); } catch (e){ return false; } }, rewarded: safe(a.rewarded, AD_RW), interstitial: safe(a.interstitial, AD_IN),
+    ev: k => { if (!AD_EVS.includes(k) || typeof a.ev !== 'function') return; try { a.ev(k); } catch (e){} } };
 }
 // cfg: FW_CONFIG.ads ('stub' or, later, a provider name). ?ads=ok|fail|skip|none picks the stub's answer, but only where the stub is the provider or on localhost: on a real provider it would hand out free rewards
 function adPick(search, host, cfg){
@@ -1009,6 +1011,24 @@ function adPick(search, host, cfg){
   if (AD_STUB_MODES.includes(q) && (prov === 'stub' || local)) return { prov: 'stub', mode: q };
   return prov === 'stub' ? { prov: 'stub', mode: 'ok' } : { prov, mode: '' };
 }
+// One portal SDK behind the adapter contract. drv speaks the vendor (init -> ads on?, rewarded, interstitial, ev.start/stop/happy/loaded), env.load() fetches the SDK (null = blocked).
+// Before init has answered: ready() false, play/loaded wait (only the latest play state goes out). An ad never runs over a started gameplay; one ad at a time
+function adVendor(name, drv, env){
+  let st = 'loading', sdk = null, busy = false, want = false, sent = false, loadQ = false;
+  const up = () => st === 'on' || st === 'noads';
+  const fire = k => { const f = drv.ev[k]; if (!f) return; try { f(sdk); } catch (e){} };
+  const flush = () => { if (!up()) return; if (loadQ){ loadQ = false; fire('loaded'); } if (sent !== want){ sent = want; fire(want ? 'start' : 'stop'); } };
+  const run = async f => { if (st !== 'on' || busy) return 'failed'; busy = true; if (sent){ sent = false; fire('stop'); } try { return await f(sdk); } finally { busy = false; flush(); } };
+  const boot = Promise.resolve().then(() => env.load()).then(async s => {
+    if (!s){ st = 'off'; return; }
+    sdk = s; try { st = (await drv.init(s)) ? 'on' : 'noads'; } catch (e){ st = 'noads'; } flush();
+  }, () => { st = 'off'; });
+  return { name, boot, ready: () => st === 'on' && !busy,
+    rewarded: () => run(drv.rewarded), interstitial: () => run(drv.interstitial),
+    ev(k){ if (k === 'start' || k === 'stop') want = k === 'start'; else if (k === 'loaded') loadQ = true; else if (k === 'happy'){ if (up()) fire('happy'); return; } flush(); } };
+}
+const adPlayEv = (was, state) => (state === 'play') === was ? null : was ? 'stop' : 'start';
+const adVol = (muted, adOn) => muted || adOn ? 0 : .5;
 /* ads:end */
 const adWait = ms => new Promise(r => setTimeout(r, ms));
 const ADS = (() => { const p = adPick(location.search, location.hostname, (window.FW_CONFIG || {}).ads); return adGuard(p.prov === 'stub' ? adStub({ mode: p.mode, wait: adWait }) : adStub({ mode: 'none', wait: adWait }), adWait, AD_CFG.timeoutMs); })();   // a provider without an adapter yet = no ads
