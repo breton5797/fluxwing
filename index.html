@@ -413,6 +413,8 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
         <div class="stat"><span data-i18n="maxCombo"></span><strong id="oCombo">0</strong></div>
       </div>
       <div class="rewards" id="oRewards"></div>
+      <button class="ghost primary" id="oAd2x" hidden></button>
+      <button class="ghost primary" id="oAdDaily" hidden></button>
       <div class="lvup" id="oLvup" hidden></div>
       <button class="btn" id="retryBtn"><span data-i18n="retry"></span></button>
       <button class="ghost sharebtn" id="shareBtn" data-i18n="shareBtn"></button>
@@ -730,7 +732,7 @@ zh:[['超速驱动','{n}秒内完美判定大幅放宽'],['闪现','瞬移穿过
 SK_IDS.forEach((id,i) => { for (const l in I18N){ const tx = (SK_TXT[l] || SK_TXT.en)[i]; I18N[l]['sk_' + id] = tx[0]; I18N[l]['sd_' + id] = tx[1]; } });
 // Key-based additions (ko/en, with ja/zh for the cost labels, the newer unit texts, the versus ranking, its seasons and the season unit; anything a language lacks falls back to en). The index arrays above keep their length and order.
 const I18N_N = {
-ko:{adFail:'지금은 광고를 볼 수 없어요', startSub:'탭 한 번이면 출발', dailyCta:'글로벌 데일리 런', dailyPlayed:'{d} · 오늘 최고 {n} · {t} 후 교체', dailyFresh:'연속 {s}일 도전 · 첫 판 보상 +{c}코인 +{g}젬', dailyDone:'연속 {s}일 유지 중 · 내일 보상까지 {t}', dailyStreak:'데일리 연속 {s}일!', k1:'탭해서 날기', k2:'가장자리 스치면 PERFECT', k3:'게이지가 차면 DASH', tapNow:'탭!',
+ko:{adFail:'지금은 광고를 볼 수 없어요', ad2x:'광고 보고 코인 2배 (+{n})', adDaily2x:'광고 보고 데일리 보상 2배', startSub:'탭 한 번이면 출발', dailyCta:'글로벌 데일리 런', dailyPlayed:'{d} · 오늘 최고 {n} · {t} 후 교체', dailyFresh:'연속 {s}일 도전 · 첫 판 보상 +{c}코인 +{g}젬', dailyDone:'연속 {s}일 유지 중 · 내일 보상까지 {t}', dailyStreak:'데일리 연속 {s}일!', k1:'탭해서 날기', k2:'가장자리 스치면 PERFECT', k3:'게이지가 차면 DASH', tapNow:'탭!',
  whyGround0:'첫 게이트 전에 떨어졌어요 · 시작하자마자 짧게 여러 번 탭!', whyGround:'너무 낮았어요 · 바닥에 닿았어요. 조금 더 일찍 탭', whyTop:'너무 높았어요 · 위쪽 벽에 닿았어요. 게이트 앞에서는 탭을 쉬세요', whyBot:'너무 낮았어요 · 아래쪽 벽에 닿았어요. 조금 더 일찍 탭', whyGate:'게이트에 부딪혔어요 · 틈 가운데를 노리세요',
  shareBtn:'친구에게 도전장 보내기', share:'SWISHBY에서 {n}점! 넘을 수 있어?', shareDaily:'SWISHBY 데일리 {d}: {n}점 · 게이트 {g} · 콤보 x{c}. 전 세계 같은 코스, 넘을 수 있어?', shared:'공유했어요', copied:'복사했어요. 친구에게 붙여넣기 하세요', shareManual:'아래 문구를 복사해서 보내세요',
  oDailyLine:'글로벌 데일리 · {d} · 전 세계 같은 코스 · {t} 후 교체', dNew:'오늘 최고 기록! 친구에게 {n}점 도전장을 보내세요', dShort:'오늘 최고 {b}점까지 {n}점 남았어요. 한 번 더?',
@@ -754,7 +756,7 @@ ko:{adFail:'지금은 광고를 볼 수 없어요', startSub:'탭 한 번이면 
  ul_solaris:'천지개벽', ud_solaris:'화면의 모든 게이트가 불타 사라지고 3.5초간 무적, {n}초간 코인 비가 내린다', ul_aurora:'극야', ud_aurora:'{n}초간 모든 게이트가 내 높이의 곧고 넓은 회랑으로 열리고, 통과하면 모두 퍼펙트', ul_tempest:'허리케인', ud_tempest:'폭풍이 되어 다음 게이트 {n}개를 무적으로 휩쓸고, 대시 게이지가 가득 찬 채 안전하게 내려앉는다', ul_pleiad:'유성우', ud_pleiad:'별똥별이 쏟아져 다음 게이트 {n}개를 한꺼번에 부순다', ul_pulsar:'빅뱅', ud_pulsar:'{n}초간 세상이 느려지고 통과한 게이트는 모두 퍼펙트, 점수 3배', ultK:'궁극기', ultReady:'궁극기 준비 완료!', hUlt:'궁극기 — 울트라 유닛에는 세 번째 버튼 ULT(A)가 있어요. 게이트를 지날 때마다 게이지가 차고 퍼펙트면 더 빨리 차요. 가득 차면 눌러서 그 유닛의 궁극기를 써요. 스테이지 전용이에요.',
  r_season:'시즌 한정', seaOnly:'시즌 보상 · 대전 시즌 상위 10명', r_monarch:'군주형', p_monarch:'근위대: 실드 1개로 출발(최대 1개). 게이트 25개마다 실드를 되찾는다.', sk_monarch:'대관식', sd_monarch:'{n}초간 무적, 4초간 퍼펙트 판정이 넓어진다',
  hz_over:'과속', hz_weight:'무게추', hz_smoke:'연막', hz_drain:'방전', hHaz:'방해 아이템 — 스테이지 11부터 게이트 사이에 붉은 테두리의 검은 가시 원반이 나와요. 닿으면 과속(3초간 빨라짐)·무게추(3초간 무거워짐)·연막(2.5초 안개)·방전(대시 게이지·스킬 충전·콤보가 0) 중 하나에 걸려요. 실드가 있거나 대시·무적 중이면 아무 일 없이 터져요. 스테이지 전용이에요.'},
-en:{adFail:'No ad available right now', startSub:'One tap run', dailyCta:'GLOBAL DAILY RUN', dailyPlayed:'{d} · today best {n} · new in {t}', dailyFresh:'Day {s} streak run · first-run reward +{c} coins +{g} gems', dailyDone:'Day {s} streak locked · next reward in {t}', dailyStreak:'Daily streak day {s}!', k1:'TAP TO FLAP', k2:'SKIM EDGE = PERFECT', k3:'DASH WHEN FULL', tapNow:'TAP!',
+en:{adFail:'No ad available right now', ad2x:'Watch an ad: coins x2 (+{n})', adDaily2x:'Watch an ad: daily reward x2', startSub:'One tap run', dailyCta:'GLOBAL DAILY RUN', dailyPlayed:'{d} · today best {n} · new in {t}', dailyFresh:'Day {s} streak run · first-run reward +{c} coins +{g} gems', dailyDone:'Day {s} streak locked · next reward in {t}', dailyStreak:'Daily streak day {s}!', k1:'TAP TO FLAP', k2:'SKIM EDGE = PERFECT', k3:'DASH WHEN FULL', tapNow:'TAP!',
  whyGround0:'Fell before the first gate · tap right away, in short quick taps', whyGround:'Too low · you hit the ground. Tap sooner', whyTop:'Too high · you hit the top wall. Let it drop before the gate', whyBot:'Too low · you hit the bottom wall. Tap earlier', whyGate:'Hit the gate · aim for the middle of the gap',
  shareBtn:'CHALLENGE A FRIEND', share:'I scored {n} in SWISHBY. Can you beat me?', shareDaily:'SWISHBY Daily {d}: I scored {n} ({g} gates, combo x{c}). Same course worldwide. Can you beat me?', shared:'Shared', copied:'Copied. Paste it to a friend', shareManual:'Copy this line and send it',
  oDailyLine:'GLOBAL DAILY · {d} · same course worldwide · new in {t}', dNew:'New daily best! Dare a friend to beat {n}', dShort:'{n} short of your best today ({b}). One more run?',
@@ -1011,6 +1013,7 @@ function adPick(search, host, cfg){
 const adWait = ms => new Promise(r => setTimeout(r, ms));
 const ADS = (() => { const p = adPick(location.search, location.hostname, (window.FW_CONFIG || {}).ads); return adGuard(p.prov === 'stub' ? adStub({ mode: p.mode, wait: adWait }) : adStub({ mode: 'none', wait: adWait }), adWait, AD_CFG.timeoutMs); })();   // a provider without an adapter yet = no ads
 let adBusy = false;
+let adRun = { coinBonus: 0, dailyBonus: null, claimed: {} };
 async function runAd(place){ if (adBusy) return 'failed'; adBusy = true; try { return await ADS.rewarded(place); } finally { adBusy = false; } }
 const rookieRuns = () => clampI(store.get('fw27_rookie_runs', 0), 0, 999);
 const rookieOn = () => rookieRun(mode, curStage, rookieRuns());
@@ -1759,6 +1762,21 @@ $('contAd').addEventListener('click', async e => {
 });
 $('contCoin').addEventListener('click', e => { e.stopPropagation(); if (W.coins < CONT_COST) return; W.coins -= CONT_COST; saveW(); renderWallet(); closeCont(true); });
 $('contNo').addEventListener('click', e => { e.stopPropagation(); closeCont(false); });
+function renderAdOffers(){
+  const of = adOffers(ADS.ready(), adRun);
+  $('oAd2x').hidden = !of.coin2x; $('oAd2x').disabled = false; $('oAd2x').textContent = t('ad2x', { n: adRun.coinBonus.toLocaleString() });
+  $('oAdDaily').hidden = !of.daily2x; $('oAdDaily').disabled = false; $('oAdDaily').textContent = t('adDaily2x');
+}
+async function claimAd(place, btn, pay){
+  if (adBusy || state !== 'over') return; btn.disabled = true;
+  const r = await runAd(place), next = r === 'granted' ? adClaim(adRun.claimed, place) : null;
+  if (state !== 'over') return;
+  if (next){ adRun = { ...adRun, claimed: next }; FX.adSeen = true; pay(); saveW(); renderWallet(); }
+  else { $('oWhy').textContent = t('adFail'); $('oWhy').hidden = false; }
+  btn.hidden = true;   // granted or not, the offer is gone for this run
+}
+$('oAd2x').addEventListener('click', e => { e.stopPropagation(); claimAd('coin2x', $('oAd2x'), () => { W.coins += adRun.coinBonus; }); });
+$('oAdDaily').addEventListener('click', e => { e.stopPropagation(); const b = adRun.dailyBonus; claimAd('daily2x', $('oAdDaily'), () => { W.coins += b.coin; W.dia += b.dia; W.gems += b.gem; }); });
 function showOver(){
   state = 'over'; overAt = performance.now();
   let nb, shownBest;
@@ -1801,6 +1819,8 @@ function showOver(){
     if (!ds.claimed){ const rw = dailyReward(ds.streak); dCoin = rw.coin; W.coins += rw.coin; W.gems += rw.gem; W.dia += rw.dia; store.set('fw27_dbonus', runDay); }
   }
   W.coins += fieldCoin + scoreCoin; const ups = grantXP(xpGain); saveW();
+  adRun = { coinBonus: adCoinBonus(fieldCoin, scoreCoin), dailyBonus: dCoin ? adDailyBonus(dailyReward(dStreak)) : null, claimed: {} };
+  renderAdOffers();
   const rw = $('oRewards'); rw.textContent = '';
   const pill = (cls, txt) => { const p = document.createElement('span'); p.className = 'wpill'; if (cls){ const i = document.createElement('i'); i.className = 'ic ' + cls; p.appendChild(i); } p.appendChild(document.createTextNode(txt)); rw.appendChild(p); };
   const cm = PK.coinMul > 1 ? ` ×${PK.coinMul}` : '', cpill = (k, n, x = '') => pill('coin', `${t(k)} +${n.toLocaleString()}${x}`);   // one coin pill per source
