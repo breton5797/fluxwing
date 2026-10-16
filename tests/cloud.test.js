@@ -143,3 +143,13 @@ test('a cloud save is applied and pushed only from the menu with nothing open', 
 test('fsSummary is what the merge question shows', () => {
   assert.deepEqual(C.fsSummary(C.fsNorm({ v: 1, w: { lvl: 7, coins: 1234 }, owned: ['zero', 'pixel'] })), { l: 7, c: 1234, u: 6 });
 });
+
+test('a deferred merged save is re-merged with what the run earned meanwhile before it is applied', () => {
+  const atDefer = S({ w: { coins: 100 } });                       // the device when the apply was put off
+  const merged = S({ w: { coins: 500 }, owned: ['zero'] });       // what the account agreed on back then
+  const now = S({ w: { coins: 160 }, best: 30 });                 // the run since then: +60 coins, best 30
+  const m = C.fsLater({ s: merged, local: atDefer }, now);
+  assert.equal(m.w.coins, 560); assert.equal(m.best, 30); assert.ok(m.owned.includes('zero'));
+  const idle = S({ w: { coins: 160 } });                          // nothing of its own beyond the coins already counted
+  assert.ok(C.fsSame(C.fsLater({ s: merged, local: idle }, idle), merged));   // nothing happened since the defer: apply as agreed
+});

@@ -1173,6 +1173,8 @@ const authCodeOk = s => { const v = typeof s === 'string' ? s.replace(/\s+/g, ''
 // Saves are read once at start-up and the run writes the wallet from memory: a merged save is written (and the page restarted) only from the idle menu
 const fsCanApply = (state, overlay) => state === 'menu' && !overlay;
 const fsSummary = s => ({ l: s.w.lvl, c: s.w.coins, u: s.owned.length });
+// A merged save whose apply was put off: fold in what this device did since (three-way, base = the device at defer time)
+const fsLater = (wait, now) => fsMerge(now, wait.s, wait.local);
 /* cloud:end */
 const adWait = ms => new Promise(r => setTimeout(r, ms));
 // The portal SDK, fetched like loadSdk() (Supabase): any failure (blocked, timeout, missing global) = null = no ads, the game carries on
@@ -3880,9 +3882,10 @@ const fsMine = () => fsRec && fsRec.uid === uid ? fsRec : null;
 const fsCall = async (fn, a) => { try { return await sb.rpc(fn, a); } catch(e){ return {error: e || {}}; } };
 function fsKeep(rev, base){ fsRec = {uid, rev, base}; store.set('fw27_sync', fsRec); }
 function fsApply(s){
-  if (!fsCanApply(state, fsOverlay() && $('authScr').hidden)){ fsWait = s; return; }   // the merge question itself may be open
+  const defer = () => { fsWait = {s, local: fsSnap(store.get)}; };   // re-merged with a fresh snapshot when it is finally applied (fsLater)
+  if (!fsCanApply(state, fsOverlay() && $('authScr').hidden)){ defer(); return; }   // the merge question itself may be open
   let last = 0; try { last = Number(sessionStorage.getItem('fw_cloud_at')) || 0; } catch(e){}
-  if (Date.now() - last < 15000){ toast(t('cloudFail')); return; }   // never a restart loop
+  if (Date.now() - last < 15000){ defer(); toast(t('cloudFail')); return; }   // never a restart loop: kept, not dropped
   fsWrites(s, store.get).forEach(([k, v]) => store.set(k, v));
   try { sessionStorage.setItem('fw_cloud_at', String(Date.now())); sessionStorage.setItem('fw_cloud_note', '1'); } catch(e){}
   location.reload();
@@ -3941,7 +3944,7 @@ async function cloudPush(){
   } finally { fsBusy = false; }
 }
 onStoreSet = k => { if (!FS_KEYS.includes(k) || !fsOn()) return; fsDirty = true; clearTimeout(fsT); fsT = setTimeout(cloudPush, 4000); };
-function cloudMenu(){ if (fsWait){ const s = fsWait; fsWait = null; fsApply(s); return; } if (fsDirty){ clearTimeout(fsT); fsT = setTimeout(cloudPush, 1500); } }
+function cloudMenu(){ if (fsWait){ const w = fsWait; fsWait = null; fsApply(fsLater(w, fsSnap(store.get))); return; } if (fsDirty){ clearTimeout(fsT); fsT = setTimeout(cloudPush, 1500); } }
 document.addEventListener('visibilitychange', () => { if (document.hidden) cloudPush(); });
 // Sign-out: this device starts fresh, so the next account to sign in here never inherits this one's progress (fsPlan)
 const AUTH_WIPE = [...FS_KEYS, 'fw27_sync', 'fw27_rp2', 'fw27_rej', 'fw27_dg'];
@@ -4152,7 +4155,7 @@ function openLB(tab){
   lbOpen = true; $('nickIn').value = nick; $('lbScr').hidden = false; renderLB(); renderAcct(); if (sb) refreshBoards();
   online().then(() => { if (needSync) syncLocal(); if (lbTab === 'vs' && !$('lbScr').hidden) refreshVsBoard(); });
 }
-function closeLB(){ lbOpen = false; $('lbScr').hidden = true; statusMsg = nickMsg = ''; }
+function closeLB(){ lbOpen = false; $('lbScr').hidden = true; statusMsg = nickMsg = ''; if (state === 'menu') cloudMenu(); }   // a cloud apply deferred behind this card runs now
 $('lbBtn').addEventListener('click', e => { e.stopPropagation(); openLB('daily'); });
 $('oLbBtn').addEventListener('click', e => { e.stopPropagation(); openLB(mode === 'daily' ? 'daily' : mode === 'versus' ? 'vs' : 'all'); });
 $('lbClose').addEventListener('click', closeLB);
