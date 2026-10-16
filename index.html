@@ -1054,10 +1054,24 @@ function adMake(p, env){
 const adGuardMs = prov => prov === 'stub' ? AD_CFG.timeoutMs : AD_SDK.guardMs;
 /* ads:end */
 const adWait = ms => new Promise(r => setTimeout(r, ms));
-const ADS = (() => { const p = adPick(location.search, location.hostname, (window.FW_CONFIG || {}).ads); return adGuard(p.prov === 'stub' ? adStub({ mode: p.mode, wait: adWait }) : adStub({ mode: 'none', wait: adWait }), adWait, AD_CFG.timeoutMs); })();   // a provider without an adapter yet = no ads
+// The portal SDK, fetched like loadSdk() (Supabase): any failure (blocked, timeout, missing global) = null = no ads, the game carries on
+function adLoad(prov){
+  const g = () => AD_GLOBAL[prov](window);
+  if (g()) return Promise.resolve(g());
+  return new Promise(res => {
+    const el = document.createElement('script'); let done = false;
+    const fin = ok => { if (done) return; done = true; clearTimeout(to); if (!ok) el.remove(); res(ok ? g() : null); };
+    const to = setTimeout(() => fin(false), AD_SDK.loadMs);
+    el.src = AD_SDK.src[prov]; el.async = true; el.onload = () => fin(true); el.onerror = () => fin(false);
+    document.head.appendChild(el);
+  });
+}
+const ADS = (() => { const p = adPick(location.search, location.hostname, (window.FW_CONFIG || {}).ads); return adGuard(adMake(p, { wait: adWait, load: adLoad }), adWait, adGuardMs(p.prov)); })();
 let adBusy = false;
+let adOn = false;   // an ad is on screen: the master gain stays at 0 whatever the mute button says
+function adAudio(on){ adOn = on; if (master) master.gain.value = adVol(muted, adOn); }
 let adRun = { coinBonus: 0, dailyBonus: null, claimed: {} };
-async function runAd(place){ if (adBusy) return 'failed'; adBusy = true; try { return await ADS.rewarded(place); } finally { adBusy = false; } }
+async function runAd(place){ if (adBusy) return 'failed'; adBusy = true; adAudio(true); try { return await ADS.rewarded(place); } finally { adBusy = false; adAudio(false); } }
 const rookieRuns = () => clampI(store.get('fw27_rookie_runs', 0), 0, 999);
 const rookieOn = () => rookieRun(mode, curStage, rookieRuns());
 const challenge = readChallenge(location.search, dayKey());
@@ -1081,7 +1095,7 @@ function audioInit(){
   if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
   try {
     ac = new (window.AudioContext || window.webkitAudioContext)();
-    master = ac.createGain(); master.gain.value = muted ? 0 : .5; master.connect(ac.destination);
+    master = ac.createGain(); master.gain.value = adVol(muted, adOn); master.connect(ac.destination);
     setTimeout(musicStart, 0);
   } catch(e){ ac = null; }
 }
@@ -1516,7 +1530,7 @@ $('dailyBtn').addEventListener('click', e => { e.stopPropagation(); audioInit();
 async function adLeave(go){
   if (adBusy) return; const now = Date.now(), st = adNorm(store.get('fw27_ads', null), now);
   if (adInterDue(st, now, { mode, rewarded: FX.adSeen }) && ADS.ready()){
-    adBusy = true; let r; try { r = await ADS.interstitial(); } finally { adBusy = false; }
+    adBusy = true; adAudio(true); let r; try { r = await ADS.interstitial(); } finally { adBusy = false; adAudio(false); }
     if (r === 'shown') store.set('fw27_ads', adInterShown(st, Date.now()));
     if (state !== 'over') return;   // the card was left some other way while the ad played; don't restart over a live run
   }
@@ -1537,7 +1551,7 @@ $('resumeBtn').addEventListener('click', togglePause);
 $('pauseBtn').addEventListener('click', e => { e.stopPropagation(); togglePause(); });
 $('muteBtn').addEventListener('click', e => {
   e.stopPropagation(); audioInit(); muted = !muted; store.set('fw27_mute', muted);
-  if (master) master.gain.value = muted ? 0 : .5; $('muteBtn').style.opacity = muted ? .4 : 1;
+  if (master) master.gain.value = adVol(muted, adOn); $('muteBtn').style.opacity = muted ? .4 : 1;
 });
 $('muteBtn').style.opacity = muted ? .4 : 1;
 $('vibBtn').classList.toggle('off', !vibOn);
