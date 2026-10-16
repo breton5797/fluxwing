@@ -413,6 +413,8 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
         <div class="stat"><span data-i18n="maxCombo"></span><strong id="oCombo">0</strong></div>
       </div>
       <div class="rewards" id="oRewards"></div>
+      <button class="ghost primary" id="oAd2x" hidden></button>
+      <button class="ghost primary" id="oAdDaily" hidden></button>
       <div class="lvup" id="oLvup" hidden></div>
       <button class="btn" id="retryBtn"><span data-i18n="retry"></span></button>
       <button class="ghost sharebtn" id="shareBtn" data-i18n="shareBtn"></button>
@@ -730,7 +732,7 @@ zh:[['超速驱动','{n}秒内完美判定大幅放宽'],['闪现','瞬移穿过
 SK_IDS.forEach((id,i) => { for (const l in I18N){ const tx = (SK_TXT[l] || SK_TXT.en)[i]; I18N[l]['sk_' + id] = tx[0]; I18N[l]['sd_' + id] = tx[1]; } });
 // Key-based additions (ko/en, with ja/zh for the cost labels, the newer unit texts, the versus ranking, its seasons and the season unit; anything a language lacks falls back to en). The index arrays above keep their length and order.
 const I18N_N = {
-ko:{startSub:'탭 한 번이면 출발', dailyCta:'글로벌 데일리 런', dailyPlayed:'{d} · 오늘 최고 {n} · {t} 후 교체', dailyFresh:'연속 {s}일 도전 · 첫 판 보상 +{c}코인 +{g}젬', dailyDone:'연속 {s}일 유지 중 · 내일 보상까지 {t}', dailyStreak:'데일리 연속 {s}일!', k1:'탭해서 날기', k2:'가장자리 스치면 PERFECT', k3:'게이지가 차면 DASH', tapNow:'탭!',
+ko:{adFail:'지금은 광고를 볼 수 없어요', ad2x:'광고 보고 코인 2배 (+{n})', adDaily2x:'광고 보고 데일리 보상 2배', startSub:'탭 한 번이면 출발', dailyCta:'글로벌 데일리 런', dailyPlayed:'{d} · 오늘 최고 {n} · {t} 후 교체', dailyFresh:'연속 {s}일 도전 · 첫 판 보상 +{c}코인 +{g}젬', dailyDone:'연속 {s}일 유지 중 · 내일 보상까지 {t}', dailyStreak:'데일리 연속 {s}일!', k1:'탭해서 날기', k2:'가장자리 스치면 PERFECT', k3:'게이지가 차면 DASH', tapNow:'탭!',
  whyGround0:'첫 게이트 전에 떨어졌어요 · 시작하자마자 짧게 여러 번 탭!', whyGround:'너무 낮았어요 · 바닥에 닿았어요. 조금 더 일찍 탭', whyTop:'너무 높았어요 · 위쪽 벽에 닿았어요. 게이트 앞에서는 탭을 쉬세요', whyBot:'너무 낮았어요 · 아래쪽 벽에 닿았어요. 조금 더 일찍 탭', whyGate:'게이트에 부딪혔어요 · 틈 가운데를 노리세요',
  shareBtn:'친구에게 도전장 보내기', share:'SWISHBY에서 {n}점! 넘을 수 있어?', shareDaily:'SWISHBY 데일리 {d}: {n}점 · 게이트 {g} · 콤보 x{c}. 전 세계 같은 코스, 넘을 수 있어?', shared:'공유했어요', copied:'복사했어요. 친구에게 붙여넣기 하세요', shareManual:'아래 문구를 복사해서 보내세요',
  oDailyLine:'글로벌 데일리 · {d} · 전 세계 같은 코스 · {t} 후 교체', dNew:'오늘 최고 기록! 친구에게 {n}점 도전장을 보내세요', dShort:'오늘 최고 {b}점까지 {n}점 남았어요. 한 번 더?',
@@ -754,7 +756,7 @@ ko:{startSub:'탭 한 번이면 출발', dailyCta:'글로벌 데일리 런', dai
  ul_solaris:'천지개벽', ud_solaris:'화면의 모든 게이트가 불타 사라지고 3.5초간 무적, {n}초간 코인 비가 내린다', ul_aurora:'극야', ud_aurora:'{n}초간 모든 게이트가 내 높이의 곧고 넓은 회랑으로 열리고, 통과하면 모두 퍼펙트', ul_tempest:'허리케인', ud_tempest:'폭풍이 되어 다음 게이트 {n}개를 무적으로 휩쓸고, 대시 게이지가 가득 찬 채 안전하게 내려앉는다', ul_pleiad:'유성우', ud_pleiad:'별똥별이 쏟아져 다음 게이트 {n}개를 한꺼번에 부순다', ul_pulsar:'빅뱅', ud_pulsar:'{n}초간 세상이 느려지고 통과한 게이트는 모두 퍼펙트, 점수 3배', ultK:'궁극기', ultReady:'궁극기 준비 완료!', hUlt:'궁극기 — 울트라 유닛에는 세 번째 버튼 ULT(A)가 있어요. 게이트를 지날 때마다 게이지가 차고 퍼펙트면 더 빨리 차요. 가득 차면 눌러서 그 유닛의 궁극기를 써요. 스테이지 전용이에요.',
  r_season:'시즌 한정', seaOnly:'시즌 보상 · 대전 시즌 상위 10명', r_monarch:'군주형', p_monarch:'근위대: 실드 1개로 출발(최대 1개). 게이트 25개마다 실드를 되찾는다.', sk_monarch:'대관식', sd_monarch:'{n}초간 무적, 4초간 퍼펙트 판정이 넓어진다',
  hz_over:'과속', hz_weight:'무게추', hz_smoke:'연막', hz_drain:'방전', hHaz:'방해 아이템 — 스테이지 11부터 게이트 사이에 붉은 테두리의 검은 가시 원반이 나와요. 닿으면 과속(3초간 빨라짐)·무게추(3초간 무거워짐)·연막(2.5초 안개)·방전(대시 게이지·스킬 충전·콤보가 0) 중 하나에 걸려요. 실드가 있거나 대시·무적 중이면 아무 일 없이 터져요. 스테이지 전용이에요.'},
-en:{startSub:'One tap run', dailyCta:'GLOBAL DAILY RUN', dailyPlayed:'{d} · today best {n} · new in {t}', dailyFresh:'Day {s} streak run · first-run reward +{c} coins +{g} gems', dailyDone:'Day {s} streak locked · next reward in {t}', dailyStreak:'Daily streak day {s}!', k1:'TAP TO FLAP', k2:'SKIM EDGE = PERFECT', k3:'DASH WHEN FULL', tapNow:'TAP!',
+en:{adFail:'No ad available right now', ad2x:'Watch an ad: coins x2 (+{n})', adDaily2x:'Watch an ad: daily reward x2', startSub:'One tap run', dailyCta:'GLOBAL DAILY RUN', dailyPlayed:'{d} · today best {n} · new in {t}', dailyFresh:'Day {s} streak run · first-run reward +{c} coins +{g} gems', dailyDone:'Day {s} streak locked · next reward in {t}', dailyStreak:'Daily streak day {s}!', k1:'TAP TO FLAP', k2:'SKIM EDGE = PERFECT', k3:'DASH WHEN FULL', tapNow:'TAP!',
  whyGround0:'Fell before the first gate · tap right away, in short quick taps', whyGround:'Too low · you hit the ground. Tap sooner', whyTop:'Too high · you hit the top wall. Let it drop before the gate', whyBot:'Too low · you hit the bottom wall. Tap earlier', whyGate:'Hit the gate · aim for the middle of the gap',
  shareBtn:'CHALLENGE A FRIEND', share:'I scored {n} in SWISHBY. Can you beat me?', shareDaily:'SWISHBY Daily {d}: I scored {n} ({g} gates, combo x{c}). Same course worldwide. Can you beat me?', shared:'Shared', copied:'Copied. Paste it to a friend', shareManual:'Copy this line and send it',
  oDailyLine:'GLOBAL DAILY · {d} · same course worldwide · new in {t}', dNew:'New daily best! Dare a friend to beat {n}', dShort:'{n} short of your best today ({b}). One more run?',
@@ -975,6 +977,44 @@ function challengeResult(ch, mode, score){
   return { beat: score > ch.score, by: Math.abs(score - ch.score) };
 }
 /* hit-loop:end */
+/* ads:start — rewarded / interstitial rules and the ad-provider adapters: pure, no DOM, no storage, no clock of its own (now and wait come in). tests/ads.test.js runs this block as it stands (tests/helpers/ads.js). */
+const AD_CFG = Object.freeze({ interEvery: 3, interGapMs: 180000, timeoutMs: 30000, stubMs: 3000 });
+const AD_STUB_MODES = Object.freeze(['ok', 'fail', 'skip', 'none']);
+const adInt = (v, max) => { const n = Math.floor(Number(v)); return Number.isFinite(n) && n > 0 ? Math.min(n, max) : 0; };
+// saved pacing {runs: finished runs since the last interstitial, lastAt: when it ran (ms)}. Junk reads as a fresh install; a lastAt in the future (clock moved back) is pulled to now
+function adNorm(raw, now){ const r = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}; return { runs: adInt(r.runs, 999), lastAt: Math.min(adInt(r.lastAt, 1e15), now) }; }
+const adRunDone = st => ({ ...st, runs: Math.min(999, st.runs + 1) });
+const adInterShown = (st, now) => ({ ...st, runs: 0, lastAt: now });
+const adInterDue = (st, now, ctx) => ctx.mode !== 'versus' && !ctx.rewarded && st.runs >= AD_CFG.interEvery && now - st.lastAt >= AD_CFG.interGapMs;
+const adCoinBonus = (field, sc) => adInt(field, 1e12) + adInt(sc, 1e12);   // the run's own income (field + score coins, unit multiplier included); level-up, clear and daily coins are not doubled
+const adDailyBonus = rw => rw ? { coin: adInt(rw.coin, 1e12), dia: adInt(rw.dia, 1e12), gem: adInt(rw.gem, 1e9) } : null;
+const adClaim = (claimed, place) => claimed[place] ? null : { ...claimed, [place]: true };
+const adOffers = (ready, run) => ({ revive: !!ready, coin2x: !!ready && run.coinBonus > 0 && !run.claimed.coin2x, daily2x: !!ready && !!run.dailyBonus && !run.claimed.daily2x });
+// An adapter: {name, ready() sync (the UI asks while it draws), rewarded(place) -> 'granted'|'skipped'|'failed', interstitial() -> 'shown'|'failed'}. The stub stands in until a provider (Poki / CrazyGames / AdSense H5) gets its own adapter with the same shape
+function adStub(o){
+  const mode = AD_STUB_MODES.includes(o.mode) ? o.mode : 'ok', ms = o.ms == null ? AD_CFG.stubMs : o.ms;
+  return { name: 'stub:' + mode, ready: () => mode !== 'none',
+    rewarded: async () => { if (mode === 'none') return 'failed'; await o.wait(ms); return mode === 'ok' ? 'granted' : mode === 'skip' ? 'skipped' : 'failed'; },
+    interstitial: async () => { if (mode === 'none' || mode === 'fail') return 'failed'; await o.wait(ms); return 'shown'; } };
+}
+const AD_RW = ['granted', 'skipped', 'failed'], AD_IN = ['shown', 'failed'];
+// Any adapter as the game sees it: a throw, an answer outside the list or no answer within ms is a failure, so a broken provider only hides buttons
+function adGuard(a, wait, ms){
+  const safe = (f, ok) => async (...x) => { try { const r = await Promise.race([Promise.resolve().then(() => f(...x)), wait(ms).then(() => 'failed')]); return ok.includes(r) ? r : 'failed'; } catch (e){ return 'failed'; } };
+  return { name: a.name, ready: () => { try { return !!a.ready(); } catch (e){ return false; } }, rewarded: safe(a.rewarded, AD_RW), interstitial: safe(a.interstitial, AD_IN) };
+}
+// cfg: FW_CONFIG.ads ('stub' or, later, a provider name). ?ads=ok|fail|skip|none picks the stub's answer, but only where the stub is the provider or on localhost: on a real provider it would hand out free rewards
+function adPick(search, host, cfg){
+  const q = new URLSearchParams(search).get('ads'), prov = typeof cfg === 'string' && cfg ? cfg : 'stub', local = /^(localhost|127\.0\.0\.1)$/.test(host);
+  if (AD_STUB_MODES.includes(q) && (prov === 'stub' || local)) return { prov: 'stub', mode: q };
+  return prov === 'stub' ? { prov: 'stub', mode: 'ok' } : { prov, mode: '' };
+}
+/* ads:end */
+const adWait = ms => new Promise(r => setTimeout(r, ms));
+const ADS = (() => { const p = adPick(location.search, location.hostname, (window.FW_CONFIG || {}).ads); return adGuard(p.prov === 'stub' ? adStub({ mode: p.mode, wait: adWait }) : adStub({ mode: 'none', wait: adWait }), adWait, AD_CFG.timeoutMs); })();   // a provider without an adapter yet = no ads
+let adBusy = false;
+let adRun = { coinBonus: 0, dailyBonus: null, claimed: {} };
+async function runAd(place){ if (adBusy) return 'failed'; adBusy = true; try { return await ADS.rewarded(place); } finally { adBusy = false; } }
 const rookieRuns = () => clampI(store.get('fw27_rookie_runs', 0), 0, 999);
 const rookieOn = () => rookieRun(mode, curStage, rookieRuns());
 const challenge = readChallenge(location.search, dayKey());
@@ -1101,7 +1141,7 @@ let skillCharge = 0, skillWasReady = false, boostT = 0, lowGravT = 0, autoT = 0,
 let bounceLeft = 0, rewindLeft = 0, perfCount = 0, phaseT = 0, giantT = 0, inkT = 0, guardUsed = false, travel = 0, hist = [], bolts = [];
 let score, gatesPassed, combo, maxCombo, perfects, speed, dashMeter, dashT, invuln, magnetT, slowT, zoneIdx, zoneBanner, deathT, spawnIdx, runDay, deathWhy, lastShare = '';
 // Per-run state for stage rules and the newer skills; TMAX remembers each timer's value when it was set (render/HUD read it).
-const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:0, clearDone:false, clearCoin:0, clearDia:0, gemsRun:0,
+const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:0, clearDone:false, clearCoin:0, clearDia:0, gemsRun:0, adSeen:false,
   laneN:0, laneY:0, strikeN:0, strikeT:0, stormDash:false, dashHit:false, resoT:0, resoMul:1,
   castT:0, castMax:0, sigT:0, sigK:'', perfT:0,   // unit fx timers (s): cast sky event and its length, passive moment and its kind, perfect flourish
   gustLock:0,   // TEMPEST: scored gates left before the gust reflex can arm again
@@ -1399,7 +1439,7 @@ $('stageScr').addEventListener('click', e => { if (e.target === $('stageScr')) $
 let lbOpen = false, overAt = 0;   // overAt: when the game-over card came up; it must be up for a moment before a tap can restart
 function flap(){
   audioInit();
-  if (state === 'menu' || state === 'over'){ if (state === 'over' && (performance.now() - overAt < 450 || mode === 'versus')) return; if (state === 'menu'){ startFromMenu(); return; } startGame(mode); return; }
+  if (state === 'menu' || state === 'over'){ if (adBusy) return; if (state === 'over' && (performance.now() - overAt < 450 || mode === 'versus')) return; if (state === 'menu'){ startFromMenu(); return; } startGame(mode); return; }
   if (state !== 'play' || dashT > 0) return;
   bird.vy = -B.flap; bird.wing = 1; squash = 1; SFX.flap(); haptic('flap'); tutFlaps++; FX.idleT = 0; FX.idleWarn = false;
   for (let i=0;i<5;i++) part(bird.x-6, bird.y+6, -60-Math.random()*80, 40+Math.random()*80, .35, B.wingCol, 2);
@@ -1429,8 +1469,18 @@ addEventListener('keydown', e => {
 });
 $('startBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); SFX.click(); startFromMenu(); });
 $('dailyBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); startGame('daily'); });
-$('retryBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); if (mode === 'versus'){ toMenu(); openVs(); } else startGame(mode); });
-$('menuBtn').addEventListener('click', e => { e.stopPropagation(); toMenu(); });
+// Leaving the result card may show one interstitial: at most one per AD_CFG.interEvery finished runs, never inside the gap, never in versus and never on a run where a rewarded ad was watched
+async function adLeave(go){
+  if (adBusy) return; const now = Date.now(), st = adNorm(store.get('fw27_ads', null), now);
+  if (adInterDue(st, now, { mode, rewarded: FX.adSeen }) && ADS.ready()){
+    adBusy = true; let r; try { r = await ADS.interstitial(); } finally { adBusy = false; }
+    if (r === 'shown') store.set('fw27_ads', adInterShown(st, Date.now()));
+    if (state !== 'over') return;   // the card was left some other way while the ad played; don't restart over a live run
+  }
+  go();
+}
+$('retryBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); adLeave(() => { if (mode === 'versus'){ toMenu(); openVs(); } else startGame(mode); }); });
+$('menuBtn').addEventListener('click', e => { e.stopPropagation(); adLeave(toMenu); });
 $('shareBtn').addEventListener('click', async e => {
   e.stopPropagation(); const text = lastShare || shareMsg(I18N[lang], {mode, score:score||0, gates:gatesPassed||0, combo:maxCombo||0, day:runDay||dayKey()});
   // the line already ends with the link, so it goes out as text alone. Closing the share sheet is an answer, not a failure: nothing follows it.
@@ -1688,22 +1738,23 @@ function die(why = 'gate'){
   $('dashBtn').hidden = true; $('skillBtn').hidden = true; $('pauseBtn').hidden = true; $('ultBtn').hidden = true;
 }
 /* ---------- continue (rewarded ad or coins), once per run, stage mode only ---------- */
-let contTimer = 0, contLeft = 0, adTimer = 0;
+let contTimer = 0, contLeft = 0;
 const CONT_COST = 200;
 function canContinue(){ return mode === 'endless' && !contUsed && score >= 3; }
 function openCont(){
   state = 'cont'; contLeft = 5; $('contScr').hidden = false; $('contAdMsg').hidden = true;
+  $('contAd').hidden = !adOffers(ADS.ready(), { coinBonus: 0, dailyBonus: null, claimed: {} }).revive;
   $('contAd').disabled = false; $('contCoin').disabled = W.coins < CONT_COST;
   $('contCoin').textContent = t('contCoin', {n: CONT_COST});
   const tick = () => {
-    if (state !== 'cont' || adTimer) return;
+    if (state !== 'cont' || adBusy) return;
     contLeft -= .1; $('contRing').style.setProperty('--p', Math.max(0, contLeft/5)); $('contNum').textContent = Math.max(0, Math.ceil(contLeft));
     if (contLeft <= 0) closeCont(false);
   };
   clearInterval(contTimer); contTimer = setInterval(tick, 100); tick();
 }
 function closeCont(go){
-  clearInterval(contTimer); clearInterval(adTimer); adTimer = 0; $('contScr').hidden = true;
+  clearInterval(contTimer); $('contScr').hidden = true;
   if (!go){ showOver(); return; }
   contUsed = true; state = 'play'; FX.fogT = 0; overT = weightT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; setGod(2.5); hurtT = 0;
   cam.tz = 1; cam.fx = LW/2; cam.fy = LH/2;
@@ -1711,15 +1762,34 @@ function closeCont(go){
   $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false; $('ultBtn').hidden = !ultOn();
   banner(t('go'), [45,100,62], .8); SFX.go(); haptic('power'); ring(bird.x, bird.y, LW, [45,100,62], .8, 10);
 }
-$('contAd').addEventListener('click', e => {
-  e.stopPropagation(); audioInit(); $('contAd').disabled = true; $('contCoin').disabled = true;
-  let n = 3; $('contAdMsg').hidden = false; $('contAdMsg').textContent = t('adPlaying') + ' · ' + n;
-  adTimer = setInterval(() => { n--; $('contAdMsg').textContent = t('adPlaying') + ' · ' + n; if (n <= 0) closeCont(true); }, 1000);
+$('contAd').addEventListener('click', async e => {
+  e.stopPropagation(); if (adBusy) return; audioInit(); $('contAd').disabled = true; $('contCoin').disabled = true;
+  $('contAdMsg').hidden = false; $('contAdMsg').textContent = t('adPlaying');
+  const r = await runAd('revive');
+  if (state !== 'cont') return;
+  if (r === 'granted'){ FX.adSeen = true; closeCont(true); return; }
+  $('contAdMsg').textContent = t('adFail'); $('contAd').hidden = true; $('contCoin').disabled = W.coins < CONT_COST;   // the coin continue and the countdown carry on
 });
 $('contCoin').addEventListener('click', e => { e.stopPropagation(); if (W.coins < CONT_COST) return; W.coins -= CONT_COST; saveW(); renderWallet(); closeCont(true); });
 $('contNo').addEventListener('click', e => { e.stopPropagation(); closeCont(false); });
+function renderAdOffers(){
+  const of = adOffers(ADS.ready(), adRun);
+  $('oAd2x').hidden = !of.coin2x; $('oAd2x').disabled = false; $('oAd2x').textContent = t('ad2x', { n: adRun.coinBonus.toLocaleString() });
+  $('oAdDaily').hidden = !of.daily2x; $('oAdDaily').disabled = false; $('oAdDaily').textContent = t('adDaily2x');
+}
+async function claimAd(place, btn, pay){
+  if (adBusy || state !== 'over') return; btn.disabled = true;
+  const r = await runAd(place), next = r === 'granted' ? adClaim(adRun.claimed, place) : null;
+  if (state !== 'over') return;
+  if (next){ adRun = { ...adRun, claimed: next }; FX.adSeen = true; pay(); saveW(); renderWallet(); }
+  else { $('oWhy').textContent = t('adFail'); $('oWhy').hidden = false; }
+  btn.hidden = true;   // granted or not, the offer is gone for this run
+}
+$('oAd2x').addEventListener('click', e => { e.stopPropagation(); claimAd('coin2x', $('oAd2x'), () => { W.coins += adRun.coinBonus; }); });
+$('oAdDaily').addEventListener('click', e => { e.stopPropagation(); const b = adRun.dailyBonus; claimAd('daily2x', $('oAdDaily'), () => { W.coins += b.coin; W.dia += b.dia; W.gems += b.gem; }); });
 function showOver(){
   state = 'over'; overAt = performance.now();
+  if (mode !== 'versus') store.set('fw27_ads', adRunDone(adNorm(store.get('fw27_ads', null), Date.now())));
   let nb, shownBest;
   if (mode === 'daily'){
     const prev = dailyBestLocal(runDay); nb = score > prev;
@@ -1760,6 +1830,8 @@ function showOver(){
     if (!ds.claimed){ const rw = dailyReward(ds.streak); dCoin = rw.coin; W.coins += rw.coin; W.gems += rw.gem; W.dia += rw.dia; store.set('fw27_dbonus', runDay); }
   }
   W.coins += fieldCoin + scoreCoin; const ups = grantXP(xpGain); saveW();
+  adRun = { coinBonus: adCoinBonus(fieldCoin, scoreCoin), dailyBonus: dCoin ? adDailyBonus(dailyReward(dStreak)) : null, claimed: {} };
+  renderAdOffers();
   const rw = $('oRewards'); rw.textContent = '';
   const pill = (cls, txt) => { const p = document.createElement('span'); p.className = 'wpill'; if (cls){ const i = document.createElement('i'); i.className = 'ic ' + cls; p.appendChild(i); } p.appendChild(document.createTextNode(txt)); rw.appendChild(p); };
   const cm = PK.coinMul > 1 ? ` ×${PK.coinMul}` : '', cpill = (k, n, x = '') => pill('coin', `${t(k)} +${n.toLocaleString()}${x}`);   // one coin pill per source
