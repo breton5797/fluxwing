@@ -1053,6 +1053,71 @@ function adMake(p, env){
 }
 const adGuardMs = prov => prov === 'stub' ? AD_CFG.timeoutMs : AD_SDK.guardMs;
 /* ads:end */
+/* cloud:start — cloud save (merge rules) and login rules: pure, no DOM, no storage, no clock (get/set come in). tests/cloud.test.js runs this block as it stands (tests/helpers/cloud.js). */
+const FS_CFG = Object.freeze({ v: 1, maxBytes: 16384, stN: 50, owned0: Object.freeze(['volt', 'blitz', 'nimbus', 'titan']) });
+// Synced to the account (public.fw_saves). Every other fw27_ key stays on this device: FS_LOCAL ("_" at the end = a prefix)
+const FS_KEYS = Object.freeze(['fw27_wallet2', 'fw27_owned', 'fw27_pass', 'fw27_starter', 'fw27_best', 'fw27_bestg', 'fw27_stg2', 'fw27_stage2',
+  'fw27_bird', 'fw27_nick', 'fw27_tut', 'fw27_rookie_runs', 'fw27_dstreak', 'fw27_dbonus', 'fw27_vsclaim']);
+const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_stg', 'fw27_stage', 'fw27_lang', 'fw27_mute', 'fw27_vib', 'fw27_ads', 'fw27_trial', 'fw27_rp2',
+  'fw27_rej', 'fw27_vsmode', 'fw27_dg', 'fw27_daily_', 'fw27_sync']);
+const fsI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
+const fsDay = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
+const fsId = v => typeof v === 'string' && /^[a-z]{1,12}$/.test(v) && v !== 'constructor';
+const fsObj = v => v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+const fsArr = (a, hi) => Array.from({ length: FS_CFG.stN }, (_, i) => fsI(Array.isArray(a) ? a[i] : 0, 0, hi));
+function fsNorm(raw){
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || raw.v !== FS_CFG.v) return null;
+  const w = fsObj(raw.w), s = fsObj(raw.stg), d = fsObj(raw.ds);
+  return { v: FS_CFG.v,
+    w: { xp: fsI(w.xp, 0, 99), lvl: fsI(w.lvl, 1, 1e6), coins: fsI(w.coins, 0, 1e12), dia: fsI(w.dia, 0, 1e12), gems: fsI(w.gems, 0, 1e9) },
+    owned: [...new Set([...FS_CFG.owned0, ...(Array.isArray(raw.owned) ? raw.owned : []).filter(fsId)])].sort().slice(0, 64),
+    pass: raw.pass === true, starter: raw.starter === true, best: fsI(raw.best, 0, 1e9), bestg: fsI(raw.bestg, 0, 1e6),
+    stg: { gates: fsArr(s.gates, 1e9), score: fsArr(s.score, 1e9), clr: fsArr(s.clr, 1), open: fsI(s.open, 0, FS_CFG.stN - 1) },
+    stage: fsI(raw.stage, 0, FS_CFG.stN - 1), bird: fsId(raw.bird) ? raw.bird : 'volt',
+    nick: typeof raw.nick === 'string' ? raw.nick.slice(0, 14) : '', tut: raw.tut ? 1 : 0, rookie: fsI(raw.rookie, 0, 999),
+    ds: fsDay(d.last) ? { last: d.last, streak: fsI(d.streak, 0, 1e6) } : null, dbonus: fsDay(raw.dbonus),
+    vsg: (Array.isArray(raw.vsg) ? raw.vsg : []).filter(k => typeof k === 'string' && /^\d{6}:[0-9a-f-]{36}$/.test(k)).slice(-24) };
+}
+// The device save as the game itself reads it (same keys, same defaults)
+function fsSnap(get){
+  const vc = fsObj(get('fw27_vsclaim', null));
+  return fsNorm({ v: FS_CFG.v, w: get('fw27_wallet2', {}), owned: get('fw27_owned', FS_CFG.owned0), pass: get('fw27_pass', false), starter: get('fw27_starter', false),
+    best: get('fw27_best', 0), bestg: get('fw27_bestg', 0), stg: get('fw27_stg2', null), stage: get('fw27_stage2', 0), bird: get('fw27_bird', 'volt'),
+    nick: get('fw27_nick', '') || '', tut: get('fw27_tut', 0), rookie: get('fw27_rookie_runs', 0), ds: get('fw27_dstreak', null), dbonus: get('fw27_dbonus', ''), vsg: vc.g });
+}
+// What to store for a save. fw27_vsclaim keeps this device's pending claims (p): only the granted keys (g) travel
+function fsWrites(s, get){
+  const vc = fsObj(get('fw27_vsclaim', null)), p = fsObj(vc.p);
+  return [['fw27_wallet2', { ...s.w }], ['fw27_owned', [...s.owned]], ['fw27_pass', s.pass], ['fw27_starter', s.starter], ['fw27_best', s.best], ['fw27_bestg', s.bestg],
+    ['fw27_stg2', { gates: [...s.stg.gates], score: [...s.stg.score], clr: [...s.stg.clr], open: s.stg.open }], ['fw27_stage2', s.stage], ['fw27_bird', s.bird],
+    ['fw27_nick', s.nick || null], ['fw27_tut', s.tut], ['fw27_rookie_runs', s.rookie], ['fw27_dstreak', s.ds && { ...s.ds }], ['fw27_dbonus', s.dbonus],
+    ['fw27_vsclaim', { g: [...s.vsg], p }]];
+}
+const fsSame = (a, b) => JSON.stringify(fsNorm(a)) === JSON.stringify(fsNorm(b));
+const fsEmpty = s => s.best === 0 && s.w.coins + s.w.dia + s.w.gems === 0 && s.w.lvl === 1 && s.w.xp === 0 && !s.pass && !s.starter
+  && s.owned.every(id => FS_CFG.owned0.includes(id)) && s.stg.gates.every(g => g === 0);
+const fsTot = w => (w.lvl - 1) * 100 + w.xp;
+// l, r, b: fsNorm results. b = the copy both sides last agreed on (three-way) or null (this device's first merge with this account)
+function fsMerge(l, r, b){
+  const cur = k => b ? Math.max(0, r.w[k] + l.w[k] - b.w[k]) : l.w[k] + r.w[k];
+  const tot = b ? Math.max(0, fsTot(r.w) + fsTot(l.w) - fsTot(b.w)) : Math.max(fsTot(l.w), fsTot(r.w));
+  const pick = k => b && JSON.stringify(l[k]) !== JSON.stringify(b[k]) ? l[k] : r[k];
+  const hi = l.best >= r.best ? l : r, mx = (x, y) => x.map((v, i) => Math.max(v, y[i]));
+  const ds = !l.ds ? r.ds : !r.ds ? l.ds : l.ds.last !== r.ds.last ? (l.ds.last > r.ds.last ? l.ds : r.ds) : (l.ds.streak >= r.ds.streak ? l.ds : r.ds);
+  return fsNorm({ v: FS_CFG.v, w: { lvl: Math.floor(tot / 100) + 1, xp: tot % 100, coins: cur('coins'), dia: cur('dia'), gems: cur('gems') },
+    owned: [...l.owned, ...r.owned], pass: l.pass || r.pass, starter: l.starter || r.starter, best: hi.best, bestg: hi.bestg,
+    stg: { gates: mx(l.stg.gates, r.stg.gates), score: mx(l.stg.score, r.stg.score), clr: mx(l.stg.clr, r.stg.clr), open: Math.max(l.stg.open, r.stg.open) },
+    stage: pick('stage'), bird: pick('bird'), nick: pick('nick') || l.nick, tut: l.tut | r.tut, rookie: Math.max(l.rookie, r.rookie),
+    ds, dbonus: l.dbonus > r.dbonus ? l.dbonus : r.dbonus, vsg: [...r.vsg, ...l.vsg.filter(k => !r.vsg.includes(k))] });
+}
+// rec: this device's last sync {uid, rev, base} | null; remote: {rev, data} | null (no row yet)
+function fsPlan(rec, uid, remote, local){
+  if (rec && rec.uid && rec.uid !== uid) return 'pull';
+  if (!remote) return 'adopt';
+  if (rec && rec.uid === uid && rec.base) return 'merge3';
+  return fsEmpty(local) ? 'pull' : 'ask';
+}
+/* cloud:end */
 const adWait = ms => new Promise(r => setTimeout(r, ms));
 // The portal SDK, fetched like loadSdk() (Supabase): any failure (blocked, timeout, missing global) = null = no ads, the game carries on
 function adLoad(prov){
