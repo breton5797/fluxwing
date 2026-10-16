@@ -975,6 +975,20 @@ function challengeResult(ch, mode, score){
   return { beat: score > ch.score, by: Math.abs(score - ch.score) };
 }
 /* hit-loop:end */
+/* ads:start — rewarded / interstitial rules and the ad-provider adapters: pure, no DOM, no storage, no clock of its own (now and wait come in). tests/ads.test.js runs this block as it stands (tests/helpers/ads.js). */
+const AD_CFG = Object.freeze({ interEvery: 3, interGapMs: 180000, timeoutMs: 30000, stubMs: 3000 });
+const AD_STUB_MODES = Object.freeze(['ok', 'fail', 'skip', 'none']);
+const adInt = (v, max) => { const n = Math.floor(Number(v)); return Number.isFinite(n) && n > 0 ? Math.min(n, max) : 0; };
+// saved pacing {runs: finished runs since the last interstitial, lastAt: when it ran (ms)}. Junk reads as a fresh install; a lastAt in the future (clock moved back) is pulled to now
+function adNorm(raw, now){ const r = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}; return { runs: adInt(r.runs, 999), lastAt: Math.min(adInt(r.lastAt, 1e15), now) }; }
+const adRunDone = st => ({ ...st, runs: Math.min(999, st.runs + 1) });
+const adInterShown = (st, now) => ({ ...st, runs: 0, lastAt: now });
+const adInterDue = (st, now, ctx) => ctx.mode !== 'versus' && !ctx.rewarded && st.runs >= AD_CFG.interEvery && now - st.lastAt >= AD_CFG.interGapMs;
+const adCoinBonus = (field, sc) => adInt(field, 1e12) + adInt(sc, 1e12);   // the run's own income (field + score coins, unit multiplier included); level-up, clear and daily coins are not doubled
+const adDailyBonus = rw => rw ? { coin: adInt(rw.coin, 1e12), dia: adInt(rw.dia, 1e12), gem: adInt(rw.gem, 1e9) } : null;
+const adClaim = (claimed, place) => claimed[place] ? null : { ...claimed, [place]: true };
+const adOffers = (ready, run) => ({ revive: !!ready, coin2x: !!ready && run.coinBonus > 0 && !run.claimed.coin2x, daily2x: !!ready && !!run.dailyBonus && !run.claimed.daily2x });
+/* ads:end */
 const rookieRuns = () => clampI(store.get('fw27_rookie_runs', 0), 0, 999);
 const rookieOn = () => rookieRun(mode, curStage, rookieRuns());
 const challenge = readChallenge(location.search, dayKey());
