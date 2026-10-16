@@ -1469,8 +1469,17 @@ addEventListener('keydown', e => {
 });
 $('startBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); SFX.click(); startFromMenu(); });
 $('dailyBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); startGame('daily'); });
-$('retryBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); if (mode === 'versus'){ toMenu(); openVs(); } else startGame(mode); });
-$('menuBtn').addEventListener('click', e => { e.stopPropagation(); toMenu(); });
+// Leaving the result card may show one interstitial: at most one per AD_CFG.interEvery finished runs, never inside the gap, never in versus and never on a run where a rewarded ad was watched
+async function adLeave(go){
+  if (adBusy) return; const now = Date.now(), st = adNorm(store.get('fw27_ads', null), now);
+  if (adInterDue(st, now, { mode, rewarded: FX.adSeen }) && ADS.ready()){
+    adBusy = true; let r; try { r = await ADS.interstitial(); } finally { adBusy = false; }
+    if (r === 'shown') store.set('fw27_ads', adInterShown(st, Date.now()));
+  }
+  go();
+}
+$('retryBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); adLeave(() => { if (mode === 'versus'){ toMenu(); openVs(); } else startGame(mode); }); });
+$('menuBtn').addEventListener('click', e => { e.stopPropagation(); adLeave(toMenu); });
 $('shareBtn').addEventListener('click', async e => {
   e.stopPropagation(); const text = lastShare || shareMsg(I18N[lang], {mode, score:score||0, gates:gatesPassed||0, combo:maxCombo||0, day:runDay||dayKey()});
   // the line already ends with the link, so it goes out as text alone. Closing the share sheet is an answer, not a failure: nothing follows it.
@@ -1779,6 +1788,7 @@ $('oAd2x').addEventListener('click', e => { e.stopPropagation(); claimAd('coin2x
 $('oAdDaily').addEventListener('click', e => { e.stopPropagation(); const b = adRun.dailyBonus; claimAd('daily2x', $('oAdDaily'), () => { W.coins += b.coin; W.dia += b.dia; W.gems += b.gem; }); });
 function showOver(){
   state = 'over'; overAt = performance.now();
+  if (mode !== 'versus') store.set('fw27_ads', adRunDone(adNorm(store.get('fw27_ads', null), Date.now())));
   let nb, shownBest;
   if (mode === 'daily'){
     const prev = dailyBestLocal(runDay); nb = score > prev;
