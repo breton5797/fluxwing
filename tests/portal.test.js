@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { portalHtml } from '../scripts/portal-build.mjs';
+import { ASSETS, portalHtml } from '../scripts/portal-build.mjs';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
@@ -18,4 +18,9 @@ test('the portal build refuses unknown providers and a page without exactly one 
   assert.throws(() => portalHtml(html, "x'}; alert(1); //"));
   assert.throws(() => portalHtml('<html></html>', 'poki'));
   assert.throws(() => portalHtml(html + 'window.FW_CONFIG = { ', 'poki'));
+});
+
+test('the portal build copies every icon the manifest references', () => {
+  const manifest = JSON.parse(readFileSync(new URL('../manifest.webmanifest', import.meta.url), 'utf8'));
+  for (const icon of manifest.icons || []) assert.ok(ASSETS.includes(icon.src), icon.src);
 });

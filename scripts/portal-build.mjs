@@ -2,7 +2,8 @@
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
-const PORTALS = ['crazygames', 'poki'], HEAD = 'window.FW_CONFIG = { ', ASSETS = ['manifest.webmanifest', 'icon.svg', 'apple-touch-icon.png'];
+const PORTALS = ['crazygames', 'poki'], HEAD = 'window.FW_CONFIG = { ';
+export const ASSETS = ['manifest.webmanifest', 'icon.svg', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'];
 
 export function portalHtml(html, prov){
   if (!PORTALS.includes(prov)) throw new Error(`portal must be one of ${PORTALS.join(', ')}`);
