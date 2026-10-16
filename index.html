@@ -1071,6 +1071,8 @@ let adBusy = false;
 let adOn = false;   // an ad is on screen: the master gain stays at 0 whatever the mute button says
 function adAudio(on){ adOn = on; if (master) master.gain.value = adVol(muted, adOn); }
 let adRun = { coinBonus: 0, dailyBonus: null, claimed: {} };
+let adPlaying = false;   // what the portal was last told: gameplay on (state 'play') or off
+function adPlaySync(){ const e = adPlayEv(adPlaying, state); if (e){ adPlaying = e === 'start'; ADS.ev(e); } }
 async function runAd(place){ if (adBusy) return 'failed'; adBusy = true; adAudio(true); try { return await ADS.rewarded(place); } finally { adBusy = false; adAudio(false); } }
 const rookieRuns = () => clampI(store.get('fw27_rookie_runs', 0), 0, 999);
 const rookieOn = () => rookieRun(mode, curStage, rookieRuns());
@@ -1556,7 +1558,7 @@ $('muteBtn').addEventListener('click', e => {
 $('muteBtn').style.opacity = muted ? .4 : 1;
 $('vibBtn').classList.toggle('off', !vibOn);
 $('vibBtn').addEventListener('click', e => { e.stopPropagation(); vibOn = !vibOn; store.set('fw27_vib', vibOn); $('vibBtn').classList.toggle('off', !vibOn); haptic([30,40,30]); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause(); adPlaySync(); });
 
 function togglePause(){
   if (state === 'play'){ state = 'paused'; $('pauseScr').hidden = false; }
@@ -1909,7 +1911,7 @@ function showOver(){
     if (v !== shown){ shown = v; oS.textContent = v; if (v > 0 && v % every === 0) tone(480 + v/Math.max(1,target)*700, .03, 'square', .04); }
     if (k < 1){ requestAnimationFrame(step); return; }
     rk.style.visibility = ''; void rk.offsetWidth; rk.classList.add('stamp'); SFX.stamp(); haptic('stamp');
-    if (nb && target > 0){ $('oNew').hidden = false; confetti(LW/2, LH*.32, 70); SFX.fanfare(); haptic('newBest'); }
+    if (nb && target > 0){ $('oNew').hidden = false; confetti(LW/2, LH*.32, 70); SFX.fanfare(); haptic('newBest'); ADS.ev('happy'); }
     else if (ups){ confetti(LW/2, LH*.5, 40); SFX.fanfare(); }
   };
   requestAnimationFrame(step);
@@ -2062,7 +2064,7 @@ function update(rdt){
       if (mode === 'endless' && !FX.clearDone && gatesPassed >= stGoal(curStage)){
         FX.clearDone = true; const first = !stg.clr[curStage]; stg.clr[curStage] = 1; stg.open = Math.max(stg.open, Math.min(ST_N-1, curStage+1));
         if (first){ FX.clearCoin = (100 + 10*(curStage+1))*INCOME_X; FX.clearDia = diaClear(curStage); W.coins += FX.clearCoin; W.dia += FX.clearDia; saveW(); }
-        store.set('fw27_stg2', stg); banner(t('stClear',{n:curStage+1}), [48,100,62], 1.8); if (first) banner(t('diaP', {n: FX.clearDia.toLocaleString()}), [185,100,66], 1.2, false); SFX.fanfare(); haptic('newBest'); confetti(bird.x+60, bird.y, 50); flash = Math.max(flash,.5); shake = Math.max(shake,8);
+        store.set('fw27_stg2', stg); banner(t('stClear',{n:curStage+1}), [48,100,62], 1.8); if (first) banner(t('diaP', {n: FX.clearDia.toLocaleString()}), [185,100,66], 1.2, false); SFX.fanfare(); haptic('newBest'); confetti(bird.x+60, bird.y, 50); flash = Math.max(flash,.5); shake = Math.max(shake,8); ADS.ev('happy');
       }
       if (mode === 'endless'){
         const tr = stTier(curStage), fn = stFogN(curStage);
@@ -4566,6 +4568,7 @@ function loop(now){
   const rdt = Math.min(.034, (now - last)/1000); last = now;
   if (state !== 'paused' && !(window.FW && window.FW.hold)) update(rdt);
   render(); drawHangarPreview(); musicTick(); tutTick(rdt); if (state === 'play' || state === 'dying' || state === 'over') vsTick(rdt);
+  adPlaySync();
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
@@ -4703,6 +4706,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
 resize(); reset(); state = 'menu';
 applyI18n(); renderWallet();
 requestAnimationFrame(loop);
+ADS.ev('loaded');
 online();
 })();
 </script>
