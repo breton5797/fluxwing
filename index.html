@@ -565,9 +565,10 @@ const SYS = 'system-ui, "Apple SD Gothic Neo", "Noto Sans KR", "Hiragino Sans", 
 let dpr = 1, scale = 1, LW = 360;
 
 /* ---------- storage ---------- */
+let onStoreSet = null;   // the cloud save marks itself dirty here (cloud save section)
 const store = {
   get(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
-  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} if (onStoreSet) onStoreSet(k); }
 };
 
 /* ---------- i18n ---------- */
@@ -1169,6 +1170,9 @@ function authUi(cfg, ua){
 }
 const authEmail = s => { const v = typeof s === 'string' ? s.trim().toLowerCase() : ''; return v.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) ? v : ''; };
 const authCodeOk = s => { const v = typeof s === 'string' ? s.replace(/\s+/g, '') : ''; return /^\d{6,10}$/.test(v) ? v : ''; };
+// Saves are read once at start-up and the run writes the wallet from memory: a merged save is written (and the page restarted) only from the idle menu
+const fsCanApply = (state, overlay) => state === 'menu' && !overlay;
+const fsSummary = s => ({ l: s.w.lvl, c: s.w.coins, u: s.owned.length });
 /* cloud:end */
 const adWait = ms => new Promise(r => setTimeout(r, ms));
 // The portal SDK, fetched like loadSdk() (Supabase): any failure (blocked, timeout, missing global) = null = no ads, the game carries on
@@ -1698,7 +1702,7 @@ function startGame(m){
 function toMenu(){
   if (typeof hideTip === 'function') hideTip(); if (mode === 'versus') vsReset();
   state = 'menu'; mode = 'endless'; reset(); state = 'menu'; $('stageScr').hidden = true;
-  $('over').hidden = true; $('menu').hidden = false; $('wallet').hidden = false; updateDaily(); renderHangar(); renderWallet(); seaCheck();
+  $('over').hidden = true; $('menu').hidden = false; $('wallet').hidden = false; updateDaily(); renderHangar(); renderWallet(); seaCheck(); cloudMenu();
 }
 
 /* ---------- unit skills ---------- */
@@ -3621,7 +3625,7 @@ function celebrate(b){
 }
 let confCb = null;
 function confirmDlg(msg, yes){ $('confMsg').textContent = msg; confCb = yes; $('confScr').hidden = false; lbOpen = true; SFX.click(); }
-function confClose(){ $('confScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden; }
+function confClose(){ $('confScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden; $('confYes').textContent = t('buy'); }   // the sign-out dialog relabels the button; every close puts it back
 $('confYes').addEventListener('click', e => { e.stopPropagation(); const f = confCb; confCb = null; confClose(); if (f) f(); });
 $('confNo').addEventListener('click', e => { e.stopPropagation(); confCb = null; confClose(); });
 const COST_KEY = {coin:'nCoin', dia:'nDia', gem:'nGem'};
@@ -3860,13 +3864,95 @@ async function initSupabase(cfg){
     if (me.error) throw me.error;
     sbUser = session.user; uid = session.user.id; sb = sbC; backend = 'supa'; myDoc = me.data ? fromRow(me.data) : null;
     lbState = 'online'; await refreshBoards();
-    if (!lbPoll) lbPoll = setInterval(() => { if (!sb || document.hidden) return; if (needSync) syncLocal(); if (lbOpen || state === 'over') refreshBoards(); if (lbOpen && lbTab === 'vs' && !$('lbScr').hidden) refreshVsBoard(); }, 20000);
+    if (!lbPoll) lbPoll = setInterval(() => { if (!sb || document.hidden) return; if (fsDirty) cloudPush(); if (needSync) syncLocal(); if (lbOpen || state === 'over') refreshBoards(); if (lbOpen && lbTab === 'vs' && !$('lbScr').hidden) refreshVsBoard(); }, 20000);
     syncLocal(); vsSync();   // RP is the server's: the cached value on this device is replaced as soon as we are online
-    authReturn(); renderAcct();
+    authReturn(); renderAcct(); cloudPull();
   } catch(e){ sbOff(); }
 }
-function cloudPull(){}   // replaced by the cloud save section (Task 4); here so Task 3 runs on its own
-function cloudMenu(){}
+/* ---------- cloud save: the account's copy of FS_KEYS (save_get / save_put, compare-and-set on rev). Pulled on sign-in and start-up,
+   pushed from the menu after a change; a merged save is written and the page restarted, from the menu only (fsCanApply) ---------- */
+const fsRecOf = r => r && typeof r === 'object' && typeof r.uid === 'string' && Number.isInteger(r.rev) && r.rev >= 0 ? {uid: r.uid, rev: r.rev, base: fsNorm(r.base)} : null;
+let fsRec = fsRecOf(store.get('fw27_sync', null));
+let fsDirty = false, fsBusy = false, fsReady = false, fsT = 0, fsWait = null, fsAskQ = null;
+const fsOn = () => AUTH_UI.show && backend === 'supa' && !!sb && !!uid && !authAnon();
+const fsOverlay = () => lbOpen || !$('authScr').hidden || !$('confScr').hidden || !$('seaScr').hidden;
+const fsMine = () => fsRec && fsRec.uid === uid ? fsRec : null;
+const fsCall = async (fn, a) => { try { return await sb.rpc(fn, a); } catch(e){ return {error: e || {}}; } };
+function fsKeep(rev, base){ fsRec = {uid, rev, base}; store.set('fw27_sync', fsRec); }
+function fsApply(s){
+  if (!fsCanApply(state, fsOverlay() && $('authScr').hidden)){ fsWait = s; return; }   // the merge question itself may be open
+  let last = 0; try { last = Number(sessionStorage.getItem('fw_cloud_at')) || 0; } catch(e){}
+  if (Date.now() - last < 15000){ toast(t('cloudFail')); return; }   // never a restart loop
+  fsWrites(s, store.get).forEach(([k, v]) => store.set(k, v));
+  try { sessionStorage.setItem('fw_cloud_at', String(Date.now())); sessionStorage.setItem('fw_cloud_note', '1'); } catch(e){}
+  location.reload();
+}
+// Write s as rev; on a conflict merge with what the account holds now (base: the copy both last agreed on) and try again, three times at most
+async function fsPut(rev, s, local, base){
+  for (let i = 0; i < 3; i++){
+    const r = await fsCall('save_put', {p_rev: rev, p_data: s});
+    if (r.error || !r.data) return false;
+    if (r.data.ok){ fsKeep(r.data.rev, s); if (!fsSame(s, local)) fsApply(s); return true; }
+    const now = r.data.rev > 0 ? fsNorm(r.data.data) : null;
+    if (r.data.rev > 0 && !now) return false;   // a save this build cannot read: leave it alone
+    s = now ? fsMerge(local, now, base) : local; rev = r.data.rev;
+  }
+  return false;
+}
+async function cloudPull(){
+  if (!fsOn() || fsBusy) return; fsBusy = true; fsReady = false;
+  try {
+    const r = await fsCall('save_get'); if (r.error || !r.data) return;
+    const remote = r.data.rev > 0 ? {rev: r.data.rev, data: fsNorm(r.data.data)} : null, local = fsSnap(store.get);
+    if (remote && !remote.data) return;   // newer format on the account: touch nothing, push nothing
+    const plan = fsPlan(fsRec, uid, remote, local), zero = fsNorm({v: FS_CFG.v});
+    if (plan === 'adopt'){ fsReady = await fsPut(0, local, local, null); return; }
+    if (plan === 'pull'){ const s = remote ? remote.data : zero; fsKeep(remote ? remote.rev : 0, s); fsReady = true; if (!fsSame(s, local)) fsApply(s); return; }
+    if (plan === 'merge3'){
+      const base = fsMine().base, m = fsMerge(local, remote.data, base);
+      if (fsSame(m, remote.data)){ fsKeep(remote.rev, remote.data); fsReady = true; if (!fsSame(m, local)) fsApply(m); }
+      else fsReady = await fsPut(remote.rev, m, local, base);
+      return;
+    }
+    fsAskQ = {local, remote}; fsAsk();   // 'ask'
+  } finally { fsBusy = false; }
+}
+function fsAsk(){
+  const {local, remote} = fsAskQ, a = fsSummary(remote.data), d = fsSummary(local);
+  $('cloudAcct').textContent = t('cloudLine', {w: t('cloudAcctW'), l: a.l, c: a.c.toLocaleString(), u: a.u});
+  $('cloudDev').textContent = t('cloudLine', {w: t('cloudDevW'), l: d.l, c: d.c.toLocaleString(), u: d.u});
+  authOpen('ask', 'cloudAsk');
+}
+$('cloudMerge').addEventListener('click', async e => {
+  e.stopPropagation(); const q = fsAskQ; if (!q || fsBusy) return; fsBusy = true;
+  try { const m = fsMerge(q.local, q.remote.data, null); fsAskQ = null; authClose(); fsReady = await fsPut(q.remote.rev, m, q.local, null); if (!fsReady) toast(t('cloudFail')); } finally { fsBusy = false; }
+});
+$('cloudPullBtn').addEventListener('click', e => {
+  e.stopPropagation(); const q = fsAskQ; if (!q) return; fsAskQ = null; authClose();
+  fsKeep(q.remote.rev, q.remote.data); fsReady = true; fsApply(q.remote.data);
+});
+async function cloudPush(){
+  if (!fsDirty || !fsReady || !fsOn() || fsBusy || fsAskQ || !fsCanApply(state, fsOverlay())) return;
+  fsDirty = false; fsBusy = true;
+  try {
+    const local = fsSnap(store.get), mine = fsMine();
+    if (mine && fsSame(local, mine.base)) return;
+    if (!(await fsPut(mine ? mine.rev : 0, local, local, mine ? mine.base : null))) fsDirty = true;
+  } finally { fsBusy = false; }
+}
+onStoreSet = k => { if (!FS_KEYS.includes(k) || !fsOn()) return; fsDirty = true; clearTimeout(fsT); fsT = setTimeout(cloudPush, 4000); };
+function cloudMenu(){ if (fsWait){ const s = fsWait; fsWait = null; fsApply(s); return; } if (fsDirty){ clearTimeout(fsT); fsT = setTimeout(cloudPush, 1500); } }
+document.addEventListener('visibilitychange', () => { if (document.hidden) cloudPush(); });
+// Sign-out: this device starts fresh, so the next account to sign in here never inherits this one's progress (fsPlan)
+const AUTH_WIPE = [...FS_KEYS, 'fw27_sync', 'fw27_rp2', 'fw27_rej', 'fw27_dg'];
+async function authLogout(){
+  authLeaving = true; onStoreSet = null; clearTimeout(fsT);
+  AUTH_WIPE.forEach(k => { try { localStorage.removeItem(k); } catch(e){} });
+  try { await sbC.auth.signOut({scope: 'local'}); } catch(e){}
+  location.replace(authBack());
+}
+$('authOutBtn').addEventListener('click', e => { e.stopPropagation(); authClose(); $('confYes').textContent = t('authOut'); confirmDlg(t('authOutQ'), authLogout); });
+try { if (sessionStorage.getItem('fw_cloud_note')){ sessionStorage.removeItem('fw_cloud_note'); setTimeout(() => toast(t('cloudLoaded')), 600); } } catch(e){}
 /* ---------- account login on top of the anonymous player (supabase/schema.sql CLOUD SAVE). linkIdentity / updateUser keep auth.uid(),
    so the leaderboard row and the RP stay. An identity or email that already has an account: sign in to that one (the cloud save section offers the merge) ---------- */
 const AUTH_UI = authUi(window.FW_CONFIG, navigator.userAgent);
@@ -4759,7 +4845,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
+if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { cloud: {get rec(){ return fsRec; }, snap: () => fsSnap(store.get), pull: cloudPull, push: cloudPush, get dirty(){ return fsDirty; }}, vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get hazards(){ return hazs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot, ultCharge: FX.ult, ultLive: ultLive()}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots

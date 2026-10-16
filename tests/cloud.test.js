@@ -133,3 +133,13 @@ test('authEmail and authCodeOk', () => {
   assert.equal(C.authCodeOk(' 123 456 '), '123456');
   for (const bad of ['12345', 'abcdef', '', null, '12345678901']) assert.equal(C.authCodeOk(bad), '');
 });
+
+test('a cloud save is applied and pushed only from the menu with nothing open', () => {
+  assert.equal(C.fsCanApply('menu', false), true);
+  for (const s of ['play', 'dying', 'over', 'paused', 'countdown']) assert.equal(C.fsCanApply(s, false), false);
+  assert.equal(C.fsCanApply('menu', true), false);
+});
+
+test('fsSummary is what the merge question shows', () => {
+  assert.deepEqual(C.fsSummary(C.fsNorm({ v: 1, w: { lvl: 7, coins: 1234 }, owned: ['zero', 'pixel'] })), { l: 7, c: 1234, u: 6 });
+});
