@@ -1029,6 +1029,29 @@ function adVendor(name, drv, env){
 }
 const adPlayEv = (was, state) => (state === 'play') === was ? null : was ? 'stop' : 'start';
 const adVol = (muted, adOn) => muted || adOn ? 0 : .5;
+// Portal SDKs: loaded from the vendor CDN only when FW_CONFIG.ads names the portal (no SRI: the vendors ship these URLs unversioned)
+const AD_SDK = Object.freeze({ guardMs: 120000, loadMs: 10000,
+  src: Object.freeze({ crazygames: 'https://sdk.crazygames.com/crazygames-sdk-v3.js', poki: 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js' }) });
+const AD_GLOBAL = Object.freeze({ crazygames: w => (w && w.CrazyGames && w.CrazyGames.SDK) || null, poki: w => (w && w.PokiSDK) || null });
+const adCgAd = (sdk, kind, win) => new Promise(res => sdk.ad.requestAd(kind, { adStarted(){}, adFinished: () => res(win), adError: () => res('failed') }));
+const AD_DRV = Object.freeze({
+  crazygames: Object.freeze({
+    init: async sdk => { await sdk.init(); if (sdk.environment === 'disabled') return false; try { return !(await sdk.ad.hasAdblock()); } catch (e){ return true; } },
+    rewarded: sdk => adCgAd(sdk, 'rewarded', 'granted'),
+    interstitial: sdk => adCgAd(sdk, 'midgame', 'shown'),
+    ev: Object.freeze({ start: s => s.game.gameplayStart(), stop: s => s.game.gameplayStop(), happy: s => s.game.happytime() }) }),
+  poki: Object.freeze({
+    init: sdk => Promise.resolve().then(() => sdk.init()).then(() => true, () => false),
+    rewarded: async sdk => (await sdk.rewardedBreak()) === true ? 'granted' : 'skipped',
+    interstitial: async sdk => { await sdk.commercialBreak(); return 'shown'; },
+    ev: Object.freeze({ start: s => s.gameplayStart(), stop: s => s.gameplayStop(), loaded: s => s.gameLoadingFinished() }) }),
+});
+// p from adPick; env.load(prov) -> the SDK or null. A provider without a driver (or a typo) = no ads
+function adMake(p, env){
+  if (p.prov === 'stub') return adStub({ mode: p.mode, wait: env.wait });
+  return Object.hasOwn(AD_DRV, p.prov) ? adVendor(p.prov, AD_DRV[p.prov], { load: () => env.load(p.prov) }) : adStub({ mode: 'none', wait: env.wait });
+}
+const adGuardMs = prov => prov === 'stub' ? AD_CFG.timeoutMs : AD_SDK.guardMs;
 /* ads:end */
 const adWait = ms => new Promise(r => setTimeout(r, ms));
 const ADS = (() => { const p = adPick(location.search, location.hostname, (window.FW_CONFIG || {}).ads); return adGuard(p.prov === 'stub' ? adStub({ mode: p.mode, wait: adWait }) : adStub({ mode: 'none', wait: adWait }), adWait, AD_CFG.timeoutMs); })();   // a provider without an adapter yet = no ads

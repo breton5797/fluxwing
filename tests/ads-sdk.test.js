@@ -102,3 +102,85 @@ test('volume: silent while muted or while an ad plays', () => {
   assert.equal(A.adVol(false, true), 0);
   assert.equal(A.adVol(true, true), 0);
 });
+
+function fakeCg(o = {}){
+  const calls = [];
+  const sdk = { environment: o.env || 'crazygames',
+    init: async () => { calls.push('init'); },
+    ad: { hasAdblock: async () => { if (o.abThrow) throw new Error('x'); return !!o.adblock; },
+      requestAd: (kind, cb) => { calls.push('ad:' + kind); setTimeout(() => { cb.adStarted(); if (o.adError) cb.adError({ code: 'unfilled' }); else cb.adFinished(); }, 0); } },
+    game: { gameplayStart: () => calls.push('start'), gameplayStop: () => calls.push('stop'), happytime: () => calls.push('happy') } };
+  return { sdk, calls };
+}
+function fakePoki(o = {}){
+  const calls = [];
+  const sdk = { init: () => { calls.push('init'); return o.initReject ? Promise.reject(new Error('adblock')) : Promise.resolve(); },
+    rewardedBreak: async () => { calls.push('rewardedBreak'); return 'rw' in o ? o.rw : true; },
+    commercialBreak: async () => { calls.push('commercialBreak'); },
+    gameplayStart: () => calls.push('start'), gameplayStop: () => calls.push('stop'), gameLoadingFinished: () => calls.push('loaded') };
+  return { sdk, calls };
+}
+const make = async (prov, sdk) => { const asked = []; const a = A.adMake({ prov, mode: '' }, { wait: tick, load: async p => { asked.push(p); return sdk; } }); await a.boot; return { a, asked }; };
+
+test('crazygames: rewarded and midgame map to the contract', async () => {
+  const { sdk, calls } = fakeCg(), { a, asked } = await make('crazygames', sdk);
+  assert.deepEqual(asked, ['crazygames']);
+  assert.equal(a.ready(), true);
+  assert.equal(await a.rewarded('revive'), 'granted');
+  assert.equal(await a.interstitial(), 'shown');
+  assert.deepEqual(calls, ['init', 'ad:rewarded', 'ad:midgame']);
+  const bad = await make('crazygames', fakeCg({ adError: true }).sdk);
+  assert.equal(await bad.a.rewarded('coin2x'), 'failed');
+  assert.equal(await bad.a.interstitial(), 'failed');
+});
+
+test('crazygames: adblock or a disabled environment means no ads; a broken adblock check does not', async () => {
+  assert.equal((await make('crazygames', fakeCg({ adblock: true }).sdk)).a.ready(), false);
+  assert.equal((await make('crazygames', fakeCg({ env: 'disabled' }).sdk)).a.ready(), false);
+  assert.equal((await make('crazygames', fakeCg({ abThrow: true }).sdk)).a.ready(), true);
+});
+
+test('crazygames: gameplay and happytime events', async () => {
+  const { sdk, calls } = fakeCg(), { a } = await make('crazygames', sdk);
+  a.ev('loaded'); a.ev('start'); a.ev('happy'); a.ev('stop');
+  assert.deepEqual(calls, ['init', 'start', 'happy', 'stop']);   // no loading call on CrazyGames
+});
+
+test('poki: rewardedBreak true/false and commercialBreak map to the contract', async () => {
+  const ok = await make('poki', fakePoki().sdk);
+  assert.equal(await ok.a.rewarded('revive'), 'granted');
+  assert.equal(await ok.a.interstitial(), 'shown');
+  assert.equal(await (await make('poki', fakePoki({ rw: false }).sdk)).a.rewarded('revive'), 'skipped');
+  assert.equal(await (await make('poki', fakePoki({ rw: 'yes' }).sdk)).a.rewarded('revive'), 'skipped');
+});
+
+test('poki: a rejected init (adblock) hides ads but still reports loading and gameplay', async () => {
+  const { sdk, calls } = fakePoki({ initReject: true }), { a } = await make('poki', sdk);
+  assert.equal(a.ready(), false);
+  assert.equal(await a.rewarded('revive'), 'failed');
+  a.ev('loaded'); a.ev('start'); a.ev('happy');
+  assert.deepEqual(calls, ['init', 'loaded', 'start']);   // Poki has no happytime here
+});
+
+test('adMake: the stub, unknown providers and prototype keys', async () => {
+  assert.equal(A.adMake({ prov: 'stub', mode: 'fail' }, { wait: tick, load: async () => null }).name, 'stub:fail');
+  for (const prov of ['adsense', 'Poki', 'toString', '__proto__', 'constructor']){
+    const a = A.adMake({ prov, mode: '' }, { wait: tick, load: async () => { throw new Error('must not load'); } });
+    assert.equal(a.ready(), false, prov);
+  }
+});
+
+test('the SDK globals are read off the window that is passed in', () => {
+  const cg = {}, pk = {};
+  assert.equal(A.AD_GLOBAL.crazygames({ CrazyGames: { SDK: cg } }), cg);
+  assert.equal(A.AD_GLOBAL.poki({ PokiSDK: pk }), pk);
+  assert.equal(A.AD_GLOBAL.crazygames({}), null);
+  assert.equal(A.AD_GLOBAL.poki(null), null);
+});
+
+test('real providers get a guard long enough for a full rewarded video; the stub keeps its own', () => {
+  assert.equal(A.adGuardMs('stub'), A.AD_CFG.timeoutMs);
+  assert.ok(A.adGuardMs('poki') >= 120000);
+  assert.ok(A.adGuardMs('crazygames') >= 120000);
+  for (const k of ['crazygames', 'poki']) assert.match(A.AD_SDK.src[k], /^https:\/\//);
+});
