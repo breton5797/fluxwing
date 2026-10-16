@@ -1439,7 +1439,7 @@ $('stageScr').addEventListener('click', e => { if (e.target === $('stageScr')) $
 let lbOpen = false, overAt = 0;   // overAt: when the game-over card came up; it must be up for a moment before a tap can restart
 function flap(){
   audioInit();
-  if (state === 'menu' || state === 'over'){ if (state === 'over' && (performance.now() - overAt < 450 || mode === 'versus')) return; if (state === 'menu'){ startFromMenu(); return; } startGame(mode); return; }
+  if (state === 'menu' || state === 'over'){ if (adBusy) return; if (state === 'over' && (performance.now() - overAt < 450 || mode === 'versus')) return; if (state === 'menu'){ startFromMenu(); return; } startGame(mode); return; }
   if (state !== 'play' || dashT > 0) return;
   bird.vy = -B.flap; bird.wing = 1; squash = 1; SFX.flap(); haptic('flap'); tutFlaps++; FX.idleT = 0; FX.idleWarn = false;
   for (let i=0;i<5;i++) part(bird.x-6, bird.y+6, -60-Math.random()*80, 40+Math.random()*80, .35, B.wingCol, 2);
@@ -1475,6 +1475,7 @@ async function adLeave(go){
   if (adInterDue(st, now, { mode, rewarded: FX.adSeen }) && ADS.ready()){
     adBusy = true; let r; try { r = await ADS.interstitial(); } finally { adBusy = false; }
     if (r === 'shown') store.set('fw27_ads', adInterShown(st, Date.now()));
+    if (state !== 'over') return;   // the card was left some other way while the ad played; don't restart over a live run
   }
   go();
 }
