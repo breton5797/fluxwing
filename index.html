@@ -1453,32 +1453,52 @@ function impUpdate(rdt){
 }
 function impBufs(){
   if (IMP.bufs) return IMP.bufs;
-  const mk = k => { const c = document.createElement('canvas'); c.width = Math.max(2, cv.width / k | 0); c.height = Math.max(2, cv.height / k | 0); return c; };
-  IMP.bufs = { b4: mk(FXCFG.bloom.down) };
+  const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(2, w | 0); c.height = Math.max(2, h | 0); return c; };
+  IMP.bufs = { box: mk(1280, 1280) };   // region scratch — post effects never read the full frame (CPU-raster budget)
   return IMP.bufs;
 }
 function impPost(){
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   const W2 = cv.width, H2 = cv.height;
   if (IMP.feat.distort) for (const w of IMP.waves){
+    // refraction approximation confined to the ring's own bounding box
     const k = w.t / FXCFG.wave.life, r = (20 + k * FXCFG.wave.maxR) * scale, wx = w.x * scale, wy = w.y * scale;
-    ctx.save(); ctx.beginPath(); ctx.arc(wx, wy, r, 0, 6.283); ctx.arc(wx, wy, Math.max(1, r - 14 * scale), 0, 6.283, true); ctx.clip();
-    const sR = FXCFG.wave.refract;
-    ctx.drawImage(cv, wx - wx * sR, wy - wy * sR, W2 * sR, H2 * sR);
-    ctx.restore();
+    const bx0 = Math.max(0, wx - r - 4), by0 = Math.max(0, wy - r - 4), bw = Math.min(W2 - bx0, 2 * r + 8), bh2 = Math.min(H2 - by0, 2 * r + 8);
+    if (bw > 8 && bh2 > 8){
+      const { box } = impBufs(), bc = box.getContext('2d');
+      bc.clearRect(0, 0, box.width, box.height);
+      const cw = Math.min(1280, bw), ch = Math.min(1280, bh2);
+      bc.drawImage(cv, bx0, by0, cw, ch, 0, 0, cw, ch);
+      ctx.save(); ctx.beginPath(); ctx.arc(wx, wy, r, 0, 6.283); ctx.arc(wx, wy, Math.max(1, r - 14 * scale), 0, 6.283, true); ctx.clip();
+      const sR = FXCFG.wave.refract;
+      ctx.drawImage(box, 0, 0, cw, ch, bx0 + (wx - bx0) * (1 - sR), by0 + (wy - by0) * (1 - sR), cw * sR, ch * sR);
+      ctx.restore();
+    }
     ctx.strokeStyle = `rgba(255,255,255,${(.35 * (1 - k)).toFixed(3)})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(wx, wy, r, 0, 6.283); ctx.stroke();
   }
-  if (IMP.feat.bloom){
-    const b = impBufs().b4, bx = b.getContext('2d');
-    bx.clearRect(0, 0, b.width, b.height); bx.drawImage(cv, 0, 0, b.width, b.height);
-    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = FXCFG.bloom.alpha; ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(b, 0, 0, W2, H2); ctx.restore();
+  if (IMP.feat.bloom && (IMP.flashA > 0 || IMP.waves.length || IMP.caT > 0)){
+    // bloom approximation: additive radial halo at the action centre — no frame readback
+    const w0 = IMP.waves[0], bxc = (w0 ? w0.x : bird.x) * scale, byc = (w0 ? w0.y : bird.y) * scale, R = 190 * scale;
+    const g = ctx.createRadialGradient(bxc, byc, R * .1, bxc, byc, R);
+    const aB = FXCFG.bloom.alpha * Math.max(IMP.flashA, IMP.caT > 0 ? .4 : 0, IMP.waves.length ? .5 : 0);
+    g.addColorStop(0, `rgba(255,255,255,${aB.toFixed(3)})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g; ctx.fillRect(bxc - R, byc - R, R * 2, R * 2); ctx.restore();
   }
   if (IMP.feat.chroma && (IMP.caT > 0 || (IMP.feat.chromaIdle && IMP.comboLvl >= 4))){
+    // RGB split confined to a box around the player — a full-screen split needs a frame read we cannot afford
     const a = IMP.caT > 0 ? Math.min(.35, IMP.caT / FXCFG.chroma.dur * .35) : FXCFG.chroma.idleAlpha;
-    const px = FXCFG.chroma.px * scale;
-    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
-    ctx.drawImage(cv, -px, 0); ctx.drawImage(cv, px, 0); ctx.restore();
+    const px = FXCFG.chroma.px * scale, half = 210 * scale;
+    const bx0 = Math.max(0, bird.x * scale - half), by0 = Math.max(0, bird.y * scale - half);
+    const bw = Math.min(W2 - bx0, half * 2), bh2 = Math.min(H2 - by0, half * 2);
+    if (bw > 8 && bh2 > 8){
+      const { box } = impBufs(), bc = box.getContext('2d');
+      bc.clearRect(0, 0, box.width, box.height);
+      bc.drawImage(cv, bx0, by0, bw, bh2, 0, 0, Math.min(box.width, bw), Math.min(box.height, bh2));
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+      ctx.drawImage(box, 0, 0, Math.min(box.width, bw), Math.min(box.height, bh2), bx0 - px, by0, bw, bh2);
+      ctx.drawImage(box, 0, 0, Math.min(box.width, bw), Math.min(box.height, bh2), bx0 + px, by0, bw, bh2);
+      ctx.restore();
+    }
   }
   if (IMP.flashA > 0 && IMP.feat.flash){
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = hsl(IMP.flashCol, IMP.flashA); ctx.fillRect(0, 0, W2, H2); ctx.restore();
