@@ -50,4 +50,16 @@ assert.ok(d.some(g => g > .9), 'greyscale reached');
 const restarted = await page.evaluate(async () => { document.getElementById('retryBtn').click(); await new Promise(r => setTimeout(r, 500)); return [FW.imp.gray, FW.imp.slow]; });
 assert.deepEqual(restarted, [0, 0], 'no leftover death look');
 assert.equal(await page.evaluate(() => FW.comboLevelOf(30, 2)), 4);
+
+// Task 5: settings UI persists and feeds the next run's features
+await page.reload(); await page.waitForFunction(() => window.FW && window.FW.imp);
+await page.click('#fxBtn');
+await page.click('[data-fxq="low"]'); await page.click('[data-fxshake]');
+const saved = await page.evaluate(() => [localStorage.getItem('fw27_fxq'), localStorage.getItem('fw27_fxshake')]);
+assert.equal(JSON.parse(saved[0]), 'low'); assert.equal(JSON.parse(saved[1]), false);
+await page.click('#fxClose');
+await page.click('#startBtn'); await page.waitForTimeout(300);
+await page.click('#stageList button').catch(() => {}); await page.waitForTimeout(500);
+const feat2 = await page.evaluate(() => [FW.imp.feat.shake, FW.imp.q]);
+assert.deepEqual(feat2, [0, 'low']);
 console.log('fx-smoke OK'); await b.close();

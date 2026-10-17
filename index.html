@@ -115,7 +115,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 #ultBtn.ready{animation:pulse3 .9s infinite}
 @keyframes pulse3{50%{box-shadow:0 0 44px var(--ring),0 0 0 3px var(--ring)}}
 @keyframes pulse2{50%{box-shadow:0 0 38px var(--ring)}}
-#topBtns{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:8px}
+#topBtns{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:8px;z-index:4}
 .ib{position:relative;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:rgba(14,10,30,.55);color:var(--ink);font:700 15px var(--body);cursor:pointer}
 .ib::after{content:"";position:absolute;inset:-4px;border-radius:50%}   /* 46px touch target around the 38px button */
 .ib:focus-visible,#dashBtn:focus-visible{outline:2px solid var(--cool);outline-offset:3px}
@@ -337,6 +337,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
   <div id="topBtns">
     <button class="ib" id="vibBtn" aria-label="Vibration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8M1.5 10.5v3M22.5 10.5v3"/></svg></button>
     <button class="ib" id="muteBtn" aria-label="Sound">♪</button>
+    <button class="ib" id="fxBtn" aria-label="Effects">✦</button>
     <button class="ib" id="pauseBtn" aria-label="Pause" hidden>II</button>
   </div>
   <button class="abtn" id="ultBtn" aria-label="Ultimate" hidden><span>ULT<small id="ultName"></small></span></button>
@@ -484,6 +485,21 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <button class="ghost primary" id="contAd" data-i18n="contAd"></button>
       <button class="ghost" id="contCoin"></button>
       <button class="ghost" id="contNo" data-i18n="giveUp"></button>
+    </div>
+  </div>
+
+  <div class="overlay" id="fxScr" hidden>
+    <div class="card">
+      <div class="lbhead"><h2 class="mtitle" id="fxTitle"></h2><button class="ghost" id="fxClose" data-i18n="close"></button></div>
+      <div class="row" id="fxQRow">
+        <button class="ghost" data-fxq="auto"></button><button class="ghost" data-fxq="low"></button>
+        <button class="ghost" data-fxq="mid"></button><button class="ghost" data-fxq="high"></button>
+      </div>
+      <div class="row">
+        <button class="ghost" data-fxshake></button>
+        <button class="ghost" data-fxflash></button>
+      </div>
+      <div class="hint" id="fxRmNote" hidden></div>
     </div>
   </div>
 
@@ -1316,8 +1332,17 @@ const SFX = {
 // Haptic patterns (ms on/off). Android Chrome supports these; iOS Safari ignores web vibration.
 let vibOn = store.get('fw27_vib', true);
 const HAPTIC = { flap:6, perfect:14, combo5:[20,30,40], fever:[30,40,30,40,90], power:[25,30,45], shieldBreak:[90,30,40],
-  dash:[35,15,60], shatter:18, ready:[12,40,12], zone:[40,60,40,60,120], newBest:[80,40,80,40,200], death:[60,30,150], stamp:35 };
+  dash:[35,15,60], shatter:18, ready:[12,40,12], zone:[40,60,40,60,120], newBest:[80,40,80,40,200], death:[60,30,150], stamp:35,
+  shieldHit:[40,20,70], deathHeavy:[80,30,120,40,200], record:[60,40,60,40,60,40,250], near:10, overdrive:[20,20,20,20,120] };
 function haptic(k){ if (!vibOn) return; const p = typeof k === 'string' ? HAPTIC[k] : k; try { navigator.vibrate && navigator.vibrate(p); } catch(e){} }
+/* fx sound hook: per-event route — a loaded sample in SFX_FILES wins, else the synth; single-file build ships none */
+const SFX_FILES = {};
+const SFX_EV = { flap: 'flap', gate: 'pass', near: 'perfect', shieldHit: 'shield', death: 'die', record: 'fanfare', coin: 'orb', comboBreak: 'shatter', overdrive: 'fever' };
+function sfx(ev, arg){
+  const key = SFX_EV[ev] || ev, route = sfxRoute(key, SFX_FILES, SFX);
+  if (route === 'file'){ try { const b = SFX_FILES[key], src = ac.createBufferSource(); src.buffer = b; src.connect(master); src.start(); } catch (e) {} }
+  else if (route === 'synth') SFX[key](arg);
+}
 
 /* ---------- zones ---------- */
 const ZONES = [
@@ -1435,8 +1460,8 @@ function impFx(ev, o = {}){
     case 'death': impHit({ level: 'heavy', dirX: -1, dirY: .4, wave: true, chroma: true, x: bird.x, y: bird.y }); break;
     case 'record': impBurst(bird.x, bird.y - 20, [45, 100, 60], ['core', 'spark', 'debris']); IMP.rayT = 1.2; IMP.stampT = 0; break;
     case 'coin': IMP.coinPulse = 1; impBurst(bird.x, bird.y, [48, 100, 62], ['spark'], .3); break;
-    case 'comboBreak': IMP.glassT = .4; impBurst(LW / 2, 112, [0, 0, 80], ['debris'], .8); break;
-    case 'overdrive': impHit({ level: 'mid', col: [300, 100, 68], chroma: true }); banner('OVERDRIVE', [300, 100, 68], 1.4); break;
+    case 'comboBreak': IMP.glassT = .4; impBurst(LW / 2, 112, [0, 0, 80], ['debris'], .8); sfx('comboBreak'); break;
+    case 'overdrive': impHit({ level: 'mid', col: [300, 100, 68], chroma: true }); banner('OVERDRIVE', [300, 100, 68], 1.4); sfx('overdrive'); break;
   }
   const hp = hapticFor(FXCFG.events[ev] && FXCFG.events[ev].haptic, HAPTIC);
   if (hp != null) haptic(hp);
@@ -1880,6 +1905,25 @@ $('muteBtn').addEventListener('click', e => {
 $('muteBtn').style.opacity = muted ? .4 : 1;
 $('vibBtn').classList.toggle('off', !vibOn);
 $('vibBtn').addEventListener('click', e => { e.stopPropagation(); vibOn = !vibOn; store.set('fw27_vib', vibOn); $('vibBtn').classList.toggle('off', !vibOn); haptic([30,40,30]); });
+{ const FXTXT = { ko: { fxT: '이펙트', fxAuto: '자동', fxLow: '낮음', fxMid: '중간', fxHigh: '높음', fxShake: '화면 흔들림', fxFlash: '화면 플래시', fxRm: '시스템의 동작 줄이기 설정이 켜져 있어 흔들림·플래시가 꺼집니다' },
+    en: { fxT: 'Effects', fxAuto: 'Auto', fxLow: 'Low', fxMid: 'Mid', fxHigh: 'High', fxShake: 'Screen shake', fxFlash: 'Screen flash', fxRm: 'Reduced motion is on: shake and flash stay off' } };
+  for (const l in I18N) for (const k in FXTXT.en) I18N[l][k] = (FXTXT[l] || FXTXT.en)[k]; }
+function renderFxScr(){
+  $('fxTitle').textContent = t('fxT');
+  document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => { const q = b.dataset.fxq; b.textContent = t('fx' + q[0].toUpperCase() + q.slice(1)); b.classList.toggle('primary', fxSettings.q === q); });
+  const sh = document.querySelector('[data-fxshake]'), fl = document.querySelector('[data-fxflash]');
+  sh.textContent = `${t('fxShake')}: ${fxSettings.shake && !RM ? 'ON' : 'OFF'}`;
+  fl.textContent = `${t('fxFlash')}: ${fxSettings.flash && !RM ? 'ON' : 'OFF'}`;
+  sh.disabled = fl.disabled = RM;
+  $('fxRmNote').hidden = !RM; if (RM) $('fxRmNote').textContent = t('fxRm');
+}
+function fxApply(){ store.set('fw27_fxq', fxSettings.q); store.set('fw27_fxshake', fxSettings.shake); store.set('fw27_fxflash', fxSettings.flash); IMP = impNew(fxSettings.q === 'auto' ? null : fxSettings.q); renderFxScr(); }
+$('fxBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); renderFxScr(); $('fxScr').hidden = false; lbOpen = true; });
+$('fxClose').addEventListener('click', e => { e.stopPropagation(); $('fxScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden; });
+$('fxScr').addEventListener('pointerdown', e => { if (e.target === $('fxScr')) $('fxClose').click(); });
+document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); fxSettings.q = b.dataset.fxq; fxApply(); }));
+document.querySelector('[data-fxshake]').addEventListener('click', e => { e.stopPropagation(); fxSettings.shake = !fxSettings.shake; fxApply(); });
+document.querySelector('[data-fxflash]').addEventListener('click', e => { e.stopPropagation(); fxSettings.flash = !fxSettings.flash; fxApply(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause(); adPlaySync(); });
 
 function togglePause(){
@@ -4928,8 +4972,14 @@ renderVsBadge();
 
 /* ---------- loop ---------- */
 let last = performance.now();
+const fxFrameMs = []; let fxFrameI = 0;
 function loop(now){
   const rdt = Math.min(.034, (now - last)/1000); last = now;
+  if (fxSettings.q === 'auto' && state === 'play'){
+    fxFrameMs[fxFrameI++ % 120] = rdt * 1000;
+    if (fxFrameI % 120 === 0){ const srt = fxFrameMs.slice().sort((a, b) => a - b), p90 = srt[Math.floor(srt.length * .9)];
+      const q2 = fxQualityStep(IMP.q, p90); if (q2 !== IMP.q) IMP = impNew(q2); }
+  }
   if (state !== 'paused' && !(window.FW && window.FW.hold)) update(rdt);
   render(); drawHangarPreview(); musicTick(); tutTick(rdt); if (state === 'play' || state === 'dying' || state === 'over') vsTick(rdt);
   adPlaySync();
