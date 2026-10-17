@@ -538,6 +538,93 @@ window.FW_CONFIG = { supabaseUrl: 'https://ecjeyelgcqbliavwltbc.supabase.co', su
 <script>
 (() => {
 'use strict';
+/* fx:start — generated from arcade-core/fx, do not edit by hand; run: node tools/sync-fx.mjs */
+// -- fx/particles.js --
+// Shared particle rules: pure stepping, no renderer coupling. Reused across arcade games.
+function makeParticle({ x, y, vx = 0, vy = 0, life = 1, g = 0, size = 3, color = '#fff', shape = 'dot' }) {
+  return Object.freeze({ x, y, vx, vy, life, g, size, color, shape });
+}
+
+function stepParticles(list, dt) {
+  const out = [];
+  for (const p of list) {
+    const life = p.life - dt;
+    if (life <= 0) continue;
+    const vy = p.vy + p.g * dt;
+    out.push({ ...p, x: p.x + p.vx * dt, y: p.y + vy * dt, vy, life });
+  }
+  return out;
+}
+
+// Low-spec mode halves particle counts (never below 1).
+function spawnCount(n, lowSpec) {
+  return lowSpec ? Math.max(1, Math.ceil(n / 2)) : n;
+}
+// -- fx/shield.js --
+// Shield aura: one rotating ring per equipped layer; a hit breaks one layer into hex shards.
+
+const RING_SPEED = 1.6; // rad/s
+
+function ringPhases(t, layers) {
+  const out = [];
+  for (let i = 0; i < layers; i++) out.push(t * RING_SPEED + (i * 2 * Math.PI) / Math.max(1, layers));
+  return out;
+}
+
+// 6 shards per layer broken, flying outward along hex directions.
+function hexBurst(x, y, layers = 1) {
+  const out = [];
+  for (let l = 0; l < layers; l++) for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * 2 * Math.PI + l * 0.3;
+    const sp = 120 + l * 40;
+    out.push(makeParticle({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.45, g: 260, size: 5, shape: 'hex' }));
+  }
+  return out;
+}
+
+function shieldHit(state, at) {
+  const layers = Math.max(0, (state.layers | 0) - 1);
+  return { ...state, layers, burst: hexBurst(at.x, at.y, 1) };
+}
+// -- fx/xp.js --
+// XP-boost visuals: colored trail behind the unit + rising "+N XP" popups.
+function pushTrail(trail, point, max = 20) {
+  const out = trail.length >= max ? trail.slice(trail.length - max + 1) : trail.slice();
+  out.push(point);
+  return out;
+}
+
+function xpPopup(amount) {
+  return Object.freeze({ text: `+${amount} XP`, vy: -40, life: 0.8 });
+}
+// -- fx/juice.js --
+// Common game-feel helpers: screen shake, 60ms hitstop, collision flash, coin bounce.
+function rnd(seed) { // deterministic noise for testable shake
+  const s = Math.sin(seed * 12.9898) * 43758.5453;
+  return (s - Math.floor(s)) * 2 - 1;
+}
+
+function shakeOffset(t, magnitude, duration, seed = 0) {
+  if (t >= duration) return { x: 0, y: 0 };
+  const k = magnitude * (1 - t / duration);
+  return { x: rnd(seed + t * 61) * k, y: rnd(seed + 7 + t * 53) * k };
+}
+
+function hitstop(now, ms = 60) {
+  const until = now + ms;
+  return { until, frozen: t => t <= until };
+}
+
+function flashAlpha(t, duration) {
+  return t >= duration ? 0 : 1 - t / duration;
+}
+
+// Overshoot to ~1.3x around t=0.15s, settle to 1 by t≈0.5s (damped spring-ish).
+function coinBounceScale(t) {
+  return 1 + 0.35 * Math.exp(-6 * t) * Math.sin(10 * t);
+}
+const FX = { makeParticle, stepParticles, spawnCount, ringPhases, hexBurst, shieldHit, pushTrail, xpPopup, shakeOffset, hitstop, flashAlpha, coinBounceScale };
+/* fx:end */
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 const $ = id => document.getElementById(id);
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
