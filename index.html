@@ -197,7 +197,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .hg-skill b{color:var(--ink)}
 .hg-skill.ult{color:hsl(300,100%,82%)}
 #over:not([hidden]) .card{animation:cardIn .5s cubic-bezier(.2,1.5,.4,1) both}
-@keyframes cardIn{from{opacity:0;transform:translateY(40px) scale(.88)}to{opacity:1;transform:none}}
+@keyframes cardIn{from{opacity:0;transform:scale(1.35)}70%{opacity:1;transform:scale(.96)}to{opacity:1;transform:none}}
 .rank.stamp{animation:stamp .42s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes stamp{0%{opacity:0;transform:scale(2.8) rotate(-14deg)}60%{opacity:1;transform:scale(.9) rotate(-3deg)}100%{transform:scale(1) rotate(-4deg)}}
 .newbest:not([hidden]){animation:nbGlow .9s ease-in-out infinite alternate}
@@ -1401,7 +1401,7 @@ const fxHw = { cores: navigator.hardwareConcurrency || 4, mem: navigator.deviceM
 function impNew(q){
   q = q || fxQualityPick(fxHw, fxSettings.q);
   return { q, feat: fxFeatures(q, fxSettings, RM, fairMode()), pool: fxPool(FXCFG.pool[q]), shk: { ox: 0, oy: 0, vx: 0, vy: 0 },
-    flashCol: [0, 0, 100], flashA: 0, waves: [], caT: 0, slow: 0, gray: 0, deathT: -1, comboLvl: 0, coinPulse: 0, crackT: 0, bufs: null, rng: fxRng((Math.random() * 1e9) | 0) };
+    flashCol: [0, 0, 100], flashA: 0, waves: [], caT: 0, slow: 0, gray: 0, deathT: -1, comboLvl: 0, coinPulse: 0, crackT: 0, rayT: 0, stampT: -1, glassT: 0, bufs: null, rng: fxRng((Math.random() * 1e9) | 0) };
 }
 let IMP;
 function impHit(o){
@@ -1417,7 +1417,7 @@ function impHit(o){
 function impBurst(x, y, col, layers, mul = 1){
   for (const layer of layers){
     const L = FXCFG.layers[layer];
-    const n = Math.round((L.n[0] + IMP.rng() * (L.n[1] - L.n[0])) * IMP.feat.partMul * mul);
+    const n = Math.round((L.n[0] + IMP.rng() * (L.n[1] - L.n[0])) * IMP.feat.partMul * mul * (IMP.comboLvl >= 3 ? FXCFG.combo.partMulL3 : 1));
     for (const sp of burstSpec(layer, n, IMP.rng, FXCFG)){
       poolSpawn(IMP.pool, { x, y, vx: Math.cos(sp.ang) * sp.sp, vy: Math.sin(sp.ang) * sp.sp, size: sp.size, life: sp.life,
         drag: sp.drag, grav: sp.grav, rot: sp.rot, vr: sp.vr, layer, col, bounce: FXCFG.death.debrisBounce });
@@ -1433,10 +1433,10 @@ function impFx(ev, o = {}){
     case 'shieldMulti': break;
     case 'speed': break;
     case 'death': impHit({ level: 'heavy', dirX: -1, dirY: .4, wave: true, chroma: true, x: bird.x, y: bird.y }); break;
-    case 'record': impBurst(bird.x, bird.y - 20, [45, 100, 60], ['core', 'spark', 'debris']); break;
+    case 'record': impBurst(bird.x, bird.y - 20, [45, 100, 60], ['core', 'spark', 'debris']); IMP.rayT = 1.2; IMP.stampT = 0; break;
     case 'coin': IMP.coinPulse = 1; impBurst(bird.x, bird.y, [48, 100, 62], ['spark'], .3); break;
-    case 'comboBreak': break;
-    case 'overdrive': impHit({ level: 'mid', col: [300, 100, 68], chroma: true }); break;
+    case 'comboBreak': IMP.glassT = .4; impBurst(LW / 2, 112, [0, 0, 80], ['debris'], .8); break;
+    case 'overdrive': impHit({ level: 'mid', col: [300, 100, 68], chroma: true }); banner('OVERDRIVE', [300, 100, 68], 1.4); break;
   }
   const hp = hapticFor(FXCFG.events[ev] && FXCFG.events[ev].haptic, HAPTIC);
   if (hp != null) haptic(hp);
@@ -1450,12 +1450,41 @@ function impUpdate(rdt){
   IMP.flashA = Math.max(0, IMP.flashA - rdt * 8);
   IMP.coinPulse = Math.max(0, IMP.coinPulse - rdt * 3);
   IMP.crackT = Math.max(0, IMP.crackT - rdt);
+  IMP.rayT = Math.max(0, IMP.rayT - rdt);
+  IMP.glassT = Math.max(0, IMP.glassT - rdt);
+  if (IMP.stampT >= 0) IMP.stampT += rdt;
 }
 function impBufs(){
   if (IMP.bufs) return IMP.bufs;
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(2, w | 0); c.height = Math.max(2, h | 0); return c; };
   IMP.bufs = { box: mk(1280, 1280) };   // region scratch — post effects never read the full frame (CPU-raster budget)
   return IMP.bufs;
+}
+function impHud(){
+  if (IMP.comboLvl >= 2 && state === 'play'){
+    const beat = .5 + .5 * Math.sin(T * 6.283 * FXCFG.combo.beatHz);
+    ctx.save(); ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = .12 * beat * (IMP.comboLvl >= 3 ? 1.4 : 1);
+    ctx.fillStyle = hsl([(T * 120) % 360, 100, 60]); ctx.fillRect(0, 0, LW, LH); ctx.restore();
+  }
+  if (IMP.rayT > 0 && IMP.feat.flash){
+    const a = Math.min(.2, IMP.rayT * .2);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(LW / 2, LH * .3); ctx.rotate((1.2 - IMP.rayT) * .6);
+    ctx.fillStyle = `hsla(45,100%,70%,${a.toFixed(3)})`;
+    for (let i = 0; i < 12; i++){ ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(LW, -LW * .06); ctx.lineTo(LW, LW * .06); ctx.fill(); }
+    ctx.restore();
+  }
+  if (IMP.stampT >= 0 && IMP.stampT < 1.4){
+    const k = Math.min(1, IMP.stampT / .25), sc = 2.2 - 1.2 * easeOutBack(k);
+    ctx.save(); ctx.translate(LW / 2, LH * .42); ctx.rotate(-.14); ctx.scale(sc, sc); ctx.globalAlpha = Math.min(1, (1.4 - IMP.stampT) * 3);
+    ctx.font = `34px Bungee, ${SYS}`; ctx.textAlign = 'center';
+    ctx.fillStyle = 'hsl(48,100%,62%)'; ctx.shadowColor = 'hsl(48,100%,60%)'; ctx.shadowBlur = 24; ctx.fillText('NEW RECORD', 0, 0);
+    ctx.restore();
+  } else if (IMP.stampT >= 1.4) IMP.stampT = -1;
+  if (IMP.glassT > 0){
+    ctx.save(); ctx.translate(LW / 2, 112); ctx.strokeStyle = `hsla(0,0%,95%,${Math.min(.8, IMP.glassT * 2).toFixed(3)})`; ctx.lineWidth = 1.3;
+    for (let i = 0; i < 7; i++){ const an = i * .9 + .3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(an) * (26 + i * 5), Math.sin(an) * (18 + i * 4)); ctx.stroke(); }
+    ctx.restore();
+  }
 }
 function impPost(){
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -2059,7 +2088,7 @@ const shards = (x,y,col,n) => bits(x,y,n,()=>col,420,.8,0);
 function addScore(p){
   score += p; scorePunch = 1;
   if (!newBestShown && runBestRef > 0 && score > runBestRef){
-    newBestShown = true; banner(t('newRec'), [48,100,62], 1.7); SFX.fanfare(); haptic('newBest'); confetti(bird.x + 60, bird.y, 46);
+    newBestShown = true; banner(t('newRec'), [48,100,62], 1.7); SFX.fanfare(); confetti(bird.x + 60, bird.y, 46); impFx('record'); IMP.rayT = 1.2; IMP.stampT = 0;
   }
 }
 
@@ -2083,7 +2112,7 @@ function die(why = 'gate'){
     banner(t('fx_rewind'), [40,90,62], 1.1); haptic('fever'); tone(1400, .5, 'sine', .14, -1200); tone(300, .5, 'triangle', .1, 900, .05);
     return;
   }
-  state = 'dying'; deathT = 0; SFX.die(); haptic('death'); vsOnMyDeath();
+  state = 'dying'; deathT = 0; IMP.deathT = 0; impFx('death'); SFX.die(); vsOnMyDeath();
   shake = 18; flash = .6; hitstop = .14;
   cam.fx = bird.x; cam.fy = bird.y; cam.tz = 1.32; ring(bird.x, bird.y, LW, [0,100,62], .8, 10); banners = [];
   if (!deathFx(B.id)) for (let i=0;i<46;i++){ const a = Math.random()*6.28, s = 80+Math.random()*360; part(bird.x, bird.y, Math.cos(a)*s, Math.sin(a)*s, .9+Math.random()*.6, Math.random()<.5?pal.a:pal.b, 2+Math.random()*3); }
@@ -2108,7 +2137,7 @@ function openCont(){
 function closeCont(go){
   clearInterval(contTimer); $('contScr').hidden = true;
   if (!go){ showOver(); return; }
-  contUsed = true; state = 'play'; FX.fogT = 0; overT = weightT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; setGod(2.5); hurtT = 0;
+  contUsed = true; state = 'play'; IMP = impNew(IMP.q); FX.fogT = 0; overT = weightT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; setGod(2.5); hurtT = 0;
   cam.tz = 1; cam.fx = LW/2; cam.fy = LH/2;
   for (const g of gates) if (Math.abs(g.x + g.w/2 - bird.x) < 140) g.broken = true;
   $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false; $('ultBtn').hidden = !ultOn();
@@ -2216,7 +2245,7 @@ function update(rdt){
   if (hitstop > 0){ hitstop -= rdt; rdt *= .05; }
   const target = Math.min(slowT > 0 ? POW.slowScale : 1, FX.ultSlow || 1, IMP.slow > 0 ? FXCFG.slowmo.scale : 1);   // PULSAR's ultimate slows the world further than the slow power-up
   timeScale += (target - timeScale) * Math.min(1, rdt*6);
-  const dt = rdt * (state === 'dying' ? .35 : timeScale);
+  const dt = rdt * (state === 'dying' ? deathPhase(deathT, FXCFG).scale : timeScale);
   T += dt * (freezeT > 0 && state === 'play' ? .03 : 1); if (FX.hold && state === 'play') FX.still += dt;   // KRAKEN's held gates: their clock falls behind by exactly what T gains (KRAKEN has no time stop)
   shake = Math.max(0, shake - rdt*40); flash = Math.max(0, flash - rdt*1.8); FX.amb = Math.max(0, FX.amb - rdt*12);
   FX.castT = Math.max(0, FX.castT - rdt); FX.sigT = Math.max(0, FX.sigT - rdt); FX.perfT = Math.max(0, FX.perfT - rdt);   // up here so they also run out while dying
@@ -2253,7 +2282,16 @@ function update(rdt){
     return;
   }
   if (state === 'dying'){
-    deathT += rdt; bird.vy += 1600*dt; bird.y = Math.min(GROUND - bird.r, bird.y + bird.vy*dt); bird.rot += 8*dt;
+    deathT += rdt;
+    { const ph = deathPhase(deathT, FXCFG);
+      if (ph.explode && IMP.deathT >= 0){ IMP.deathT = -1;
+        if (IMP.feat.flash){ IMP.flashCol = [0, 0, 100]; IMP.flashA = FXCFG.flash.alpha; }
+        if (IMP.feat.shake) IMP.shk = shakeKick(IMP.shk, -1, .4, FXCFG.shake.ampPx.heavy);
+        impBurst(bird.x, bird.y, pal.a.slice(), ['core', 'spark', 'smoke', 'debris'], 1.4);
+      }
+      IMP.gray = ph.gray;
+    }
+    bird.vy += 1600*dt; bird.y = Math.min(GROUND - bird.r, bird.y + bird.vy*dt); bird.rot += 8*dt;
     if (deathT > 1.1){ if (canContinue()) openCont(); else showOver(); }
     return;
   }
@@ -2382,6 +2420,7 @@ function update(rdt){
         dashMeter = Math.min(1, dashMeter + .34*B.dash); skillCharge = Math.min(1, skillCharge + (FX.resoT > 0 || sure ? 0 : PK.perfCharge));
         if (PK.veil && !sure && FX.threads < 3 && ++FX.threadP >= PK.veil){ FX.threadP = 0; FX.threads++; sigFx(B.id, 'thread', g); }   // AURORA: every PK.veil Perfects weave one thread, three at most; a full set stops counting
         SFX.perfect(combo); perfectFx(B.id, g); flash = Math.max(flash, .18); hitstop = .06; shake = Math.max(shake, 4);
+        { const pl = comboLevel(combo, tier, FXCFG); if (pl >= 4 && IMP.comboLvl < 4) impFx('overdrive'); IMP.comboLvl = pl; }
         impFx('near'); if (g.minClear < perfWin() * FXCFG.near.closeFrac) pop('CLOSE!', bird.x + 10, bird.y - 52, [FXCFG.near.flashHue, 100, 72], true);
         g.flash = 1; cam.z = Math.max(cam.z, 1.035);
         { const cy2 = gY(g), gp2 = gGap(g); ring(g.x + g.w, bird.y < cy2 ? cy2 - gp2/2 : cy2 + gp2/2, 95, tier === 2 ? [300,100,68] : pal.a, .45, 3); }
@@ -2394,6 +2433,7 @@ function update(rdt){
           if (combo > 1) pop(t('comboBreak'), bird.x, bird.y+36, [0,0,70]);
           if (tier === 2) banner(t('feverEnd'), [0,0,78], .9, false);
           combo = PK.comboKeep ? Math.floor(combo * PK.comboKeep) : 0; tier = combo >= Math.min(5, PK.feverAt - 3) ? 1 : 0; addScore(1); SFX.pass(); if (combo > 0) sigFx(B.id, 'keep', g);
+          if (maxCombo > 4) impFx('comboBreak'); IMP.glassT = maxCombo > 4 ? .4 : 0; IMP.comboLvl = comboLevel(combo, tier, FXCFG);
         }
         dashMeter = Math.min(1, dashMeter + .08*B.dash); ultFill(0, live);
       }
@@ -2625,6 +2665,7 @@ function render(){
     edge(0,0,w,0, 0,0,w,LH); edge(LW,0,LW-w,0, LW-w,0,w,LH); edge(0,0,0,w, 0,0,LW,w); edge(0,LH,0,LH-w, 0,LH-w,LW,w);
   }
   pillBot = 0; if (state === 'play' || state === 'paused' || state === 'dying') drawHUD();
+  impHud();
   for (const b of banners){
     const k = b.t / b.dur, inT = .16, outT = .2;
     const e = k < inT ? 1 - Math.pow(1 - k/inT, 3) : k > 1 - outT ? 1 - (k - (1-outT))/outT : 1;
@@ -4903,7 +4944,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter, lowGravT, inkT, overT, weightT, fogT: FX.fogT}; },   // QA only: timers a player reads off the screen (lowGravT: the bot's flight model follows NIMBUS's glide; inkT: KRAKEN's ink cloak log; overT / weightT / fogT: the hazards)
   haz(k, dx, dy){ const h = {x: bird.x + (dx || 0), y: bird.y + (dy || 0), k, got:false, t:0}; if (dx == null) hazHit(h); else hazs.push(h); },   // QA only: a hazard as if touched right now, or one placed dx / dy from the bird
   get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
-  setFxQuality(q){ fxSettings.q = q; IMP = impNew(q); }, get imp(){ return IMP; }, fx: impFx, get fxEvents(){ return FX_EVENTS.slice(); },
+  setFxQuality(q){ fxSettings.q = q; IMP = impNew(q); }, comboLevelOf: (c, tr) => comboLevel(c, tr, FXCFG), get imp(){ return IMP; }, fx: impFx, get fxEvents(){ return FX_EVENTS.slice(); },
   hold: false, step(dt, n){ for (let i = 0; i < (n || 1); i++) update(dt); },
   selfTest(){
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b), S = [0,9,10,24,25,39,40,49], fails = [];

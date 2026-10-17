@@ -40,4 +40,14 @@ for (const ev of await page.evaluate(() => FW.fxEvents)) {
 }
 const cap = await page.evaluate(() => { FW.setFxQuality('low'); for (let i = 0; i < 50; i++) FW.fx('death'); return [FW.imp.pool.live, FW.imp.pool.items.length]; });
 assert.ok(cap[0] <= cap[1]);
+
+// Task 4: death look + clean restart + combo levels
+await page.reload(); await page.waitForFunction(() => window.FW && window.FW.imp);
+await page.click('#startBtn'); await page.waitForTimeout(400);
+await page.click('#stageList button').catch(() => {}); await page.waitForTimeout(600);
+const d = await page.evaluate(() => { FW.kill(); const s = []; for (let i = 0; i < 95; i++){ FW.step(1 / 60, 1); s.push(FW.imp.gray); } return s; });
+assert.ok(d.some(g => g > .9), 'greyscale reached');
+const restarted = await page.evaluate(async () => { document.getElementById('retryBtn').click(); await new Promise(r => setTimeout(r, 500)); return [FW.imp.gray, FW.imp.slow]; });
+assert.deepEqual(restarted, [0, 0], 'no leftover death look');
+assert.equal(await page.evaluate(() => FW.comboLevelOf(30, 2)), 4);
 console.log('fx-smoke OK'); await b.close();
