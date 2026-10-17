@@ -196,7 +196,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .hg-skill{margin:0;font-size:12.5px;line-height:1.45;color:var(--gold);text-wrap:pretty}
 .hg-skill b{color:var(--ink)}
 .hg-skill.ult{color:hsl(300,100%,82%)}
-#over:not([hidden]) .card{animation:cardIn .5s cubic-bezier(.2,1.5,.4,1) both}
+#over:not([hidden]) .card{animation:cardIn .38s cubic-bezier(.2,1.5,.4,1) both}
 @keyframes cardIn{from{opacity:0;transform:scale(1.35)}70%{opacity:1;transform:scale(.96)}to{opacity:1;transform:none}}
 .rank.stamp{animation:stamp .42s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes stamp{0%{opacity:0;transform:scale(2.8) rotate(-14deg)}60%{opacity:1;transform:scale(.9) rotate(-3deg)}100%{transform:scale(1) rotate(-4deg)}}
@@ -1278,7 +1278,6 @@ function resize(){
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
   scale = cv.height / LH; LW = cv.width / scale;
-  if (IMP) IMP.bufs = null;
   buildSkyline();
 }
 addEventListener('resize', resize);
@@ -1426,7 +1425,7 @@ const fxHw = { cores: navigator.hardwareConcurrency || 4, mem: navigator.deviceM
 function impNew(q){
   q = q || fxQualityPick(fxHw, fxSettings.q);
   return { q, feat: fxFeatures(q, fxSettings, RM, fairMode()), pool: fxPool(FXCFG.pool[q]), shk: { ox: 0, oy: 0, vx: 0, vy: 0 },
-    flashCol: [0, 0, 100], flashA: 0, waves: [], caT: 0, slow: 0, gray: 0, deathT: -1, comboLvl: 0, coinPulse: 0, crackT: 0, rayT: 0, stampT: -1, glassT: 0, bufs: null, rng: fxRng((Math.random() * 1e9) | 0) };
+    flashCol: [0, 0, 100], flashA: 0, waves: [], caT: 0, slow: 0, gray: 0, deathT: -1, comboLvl: 0, coinPulse: 0, crackT: 0, rayT: 0, stampT: -1, glassT: 0, rng: fxRng((Math.random() * 1e9) | 0) };
 }
 let IMP;
 function impHit(o){
@@ -1479,14 +1478,8 @@ function impUpdate(rdt){
   IMP.glassT = Math.max(0, IMP.glassT - rdt);
   if (IMP.stampT >= 0) IMP.stampT += rdt;
 }
-function impBufs(){
-  if (IMP.bufs) return IMP.bufs;
-  const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(2, w | 0); c.height = Math.max(2, h | 0); return c; };
-  IMP.bufs = { box: mk(1280, 1280) };   // region scratch — post effects never read the full frame (CPU-raster budget)
-  return IMP.bufs;
-}
 function impHud(){
-  if (IMP.comboLvl >= 2 && state === 'play'){
+  if (IMP.comboLvl >= 2 && state === 'play' && IMP.feat.flash){
     const beat = .5 + .5 * Math.sin(T * 6.283 * FXCFG.combo.beatHz);
     ctx.save(); ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = .12 * beat * (IMP.comboLvl >= 3 ? 1.4 : 1);
     ctx.fillStyle = hsl([(T * 120) % 360, 100, 60]); ctx.fillRect(0, 0, LW, LH); ctx.restore();
@@ -1505,6 +1498,7 @@ function impHud(){
     ctx.fillStyle = 'hsl(48,100%,62%)'; ctx.shadowColor = 'hsl(48,100%,60%)'; ctx.shadowBlur = 24; ctx.fillText('NEW RECORD', 0, 0);
     ctx.restore();
   } else if (IMP.stampT >= 1.4) IMP.stampT = -1;
+  if (IMP.stampT >= .25 && IMP.stampT < .25 + 1/30 && IMP.feat.shake) IMP.shk = shakeKick(IMP.shk, 0, 1, FXCFG.shake.ampPx.mid);
   if (IMP.glassT > 0){
     ctx.save(); ctx.translate(LW / 2, 112); ctx.strokeStyle = `hsla(0,0%,95%,${Math.min(.8, IMP.glassT * 2).toFixed(3)})`; ctx.lineWidth = 1.3;
     for (let i = 0; i < 7; i++){ const an = i * .9 + .3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(an) * (26 + i * 5), Math.sin(an) * (18 + i * 4)); ctx.stroke(); }
@@ -1515,44 +1509,21 @@ function impPost(){
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   const W2 = cv.width, H2 = cv.height;
   if (IMP.feat.distort) for (const w of IMP.waves){
-    // refraction approximation confined to the ring's own bounding box
-    const k = w.t / FXCFG.wave.life, r = (20 + k * FXCFG.wave.maxR) * scale, wx = w.x * scale, wy = w.y * scale;
-    const bx0 = Math.max(0, wx - r - 4), by0 = Math.max(0, wy - r - 4), bw = Math.min(W2 - bx0, 2 * r + 8), bh2 = Math.min(H2 - by0, 2 * r + 8);
-    if (bw > 8 && bh2 > 8){
-      const { box } = impBufs(), bc = box.getContext('2d');
-      bc.clearRect(0, 0, box.width, box.height);
-      const cw = Math.min(1280, bw), ch = Math.min(1280, bh2);
-      bc.drawImage(cv, bx0, by0, cw, ch, 0, 0, cw, ch);
-      ctx.save(); ctx.beginPath(); ctx.arc(wx, wy, r, 0, 6.283); ctx.arc(wx, wy, Math.max(1, r - 14 * scale), 0, 6.283, true); ctx.clip();
-      const sR = FXCFG.wave.refract;
-      ctx.drawImage(box, 0, 0, cw, ch, bx0 + (wx - bx0) * (1 - sR), by0 + (wy - by0) * (1 - sR), cw * sR, ch * sR);
-      ctx.restore();
-    }
-    ctx.strokeStyle = `rgba(255,255,255,${(.35 * (1 - k)).toFixed(3)})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(wx, wy, r, 0, 6.283); ctx.stroke();
+    // shockwave: expanding double ring + trailing dashed ring — no frame copies on the CPU-raster budget (review C1)
+    const k = w.t / FXCFG.wave.life, r = (20 + k * FXCFG.wave.maxR) * scale, wx = w.x * scale, wy = w.y * scale, aW = (1 - k);
+    ctx.save();
+    ctx.strokeStyle = `rgba(255,255,255,${(.4 * aW).toFixed(3)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(wx, wy, r, 0, 6.283); ctx.stroke();
+    ctx.strokeStyle = `rgba(255,255,255,${(.18 * aW).toFixed(3)})`; ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(wx, wy, Math.max(1, r - 9 * scale), 0, 6.283); ctx.stroke();
+    ctx.setLineDash([6, 10]); ctx.lineDashOffset = -w.t * 300; ctx.strokeStyle = `rgba(180,220,255,${(.25 * aW).toFixed(3)})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(wx, wy, r * .72, 0, 6.283); ctx.stroke();
+    ctx.restore();
   }
   if (IMP.feat.bloom && (IMP.flashA > 0 || IMP.waves.length || IMP.caT > 0)){
-    // bloom approximation: additive radial halo at the action centre — no frame readback
     const w0 = IMP.waves[0], bxc = (w0 ? w0.x : bird.x) * scale, byc = (w0 ? w0.y : bird.y) * scale, R = 190 * scale;
     const g = ctx.createRadialGradient(bxc, byc, R * .1, bxc, byc, R);
     const aB = FXCFG.bloom.alpha * Math.max(IMP.flashA, IMP.caT > 0 ? .4 : 0, IMP.waves.length ? .5 : 0);
     g.addColorStop(0, `rgba(255,255,255,${aB.toFixed(3)})`); g.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g; ctx.fillRect(bxc - R, byc - R, R * 2, R * 2); ctx.restore();
-  }
-  if (IMP.feat.chroma && (IMP.caT > 0 || (IMP.feat.chromaIdle && IMP.comboLvl >= 4))){
-    // RGB split confined to a box around the player — a full-screen split needs a frame read we cannot afford
-    const a = IMP.caT > 0 ? Math.min(.35, IMP.caT / FXCFG.chroma.dur * .35) : FXCFG.chroma.idleAlpha;
-    const px = FXCFG.chroma.px * scale, half = 210 * scale;
-    const bx0 = Math.max(0, bird.x * scale - half), by0 = Math.max(0, bird.y * scale - half);
-    const bw = Math.min(W2 - bx0, half * 2), bh2 = Math.min(H2 - by0, half * 2);
-    if (bw > 8 && bh2 > 8){
-      const { box } = impBufs(), bc = box.getContext('2d');
-      bc.clearRect(0, 0, box.width, box.height);
-      bc.drawImage(cv, bx0, by0, bw, bh2, 0, 0, Math.min(box.width, bw), Math.min(box.height, bh2));
-      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
-      ctx.drawImage(box, 0, 0, Math.min(box.width, bw), Math.min(box.height, bh2), bx0 - px, by0, bw, bh2);
-      ctx.drawImage(box, 0, 0, Math.min(box.width, bw), Math.min(box.height, bh2), bx0 + px, by0, bw, bh2);
-      ctx.restore();
-    }
   }
   if (IMP.flashA > 0 && IMP.feat.flash){
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = hsl(IMP.flashCol, IMP.flashA); ctx.fillRect(0, 0, W2, H2); ctx.restore();
@@ -1918,7 +1889,7 @@ function renderFxScr(){
   $('fxRmNote').hidden = !RM; if (RM) $('fxRmNote').textContent = t('fxRm');
 }
 function fxApply(){ store.set('fw27_fxq', fxSettings.q); store.set('fw27_fxshake', fxSettings.shake); store.set('fw27_fxflash', fxSettings.flash); IMP = impNew(fxSettings.q === 'auto' ? null : fxSettings.q); renderFxScr(); }
-$('fxBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); renderFxScr(); $('fxScr').hidden = false; lbOpen = true; });
+$('fxBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); if (state === 'play') togglePause(); renderFxScr(); $('fxScr').hidden = false; lbOpen = true; });
 $('fxClose').addEventListener('click', e => { e.stopPropagation(); $('fxScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden; });
 $('fxScr').addEventListener('pointerdown', e => { if (e.target === $('fxScr')) $('fxClose').click(); });
 document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); fxSettings.q = b.dataset.fxq; fxApply(); }));
@@ -2476,8 +2447,10 @@ function update(rdt){
         } else {
           if (combo > 1) pop(t('comboBreak'), bird.x, bird.y+36, [0,0,70]);
           if (tier === 2) banner(t('feverEnd'), [0,0,78], .9, false);
+          const comboWas = combo;
           combo = PK.comboKeep ? Math.floor(combo * PK.comboKeep) : 0; tier = combo >= Math.min(5, PK.feverAt - 3) ? 1 : 0; addScore(1); SFX.pass(); if (combo > 0) sigFx(B.id, 'keep', g);
-          if (maxCombo > 4) impFx('comboBreak'); IMP.glassT = maxCombo > 4 ? .4 : 0; IMP.comboLvl = comboLevel(combo, tier, FXCFG);
+          if (comboWas > 4) impFx('comboBreak');
+          IMP.comboLvl = comboLevel(combo, tier, FXCFG); impFx('gate');
         }
         dashMeter = Math.min(1, dashMeter + .08*B.dash); ultFill(0, live);
       }
@@ -2551,7 +2524,7 @@ function breakShield(dirY){
 function render(){
   ctx.setTransform(1,0,0,1,0,0);
   ctx.fillStyle = '#000'; ctx.fillRect(0,0,cv.width,cv.height);
-  const sk = RM ? 0 : shake + FX.amb;
+  const sk = IMP.feat.shake ? shake + FX.amb : 0;
   const z = RM ? 1 : cam.z;
   ctx.setTransform(scale*z,0,0,scale*z, cam.fx*(1-z)*scale + ((Math.random()-.5)*sk + IMP.shk.ox*IMP.feat.shake)*scale, cam.fy*(1-z)*scale + ((Math.random()-.5)*sk + IMP.shk.oy*IMP.feat.shake)*scale);
 
@@ -2582,8 +2555,9 @@ function render(){
   }
   skyEvent();   // unit sky effects sit behind the gates so they never hide a gap
   if ((dashT > 0 || potionT > 0 || rushT > 0 || feverGlow > .3 || IMP.comboLvl >= 3) && !RM){
+    const band = !(dashT > 0 || feverGlow > .3);   // speed states and L3 keep the lines to the top/bottom 30% bands
     ctx.strokeStyle = dashT > 0 ? hsl(B.wingCol,.35) : hsl([(T*160)%360,100,70],.18); ctx.lineWidth = 2;
-    for (let i=0;i<14;i++){ const y = (i*47 + T*900) % GROUND, x = (LW + 40) - ((T*1800 + i*173) % (LW + 260)); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 70 + (i%3)*30, y); ctx.stroke(); }
+    for (let i=0;i<14;i++){ let y = (i*47 + T*900) % GROUND; if (band) y = y < GROUND/2 ? y * .3 : GROUND - (GROUND - y) * .3; const x = (LW + 40) - ((T*1800 + i*173) % (LW + 260)); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 70 + (i%3)*30, y); ctx.stroke(); }
   }
 
   if (state === 'menu') drawFlock(1/60);
@@ -2671,6 +2645,7 @@ function render(){
   }
 
   if (state !== 'dying' && state !== 'over' && state !== 'cont') drawBird();
+  if (IMP.comboLvl >= 3 && state === 'play' && !RM){ ctx.save(); ctx.strokeStyle = hsl([(T*200)%360,100,66], .5); ctx.lineWidth = 2; ctx.setLineDash([10, 14]); ctx.lineDashOffset = -T*80; ctx.beginPath(); ctx.arc(bird.x, bird.y, bird.r*2.6, 0, 6.283); ctx.stroke(); ctx.restore(); }
   drawRival();
 
   for (const p of pops){
@@ -2699,7 +2674,7 @@ function render(){
     vd.addColorStop(0,'rgba(0,0,0,0)'); vd.addColorStop(1, `rgba(255,40,70,${danger*(.25 + .2*pz)})`); ctx.fillStyle = vd; ctx.fillRect(0,0,LW,LH);
     if (danger > .4){ ctx.save(); ctx.font = `22px Bungee, ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(255,70,90,${.6 + .4*pz})`; ctx.shadowColor = 'rgba(255,40,70,.9)'; ctx.shadowBlur = 14; ctx.fillText('!', bird.x, bird.y - bird.r*2.4); ctx.restore(); }
   }
-  if (flash > 0 && !RM){ ctx.fillStyle = `rgba(255,255,255,${flash*.35})`; ctx.fillRect(0,0,LW,LH); }
+  if (flash > 0 && IMP.feat.flash){ ctx.fillStyle = `rgba(255,255,255,${flash*.35})`; ctx.fillRect(0,0,LW,LH); }
 
   impPost();
   ctx.setTransform(scale,0,0,scale,0,0);
@@ -3272,6 +3247,14 @@ function drawBird(){
   ctx.rotate(bird.rot); ctx.scale(vs*(1 - .12*squash), vs*(1 + .22*squash));
   const o = {lite:false, pose:0, vy:bird.vy}; if (U.opt) U.opt(o);
   drawShape(ctx, B, bird.wing, dashT > 0 ? B.wingCol : tier === 2 ? [(T*240)%360,100,64] : (B.uiCol || B.col), o); unitFront(B);
+  if (IMP.feat.chroma && (IMP.caT > 0 || (IMP.feat.chromaIdle && IMP.comboLvl >= 4))){
+    // chromatic split on the subject only — a full-frame split needs a frame copy we cannot afford (review C1)
+    const px = FXCFG.chroma.px, aC = IMP.caT > 0 ? Math.min(.4, IMP.caT / FXCFG.chroma.dur * .4) : FXCFG.chroma.idleAlpha;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = aC;
+    ctx.translate(-px, 0); drawShape(ctx, B, bird.wing, [185, 100, 60], o);
+    ctx.translate(px * 2, 0); drawShape(ctx, B, bird.wing, [340, 100, 60], o);
+    ctx.restore();
+  }
   ctx.restore();
 }
 /* ---------- unit fx: state-dependent looks and moments ----------

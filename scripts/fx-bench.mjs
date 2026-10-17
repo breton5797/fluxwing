@@ -17,6 +17,7 @@ const res = await page.evaluate(async q => {
   await new Promise(r => setTimeout(r, 1500));
   window.FW.hold = true;
   window.FW.cast();                       // a frame with plenty going on
+  if (window.FW.fx){ window.FW.fx('shieldHit'); window.FW.fx('overdrive'); }   // post effects active (waves/chroma/bloom) — review C1
   const ms = [];
   for (let i = 0; i < 200; i++){ const t0 = performance.now(); window.FW.dbg.render(); ms.push(performance.now() - t0); }
   ms.sort((a, b) => a - b);

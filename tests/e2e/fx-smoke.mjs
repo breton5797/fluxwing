@@ -21,6 +21,7 @@ await page.setViewportSize({ width: 390, height: 844 });
 await page.reload();
 await page.waitForFunction(() => window.FW);
 await page.click('#dailyBtn'); await page.waitForTimeout(600);
+assert.equal(await page.evaluate(() => FW.mode), 'daily');
 const fair = await page.evaluate(() => { FW.fx('near'); return FW.imp.slow; });
 assert.equal(fair, 0, 'no slowmo in daily');
 assert.deepEqual(errors, []);
@@ -38,8 +39,8 @@ for (const ev of await page.evaluate(() => FW.fxEvents)) {
   const r = await page.evaluate(ev => { FW.fx(ev); FW.step(1 / 60, 10); FW.dbg.render(); return FW.imp.pool.live; }, ev);
   assert.ok(Number.isInteger(r), ev);
 }
-const cap = await page.evaluate(() => { FW.setFxQuality('low'); for (let i = 0; i < 50; i++) FW.fx('death'); return [FW.imp.pool.live, FW.imp.pool.items.length]; });
-assert.ok(cap[0] <= cap[1]);
+const cap = await page.evaluate(() => { FW.setFxQuality('low'); for (let i = 0; i < 60; i++) FW.fx('shieldHit'); return [FW.imp.pool.live, FW.imp.pool.items.length]; });
+assert.ok(cap[0] > 0 && cap[0] <= cap[1], 'pool fills but never grows: ' + cap);
 
 // Task 4: death look + clean restart + combo levels
 await page.reload(); await page.waitForFunction(() => window.FW && window.FW.imp);
@@ -72,4 +73,11 @@ await page.goto(`${base}/index.html`);
 await page.waitForTimeout(400);
 assert.equal(await page.$('#fxDev'), null);
 assert.equal(await page.evaluate(() => typeof window.FW), 'undefined');
+
+// AC7: reduced motion kills shake, flash and slowmo
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.goto(`${base}/index.html#dev`); await page.reload();
+await page.waitForFunction(() => window.FW && window.FW.imp);
+const rmFeat = await page.evaluate(() => [FW.imp.feat.shake, FW.imp.feat.flash, FW.imp.feat.slowmo]);
+assert.deepEqual(rmFeat, [0, false, false], 'reduced motion feats');
 console.log('fx-smoke OK'); await b.close();
