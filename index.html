@@ -529,6 +529,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 <!-- ================= ONLINE CONFIG (Supabase) =================
      Empty values = offline build: device-only records, versus against the AI, no third-party request at all.
      Fill both in to switch on the global leaderboard and online versus (backend: supabase/schema.sql). -->
+<script type="application/json" id="fxcfg">{"hitstop":{"light":0.04,"mid":0.08,"heavy":0.12},"punch":{"light":1.05,"mid":1.09,"heavy":1.15},"shake":{"stiff":260,"damp":18,"ampPx":{"light":4,"mid":9,"heavy":16}},"flash":{"frames":2,"alpha":0.55},"wave":{"life":0.45,"maxR":220,"refract":1.03,"cap":2},"chroma":{"dur":0.2,"px":3,"idleAlpha":0.15},"bloom":{"down":4,"alpha":0.25},"slowmo":{"scale":0.3,"near":0.2},"vignette":{"hurt":0.55,"danger":0.45},"death":{"slow":0.4,"slowScale":0.3,"grayFrom":0.6,"grayTo":1.1,"debrisBounce":0.45},"layers":{"core":{"n":[1,2],"size":[18,34],"speed":[0,0],"life":[0.08,0.14],"drag":0,"grav":0},"spark":{"n":[10,18],"size":[2,4],"speed":[220,520],"life":[0.25,0.55],"drag":3.5,"grav":900},"smoke":{"n":[4,8],"size":[10,22],"speed":[30,90],"life":[0.5,0.9],"drag":2,"grav":-60},"debris":{"n":[5,10],"size":[3,7],"speed":[150,380],"life":[0.6,1.1],"drag":1,"grav":1100}},"pool":{"low":240,"mid":400,"high":640},"quality":{"partMul":{"low":0.4,"mid":0.7,"high":1},"downP90Ms":20},"combo":{"l3":20,"l4":30,"partMulL3":2,"beatHz":2},"pop":{"from":1.6,"dur":0.35},"near":{"closeFrac":0.33,"flashHue":205},"events":{"flap":{"haptic":"flap"},"gate":{"haptic":null},"near":{"haptic":"near"},"shieldHit":{"haptic":"shieldHit"},"shieldMulti":{"haptic":null},"speed":{"haptic":null},"death":{"haptic":"deathHeavy"},"record":{"haptic":"record"},"coin":{"haptic":null},"comboBreak":{"haptic":"shatter"},"overdrive":{"haptic":"overdrive"}}}</script>
 <script>
 // Only the publishable / anon key ever goes here. Never a secret or service_role key.
 window.FW_CONFIG = { supabaseUrl: 'https://ecjeyelgcqbliavwltbc.supabase.co', supabaseAnonKey: 'sb_publishable_wG1eznhHBLW33Ghrt1gNNg_c32xOXX1' };
@@ -977,6 +978,180 @@ function challengeResult(ch, mode, score){
   return { beat: score > ch.score, by: Math.abs(score - ch.score) };
 }
 /* hit-loop:end */
+/* fx-core:start — pure impact-fx rules: config, quality, shake spring, particle pool, event curves. No DOM, no clock, no game globals. tests/helpers/fx.js extracts and runs this block; numbers ship in fx-config.json via the #fxcfg tag (scripts/fx-inline.mjs). */
+const FX_EVENTS = ['flap', 'gate', 'near', 'shieldHit', 'shieldMulti', 'speed', 'death', 'record', 'coin', 'comboBreak', 'overdrive'];
+const FX_DEFAULTS = Object.freeze({
+  hitstop: { light: .04, mid: .08, heavy: .12 },
+  punch: { light: 1.05, mid: 1.09, heavy: 1.15 },
+  shake: { stiff: 260, damp: 18, ampPx: { light: 4, mid: 9, heavy: 16 } },
+  flash: { frames: 2, alpha: .55 },
+  wave: { life: .45, maxR: 220, refract: 1.03, cap: 2 },
+  chroma: { dur: .2, px: 3, idleAlpha: .15 },
+  bloom: { down: 4, alpha: .25 },
+  slowmo: { scale: .3, near: .2 },
+  vignette: { hurt: .55, danger: .45 },
+  death: { slow: .4, slowScale: .3, grayFrom: .6, grayTo: 1.1, debrisBounce: .45 },
+  layers: {
+    core:   { n: [1, 2],   size: [18, 34], speed: [0, 0],     life: [.08, .14], drag: 0,   grav: 0 },
+    spark:  { n: [10, 18], size: [2, 4],   speed: [220, 520], life: [.25, .55], drag: 3.5, grav: 900 },
+    smoke:  { n: [4, 8],   size: [10, 22], speed: [30, 90],   life: [.5, .9],   drag: 2,   grav: -60 },
+    debris: { n: [5, 10],  size: [3, 7],   speed: [150, 380], life: [.6, 1.1],  drag: 1,   grav: 1100 }
+  },
+  pool: { low: 240, mid: 400, high: 640 },
+  quality: { partMul: { low: .4, mid: .7, high: 1 }, downP90Ms: 20 },
+  combo: { l3: 20, l4: 30, partMulL3: 2, beatHz: 2 },
+  pop: { from: 1.6, dur: .35 },
+  near: { closeFrac: .33, flashHue: 205 },
+  events: {
+    flap: { haptic: 'flap' }, gate: { haptic: null }, near: { haptic: 'near' },
+    shieldHit: { haptic: 'shieldHit' }, shieldMulti: { haptic: null }, speed: { haptic: null },
+    death: { haptic: 'deathHeavy' }, record: { haptic: 'record' }, coin: { haptic: null },
+    comboBreak: { haptic: 'shatter' }, overdrive: { haptic: 'overdrive' }
+  }
+});
+const FX_RANGES = {
+  'hitstop.light': [.04, .06], 'hitstop.mid': [.06, .1], 'hitstop.heavy': [.1, .12],
+  'punch.light': [1.05, 1.08], 'punch.mid': [1.08, 1.12], 'punch.heavy': [1.12, 1.15],
+  'shake.stiff': [60, 600], 'shake.damp': [4, 40],
+  'shake.ampPx.light': [1, 8], 'shake.ampPx.mid': [4, 14], 'shake.ampPx.heavy': [8, 24],
+  'flash.frames': [1, 2], 'flash.alpha': [.1, .8],
+  'wave.life': [.2, .8], 'wave.maxR': [80, 400], 'wave.refract': [1.01, 1.08], 'wave.cap': [1, 3],
+  'chroma.dur': [.05, .5], 'chroma.px': [1, 6], 'chroma.idleAlpha': [0, .3],
+  'bloom.down': [2, 8], 'bloom.alpha': [.05, .5],
+  'slowmo.scale': [.2, .6], 'slowmo.near': [0, .5],
+  'vignette.hurt': [0, 1], 'vignette.danger': [0, 1],
+  'death.slow': [.2, .6], 'death.slowScale': [.2, .5], 'death.grayFrom': [.3, 1], 'death.grayTo': [.6, 1.5], 'death.debrisBounce': [0, .9],
+  'pool.low': [64, 2048], 'pool.mid': [64, 2048], 'pool.high': [64, 2048],
+  'quality.downP90Ms': [10, 40],
+  'combo.l3': [12, 40], 'combo.l4': [20, 60], 'combo.partMulL3': [1, 3], 'combo.beatHz': [.5, 6],
+  'pop.from': [1.1, 2.2], 'pop.dur': [.1, .8],
+  'near.closeFrac': [.1, .6], 'near.flashHue': [0, 360]
+};
+const fxClamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+function fxCfgMerge(def, over, path = '') {
+  const out = Array.isArray(def) ? def.slice() : { ...def };
+  if (Array.isArray(def)) {
+    if (Array.isArray(over) && over.length === def.length && over.every(v => typeof v === 'number')) return over.slice();
+    return out;
+  }
+  for (const k of Object.keys(def)) {
+    const p = path ? `${path}.${k}` : k, d = def[k], o = over && over[k];
+    if (typeof d === 'object' && d !== null) out[k] = fxCfgMerge(d, o, p);
+    else if (typeof o === typeof d && o !== undefined && o !== null) out[k] = FX_RANGES[p] ? fxClamp(o, FX_RANGES[p][0], FX_RANGES[p][1]) : o;
+  }
+  return out;
+}
+function fxQualityPick(hw, saved) {
+  if (saved && saved !== 'auto') return saved;
+  const cores = hw.cores || 4, mem = hw.mem || 4;
+  if (cores <= 4 || mem <= 3) return 'low';
+  if (cores <= 6) return 'mid';
+  return 'high';
+}
+function fxQualityStep(q, p90Ms) {
+  if (p90Ms <= 20) return q;
+  return q === 'high' ? 'mid' : 'low';
+}
+function fxFeatures(q, a11y, rm, fair) {
+  const low = q === 'low', high = q === 'high';
+  return {
+    distort: !low && !rm,
+    chroma: !low && !rm,
+    chromaIdle: high && !rm,
+    bloom: high && !rm,
+    partMul: ({ low: .4, mid: .7, high: 1 })[q] * (rm ? .5 : 1),
+    shake: (rm || !a11y.shake) ? 0 : 1,
+    flash: !rm && !!a11y.flash,
+    slowmo: !rm && !fair,
+    waves: low ? 0 : high ? 2 : 1
+  };
+}
+const hitstopFor = (level, cfg) => fxClamp(cfg.hitstop[level] ?? cfg.hitstop.mid, .04, .12);
+const punchFor = (level, cfg) => fxClamp(cfg.punch[level] ?? cfg.punch.mid, 1.05, 1.15);
+function shakeKick(s, dx, dy, amp) {
+  const d = Math.hypot(dx, dy) || 1;
+  return { ox: s.ox, oy: s.oy, vx: s.vx + dx / d * amp * 40, vy: s.vy + dy / d * amp * 40 };
+}
+function shakeStep(s, dt, cfg) {
+  const { stiff, damp } = cfg.shake;
+  const vx = s.vx + (-stiff * s.ox - damp * s.vx) * dt, vy = s.vy + (-stiff * s.oy - damp * s.vy) * dt;
+  return { ox: s.ox + vx * dt, oy: s.oy + vy * dt, vx, vy };
+}
+/* Immutability exception (plan §Task1): fxPool/poolSpawn/poolStep mutate the pool in place — the brief
+   requires object pooling and the baseline shows parts.filter realloc cost. Limited to these functions. */
+function fxPool(n) { return { items: Array.from({ length: n }, () => ({ alive: false })), live: 0, cursor: 0 }; }
+function poolSpawn(pool, init) {
+  const n = pool.items.length;
+  for (let k = 0; k < n; k++) {
+    const i = (pool.cursor + k) % n, it = pool.items[i];
+    if (it.alive) continue;
+    pool.cursor = (i + 1) % n;
+    it.alive = true; it.t = 0; it.layer = 'spark'; it.size = 3; it.rot = 0; it.vr = 0; it.col = [0, 0, 100]; it.drag = 0; it.grav = 0; it.bounce = 0;
+    Object.assign(it, init);
+    pool.live++;
+    return i;
+  }
+  return -1;
+}
+function poolStep(pool, dt, groundY) {
+  for (const it of pool.items) {
+    if (!it.alive) continue;
+    it.t += dt;
+    if (it.t >= it.life) { it.alive = false; pool.live--; continue; }
+    const g = it.grav || (it.layer === 'debris' ? 1100 : it.layer === 'spark' ? 900 : it.layer === 'smoke' ? -60 : 0);
+    it.vy += g * dt;
+    if (it.drag) { const f = 1 / (1 + it.drag * dt); it.vx *= f; it.vy *= f; }
+    it.x += it.vx * dt; it.y += it.vy * dt;
+    if (it.vr) it.rot += it.vr * dt;
+    if (it.layer === 'debris' && it.y > groundY && it.vy > 0) { it.y = groundY; it.vy = -it.vy * (it.bounce || .45); }
+  }
+}
+function fxRng(seed) {
+  let a = seed | 0;
+  return () => { a = a + 0x6D2B79F5 | 0; let r = Math.imul(a ^ a >>> 15, 1 | a); r = r + Math.imul(r ^ r >>> 7, 61 | r) ^ r; return ((r ^ r >>> 14) >>> 0) / 4294967296; };
+}
+const fxLerp = (a, b, k) => a + (b - a) * k;
+const fxRange = (r, rng) => fxLerp(r[0], r[1], rng());
+function burstSpec(layer, n, rng, cfg) {
+  const L = cfg.layers[layer], out = [];
+  for (let i = 0; i < n; i++) {
+    out.push({
+      layer, ang: rng() * 6.2832, sp: fxRange(L.speed, rng), size: fxRange(L.size, rng),
+      life: fxRange(L.life, rng), drag: L.drag, grav: L.grav, rot: rng() * 6.2832, vr: (rng() - .5) * 14
+    });
+  }
+  return out;
+}
+function gradCol(k, ev) {
+  if (k <= .5) { const t = k * 2; return [ev[0], ev[1], ev[2] + (100 - ev[2]) * (1 - t)]; }
+  const t = (k - .5) * 2;
+  return [ev[0], ev[1], ev[2] + (12 - ev[2]) * t];
+}
+const decel = (v, dt, drag) => v / (1 + drag * dt);
+function easeOutBack(t) { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+function popScale(t, from = 1.6) { return 1 + (from - 1) * (1 - easeOutBack(fxClamp(t, 0, 1))); }
+function comboLevel(combo, tier, cfg) {
+  if (tier >= 2) return combo >= cfg.combo.l4 ? 4 : combo >= cfg.combo.l3 ? 3 : 2;
+  return tier;
+}
+function deathPhase(t, cfg) {
+  const d = cfg.death;
+  return {
+    scale: t < d.slow ? d.slowScale : .35,
+    explode: t >= d.slow,
+    flash: t >= d.slow && t < d.slow + .07,
+    gray: fxClamp((t - d.grayFrom) / (d.grayTo - d.grayFrom), 0, 1)
+  };
+}
+function shieldRings(n, cfg) {
+  const out = [];
+  for (let i = 0; i < n; i++) out.push({ rMul: 1 + i * .22, spin: (i % 2 ? -1 : 1) * (.8 + i * .5), hue: (185 + i * 40) % 360 });
+  return out;
+}
+const arcsOn = (n, cfg) => n >= 3;
+const sfxRoute = (ev, files, synth) => files && files[ev] ? 'file' : synth && synth[ev] ? 'synth' : null;
+const hapticFor = (ev, table) => (table && ev in table) ? table[ev] : null;
+/* fx-core:end */
 /* ads:start — rewarded / interstitial rules and the ad-provider adapters: pure, no DOM, no storage, no clock of its own (now and wait come in). tests/ads.test.js runs this block as it stands (tests/helpers/ads.js). */
 const AD_CFG = Object.freeze({ interEvery: 3, interGapMs: 180000, timeoutMs: 30000, stubMs: 3000 });
 const AD_STUB_MODES = Object.freeze(['ok', 'fail', 'skip', 'none']);

@@ -1,0 +1,29 @@
+{
+  "hitstop": { "light": 0.04, "mid": 0.08, "heavy": 0.12 },
+  "punch": { "light": 1.05, "mid": 1.09, "heavy": 1.15 },
+  "shake": { "stiff": 260, "damp": 18, "ampPx": { "light": 4, "mid": 9, "heavy": 16 } },
+  "flash": { "frames": 2, "alpha": 0.55 },
+  "wave": { "life": 0.45, "maxR": 220, "refract": 1.03, "cap": 2 },
+  "chroma": { "dur": 0.2, "px": 3, "idleAlpha": 0.15 },
+  "bloom": { "down": 4, "alpha": 0.25 },
+  "slowmo": { "scale": 0.3, "near": 0.2 },
+  "vignette": { "hurt": 0.55, "danger": 0.45 },
+  "death": { "slow": 0.4, "slowScale": 0.3, "grayFrom": 0.6, "grayTo": 1.1, "debrisBounce": 0.45 },
+  "layers": {
+    "core":   { "n": [1, 2],   "size": [18, 34], "speed": [0, 0],     "life": [0.08, 0.14], "drag": 0,   "grav": 0 },
+    "spark":  { "n": [10, 18], "size": [2, 4],   "speed": [220, 520], "life": [0.25, 0.55], "drag": 3.5, "grav": 900 },
+    "smoke":  { "n": [4, 8],   "size": [10, 22], "speed": [30, 90],   "life": [0.5, 0.9],   "drag": 2,   "grav": -60 },
+    "debris": { "n": [5, 10],  "size": [3, 7],   "speed": [150, 380], "life": [0.6, 1.1],   "drag": 1,   "grav": 1100 }
+  },
+  "pool": { "low": 240, "mid": 400, "high": 640 },
+  "quality": { "partMul": { "low": 0.4, "mid": 0.7, "high": 1 }, "downP90Ms": 20 },
+  "combo": { "l3": 20, "l4": 30, "partMulL3": 2, "beatHz": 2 },
+  "pop": { "from": 1.6, "dur": 0.35 },
+  "near": { "closeFrac": 0.33, "flashHue": 205 },
+  "events": {
+    "flap": { "haptic": "flap" }, "gate": { "haptic": null }, "near": { "haptic": "near" },
+    "shieldHit": { "haptic": "shieldHit" }, "shieldMulti": { "haptic": null }, "speed": { "haptic": null },
+    "death": { "haptic": "deathHeavy" }, "record": { "haptic": "record" }, "coin": { "haptic": null },
+    "comboBreak": { "haptic": "shatter" }, "overdrive": { "haptic": "overdrive" }
+  }
+}
