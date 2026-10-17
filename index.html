@@ -115,7 +115,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 #ultBtn.ready{animation:pulse3 .9s infinite}
 @keyframes pulse3{50%{box-shadow:0 0 44px var(--ring),0 0 0 3px var(--ring)}}
 @keyframes pulse2{50%{box-shadow:0 0 38px var(--ring)}}
-#topBtns{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:8px}
+#topBtns{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:8px;z-index:4}
 .ib{position:relative;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:rgba(14,10,30,.55);color:var(--ink);font:700 15px var(--body);cursor:pointer}
 .ib::after{content:"";position:absolute;inset:-4px;border-radius:50%}   /* 46px touch target around the 38px button */
 .ib:focus-visible,#dashBtn:focus-visible{outline:2px solid var(--cool);outline-offset:3px}
@@ -196,8 +196,8 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .hg-skill{margin:0;font-size:12.5px;line-height:1.45;color:var(--gold);text-wrap:pretty}
 .hg-skill b{color:var(--ink)}
 .hg-skill.ult{color:hsl(300,100%,82%)}
-#over:not([hidden]) .card{animation:cardIn .5s cubic-bezier(.2,1.5,.4,1) both}
-@keyframes cardIn{from{opacity:0;transform:translateY(40px) scale(.88)}to{opacity:1;transform:none}}
+#over:not([hidden]) .card{animation:cardIn .38s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes cardIn{from{opacity:0;transform:scale(1.35)}70%{opacity:1;transform:scale(.96)}to{opacity:1;transform:none}}
 .rank.stamp{animation:stamp .42s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes stamp{0%{opacity:0;transform:scale(2.8) rotate(-14deg)}60%{opacity:1;transform:scale(.9) rotate(-3deg)}100%{transform:scale(1) rotate(-4deg)}}
 .newbest:not([hidden]){animation:nbGlow .9s ease-in-out infinite alternate}
@@ -337,6 +337,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
   <div id="topBtns">
     <button class="ib" id="vibBtn" aria-label="Vibration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8M1.5 10.5v3M22.5 10.5v3"/></svg></button>
     <button class="ib" id="muteBtn" aria-label="Sound">♪</button>
+    <button class="ib" id="fxBtn" aria-label="Effects">✦</button>
     <button class="ib" id="pauseBtn" aria-label="Pause" hidden>II</button>
   </div>
   <button class="abtn" id="ultBtn" aria-label="Ultimate" hidden><span>ULT<small id="ultName"></small></span></button>
@@ -487,6 +488,21 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     </div>
   </div>
 
+  <div class="overlay" id="fxScr" hidden>
+    <div class="card">
+      <div class="lbhead"><h2 class="mtitle" id="fxTitle"></h2><button class="ghost" id="fxClose" data-i18n="close"></button></div>
+      <div class="row" id="fxQRow">
+        <button class="ghost" data-fxq="auto"></button><button class="ghost" data-fxq="low"></button>
+        <button class="ghost" data-fxq="mid"></button><button class="ghost" data-fxq="high"></button>
+      </div>
+      <div class="row">
+        <button class="ghost" data-fxshake></button>
+        <button class="ghost" data-fxflash></button>
+      </div>
+      <div class="hint" id="fxRmNote" hidden></div>
+    </div>
+  </div>
+
   <div class="overlay" id="confScr" hidden>
     <div class="card confcard">
       <div id="confMsg"></div>
@@ -529,6 +545,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 <!-- ================= ONLINE CONFIG (Supabase) =================
      Empty values = offline build: device-only records, versus against the AI, no third-party request at all.
      Fill both in to switch on the global leaderboard and online versus (backend: supabase/schema.sql). -->
+<script type="application/json" id="fxcfg">{"hitstop":{"light":0.04,"mid":0.08,"heavy":0.12},"punch":{"light":1.05,"mid":1.09,"heavy":1.15},"shake":{"stiff":260,"damp":18,"ampPx":{"light":4,"mid":9,"heavy":16}},"flash":{"frames":2,"alpha":0.55},"wave":{"life":0.45,"maxR":220,"refract":1.03,"cap":2},"chroma":{"dur":0.2,"px":3,"idleAlpha":0.15},"bloom":{"down":4,"alpha":0.25},"slowmo":{"scale":0.3,"near":0.2},"vignette":{"hurt":0.55,"danger":0.45},"death":{"slow":0.4,"slowScale":0.3,"grayFrom":0.6,"grayTo":1.1,"debrisBounce":0.45},"layers":{"core":{"n":[1,2],"size":[18,34],"speed":[0,0],"life":[0.08,0.14],"drag":0,"grav":0},"spark":{"n":[10,18],"size":[2,4],"speed":[220,520],"life":[0.25,0.55],"drag":3.5,"grav":900},"smoke":{"n":[4,8],"size":[10,22],"speed":[30,90],"life":[0.5,0.9],"drag":2,"grav":-60},"debris":{"n":[5,10],"size":[3,7],"speed":[150,380],"life":[0.6,1.1],"drag":1,"grav":1100}},"pool":{"low":240,"mid":400,"high":640},"quality":{"partMul":{"low":0.4,"mid":0.7,"high":1},"downP90Ms":20},"combo":{"l3":20,"l4":30,"partMulL3":2,"beatHz":2},"pop":{"from":1.6,"dur":0.35},"near":{"closeFrac":0.33,"flashHue":205},"events":{"flap":{"haptic":"flap"},"gate":{"haptic":null},"near":{"haptic":"near"},"shieldHit":{"haptic":"shieldHit"},"shieldMulti":{"haptic":null},"speed":{"haptic":null},"death":{"haptic":"deathHeavy"},"record":{"haptic":"record"},"coin":{"haptic":null},"comboBreak":{"haptic":"shatter"},"overdrive":{"haptic":"overdrive"}}}</script>
 <script>
 // Only the publishable / anon key ever goes here. Never a secret or service_role key.
 window.FW_CONFIG = { supabaseUrl: 'https://ecjeyelgcqbliavwltbc.supabase.co', supabaseAnonKey: 'sb_publishable_wG1eznhHBLW33Ghrt1gNNg_c32xOXX1' };
@@ -977,6 +994,180 @@ function challengeResult(ch, mode, score){
   return { beat: score > ch.score, by: Math.abs(score - ch.score) };
 }
 /* hit-loop:end */
+/* fx-core:start — pure impact-fx rules: config, quality, shake spring, particle pool, event curves. No DOM, no clock, no game globals. tests/helpers/fx.js extracts and runs this block; numbers ship in fx-config.json via the #fxcfg tag (scripts/fx-inline.mjs). */
+const FX_EVENTS = ['flap', 'gate', 'near', 'shieldHit', 'shieldMulti', 'speed', 'death', 'record', 'coin', 'comboBreak', 'overdrive'];
+const FX_DEFAULTS = Object.freeze({
+  hitstop: { light: .04, mid: .08, heavy: .12 },
+  punch: { light: 1.05, mid: 1.09, heavy: 1.15 },
+  shake: { stiff: 260, damp: 18, ampPx: { light: 4, mid: 9, heavy: 16 } },
+  flash: { frames: 2, alpha: .55 },
+  wave: { life: .45, maxR: 220, refract: 1.03, cap: 2 },
+  chroma: { dur: .2, px: 3, idleAlpha: .15 },
+  bloom: { down: 4, alpha: .25 },
+  slowmo: { scale: .3, near: .2 },
+  vignette: { hurt: .55, danger: .45 },
+  death: { slow: .4, slowScale: .3, grayFrom: .6, grayTo: 1.1, debrisBounce: .45 },
+  layers: {
+    core:   { n: [1, 2],   size: [18, 34], speed: [0, 0],     life: [.08, .14], drag: 0,   grav: 0 },
+    spark:  { n: [10, 18], size: [2, 4],   speed: [220, 520], life: [.25, .55], drag: 3.5, grav: 900 },
+    smoke:  { n: [4, 8],   size: [10, 22], speed: [30, 90],   life: [.5, .9],   drag: 2,   grav: -60 },
+    debris: { n: [5, 10],  size: [3, 7],   speed: [150, 380], life: [.6, 1.1],  drag: 1,   grav: 1100 }
+  },
+  pool: { low: 240, mid: 400, high: 640 },
+  quality: { partMul: { low: .4, mid: .7, high: 1 }, downP90Ms: 20 },
+  combo: { l3: 20, l4: 30, partMulL3: 2, beatHz: 2 },
+  pop: { from: 1.6, dur: .35 },
+  near: { closeFrac: .33, flashHue: 205 },
+  events: {
+    flap: { haptic: 'flap' }, gate: { haptic: null }, near: { haptic: 'near' },
+    shieldHit: { haptic: 'shieldHit' }, shieldMulti: { haptic: null }, speed: { haptic: null },
+    death: { haptic: 'deathHeavy' }, record: { haptic: 'record' }, coin: { haptic: null },
+    comboBreak: { haptic: 'shatter' }, overdrive: { haptic: 'overdrive' }
+  }
+});
+const FX_RANGES = {
+  'hitstop.light': [.04, .06], 'hitstop.mid': [.06, .1], 'hitstop.heavy': [.1, .12],
+  'punch.light': [1.05, 1.08], 'punch.mid': [1.08, 1.12], 'punch.heavy': [1.12, 1.15],
+  'shake.stiff': [60, 600], 'shake.damp': [4, 40],
+  'shake.ampPx.light': [1, 8], 'shake.ampPx.mid': [4, 14], 'shake.ampPx.heavy': [8, 24],
+  'flash.frames': [1, 2], 'flash.alpha': [.1, .8],
+  'wave.life': [.2, .8], 'wave.maxR': [80, 400], 'wave.refract': [1.01, 1.08], 'wave.cap': [1, 3],
+  'chroma.dur': [.05, .5], 'chroma.px': [1, 6], 'chroma.idleAlpha': [0, .3],
+  'bloom.down': [2, 8], 'bloom.alpha': [.05, .5],
+  'slowmo.scale': [.2, .6], 'slowmo.near': [0, .5],
+  'vignette.hurt': [0, 1], 'vignette.danger': [0, 1],
+  'death.slow': [.2, .6], 'death.slowScale': [.2, .5], 'death.grayFrom': [.3, 1], 'death.grayTo': [.6, 1.5], 'death.debrisBounce': [0, .9],
+  'pool.low': [64, 2048], 'pool.mid': [64, 2048], 'pool.high': [64, 2048],
+  'quality.downP90Ms': [10, 40],
+  'combo.l3': [12, 40], 'combo.l4': [20, 60], 'combo.partMulL3': [1, 3], 'combo.beatHz': [.5, 6],
+  'pop.from': [1.1, 2.2], 'pop.dur': [.1, .8],
+  'near.closeFrac': [.1, .6], 'near.flashHue': [0, 360]
+};
+const fxClamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+function fxCfgMerge(def, over, path = '') {
+  const out = Array.isArray(def) ? def.slice() : { ...def };
+  if (Array.isArray(def)) {
+    if (Array.isArray(over) && over.length === def.length && over.every(v => typeof v === 'number')) return over.slice();
+    return out;
+  }
+  for (const k of Object.keys(def)) {
+    const p = path ? `${path}.${k}` : k, d = def[k], o = over && over[k];
+    if (typeof d === 'object' && d !== null) out[k] = fxCfgMerge(d, o, p);
+    else if (typeof o === typeof d && o !== undefined && o !== null) out[k] = FX_RANGES[p] ? fxClamp(o, FX_RANGES[p][0], FX_RANGES[p][1]) : o;
+  }
+  return out;
+}
+function fxQualityPick(hw, saved) {
+  if (saved && saved !== 'auto') return saved;
+  const cores = hw.cores || 4, mem = hw.mem || 4;
+  if (cores <= 4 || mem <= 3) return 'low';
+  if (cores <= 6) return 'mid';
+  return 'high';
+}
+function fxQualityStep(q, p90Ms) {
+  if (p90Ms <= 20) return q;
+  return q === 'high' ? 'mid' : 'low';
+}
+function fxFeatures(q, a11y, rm, fair) {
+  const low = q === 'low', high = q === 'high';
+  return {
+    distort: !low && !rm,
+    chroma: !low && !rm,
+    chromaIdle: high && !rm,
+    bloom: high && !rm,
+    partMul: ({ low: .4, mid: .7, high: 1 })[q] * (rm ? .5 : 1),
+    shake: (rm || !a11y.shake) ? 0 : 1,
+    flash: !rm && !!a11y.flash,
+    slowmo: !rm && !fair,
+    waves: low ? 0 : high ? 2 : 1
+  };
+}
+const hitstopFor = (level, cfg) => fxClamp(cfg.hitstop[level] ?? cfg.hitstop.mid, .04, .12);
+const punchFor = (level, cfg) => fxClamp(cfg.punch[level] ?? cfg.punch.mid, 1.05, 1.15);
+function shakeKick(s, dx, dy, amp) {
+  const d = Math.hypot(dx, dy) || 1;
+  return { ox: s.ox, oy: s.oy, vx: s.vx + dx / d * amp * 40, vy: s.vy + dy / d * amp * 40 };
+}
+function shakeStep(s, dt, cfg) {
+  const { stiff, damp } = cfg.shake;
+  const vx = s.vx + (-stiff * s.ox - damp * s.vx) * dt, vy = s.vy + (-stiff * s.oy - damp * s.vy) * dt;
+  return { ox: s.ox + vx * dt, oy: s.oy + vy * dt, vx, vy };
+}
+/* Immutability exception (plan §Task1): fxPool/poolSpawn/poolStep mutate the pool in place — the brief
+   requires object pooling and the baseline shows parts.filter realloc cost. Limited to these functions. */
+function fxPool(n) { return { items: Array.from({ length: n }, () => ({ alive: false })), live: 0, cursor: 0 }; }
+function poolSpawn(pool, init) {
+  const n = pool.items.length;
+  for (let k = 0; k < n; k++) {
+    const i = (pool.cursor + k) % n, it = pool.items[i];
+    if (it.alive) continue;
+    pool.cursor = (i + 1) % n;
+    it.alive = true; it.t = 0; it.layer = 'spark'; it.size = 3; it.rot = 0; it.vr = 0; it.col = [0, 0, 100]; it.drag = 0; it.grav = 0; it.bounce = 0;
+    Object.assign(it, init);
+    pool.live++;
+    return i;
+  }
+  return -1;
+}
+function poolStep(pool, dt, groundY) {
+  for (const it of pool.items) {
+    if (!it.alive) continue;
+    it.t += dt;
+    if (it.t >= it.life) { it.alive = false; pool.live--; continue; }
+    const g = it.grav || (it.layer === 'debris' ? 1100 : it.layer === 'spark' ? 900 : it.layer === 'smoke' ? -60 : 0);
+    it.vy += g * dt;
+    if (it.drag) { const f = 1 / (1 + it.drag * dt); it.vx *= f; it.vy *= f; }
+    it.x += it.vx * dt; it.y += it.vy * dt;
+    if (it.vr) it.rot += it.vr * dt;
+    if (it.layer === 'debris' && it.y > groundY && it.vy > 0) { it.y = groundY; it.vy = -it.vy * (it.bounce || .45); }
+  }
+}
+function fxRng(seed) {
+  let a = seed | 0;
+  return () => { a = a + 0x6D2B79F5 | 0; let r = Math.imul(a ^ a >>> 15, 1 | a); r = r + Math.imul(r ^ r >>> 7, 61 | r) ^ r; return ((r ^ r >>> 14) >>> 0) / 4294967296; };
+}
+const fxLerp = (a, b, k) => a + (b - a) * k;
+const fxRange = (r, rng) => fxLerp(r[0], r[1], rng());
+function burstSpec(layer, n, rng, cfg) {
+  const L = cfg.layers[layer], out = [];
+  for (let i = 0; i < n; i++) {
+    out.push({
+      layer, ang: rng() * 6.2832, sp: fxRange(L.speed, rng), size: fxRange(L.size, rng),
+      life: fxRange(L.life, rng), drag: L.drag, grav: L.grav, rot: rng() * 6.2832, vr: (rng() - .5) * 14
+    });
+  }
+  return out;
+}
+function gradCol(k, ev) {
+  if (k <= .5) { const t = k * 2; return [ev[0], ev[1], ev[2] + (100 - ev[2]) * (1 - t)]; }
+  const t = (k - .5) * 2;
+  return [ev[0], ev[1], ev[2] + (12 - ev[2]) * t];
+}
+const decel = (v, dt, drag) => v / (1 + drag * dt);
+function easeOutBack(t) { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+function popScale(t, from = 1.6) { return 1 + (from - 1) * (1 - easeOutBack(fxClamp(t, 0, 1))); }
+function comboLevel(combo, tier, cfg) {
+  if (tier >= 2) return combo >= cfg.combo.l4 ? 4 : combo >= cfg.combo.l3 ? 3 : 2;
+  return tier;
+}
+function deathPhase(t, cfg) {
+  const d = cfg.death;
+  return {
+    scale: t < d.slow ? d.slowScale : .35,
+    explode: t >= d.slow,
+    flash: t >= d.slow && t < d.slow + .07,
+    gray: fxClamp((t - d.grayFrom) / (d.grayTo - d.grayFrom), 0, 1)
+  };
+}
+function shieldRings(n, cfg) {
+  const out = [];
+  for (let i = 0; i < n; i++) out.push({ rMul: 1 + i * .22, spin: (i % 2 ? -1 : 1) * (.8 + i * .5), hue: (185 + i * 40) % 360 });
+  return out;
+}
+const arcsOn = (n, cfg) => n >= 3;
+const sfxRoute = (ev, files, synth) => files && files[ev] ? 'file' : synth && synth[ev] ? 'synth' : null;
+const hapticFor = (ev, table) => (table && ev in table) ? table[ev] : null;
+/* fx-core:end */
 /* ads:start — rewarded / interstitial rules and the ad-provider adapters: pure, no DOM, no storage, no clock of its own (now and wait come in). tests/ads.test.js runs this block as it stands (tests/helpers/ads.js). */
 const AD_CFG = Object.freeze({ interEvery: 3, interGapMs: 180000, timeoutMs: 30000, stubMs: 3000 });
 const AD_STUB_MODES = Object.freeze(['ok', 'fail', 'skip', 'none']);
@@ -1140,8 +1331,17 @@ const SFX = {
 // Haptic patterns (ms on/off). Android Chrome supports these; iOS Safari ignores web vibration.
 let vibOn = store.get('fw27_vib', true);
 const HAPTIC = { flap:6, perfect:14, combo5:[20,30,40], fever:[30,40,30,40,90], power:[25,30,45], shieldBreak:[90,30,40],
-  dash:[35,15,60], shatter:18, ready:[12,40,12], zone:[40,60,40,60,120], newBest:[80,40,80,40,200], death:[60,30,150], stamp:35 };
+  dash:[35,15,60], shatter:18, ready:[12,40,12], zone:[40,60,40,60,120], newBest:[80,40,80,40,200], death:[60,30,150], stamp:35,
+  shieldHit:[40,20,70], deathHeavy:[80,30,120,40,200], record:[60,40,60,40,60,40,250], near:10, overdrive:[20,20,20,20,120] };
 function haptic(k){ if (!vibOn) return; const p = typeof k === 'string' ? HAPTIC[k] : k; try { navigator.vibrate && navigator.vibrate(p); } catch(e){} }
+/* fx sound hook: per-event route — a loaded sample in SFX_FILES wins, else the synth; single-file build ships none */
+const SFX_FILES = {};
+const SFX_EV = { flap: 'flap', gate: 'pass', near: 'perfect', shieldHit: 'shield', death: 'die', record: 'fanfare', coin: 'orb', comboBreak: 'shatter', overdrive: 'fever' };
+function sfx(ev, arg){
+  const key = SFX_EV[ev] || ev, route = sfxRoute(key, SFX_FILES, SFX);
+  if (route === 'file'){ try { const b = SFX_FILES[key], src = ac.createBufferSource(); src.buffer = b; src.connect(master); src.start(); } catch (e) {} }
+  else if (route === 'synth') SFX[key](arg);
+}
 
 /* ---------- zones ---------- */
 const ZONES = [
@@ -1217,7 +1417,124 @@ const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:
   ultSlow:0, ultLane:0, ultOut:0, carry:false });   // PULSAR: world time scale while its ultimate runs · AURORA: extra gap of its ultimate's lane (laneApply then also drops the ±140 reach) · TEMPEST: the storm chain steers the bird itself
 let FX = newFx(); const TMAX = {};
 
+/* fx-imp: runtime wiring for the impact layer — pure rules live in the fx-core block; numbers in #fxcfg */
+const FXCFG0 = (() => { try { return JSON.parse($('fxcfg').textContent); } catch (e) { return {}; } })();
+let FXCFG = fxCfgMerge(FX_DEFAULTS, FXCFG0);
+const fxSettings = { q: store.get('fw27_fxq', 'auto'), shake: store.get('fw27_fxshake', true), flash: store.get('fw27_fxflash', true) };
+const fxHw = { cores: navigator.hardwareConcurrency || 4, mem: navigator.deviceMemory || 4, dpr: window.devicePixelRatio || 1 };
+function impNew(q){
+  q = q || fxQualityPick(fxHw, fxSettings.q);
+  return { q, feat: fxFeatures(q, fxSettings, RM, fairMode()), pool: fxPool(FXCFG.pool[q]), shk: { ox: 0, oy: 0, vx: 0, vy: 0 },
+    flashCol: [0, 0, 100], flashA: 0, waves: [], caT: 0, slow: 0, gray: 0, deathT: -1, comboLvl: 0, coinPulse: 0, crackT: 0, rayT: 0, stampT: -1, glassT: 0, rng: fxRng((Math.random() * 1e9) | 0) };
+}
+let IMP;
+function impHit(o){
+  const lv = o.level || 'light';
+  hitstop = Math.max(hitstop, hitstopFor(lv, FXCFG));
+  cam.z = Math.max(cam.z, punchFor(lv, FXCFG));
+  if (IMP.feat.shake) IMP.shk = shakeKick(IMP.shk, o.dirX || 0, o.dirY ?? 1, FXCFG.shake.ampPx[lv]);
+  if (o.col && IMP.feat.flash){ IMP.flashCol = o.col; IMP.flashA = FXCFG.flash.alpha; }
+  if (o.wave && IMP.feat.waves && IMP.waves.length < Math.min(FXCFG.wave.cap, IMP.feat.waves)) IMP.waves.push({ x: o.x ?? bird.x, y: o.y ?? bird.y, t: 0 });
+  if (o.chroma && IMP.feat.chroma) IMP.caT = Math.max(IMP.caT, FXCFG.chroma.dur);
+  if (o.slow && IMP.feat.slowmo) IMP.slow = Math.max(IMP.slow, o.slow);
+}
+function impBurst(x, y, col, layers, mul = 1){
+  for (const layer of layers){
+    const L = FXCFG.layers[layer];
+    const n = Math.round((L.n[0] + IMP.rng() * (L.n[1] - L.n[0])) * IMP.feat.partMul * mul * (IMP.comboLvl >= 3 ? FXCFG.combo.partMulL3 : 1));
+    for (const sp of burstSpec(layer, n, IMP.rng, FXCFG)){
+      poolSpawn(IMP.pool, { x, y, vx: Math.cos(sp.ang) * sp.sp, vy: Math.sin(sp.ang) * sp.sp, size: sp.size, life: sp.life,
+        drag: sp.drag, grav: sp.grav, rot: sp.rot, vr: sp.vr, layer, col, bounce: FXCFG.death.debrisBounce });
+    }
+  }
+}
+function impFx(ev, o = {}){
+  switch (ev) {
+    case 'flap': impBurst(bird.x - 8, bird.y + 6, B.wingCol, ['smoke'], .6); break;
+    case 'gate': cam.z = Math.max(cam.z, punchFor('light', FXCFG)); break;
+    case 'near': impHit({ level: 'light', col: [FXCFG.near.flashHue, 100, 70], slow: FXCFG.slowmo.near }); impBurst(bird.x + 14, bird.y, [FXCFG.near.flashHue, 100, 70], ['core', 'spark'], .7); break;
+    case 'shieldHit': impHit({ level: 'mid', dirX: -1, dirY: o.dirY || 0, col: [190, 100, 72], wave: true, chroma: true, x: bird.x, y: bird.y }); impBurst(bird.x, bird.y, [190, 100, 70], ['core', 'spark', 'debris']); break;
+    case 'shieldMulti': break;
+    case 'speed': break;
+    case 'death': impHit({ level: 'heavy', dirX: -1, dirY: .4, wave: true, chroma: true, x: bird.x, y: bird.y }); break;
+    case 'record': impBurst(bird.x, bird.y - 20, [45, 100, 60], ['core', 'spark', 'debris']); IMP.rayT = 1.2; IMP.stampT = 0; break;
+    case 'coin': IMP.coinPulse = 1; impBurst(bird.x, bird.y, [48, 100, 62], ['spark'], .3); break;
+    case 'comboBreak': IMP.glassT = .4; impBurst(LW / 2, 112, [0, 0, 80], ['debris'], .8); sfx('comboBreak'); break;
+    case 'overdrive': impHit({ level: 'mid', col: [300, 100, 68], chroma: true }); banner('OVERDRIVE', [300, 100, 68], 1.4); sfx('overdrive'); break;
+  }
+  const hp = hapticFor(FXCFG.events[ev] && FXCFG.events[ev].haptic, HAPTIC);
+  if (hp != null) haptic(hp);
+}
+function impUpdate(rdt){
+  IMP.shk = IMP.feat.shake ? shakeStep(IMP.shk, rdt, FXCFG) : IMP.shk;
+  poolStep(IMP.pool, rdt, GROUND);
+  if (IMP.waves.length){ for (const w of IMP.waves) w.t += rdt; IMP.waves = IMP.waves.filter(w => w.t < FXCFG.wave.life); }
+  IMP.caT = Math.max(0, IMP.caT - rdt);
+  IMP.slow = Math.max(0, IMP.slow - rdt);
+  IMP.flashA = Math.max(0, IMP.flashA - rdt * 8);
+  IMP.coinPulse = Math.max(0, IMP.coinPulse - rdt * 3);
+  IMP.crackT = Math.max(0, IMP.crackT - rdt);
+  IMP.rayT = Math.max(0, IMP.rayT - rdt);
+  IMP.glassT = Math.max(0, IMP.glassT - rdt);
+  if (IMP.stampT >= 0) IMP.stampT += rdt;
+}
+function impHud(){
+  if (IMP.comboLvl >= 2 && state === 'play' && IMP.feat.flash){
+    const beat = .5 + .5 * Math.sin(T * 6.283 * FXCFG.combo.beatHz);
+    ctx.save(); ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = .12 * beat * (IMP.comboLvl >= 3 ? 1.4 : 1);
+    ctx.fillStyle = hsl([(T * 120) % 360, 100, 60]); ctx.fillRect(0, 0, LW, LH); ctx.restore();
+  }
+  if (IMP.rayT > 0 && IMP.feat.flash){
+    const a = Math.min(.2, IMP.rayT * .2);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(LW / 2, LH * .3); ctx.rotate((1.2 - IMP.rayT) * .6);
+    ctx.fillStyle = `hsla(45,100%,70%,${a.toFixed(3)})`;
+    for (let i = 0; i < 12; i++){ ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(LW, -LW * .06); ctx.lineTo(LW, LW * .06); ctx.fill(); }
+    ctx.restore();
+  }
+  if (IMP.stampT >= 0 && IMP.stampT < 1.4){
+    const k = Math.min(1, IMP.stampT / .25), sc = 2.2 - 1.2 * easeOutBack(k);
+    ctx.save(); ctx.translate(LW / 2, LH * .42); ctx.rotate(-.14); ctx.scale(sc, sc); ctx.globalAlpha = Math.min(1, (1.4 - IMP.stampT) * 3);
+    ctx.font = `34px Bungee, ${SYS}`; ctx.textAlign = 'center';
+    ctx.fillStyle = 'hsl(48,100%,62%)'; ctx.shadowColor = 'hsl(48,100%,60%)'; ctx.shadowBlur = 24; ctx.fillText('NEW RECORD', 0, 0);
+    ctx.restore();
+  } else if (IMP.stampT >= 1.4) IMP.stampT = -1;
+  if (IMP.stampT >= .25 && IMP.stampT < .25 + 1/30 && IMP.feat.shake) IMP.shk = shakeKick(IMP.shk, 0, 1, FXCFG.shake.ampPx.mid);
+  if (IMP.glassT > 0){
+    ctx.save(); ctx.translate(LW / 2, 112); ctx.strokeStyle = `hsla(0,0%,95%,${Math.min(.8, IMP.glassT * 2).toFixed(3)})`; ctx.lineWidth = 1.3;
+    for (let i = 0; i < 7; i++){ const an = i * .9 + .3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(an) * (26 + i * 5), Math.sin(an) * (18 + i * 4)); ctx.stroke(); }
+    ctx.restore();
+  }
+}
+function impPost(){
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const W2 = cv.width, H2 = cv.height;
+  if (IMP.feat.distort) for (const w of IMP.waves){
+    // shockwave: expanding double ring + trailing dashed ring — no frame copies on the CPU-raster budget (review C1)
+    const k = w.t / FXCFG.wave.life, r = (20 + k * FXCFG.wave.maxR) * scale, wx = w.x * scale, wy = w.y * scale, aW = (1 - k);
+    ctx.save();
+    ctx.strokeStyle = `rgba(255,255,255,${(.4 * aW).toFixed(3)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(wx, wy, r, 0, 6.283); ctx.stroke();
+    ctx.strokeStyle = `rgba(255,255,255,${(.18 * aW).toFixed(3)})`; ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(wx, wy, Math.max(1, r - 9 * scale), 0, 6.283); ctx.stroke();
+    ctx.setLineDash([6, 10]); ctx.lineDashOffset = -w.t * 300; ctx.strokeStyle = `rgba(180,220,255,${(.25 * aW).toFixed(3)})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(wx, wy, r * .72, 0, 6.283); ctx.stroke();
+    ctx.restore();
+  }
+  if (IMP.feat.bloom && (IMP.flashA > 0 || IMP.waves.length || IMP.caT > 0)){
+    const w0 = IMP.waves[0], bxc = (w0 ? w0.x : bird.x) * scale, byc = (w0 ? w0.y : bird.y) * scale, R = 190 * scale;
+    const g = ctx.createRadialGradient(bxc, byc, R * .1, bxc, byc, R);
+    const aB = FXCFG.bloom.alpha * Math.max(IMP.flashA, IMP.caT > 0 ? .4 : 0, IMP.waves.length ? .5 : 0);
+    g.addColorStop(0, `rgba(255,255,255,${aB.toFixed(3)})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g; ctx.fillRect(bxc - R, byc - R, R * 2, R * 2); ctx.restore();
+  }
+  if (IMP.flashA > 0 && IMP.feat.flash){
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = hsl(IMP.flashCol, IMP.flashA); ctx.fillRect(0, 0, W2, H2); ctx.restore();
+  }
+  if (IMP.gray > 0){
+    ctx.save(); ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = `rgba(128,128,128,${IMP.gray})`; ctx.fillRect(0, 0, W2, H2); ctx.restore();
+  }
+}
+
 function reset(){
+  IMP = impNew(IMP && IMP.q);
   T = 0; timeScale = 1; hitstop = 0; shake = 0; flash = 0;
   bird.x = Math.min(LW*.3, 150); bird.y = 280; bird.vy = 0; bird.rot = 0;
   gates = []; orbs = []; hazs = []; parts = []; pops = []; trail = [];
@@ -1502,6 +1819,7 @@ function flap(){
   if (state !== 'play' || dashT > 0) return;
   bird.vy = -B.flap; bird.wing = 1; squash = 1; SFX.flap(); haptic('flap'); tutFlaps++; FX.idleT = 0; FX.idleWarn = false;
   for (let i=0;i<5;i++) part(bird.x-6, bird.y+6, -60-Math.random()*80, 40+Math.random()*80, .35, B.wingCol, 2);
+  impFx('flap'); if (IMP.q !== 'low') ghosts.push({x: bird.x, y: bird.y, rot: bird.rot, life: .12});
 }
 function dash(){
   if (state !== 'play' || dashMeter < 1 || dashT > 0) return;
@@ -1558,6 +1876,25 @@ $('muteBtn').addEventListener('click', e => {
 $('muteBtn').style.opacity = muted ? .4 : 1;
 $('vibBtn').classList.toggle('off', !vibOn);
 $('vibBtn').addEventListener('click', e => { e.stopPropagation(); vibOn = !vibOn; store.set('fw27_vib', vibOn); $('vibBtn').classList.toggle('off', !vibOn); haptic([30,40,30]); });
+{ const FXTXT = { ko: { fxT: '이펙트', fxAuto: '자동', fxLow: '낮음', fxMid: '중간', fxHigh: '높음', fxShake: '화면 흔들림', fxFlash: '화면 플래시', fxRm: '시스템의 동작 줄이기 설정이 켜져 있어 흔들림·플래시가 꺼집니다' },
+    en: { fxT: 'Effects', fxAuto: 'Auto', fxLow: 'Low', fxMid: 'Mid', fxHigh: 'High', fxShake: 'Screen shake', fxFlash: 'Screen flash', fxRm: 'Reduced motion is on: shake and flash stay off' } };
+  for (const l in I18N) for (const k in FXTXT.en) I18N[l][k] = (FXTXT[l] || FXTXT.en)[k]; }
+function renderFxScr(){
+  $('fxTitle').textContent = t('fxT');
+  document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => { const q = b.dataset.fxq; b.textContent = t('fx' + q[0].toUpperCase() + q.slice(1)); b.classList.toggle('primary', fxSettings.q === q); });
+  const sh = document.querySelector('[data-fxshake]'), fl = document.querySelector('[data-fxflash]');
+  sh.textContent = `${t('fxShake')}: ${fxSettings.shake && !RM ? 'ON' : 'OFF'}`;
+  fl.textContent = `${t('fxFlash')}: ${fxSettings.flash && !RM ? 'ON' : 'OFF'}`;
+  sh.disabled = fl.disabled = RM;
+  $('fxRmNote').hidden = !RM; if (RM) $('fxRmNote').textContent = t('fxRm');
+}
+function fxApply(){ store.set('fw27_fxq', fxSettings.q); store.set('fw27_fxshake', fxSettings.shake); store.set('fw27_fxflash', fxSettings.flash); IMP = impNew(fxSettings.q === 'auto' ? null : fxSettings.q); renderFxScr(); }
+$('fxBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); if (state === 'play') togglePause(); renderFxScr(); $('fxScr').hidden = false; lbOpen = true; });
+$('fxClose').addEventListener('click', e => { e.stopPropagation(); $('fxScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden; });
+$('fxScr').addEventListener('pointerdown', e => { if (e.target === $('fxScr')) $('fxClose').click(); });
+document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); fxSettings.q = b.dataset.fxq; fxApply(); }));
+document.querySelector('[data-fxshake]').addEventListener('click', e => { e.stopPropagation(); fxSettings.shake = !fxSettings.shake; fxApply(); });
+document.querySelector('[data-fxflash]').addEventListener('click', e => { e.stopPropagation(); fxSettings.flash = !fxSettings.flash; fxApply(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause(); adPlaySync(); });
 
 function togglePause(){
@@ -1766,7 +2103,7 @@ const shards = (x,y,col,n) => bits(x,y,n,()=>col,420,.8,0);
 function addScore(p){
   score += p; scorePunch = 1;
   if (!newBestShown && runBestRef > 0 && score > runBestRef){
-    newBestShown = true; banner(t('newRec'), [48,100,62], 1.7); SFX.fanfare(); haptic('newBest'); confetti(bird.x + 60, bird.y, 46);
+    newBestShown = true; banner(t('newRec'), [48,100,62], 1.7); SFX.fanfare(); confetti(bird.x + 60, bird.y, 46); impFx('record'); IMP.rayT = 1.2; IMP.stampT = 0;
   }
 }
 
@@ -1790,7 +2127,7 @@ function die(why = 'gate'){
     banner(t('fx_rewind'), [40,90,62], 1.1); haptic('fever'); tone(1400, .5, 'sine', .14, -1200); tone(300, .5, 'triangle', .1, 900, .05);
     return;
   }
-  state = 'dying'; deathT = 0; SFX.die(); haptic('death'); vsOnMyDeath();
+  state = 'dying'; deathT = 0; IMP.deathT = 0; impFx('death'); SFX.die(); vsOnMyDeath();
   shake = 18; flash = .6; hitstop = .14;
   cam.fx = bird.x; cam.fy = bird.y; cam.tz = 1.32; ring(bird.x, bird.y, LW, [0,100,62], .8, 10); banners = [];
   if (!deathFx(B.id)) for (let i=0;i<46;i++){ const a = Math.random()*6.28, s = 80+Math.random()*360; part(bird.x, bird.y, Math.cos(a)*s, Math.sin(a)*s, .9+Math.random()*.6, Math.random()<.5?pal.a:pal.b, 2+Math.random()*3); }
@@ -1815,7 +2152,7 @@ function openCont(){
 function closeCont(go){
   clearInterval(contTimer); $('contScr').hidden = true;
   if (!go){ showOver(); return; }
-  contUsed = true; state = 'play'; FX.fogT = 0; overT = weightT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; setGod(2.5); hurtT = 0;
+  contUsed = true; state = 'play'; IMP = impNew(IMP.q); FX.fogT = 0; overT = weightT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; setGod(2.5); hurtT = 0;
   cam.tz = 1; cam.fx = LW/2; cam.fy = LH/2;
   for (const g of gates) if (Math.abs(g.x + g.w/2 - bird.x) < 140) g.broken = true;
   $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false; $('ultBtn').hidden = !ultOn();
@@ -1919,10 +2256,11 @@ function showOver(){
 
 /* ---------- update ---------- */
 function update(rdt){
+  impUpdate(rdt);
   if (hitstop > 0){ hitstop -= rdt; rdt *= .05; }
-  const target = Math.min(slowT > 0 ? POW.slowScale : 1, FX.ultSlow || 1);   // PULSAR's ultimate slows the world further than the slow power-up
+  const target = Math.min(slowT > 0 ? POW.slowScale : 1, FX.ultSlow || 1, IMP.slow > 0 ? FXCFG.slowmo.scale : 1);   // PULSAR's ultimate slows the world further than the slow power-up
   timeScale += (target - timeScale) * Math.min(1, rdt*6);
-  const dt = rdt * (state === 'dying' ? .35 : timeScale);
+  const dt = rdt * (state === 'dying' ? deathPhase(deathT, FXCFG).scale : timeScale);
   T += dt * (freezeT > 0 && state === 'play' ? .03 : 1); if (FX.hold && state === 'play') FX.still += dt;   // KRAKEN's held gates: their clock falls behind by exactly what T gains (KRAKEN has no time stop)
   shake = Math.max(0, shake - rdt*40); flash = Math.max(0, flash - rdt*1.8); FX.amb = Math.max(0, FX.amb - rdt*12);
   FX.castT = Math.max(0, FX.castT - rdt); FX.sigT = Math.max(0, FX.sigT - rdt); FX.perfT = Math.max(0, FX.perfT - rdt);   // up here so they also run out while dying
@@ -1959,7 +2297,16 @@ function update(rdt){
     return;
   }
   if (state === 'dying'){
-    deathT += rdt; bird.vy += 1600*dt; bird.y = Math.min(GROUND - bird.r, bird.y + bird.vy*dt); bird.rot += 8*dt;
+    deathT += rdt;
+    { const ph = deathPhase(deathT, FXCFG);
+      if (ph.explode && IMP.deathT >= 0){ IMP.deathT = -1;
+        if (IMP.feat.flash){ IMP.flashCol = [0, 0, 100]; IMP.flashA = FXCFG.flash.alpha; }
+        if (IMP.feat.shake) IMP.shk = shakeKick(IMP.shk, -1, .4, FXCFG.shake.ampPx.heavy);
+        impBurst(bird.x, bird.y, pal.a.slice(), ['core', 'spark', 'smoke', 'debris'], 1.4);
+      }
+      IMP.gray = ph.gray;
+    }
+    bird.vy += 1600*dt; bird.y = Math.min(GROUND - bird.r, bird.y + bird.vy*dt); bird.rot += 8*dt;
     if (deathT > 1.1){ if (canContinue()) openCont(); else showOver(); }
     return;
   }
@@ -2032,7 +2379,7 @@ function update(rdt){
         if (bird.y - hr < top || bird.y + hr > bot){
           if (invuln > 0 || godT > 0 || freezeT > 0){ if (godT > 0) sigFx(B.id, 'block', g); }
           else if (cloneT > 0){ cloneHit(); }
-          else if (shields > 0){ breakShield(); if (PK.shieldBurst){ g.broken = true; g.flash = 1; shards(g.x + g.w/2, bird.y, [50,100,72], 24); sigFx(B.id, 'burst', g); } }
+          else if (shields > 0){ breakShield(bird.y < gY(g) ? -1 : 1); if (PK.shieldBurst){ g.broken = true; g.flash = 1; shards(g.x + g.w/2, bird.y, [50,100,72], 24); sigFx(B.id, 'burst', g); } }
           else if (PK.inkSlip && inkT > 0 && FX.inkLock === 0){   // KRAKEN ink cloak: while ink is out and the cloak is not locked, a fatal gate hit dissolves the gate instead. The ink is spent on the spot, the cloak locks for PK.inkSlip scored gates (the dissolved gate does not count), and the combo is lost
             inkT = 0; FX.inkLock = PK.inkSlip; g.broken = g.slip = true; g.flash = 1; invuln = .6; combo = 0; tier = 0;
             hitstop = Math.max(hitstop, .12); banner(t('fx_slip'), [285,80,70], 1, false); haptic('shatter'); sigFx(B.id, 'slip', g); }
@@ -2088,17 +2435,22 @@ function update(rdt){
         dashMeter = Math.min(1, dashMeter + .34*B.dash); skillCharge = Math.min(1, skillCharge + (FX.resoT > 0 || sure ? 0 : PK.perfCharge));
         if (PK.veil && !sure && FX.threads < 3 && ++FX.threadP >= PK.veil){ FX.threadP = 0; FX.threads++; sigFx(B.id, 'thread', g); }   // AURORA: every PK.veil Perfects weave one thread, three at most; a full set stops counting
         SFX.perfect(combo); perfectFx(B.id, g); flash = Math.max(flash, .18); hitstop = .06; shake = Math.max(shake, 4);
+        { const pl = comboLevel(combo, tier, FXCFG); if (pl >= 4 && IMP.comboLvl < 4) impFx('overdrive'); IMP.comboLvl = pl; }
+        impFx('near'); if (g.minClear < perfWin() * FXCFG.near.closeFrac) pop('CLOSE!', bird.x + 10, bird.y - 52, [FXCFG.near.flashHue, 100, 72], true);
         g.flash = 1; cam.z = Math.max(cam.z, 1.035);
         { const cy2 = gY(g), gp2 = gGap(g); ring(g.x + g.w, bird.y < cy2 ? cy2 - gp2/2 : cy2 + gp2/2, 95, tier === 2 ? [300,100,68] : pal.a, .45, 3); }
         pop(combo > 1 ? `${t('perfectP')} x${combo}  +${pts}` : `${t('perfectP')} +${pts}`, bird.x+10, bird.y-30, pal.a, true);
-        for (let i=0;i<16;i++) part(g.x+g.w, bird.y, 60+Math.random()*200, (Math.random()-.5)*260, .6, pal.a, 2.5);
+        impBurst(g.x + g.w, bird.y, pal.a.slice(), ['spark']);
       } else {
         if (tier === 2 && PK.comboGuard && !guardUsed){
           guardUsed = true; addScore(1); pop(t('fx_guard'), bird.x, bird.y+36, [45,100,62], true); ring(bird.x, bird.y, 110, [45,100,62], .5, 5); haptic('power'); SFX.ready(); sigFx(B.id, 'guard', g);
         } else {
           if (combo > 1) pop(t('comboBreak'), bird.x, bird.y+36, [0,0,70]);
           if (tier === 2) banner(t('feverEnd'), [0,0,78], .9, false);
+          const comboWas = combo;
           combo = PK.comboKeep ? Math.floor(combo * PK.comboKeep) : 0; tier = combo >= Math.min(5, PK.feverAt - 3) ? 1 : 0; addScore(1); SFX.pass(); if (combo > 0) sigFx(B.id, 'keep', g);
+          if (comboWas > 4) impFx('comboBreak');
+          IMP.comboLvl = comboLevel(combo, tier, FXCFG); impFx('gate');
         }
         dashMeter = Math.min(1, dashMeter + .08*B.dash); ultFill(0, live);
       }
@@ -2131,11 +2483,11 @@ function update(rdt){
     if (o.got) continue;
     const dx = bird.x - o.x, dy = bird.y - o.y, d = Math.hypot(dx,dy);
     const mr = o.k === 'gem' ? 110 : rushT > 0 ? 240 : magnetT > 0 ? 190 : PK.magnet;
-    if (mr && (o.k === 'orb' || o.k === 'gem') && d < mr && d > 0){ o.x += dx/d * 520*dt; o.y += dy/d * 520*dt; }
+    if (mr && (o.k === 'orb' || o.k === 'gem') && d < mr && d > 0){ o.x += dx/d * 520*dt; o.y += dy/d * 520*dt; o.pull = 1; }
     if (d < bird.r + (o.k==='orb'?10:o.k==='gem'?22:16)){
       o.got = true;
       if (o.k === 'orb' && PK.orbShieldEvery && Math.floor((orbsGot + (rushT > 0 ? 2 : 1)) / PK.orbShieldEvery) > Math.floor(orbsGot / PK.orbShieldEvery) && shields < PK.shieldMax){ shields++; popT = 0; pop(t('shieldP') + ' +1', bird.x, bird.y-34, [48,100,62], true); SFX.power(); haptic('power'); }
-      if (o.k === 'orb'){ orbsGot += rushT > 0 ? 2 : 1; dashMeter = Math.min(1, dashMeter + .05*B.dash); SFX.orb(); for (let i=0;i<6;i++) part(o.x,o.y,(Math.random()-.5)*160,(Math.random()-.5)*160,.35,[48,100,65],2); }
+      if (o.k === 'orb'){ orbsGot += rushT > 0 ? 2 : 1; dashMeter = Math.min(1, dashMeter + .05*B.dash); SFX.orb(); for (let i=0;i<6;i++) part(o.x,o.y,(Math.random()-.5)*160,(Math.random()-.5)*160,.35,[48,100,65],2); IMP.coinPulse = 1; impBurst(o.x, o.y, [48,100,62], ['spark'], .3); }
       else if (o.k === 'gem'){ W.gems++; FX.gemsRun++; saveW(); pop(t('gemP'), bird.x, bird.y-34, [335,100,72], true); ring(bird.x, bird.y, 160, [335,100,72], .6, 6); flash = Math.max(flash, .3); SFX.power(); haptic('power'); }
       else {
         SFX.power(); haptic('power');
@@ -2159,22 +2511,22 @@ function cloneHit(){
   cloneT = 0; invuln = 1; hurtT = .35; shards(bird.x - 26, bird.y, [270,40,30], 24); ring(bird.x, bird.y, 140, B.uiCol || B.col, .5, 6);
   pop(t('sk_zero'), bird.x, bird.y - 34, B.uiCol || B.col, true); haptic('shieldBreak'); SFX.shield(); shake = 10; sigFx(B.id, 'clone');
 }
-function breakShield(){
-  hurtT = .45;
+function breakShield(dirY){
+  hurtT = Math.max(.45, FXCFG.vignette.hurt);
+  impFx('shieldHit', { dirY: dirY || 0 }); IMP.crackT = .3;
   shields = Math.max(0, shields - 1); invuln = POW.shieldInv; popT = -1;
   const bc = ufx(B.id, 'breakCol');   // a unit may recolour the pieces of its own shield
   shards(bird.x, bird.y, bc || [190,100,78], 22); ring(bird.x, bird.y, 170, bc || [190,100,78], .5, 7); SFX.shield(); haptic('shieldBreak'); shake = 10; flash = .3;
   pop(t('shieldBreak'), bird.x, bird.y-34, [190,100,70]);
-  for (let i=0;i<20;i++){ const a=Math.random()*6.28; part(bird.x,bird.y,Math.cos(a)*220,Math.sin(a)*220,.5,bc || [190,100,70],2.5); }
 }
 
 /* ---------- render ---------- */
 function render(){
   ctx.setTransform(1,0,0,1,0,0);
   ctx.fillStyle = '#000'; ctx.fillRect(0,0,cv.width,cv.height);
-  const sk = RM ? 0 : shake + FX.amb;
+  const sk = IMP.feat.shake ? shake + FX.amb : 0;
   const z = RM ? 1 : cam.z;
-  ctx.setTransform(scale*z,0,0,scale*z, cam.fx*(1-z)*scale + (Math.random()-.5)*sk*scale, cam.fy*(1-z)*scale + (Math.random()-.5)*sk*scale);
+  ctx.setTransform(scale*z,0,0,scale*z, cam.fx*(1-z)*scale + ((Math.random()-.5)*sk + IMP.shk.ox*IMP.feat.shake)*scale, cam.fy*(1-z)*scale + ((Math.random()-.5)*sk + IMP.shk.oy*IMP.feat.shake)*scale);
 
   const sg = ctx.createLinearGradient(0,0,0,GROUND);
   sg.addColorStop(0, hsl(pal.sky0)); sg.addColorStop(1, hsl(pal.sky1));
@@ -2202,9 +2554,10 @@ function render(){
   drawSky(sky1, .3, hsl(pal.sky0,1,1), GROUND, true);
   }
   skyEvent();   // unit sky effects sit behind the gates so they never hide a gap
-  if ((dashT > 0 || feverGlow > .3) && !RM){
+  if ((dashT > 0 || potionT > 0 || rushT > 0 || feverGlow > .3 || IMP.comboLvl >= 3) && !RM){
+    const band = !(dashT > 0 || feverGlow > .3);   // speed states and L3 keep the lines to the top/bottom 30% bands
     ctx.strokeStyle = dashT > 0 ? hsl(B.wingCol,.35) : hsl([(T*160)%360,100,70],.18); ctx.lineWidth = 2;
-    for (let i=0;i<14;i++){ const y = (i*47 + T*900) % GROUND, x = (LW + 40) - ((T*1800 + i*173) % (LW + 260)); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 70 + (i%3)*30, y); ctx.stroke(); }
+    for (let i=0;i<14;i++){ let y = (i*47 + T*900) % GROUND; if (band) y = y < GROUND/2 ? y * .3 : GROUND - (GROUND - y) * .3; const x = (LW + 40) - ((T*1800 + i*173) % (LW + 260)); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 70 + (i%3)*30, y); ctx.stroke(); }
   }
 
   if (state === 'menu') drawFlock(1/60);
@@ -2226,6 +2579,10 @@ function render(){
 
   for (const o of orbs){
     const bob = Math.sin(o.t*5)*3;
+    if (o.pull && !o.got){ const dxp = bird.x - o.x, dyp = bird.y - o.y, dp = Math.hypot(dxp, dyp) || 1;
+      ctx.fillStyle = 'hsla(48,100%,65%,.4)';
+      for (let i = 1; i <= 2; i++){ ctx.beginPath(); ctx.arc(o.x - dxp/dp*i*9, o.y + bob - dyp/dp*i*9, 2.4 - i*.7, 0, 6.283); ctx.fill(); }
+    }
     if (o.k === 'orb'){
       ctx.save(); ctx.translate(o.x, o.y + bob); ctx.rotate(o.t*2);
       ctx.shadowColor = 'hsl(48,100%,60%)'; ctx.shadowBlur = 14;
@@ -2263,6 +2620,19 @@ function render(){
     else ctx.fillRect(p.x-p.size/2, p.y-p.size/2, p.size, p.size);
   }
   ctx.globalAlpha = 1;
+  if (IMP.pool.live){
+    ctx.save();
+    for (const q of IMP.pool.items){
+      if (!q.alive) continue;
+      const k = q.t / q.life, col = gradCol(k, q.col);
+      ctx.globalAlpha = 1 - k;
+      if (q.layer === 'core'){ ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = hsl(col, .9); ctx.beginPath(); ctx.arc(q.x, q.y, q.size * (1 - k * .5), 0, 6.283); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
+      else if (q.layer === 'smoke'){ ctx.fillStyle = hsl(col, .35); ctx.beginPath(); ctx.arc(q.x, q.y, q.size * (1 + k), 0, 6.283); ctx.fill(); }
+      else if (q.layer === 'debris'){ ctx.save(); ctx.fillStyle = hsl(col); ctx.translate(q.x, q.y); ctx.rotate(q.rot); ctx.beginPath(); for (let i = 0; i < 6; i++){ const a = i / 6 * 6.283; ctx.lineTo(Math.cos(a) * q.size, Math.sin(a) * q.size); } ctx.closePath(); ctx.fill(); ctx.restore(); }
+      else { ctx.fillStyle = hsl(col); ctx.fillRect(q.x - q.size / 2, q.y - q.size / 2, q.size, q.size); }
+    }
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
   for (const q of rings){
     const k = q.life/q.max0; ctx.globalAlpha = k; ctx.strokeStyle = hsl(q.col); ctx.lineWidth = Math.max(.5, q.w*k);
     ctx.shadowColor = hsl(q.col); ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.28); ctx.stroke();
@@ -2275,10 +2645,11 @@ function render(){
   }
 
   if (state !== 'dying' && state !== 'over' && state !== 'cont') drawBird();
+  if (IMP.comboLvl >= 3 && state === 'play' && !RM){ ctx.save(); ctx.strokeStyle = hsl([(T*200)%360,100,66], .5); ctx.lineWidth = 2; ctx.setLineDash([10, 14]); ctx.lineDashOffset = -T*80; ctx.beginPath(); ctx.arc(bird.x, bird.y, bird.r*2.6, 0, 6.283); ctx.stroke(); ctx.restore(); }
   drawRival();
 
   for (const p of pops){
-    const a = 1 - Math.max(0,(p.t-.6)/.5), s = p.big ? 1 + Math.max(0,.25-p.t)*2 : 1;
+    const a = 1 - Math.max(0,(p.t-.6)/.5), s = p.big ? popScale(Math.min(1, p.t / FXCFG.pop.dur), FXCFG.pop.from) : 1;
     ctx.save(); ctx.globalAlpha = a; ctx.translate(p.x, p.y); ctx.scale(s,s);
     ctx.font = `${p.big?18:14}px Bungee, ${SYS}`; ctx.textAlign = 'center';
     ctx.fillStyle = hsl(p.col); ctx.shadowColor = hsl(p.col); ctx.shadowBlur = 10; ctx.fillText(p.text, 0, 0);
@@ -2303,8 +2674,9 @@ function render(){
     vd.addColorStop(0,'rgba(0,0,0,0)'); vd.addColorStop(1, `rgba(255,40,70,${danger*(.25 + .2*pz)})`); ctx.fillStyle = vd; ctx.fillRect(0,0,LW,LH);
     if (danger > .4){ ctx.save(); ctx.font = `22px Bungee, ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(255,70,90,${.6 + .4*pz})`; ctx.shadowColor = 'rgba(255,40,70,.9)'; ctx.shadowBlur = 14; ctx.fillText('!', bird.x, bird.y - bird.r*2.4); ctx.restore(); }
   }
-  if (flash > 0 && !RM){ ctx.fillStyle = `rgba(255,255,255,${flash*.35})`; ctx.fillRect(0,0,LW,LH); }
+  if (flash > 0 && IMP.feat.flash){ ctx.fillStyle = `rgba(255,255,255,${flash*.35})`; ctx.fillRect(0,0,LW,LH); }
 
+  impPost();
   ctx.setTransform(scale,0,0,scale,0,0);
   if (feverGlow > .01 && !RM){
     const pu = .5 + .5*Math.sin(T*10), hue = ufx(B.id, 'feverHue') ?? (T*120) % 360, w = 46;
@@ -2312,6 +2684,7 @@ function render(){
     edge(0,0,w,0, 0,0,w,LH); edge(LW,0,LW-w,0, LW-w,0,w,LH); edge(0,0,0,w, 0,0,LW,w); edge(0,LH,0,LH-w, 0,LH-w,LW,w);
   }
   pillBot = 0; if (state === 'play' || state === 'paused' || state === 'dying') drawHUD();
+  impHud();
   for (const b of banners){
     const k = b.t / b.dur, inT = .16, outT = .2;
     const e = k < inT ? 1 - Math.pow(1 - k/inT, 3) : k > 1 - outT ? 1 - (k - (1-outT))/outT : 1;
@@ -2856,18 +3229,32 @@ function drawBird(){
   const skA = godT > 0 || boostT > 0 || lowGravT > 0 || autoT > 0 || rushT > 0 || foreT > 0 || freezeT > 0;
   if (skA && !U.active){ ctx.strokeStyle = hsl(godT > 0 ? [45,100,62] : (B.uiCol || B.col), .6 + .3*Math.sin(T*14)); ctx.lineWidth = 3; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(0,0,bird.r*2.1 + Math.sin(T*10)*3,0,6.28); ctx.stroke(); ctx.shadowBlur = 0; }
   if (potionT > 0){ for (let i=0;i<10;i++){ const a = T*4 + i*.628; ctx.fillStyle = `hsla(${(i*36 + T*300)%360},100%,65%,.8)`; ctx.beginPath(); ctx.arc(Math.cos(a)*bird.r*2, Math.sin(a)*bird.r*2, 2.2, 0, 6.28); ctx.fill(); } }
-  if (U.shields) U.shields(vs); else for (let k = 0; k < shields; k++){
-    const R = (bird.r + 10 + k*6) * vs, hue = U.shieldHue || 190;
-    ctx.save(); ctx.rotate(T*1.4*(k % 2 ? -1 : 1) + k*.5); ctx.shadowColor = `hsl(${hue},100%,60%)`; ctx.shadowBlur = 18;
+  if (U.shields) U.shields(vs); else { const sr = shieldRings(shields, FXCFG); for (let k = 0; k < shields; k++){
+    const R = (bird.r + 10 + k*6) * vs, hue = U.shieldHue || sr[k].hue, crack = k === shields - 1 ? IMP.crackT : 0;
+    ctx.save(); ctx.rotate(T*1.4*sr[k].spin + k*.5); ctx.shadowColor = `hsl(${hue},100%,60%)`; ctx.shadowBlur = 18;
     ctx.strokeStyle = `hsla(${hue},100%,72%,${.6+.25*Math.sin(T*8 + k)})`; ctx.fillStyle = `hsla(${hue},100%,60%,${k ? .04 : .10})`; ctx.lineWidth = 2.5 - k*.5;
     ctx.beginPath(); for (let i=0;i<6;i++){ const a = i/6*6.283; ctx.lineTo(Math.cos(a)*R, Math.sin(a)*R); } ctx.closePath(); ctx.fill(); ctx.stroke();
+    if (crack > 0){ ctx.strokeStyle = `hsla(0,0%,100%,${crack*2.4})`; ctx.lineWidth = 1.4; ctx.beginPath(); for (let i=0;i<4;i++){ const a = i*1.7 + .4; ctx.moveTo(Math.cos(a)*R*.4, Math.sin(a)*R*.4); ctx.lineTo(Math.cos(a+.3)*R, Math.sin(a+.3)*R); } ctx.stroke(); }
     ctx.restore();
+  }
+  if (arcsOn(shields, FXCFG) && !RM){ ctx.save(); ctx.strokeStyle = 'hsla(195,100%,80%,.7)'; ctx.lineWidth = 1.2;
+    for (let j = 0; j < 2; j++){ const a0 = T*7 + j*3.1, r0 = (bird.r + 10) * vs, r1 = (bird.r + 10 + (shields-1)*6) * vs; ctx.beginPath(); ctx.moveTo(Math.cos(a0)*r0, Math.sin(a0)*r0);
+      for (let i = 1; i <= 3; i++){ const rr = r0 + (r1 - r0) * i / 3, aa = a0 + Math.sin(T*31 + i*2.7 + j) * .25; ctx.lineTo(Math.cos(aa)*rr, Math.sin(aa)*rr); } ctx.stroke(); }
+    ctx.restore(); }
   }
   if (giantT > 0) vs *= 1 + Math.min(1, (TMAX.giant - giantT) * 5, giantT * 4);
   if (phaseT > 0) ctx.globalAlpha = RM ? .6 : .52 + .15*Math.sin(T*18.85);   // ghosting: 3Hz (was 4.8Hz) and a little more solid, steady with reduced motion
   ctx.rotate(bird.rot); ctx.scale(vs*(1 - .12*squash), vs*(1 + .22*squash));
   const o = {lite:false, pose:0, vy:bird.vy}; if (U.opt) U.opt(o);
   drawShape(ctx, B, bird.wing, dashT > 0 ? B.wingCol : tier === 2 ? [(T*240)%360,100,64] : (B.uiCol || B.col), o); unitFront(B);
+  if (IMP.feat.chroma && (IMP.caT > 0 || (IMP.feat.chromaIdle && IMP.comboLvl >= 4))){
+    // chromatic split on the subject only — a full-frame split needs a frame copy we cannot afford (review C1)
+    const px = FXCFG.chroma.px, aC = IMP.caT > 0 ? Math.min(.4, IMP.caT / FXCFG.chroma.dur * .4) : FXCFG.chroma.idleAlpha;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = aC;
+    ctx.translate(-px, 0); drawShape(ctx, B, bird.wing, [185, 100, 60], o);
+    ctx.translate(px * 2, 0); drawShape(ctx, B, bird.wing, [340, 100, 60], o);
+    ctx.restore();
+  }
   ctx.restore();
 }
 /* ---------- unit fx: state-dependent looks and moments ----------
@@ -3559,6 +3946,10 @@ function drawHUD(){
   ctx.shadowColor = hsl(pal.a); ctx.shadowBlur = 16;
   { const sp = 1 + scorePunch*.38; ctx.save(); ctx.translate(LW/2, 68); ctx.scale(sp, sp); ctx.fillText(score, 0, 18); ctx.restore(); }
   ctx.shadowBlur = 0;
+  { const cs = 1 + IMP.coinPulse*.35; ctx.save(); ctx.translate(LW/2, 96); ctx.scale(cs, cs);
+    ctx.font = `700 12px "Chakra Petch", ${SYS}`; ctx.fillStyle = 'hsl(48,100%,62%)';
+    ctx.beginPath(); ctx.arc(-16, -4, 4.5, 0, 6.283); ctx.fill();
+    ctx.fillStyle = 'rgba(243,238,252,.9)'; ctx.textAlign = 'left'; ctx.fillText(String(orbsGot), -8, 0); ctx.textAlign = 'center'; ctx.restore(); }
   if (combo > 1){
     ctx.font = `16px Bungee, ${SYS}`; ctx.fillStyle = hsl(pal.a);
     if (tier === 2) ctx.fillStyle = hsl([(T*240)%360,100,66]); else if (tier === 1) ctx.fillStyle = 'hsl(28,100%,62%)';
@@ -4564,8 +4955,14 @@ renderVsBadge();
 
 /* ---------- loop ---------- */
 let last = performance.now();
+const fxFrameMs = []; let fxFrameI = 0;
 function loop(now){
   const rdt = Math.min(.034, (now - last)/1000); last = now;
+  if (fxSettings.q === 'auto' && state === 'play'){
+    fxFrameMs[fxFrameI++ % 120] = rdt * 1000;
+    if (fxFrameI % 120 === 0){ const srt = fxFrameMs.slice().sort((a, b) => a - b), p90 = srt[Math.floor(srt.length * .9)];
+      const q2 = fxQualityStep(IMP.q, p90); if (q2 !== IMP.q) IMP = impNew(q2); }
+  }
   if (state !== 'paused' && !(window.FW && window.FW.hold)) update(rdt);
   render(); drawHangarPreview(); musicTick(); tutTick(rdt); if (state === 'play' || state === 'dying' || state === 'over') vsTick(rdt);
   adPlaySync();
@@ -4580,6 +4977,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter, lowGravT, inkT, overT, weightT, fogT: FX.fogT}; },   // QA only: timers a player reads off the screen (lowGravT: the bot's flight model follows NIMBUS's glide; inkT: KRAKEN's ink cloak log; overT / weightT / fogT: the hazards)
   haz(k, dx, dy){ const h = {x: bird.x + (dx || 0), y: bird.y + (dy || 0), k, got:false, t:0}; if (dx == null) hazHit(h); else hazs.push(h); },   // QA only: a hazard as if touched right now, or one placed dx / dy from the bird
   get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
+  setFxQuality(q){ fxSettings.q = q; IMP = impNew(q); }, comboLevelOf: (c, tr) => comboLevel(c, tr, FXCFG), get imp(){ return IMP; }, fx: impFx, get fxEvents(){ return FX_EVENTS.slice(); },
   hold: false, step(dt, n){ for (let i = 0; i < (n || 1); i++) update(dt); },
   selfTest(){
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b), S = [0,9,10,24,25,39,40,49], fails = [];
@@ -4703,6 +5101,37 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
     for (const k in checks){ let ok = false; try { ok = checks[k](); } catch(e){} if (!ok) fails.push(k); }
     return fails;
   } };
+if (window.FW){
+  /* dev FX panel — replay buttons, quality select, live tuning sliders, Copy JSON (never on release URLs) */
+  const pd = document.createElement('div'); pd.id = 'fxDev';
+  pd.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:99;background:rgba(10,7,22,.88);border:1px solid rgba(243,238,252,.3);border-radius:10px;padding:8px;max-width:190px;font:11px monospace;color:#eee;display:flex;flex-wrap:wrap;gap:4px';
+  const addBtn = (label, fn, attr) => { const b = document.createElement('button'); b.textContent = label; if (attr) b.setAttribute(attr[0], attr[1]); b.style.cssText = 'font:10px monospace;padding:2px 5px;background:#223;color:#eee;border:1px solid #556;border-radius:4px;cursor:pointer'; b.addEventListener('click', e => { e.stopPropagation(); fn(); }); pd.appendChild(b); return b; };
+  for (const ev of FX_EVENTS) addBtn(ev, () => impFx(ev), ['data-fxev', ev]);
+  const sel = document.createElement('select'); sel.style.cssText = 'font:10px monospace;background:#223;color:#eee';
+  for (const q of ['auto', 'low', 'mid', 'high']){ const o = document.createElement('option'); o.value = q; o.textContent = 'q:' + q; sel.appendChild(o); }
+  sel.addEventListener('change', () => { fxSettings.q = sel.value; IMP = impNew(sel.value === 'auto' ? null : sel.value); });
+  pd.appendChild(sel);
+  const addSlider = (label, path, min, max, step) => {
+    const w = document.createElement('label'); w.style.cssText = 'display:flex;gap:3px;align-items:center;width:100%';
+    const r = document.createElement('input'); r.type = 'range'; r.min = min; r.max = max; r.step = step; r.style.flex = '1';
+    let v = FXCFG; for (const k of path.split('.')) v = v[k];
+    r.value = v;
+    r.addEventListener('input', () => {
+      const patch = {}; let p = patch; const ks = path.split('.');
+      ks.forEach((k, ix) => { p[k] = ix === ks.length - 1 ? +r.value : (p[k] = {}); p = p[k]; });
+      FXCFG = fxCfgMerge(FXCFG, patch);
+    });
+    const tlb = document.createElement('span'); tlb.textContent = label; w.append(tlb, r); pd.appendChild(w);
+  };
+  addSlider('hs.heavy', 'hitstop.heavy', .04, .12, .005);
+  addSlider('punch.hv', 'punch.heavy', 1.05, 1.15, .005);
+  addSlider('shake.hv', 'shake.ampPx.heavy', 1, 24, 1);
+  addSlider('slowmo', 'slowmo.scale', .2, .6, .02);
+  addSlider('chromaPx', 'chroma.px', 1, 6, .5);
+  addSlider('bloomA', 'bloom.alpha', .05, .5, .02);
+  addBtn('Copy JSON', () => { try { navigator.clipboard.writeText(JSON.stringify(FXCFG, null, 2)); } catch (e) {} });
+  document.body.appendChild(pd);
+}
 resize(); reset(); state = 'menu';
 applyI18n(); renderWallet();
 requestAnimationFrame(loop);
