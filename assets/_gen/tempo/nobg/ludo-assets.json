@@ -1,0 +1,92 @@
+{
+  "assets": [
+    {
+      "file": "removeBackground-d6540c4d.webp",
+      "command": "image remove-background",
+      "operation_id": "removeBackground",
+      "body": {
+        "image": "../0.jpg"
+      },
+      "job_id": "d6540c4d-4bef-466d-aa78-7b75d12dc14a",
+      "credits": 0.5,
+      "created_at": "2026-10-17T03:03:26.432Z"
+    },
+    {
+      "file": "removeBackground-d6540c4d.png",
+      "command": "image remove-background",
+      "operation_id": "removeBackground",
+      "body": {
+        "image": "../0.jpg"
+      },
+      "job_id": "d6540c4d-4bef-466d-aa78-7b75d12dc14a",
+      "credits": 0.5,
+      "created_at": "2026-10-17T03:03:26.432Z"
+    },
+    {
+      "file": "removeBackground-4a0d14f3.webp",
+      "command": "image remove-background",
+      "operation_id": "removeBackground",
+      "body": {
+        "image": "../1.jpg"
+      },
+      "job_id": "4a0d14f3-0a0e-4b89-b94e-540722593d8b",
+      "credits": 0.5,
+      "created_at": "2026-10-17T03:03:48.042Z"
+    },
+    {
+      "file": "removeBackground-4a0d14f3.png",
+      "command": "image remove-background",
+      "operation_id": "removeBackground",
+      "body": {
+        "image": "../1.jpg"
+      },
+      "job_id": "4a0d14f3-0a0e-4b89-b94e-540722593d8b",
+      "credits": 0.5,
+      "created_at": "2026-10-17T03:03:48.042Z"
+    },
+    {
+      "file": "removeBackground-260f89f8.webp",
+      "command": "image remove-background",
+      "operation_id": "removeBackground",
+      "body": {
+        "image": "../2.jpg"
+      },
+      "job_id": "260f89f8-ab07-478b-b291-2210f0e3fc60",
+      "credits": 0.5,
+      "created_at": "2026-10-17T03:04:05.416Z"
+    },
+    {
+      "file": "removeBackground-260f89f8.png",
+      "command": "image remove-background",
+      "operation_id": "removeBackground",
+      "body": {
+        "image": "../2.jpg"
+      },
+      "job_id": "260f89f8-ab07-478b-b291-2210f0e3fc60",
+      "credits": 0.5,
+      "created_at": "2026-10-17T03:04:05.416Z"
+    },
+    {
+      "file": "removeBackground-34ad05c8.webp",
+      "command": "image remove-background",
+      "operation_id": "removeBackground",
+      "body": {
+        "image": "../3.jpg"
+      },
+      "job_id": "34ad05c8-2196-485a-b7a7-f2bd8f3dc747",
+      "credits": 0.5,
+      "created_at": "2026-10-17T03:04:33.882Z"
+    },
+    {
+      "file": "removeBackground-34ad05c8.png",
+      "command": "image remove-background",
+      "operation_id": "removeBackground",
+      "body": {
+        "image": "../3.jpg"
+      },
+      "job_id": "34ad05c8-2196-485a-b7a7-f2bd8f3dc747",
+      "credits": 0.5,
+      "created_at": "2026-10-17T03:04:33.882Z"
+    }
+  ]
+}
