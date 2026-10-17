@@ -538,95 +538,6 @@ window.FW_CONFIG = { supabaseUrl: 'https://ecjeyelgcqbliavwltbc.supabase.co', su
 <script>
 (() => {
 'use strict';
-/* fx:start — generated from arcade-core/fx, do not edit by hand; run: node tools/sync-fx.mjs */
-const AFX = (() => {
-// -- fx/particles.js --
-// Shared particle rules: pure stepping, no renderer coupling. Reused across arcade games.
-function makeParticle({ x, y, vx = 0, vy = 0, life = 1, g = 0, size = 3, color = '#fff', shape = 'dot' }) {
-  return Object.freeze({ x, y, vx, vy, life, g, size, color, shape });
-}
-
-function stepParticles(list, dt) {
-  const out = [];
-  for (const p of list) {
-    const life = p.life - dt;
-    if (life <= 0) continue;
-    const vy = p.vy + p.g * dt;
-    out.push({ ...p, x: p.x + p.vx * dt, y: p.y + vy * dt, vy, life });
-  }
-  return out;
-}
-
-// Low-spec mode halves particle counts (never below 1).
-function spawnCount(n, lowSpec) {
-  return lowSpec ? Math.max(1, Math.ceil(n / 2)) : n;
-}
-// -- fx/shield.js --
-// Shield aura: one rotating ring per equipped layer; a hit breaks one layer into hex shards.
-
-const RING_SPEED = 1.6; // rad/s
-
-function ringPhases(t, layers) {
-  const out = [];
-  for (let i = 0; i < layers; i++) out.push(t * RING_SPEED + (i * 2 * Math.PI) / Math.max(1, layers));
-  return out;
-}
-
-// 6 shards per layer broken, flying outward along hex directions.
-function hexBurst(x, y, layers = 1) {
-  const out = [];
-  for (let l = 0; l < layers; l++) for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * 2 * Math.PI + l * 0.3;
-    const sp = 120 + l * 40;
-    out.push(makeParticle({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.45, g: 260, size: 5, shape: 'hex' }));
-  }
-  return out;
-}
-
-function shieldHit(state, at) {
-  const layers = Math.max(0, (state.layers | 0) - 1);
-  return { ...state, layers, burst: hexBurst(at.x, at.y, 1) };
-}
-// -- fx/xp.js --
-// XP-boost visuals: colored trail behind the unit + rising "+N XP" popups.
-function pushTrail(trail, point, max = 20) {
-  const out = trail.length >= max ? trail.slice(trail.length - max + 1) : trail.slice();
-  out.push(point);
-  return out;
-}
-
-function xpPopup(amount) {
-  return Object.freeze({ text: `+${amount} XP`, vy: -40, life: 0.8 });
-}
-// -- fx/juice.js --
-// Common game-feel helpers: screen shake, 60ms hitstop, collision flash, coin bounce.
-function rnd(seed) { // deterministic noise for testable shake
-  const s = Math.sin(seed * 12.9898) * 43758.5453;
-  return (s - Math.floor(s)) * 2 - 1;
-}
-
-function shakeOffset(t, magnitude, duration, seed = 0) {
-  if (t >= duration) return { x: 0, y: 0 };
-  const k = magnitude * (1 - t / duration);
-  return { x: rnd(seed + t * 61) * k, y: rnd(seed + 7 + t * 53) * k };
-}
-
-function hitstop(now, ms = 60) {
-  const until = now + ms;
-  return { until, frozen: t => t <= until };
-}
-
-function flashAlpha(t, duration) {
-  return t >= duration ? 0 : 1 - t / duration;
-}
-
-// Overshoot to ~1.3x around t=0.15s, settle to 1 by t≈0.5s (damped spring-ish).
-function coinBounceScale(t) {
-  return 1 + 0.35 * Math.exp(-6 * t) * Math.sin(10 * t);
-}
-return { makeParticle, stepParticles, spawnCount, ringPhases, hexBurst, shieldHit, pushTrail, xpPopup, shakeOffset, hitstop, flashAlpha, coinBounceScale };
-})();
-/* fx:end */
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 const $ = id => document.getElementById(id);
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -710,13 +621,6 @@ const BIRDS = [
   { id:'tempest', name:'TEMPEST', rarity:4, hidden:true, col:[215,75,52],  wingCol:[185,100,70], speed:1.15, flap:490, grav:1600, maxFall:760, dash:1.40, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,3,2,5], dashPts:2, dashRefund:.3, gust:.33, gustLock:16 },
   { id:'pleiad',  name:'PLEIAD',  rarity:4, hidden:true, col:[232,65,62],  wingCol:[50,100,72],  speed:1.00, flap:480, grav:1500, maxFall:700, dash:1.10, r:13.5, window:17, bonus:0, nose:16, h:14, span:28, stats:[3,3,3,3], shieldStart:1, shieldMax:2, shieldRegen:60, shieldBurst:true },
   { id:'pulsar',  name:'PULSAR',  rarity:4, col:[320,100,62], wingCol:[180,100,66], speed:1.06, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:19, bonus:2, nose:19, h:12, span:28, stats:[4,3,3,3], perfCharge:.08, feverAt:8, ping:.34 },
-  // ---- illustrated premium line (image-rendered via UNIT_ART; procedural fallback until the PNG loads) ----
-  { id:'magnet',  name:'MAGNET',  rarity:1, img:1, col:[220,15,60],  wingCol:[0,90,60],    speed:1.00, flap:470, grav:1500, maxFall:720, dash:1.00, r:13,   window:17, bonus:0, nose:16, h:13, span:26, stats:[3,3,3,3], magnet:140, coinMul:2 },
-  { id:'tempo',   name:'TEMPO',   rarity:1, img:1, col:[28,95,60],   wingCol:[0,0,95],     speed:1.04, flap:460, grav:1450, maxFall:700, dash:1.05, r:12.5, window:18, bonus:1, nose:17, h:12, span:26, stats:[4,3,3,3], perfCharge:.11 },
-  { id:'mirage',  name:'MIRAGE',  rarity:2, img:1, col:[270,45,80],  wingCol:[290,80,70],  speed:1.04, flap:450, grav:1380, maxFall:660, dash:1.10, r:12.5, window:17, bonus:0, nose:16, h:13, span:26, stats:[4,3,4,3], phaseEvery:9 },
-  { id:'catalyst',name:'CATALYST',rarity:2, img:1, col:[110,80,55],  wingCol:[45,90,60],   speed:0.98, flap:460, grav:1450, maxFall:690, dash:1.00, r:13.5, window:17, bonus:0, nose:15, h:14, span:28, stats:[3,3,4,3], xpMul:3 },
-  { id:'bulwark', name:'BULWARK', rarity:3, img:1, col:[185,70,45],  wingCol:[200,30,70],  speed:0.95, flap:560, grav:1750, maxFall:760, dash:1.25, r:15,   window:16, bonus:0, nose:16, h:15, span:26, stats:[2,5,2,4], shieldStart:2, shieldMax:4, shieldRegen:45 },
-  { id:'prime',   name:'PHOENIX PRIME', rarity:2, img:1, col:[45,100,58], wingCol:[8,100,55], speed:1.08, flap:480, grav:1520, maxFall:720, dash:1.20, r:13.5, window:18, bonus:1, nose:18, h:13, span:30, stats:[4,4,3,4], revive:1, xpMul:2, feverAt:7 },
   // ---- season reward: never sold, never the free trial (season). Legendary rank for power, cast scale and hangar order; its own label and badge colour ----
   { id:'monarch', name:'MONARCH', rarity:2, season:true, col:[48,70,93], wingCol:[46,100,58], uiCol:[46,100,60], speed:1.00, flap:480, grav:1500, maxFall:720, dash:1.10, r:13.5, window:17, bonus:0, nose:19, h:13, span:32, stats:[3,3,3,3], shieldStart:1, shieldRegen:25 }
 ];
@@ -932,22 +836,6 @@ vi:{startSub:'Một chạm là bay', dailyCta:'THỬ THÁCH TOÀN CẦU HÔM NAY
  pt_bronze:'Đồng', pt_silver:'Bạc', pt_gold:'Vàng', pt_platinum:'Bạch kim', pt_diamond:'Kim cương', pt_transcend:'Siêu việt', pt_demigod:'Bán thần', ptUp:'THĂNG HẠNG! {t}', hz_over:'QUÁ TỐC', hz_weight:'TẠ NẶNG', hz_smoke:'KHÓI MÙ', hz_drain:'XẢ ĐIỆN', hHaz:'Vật cản — từ STAGE 11, những đĩa gai màu tối viền đỏ xuất hiện giữa các cổng. Chạm vào sẽ dính một trong số: Quá tốc (nhanh hơn trong 3 giây), Tạ nặng (nặng hơn trong 3 giây), Khói mù (2,5 giây sương mù) hoặc Xả điện (thanh lướt, năng lượng kỹ năng và combo về 0). Khi có khiên, đang lướt hoặc bất tử, chúng vỡ tan mà không gây hại. Chỉ có ở chế độ stage.'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
-// Illustrated premium line texts (ko/en; other languages fall back to en)
-const I18N_P = {
-ko:{ r_bulwark:'성채형', p_bulwark:'실드 2개로 출발, 최대 4개까지 겹쳐 두른다. 게이트 45개마다 실드 회복.', sk_bulwark:'성채 전개', sd_bulwark:'{n}초간 무적, 실드 1개 회복',
- r_catalyst:'연성형', p_catalyst:'경험치 획득 3배. 모든 성장이 빠르다.', sk_catalyst:'시간 연성', sd_catalyst:'{n}초간 시간이 느려진다',
- r_mirage:'신기루형', p_mirage:'게이트 9개마다 벽을 통과하는 신기루 상태가 된다.', sk_mirage:'환영 산책', sd_mirage:'{n}초간 벽을 통과한다',
- r_tempo:'박자형', p_tempo:'퍼펙트마다 스킬 게이지가 크게 차오른다.', sk_tempo:'정지 박자', sd_tempo:'{n}초간 세상이 멈춘다',
- r_magnet:'자력형', p_magnet:'코인 흡인 반경 2배, 코인 획득 2배.', sk_magnet:'풀 마그넷', sd_magnet:'{n}초간 강력 자석',
- r_prime:'불멸형', p_prime:'죽음에서 1번 부활하고 경험치 2배, 7콤보부터 피버.', sk_prime:'태양 불꽃', sd_prime:'{n}초간 죽지 않는다' },
-en:{ r_bulwark:'Bastion', p_bulwark:'Starts with 2 shields, stacks up to 4 rings. A shield returns every 45 gates.', sk_bulwark:'Bastion Wall', sd_bulwark:'Invincible for {n}s and restores 1 shield',
- r_catalyst:'Alchemic', p_catalyst:'Triple XP from every run.', sk_catalyst:'Transmute Time', sd_catalyst:'Time slows for {n}s',
- r_mirage:'Mirage', p_mirage:'Every 9 gates, briefly phases through walls.', sk_mirage:'Phantom Walk', sd_mirage:'Pass through walls for {n}s',
- r_tempo:'Metronome', p_tempo:'Every Perfect charges the skill meter much faster.', sk_tempo:'Rest Beat', sd_tempo:'The world freezes for {n}s',
- r_magnet:'Magnetic', p_magnet:'Double coin pull radius and double coins.', sk_magnet:'Full Magnet', sd_magnet:'A strong magnet for {n}s',
- r_prime:'Immortal', p_prime:'Revives once from death, double XP, Fever from 7 combo.', sk_prime:'Solar Flare', sd_prime:'Can’t die for {n}s' },
-};
-for (const l in I18N) Object.assign(I18N[l], I18N_P.en, I18N_P[l] || {});
 const birdById = id => BIRDS.find(b => b.id === id);
 let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
 
@@ -1707,8 +1595,6 @@ const SK = {
  phoenix:{cd:20,dur:4,f:{cd:18,dur:1}}, zero:{cd:11,dur:8,f:{cd:18,dur:4}}, raijin:{cd:16,n:3,f:{cd:18,n:1}}, chrono:{cd:20,dur:3,f:{cd:18,dur:1.2}}, goliath:{cd:13,dur:5,f:{cd:18,dur:1.5}},
  solaris:{cd:15,dur:6,fever:1,mag:1,f:{cd:18,dur:1,fever:0,mag:0}}, aurora:{cd:12,n:8,gap:40,perf:1,f:{cd:18,n:1,gap:0,perf:0}}, tempest:{cd:12,len:1.5,n:5,inv:1,arm:1,f:{cd:18,len:1,n:0,inv:0,arm:0}},
  pleiad:{cd:24,n:4,sh:1,f:{cd:18,n:1,sh:0}}, pulsar:{cd:11,dur:6,mul:3,brk:2,f:{cd:18,dur:2,mul:1,brk:0}},
- bulwark:{cd:24,dur:3,sh:1,f:{cd:18,dur:1,sh:0}}, catalyst:{cd:16,dur:2.5,f:{cd:18,dur:1.5}}, mirage:{cd:12,dur:4,perf:0,f:{cd:18,dur:1.2,perf:0}},
- tempo:{cd:20,dur:2.5,f:{cd:18,dur:1}}, magnet:{cd:14,dur:6,f:{cd:18,dur:3}}, prime:{cd:20,dur:4,f:{cd:18,dur:1}},
  monarch:{cd:26,dur:1,win:4,f:{cd:18,dur:1,win:0}}   // dur: seconds invincible; win: seconds of the wide Perfect window (VOLT's +10px), none in fair modes
 };
 const fairMode = () => mode === 'daily' || mode === 'versus';
@@ -1777,12 +1663,6 @@ function useSkill(){
     case 'raijin': FX.strikeN = skv('n'); FX.strikeT = 0; break;
     case 'chrono': freezeT = TMAX.freeze = skv('dur'); break;
     case 'goliath': giantT = TMAX.giant = skv('dur'); break;
-    case 'bulwark': setGod(skv('dur')); castShield(); break;
-    case 'catalyst': slowT = Math.max(slowT, skv('dur')); TMAX.slow = slowT; break;
-    case 'mirage': phaseT = TMAX.phase = skv('dur'); FX.phaseP = !!skv('perf'); break;
-    case 'tempo': freezeT = TMAX.freeze = skv('dur'); break;
-    case 'magnet': magnetT = TMAX.magnet = skv('dur'); break;
-    case 'prime': setGod(skv('dur')); break;
     case 'solaris':
       setGod(skv('dur')); if (skv('mag') && magnetT < skv('dur')) magnetT = TMAX.magnet = skv('dur');   // the coin magnet runs for as long as the invincibility
       if (skv('fever')){
@@ -2931,21 +2811,7 @@ const UNIT_ART = {
     c.restore();
   }
 };
-/* img-units: illustrated premium units render their PNG; before it loads (or on error) they fall through to the shared body */
-const UNIT_IMG = {};
-for (const d of BIRDS) if (d.img){
-  const im = new Image(); im.onload = () => { UNIT_IMG[d.id] = im; }; im.src = `assets/units/${d.id}/256.webp`;
-}
-function drawUnitImg(c, d, w, glow, o){
-  const im = UNIT_IMG[d.id]; if (!im) return false;
-  const s = d.span * 2.1, bob = (o && o.lite) ? 0 : w * 2;
-  if (glow){ c.save(); c.shadowColor = hsl(glow); c.shadowBlur = 22; }
-  c.drawImage(im, -s/2, -s/2 - bob, s, s);
-  if (glow) c.restore();
-  return true;
-}
 function drawShape(c, d, w, glow, o){
-  if (d.img && drawUnitImg(c, d, w, glow, o)) return;
   const art = UNIT_ART[d.id]; if (art) return art(c, d, w, glow, o || O0);
   if (d.id === 'mochi') return drawMochi(c, d, w, glow);
   if (d.id === 'pixel') return drawPixel(c, d, w, glow);
@@ -3037,14 +2903,6 @@ function windStreaks(n){ for (let i=0;i<n && parts.length < 400;i++) parts.push(
 const leafPart = (x, y, vx, vy, life, l) => { if (parts.length < 400) parts.push({x, y, vx, vy, life, max:life, col:[46,100,l], size:7, rot:Math.random()*6.28, vr:(Math.random()-.5)*10, rect:true}); };   // MONARCH: one gold leaf, tumbling as it falls
 const PLE7 = [[.12,.62],[.26,.36],[.41,.5],[.55,.26],[.67,.52],[.8,.32],[.91,.6]];   // PLEIAD's sky constellation, in units of screen width × the top third
 const UNIT_FX = {
-  // illustrated premium line: shared shield hex rings already stack per layer (BULWARK starts at 2);
-  // CATALYST shows its xp boost as a two-tone alchemy trail, PRIME keeps a fixed ember fever border
-  catalyst: {
-    shieldHue: 110,
-    trail(){ for (let i = trail.length - 1; i > 0; i -= 2){ const a = i/trail.length; ctx.fillStyle = hsl(i % 4 ? [110,80,60] : [45,90,60], a*.7); ctx.beginPath(); ctx.arc(trail[i].x, trail[i].y, 1.5 + a*3, 0, 6.28); ctx.fill(); } },
-  },
-  prime: { feverHue: 38, shieldHue: 30 },
-  bulwark: { shieldHue: 185 },
   solaris: {
     active:true, tint:0, feverHue:45, shieldHue:30, ringCol:[[45,100,62],[25,100,58]],
     opt(o){ o.ray = godT > 0 ? 2 : 1; o.flare = FX.perfT > 0 ? 8*Math.min(1, FX.perfT/.15) : 0; },
@@ -4744,7 +4602,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
           && eq(fair, [[0,0,true],[0,0,true]]) && eq(L0, [0,true]) && eq(L49, [7,true]) && fresh && !!document.querySelector('#helpScr [data-i18n="hHaz"]') && eq(Object.keys(FW.timers).filter(k => /^(overT|weightT|fogT)$/.test(k)), ['overT','weightT','fogT'])
           && Object.keys(I18N).length === 10 && Object.keys(I18N).every(l => ['hz_over','hz_weight','hz_smoke','hz_drain','hHaz'].every(k => typeof I18N[l][k] === 'string' && I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && /11/.test(I18N[l].hHaz) && /2[.,]5/.test(I18N[l].hHaz)); },
       pow: () => eq([0,.19,.2,.59,.6,.79,.8,.99].map(powKind), ['shield','shield','magnet','magnet','slow','slow','potion','potion']),
-      sk23: () => BIRDS.length === 29 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
+      sk23: () => BIRDS.length === 23 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
       ultra5: () => BIRDS.filter(b => b.rarity === 4).length === 5,
       hiddenU: () => eq(BIRDS.filter(b => b.hidden).map(b => b.id).sort(), ['aurora','pleiad','tempest']) && ROSTER.every(b => !b.hidden || owned.has(b.id)) && ROSTER.includes(birdById('solaris')) && ROSTER.includes(birdById('pulsar')) && ROSTER[0] === birdById('volt'),
       ptier: () => { const r0 = rp, on = p => { setRp(p); return [$('menuTier').textContent, $('oRank').textContent, $('menuTier').querySelector('img').src === PTIER_IMG[tierOf(p)], $('menuTier').hidden, $('oRank').hidden]; }, m0 = mode, seen = [0, 400, 5600, 8000].map(on); mode = 'versus'; const vsBronze = on(0)[4]; mode = m0; setRp(r0);   // one ladder, keyed by the versus RP: the menu and result badges follow rp
@@ -4759,13 +4617,13 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
         return ['flash','shake','parts'].every(k => up(k)) && ['z','stop','sky','ban'].every(k => up(k, 1)) && L.every((v, i) => !i || (rad(v) > rad(L[i-1]) && v.rings.length >= L[i-1].rings.length)) && TIER_FX.ultra.shake < 18
           && eq([TIER_FX.common, TIER_FX.epic].map(v => [v.rings, v.flash, v.shake, v.z, v.stop, v.parts, v.sky, v.ban, v.big]), [[[180,110],.2,3,1.07,0,0,0,1,false],[[240,110],.3,5,1.07,0,0,0,1,false]]); },
       unitFx: () => Object.keys(UNIT_ART).concat(Object.keys(UNIT_FX)).every(id => birdById(id)) && Object.values(UNIT_ART).every(f => typeof f === 'function') && ['solaris','pleiad','oracle','phoenix','zero','raijin','chrono','goliath','aegis','kraken','specter','aurora','tempest','pulsar','monarch'].every(id => UNIT_ART[id] && UNIT_FX[id])
-        && BIRDS.every(b => (b.rarity || 0) < 2 || b.img || (UNIT_ART[b.id] && typeof UNIT_FX[b.id].idle === 'function')) && eq(['castT','castMax','sigT','sigK','perfT'].map(k => newFx()[k]), [0,0,0,'',0]) && [O0, OL].every(o => o.pose === 0 && o.vy === 0) && OL.lite && !O0.lite,
+        && BIRDS.every(b => (b.rarity || 0) < 2 || (UNIT_ART[b.id] && typeof UNIT_FX[b.id].idle === 'function')) && eq(['castT','castMax','sigT','sigK','perfT'].map(k => newFx()[k]), [0,0,0,'',0]) && [O0, OL].every(o => o.pose === 0 && o.vy === 0) && OL.lite && !O0.lite,
       i18n: () => Object.keys(I18N).every(l => BIRDS.every(b => ['r_','p_','sk_','sd_'].every(p => typeof I18N[l][p + b.id] === 'string' && I18N[l][p + b.id]))),
       i18nIdx: () => I18N.ja.p_pixel.startsWith('コイン2倍'),
       price: () => eq(['volt','mochi','zero','aegis','solaris','pulsar'].map(id => priceOf(birdById(id))), [null,{coin:40000,dia:10000,gem:15},{coin:90000,dia:22000,gem:25},{coin:100000,dia:33000,gem:40},{coin:150000,dia:40000,gem:100},{coin:150000,dia:40000,gem:100}]),
       price3: () => BIRDS.every(b => { const p = priceOf(b); return b.rarity && !b.season ? CUR.every(([k]) => Number.isInteger(p[k]) && p[k] > 0) : p === null; }),
       rarity: () => { const ids = r => BIRDS.filter(b => b.rarity === r).map(b => b.id).sort();
-        return eq(RARITY_KEY, ['r_common','r_epic','r_legendary','r_mythic','r_ultra']) && eq(ids(2), ['catalyst','chrono','goliath','mirage','monarch','phoenix','prime','raijin','zero']) && eq(ids(3), ['aegis','bulwark','kraken','oracle','specter'])
+        return eq(RARITY_KEY, ['r_common','r_epic','r_legendary','r_mythic','r_ultra']) && eq(ids(2), ['chrono','goliath','monarch','phoenix','raijin','zero']) && eq(ids(3), ['aegis','kraken','oracle','specter'])
           && BIRDS.every((b, i) => !i || (b.rarity || 0) >= (BIRDS[i-1].rarity || 0)) && [2,3,4].every(r => CUR.every(([k]) => PRICE[r][k] > PRICE[r-1][k])); },
       coinTbl: () => eq(ST_SCOIN, [30,40,55,67]) && eq(ST_ORBP, [.3,.4,.5,.67]) && INCOME_X === 5 && eq([0,49,50,99,100,275].map(s => scoreCoins(s, 0)), [0,0,150,150,300,750]) && eq([1,2,3].map(tr => scoreCoins(120, tr)), [400,550,670]),
       dia: () => eq([0,9,10,24,25,39,40,49].map(diaClear), [0,0,1,1,2,2,3,3].map(i => DIA_CLEAR[i])) && [DIA_LEVEL, DIA_DAILY, ...DIA_CLEAR].every(n => Number.isInteger(n) && n > 0),

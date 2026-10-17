@@ -4,7 +4,3 @@ dist/
 .DS_Store
 .claude/
 .vercel/
-.env
-art/scenario-train/
-assets/_test/
-assets/_rejected/
