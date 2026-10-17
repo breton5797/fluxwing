@@ -8,10 +8,11 @@ import { selectBest } from './select.js';
 import { makeEntry, upsertManifest } from './manifest.js';
 
 const ROOT = new URL('../..', import.meta.url).pathname;
-const UNITS = {
-  bulwark: 'epic', catalyst: 'epic', mirage: 'rare',
-  tempo: 'rare', magnet: 'rare', phoenix: 'legend',
-};
+// [source folder in assets/_gen, in-game unit id, icon grade]
+const UNITS = [
+  ['bulwark', 'bulwark', 'epic'], ['catalyst', 'catalyst', 'epic'], ['mirage', 'mirage', 'rare'],
+  ['tempo', 'tempo', 'rare'], ['magnet', 'magnet', 'rare'], ['phoenix', 'prime', 'legend'],
+];
 const PROMPTS = JSON.parse(readFileSync(join(ROOT, 'tools/asset-pipeline/prompts.json'), 'utf8'));
 
 async function grid(file) {
@@ -27,8 +28,8 @@ async function grid(file) {
 let manifest = existsSync(join(ROOT, 'assets/manifest.json'))
   ? JSON.parse(readFileSync(join(ROOT, 'assets/manifest.json'), 'utf8')) : { assets: [] };
 
-for (const [unit, grade] of Object.entries(UNITS)) {
-  const dir = join(ROOT, 'assets/_gen', unit, 'nobg');
+for (const [src, unit, grade] of UNITS) {
+  const dir = join(ROOT, 'assets/_gen', src, 'nobg');
   const files = readdirSync(dir).filter(f => f.endsWith('.png')).map(f => join(dir, f));
   if (!files.length) { console.log(unit, 'no candidates'); continue; }
   const grids = [];
@@ -47,7 +48,7 @@ for (const [unit, grade] of Object.entries(UNITS)) {
     paths[`webp${size}`] = `assets/units/${unit}/${size}.webp`;
   }
   files.forEach((f, i) => { if (i !== best) renameSync(f, join(rejDir, `${i}.png`)); });
-  manifest = upsertManifest(manifest, makeEntry({ id: unit, grade, paths, prompt: PROMPTS[unit] ?? '' }));
+  manifest = upsertManifest(manifest, makeEntry({ id: unit, grade, paths, prompt: PROMPTS[src] ?? '' }));
   console.log(unit, `picked candidate ${best} of ${files.length}`);
 }
 writeFileSync(join(ROOT, 'assets/manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
