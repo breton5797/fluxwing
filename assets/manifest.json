@@ -9,7 +9,10 @@
         "png256": "assets/units/bulwark/256.png",
         "webp256": "assets/units/bulwark/256.webp",
         "png128": "assets/units/bulwark/128.png",
-        "webp128": "assets/units/bulwark/128.webp"
+        "webp128": "assets/units/bulwark/128.webp",
+        "anim_flap": "assets/units/bulwark/anim/flap/sheet.webp",
+        "anim_hit": "assets/units/bulwark/anim/hit/sheet.webp",
+        "anim_idle": "assets/units/bulwark/anim/idle/sheet.webp"
       },
       "prompt": "SWBY_bulwark a single round turtle-knight bird character with hexagonal shell armor panels, teal and silver, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
       "updatedAt": "2026-10-17T03:10:06.647Z"
@@ -23,7 +26,10 @@
         "png256": "assets/units/catalyst/256.png",
         "webp256": "assets/units/catalyst/256.webp",
         "png128": "assets/units/catalyst/128.png",
-        "webp128": "assets/units/catalyst/128.webp"
+        "webp128": "assets/units/catalyst/128.webp",
+        "anim_flap": "assets/units/catalyst/anim/flap/sheet.webp",
+        "anim_hit": "assets/units/catalyst/anim/hit/sheet.webp",
+        "anim_idle": "assets/units/catalyst/anim/idle/sheet.webp"
       },
       "prompt": "SWBY_catalyst a single alchemist bird character with glass beaker shaped belly filled with glowing green liquid and bubbles, brass accents, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
       "updatedAt": "2026-10-17T03:10:08.398Z"
@@ -37,7 +43,10 @@
         "png256": "assets/units/mirage/256.png",
         "webp256": "assets/units/mirage/256.webp",
         "png128": "assets/units/mirage/128.png",
-        "webp128": "assets/units/mirage/128.webp"
+        "webp128": "assets/units/mirage/128.webp",
+        "anim_flap": "assets/units/mirage/anim/flap/sheet.webp",
+        "anim_hit": "assets/units/mirage/anim/hit/sheet.webp",
+        "anim_idle": "assets/units/mirage/anim/idle/sheet.webp"
       },
       "prompt": "SWBY_mirage a single ghostly fox-bird character with translucent pale violet body and wispy afterimage trail, glowing eyes, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
       "updatedAt": "2026-10-17T03:10:09.934Z"
@@ -51,7 +60,10 @@
         "png256": "assets/units/tempo/256.png",
         "webp256": "assets/units/tempo/256.webp",
         "png128": "assets/units/tempo/128.png",
-        "webp128": "assets/units/tempo/128.webp"
+        "webp128": "assets/units/tempo/128.webp",
+        "anim_flap": "assets/units/tempo/anim/flap/sheet.webp",
+        "anim_hit": "assets/units/tempo/anim/hit/sheet.webp",
+        "anim_idle": "assets/units/tempo/anim/idle/sheet.webp"
       },
       "prompt": "SWBY_tempo a single metronome hummingbird character with rhythmic striped wings and pendulum tail, orange and white, musical, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
       "updatedAt": "2026-10-17T03:10:11.401Z"
@@ -65,7 +77,10 @@
         "png256": "assets/units/magnet/256.png",
         "webp256": "assets/units/magnet/256.webp",
         "png128": "assets/units/magnet/128.png",
-        "webp128": "assets/units/magnet/128.webp"
+        "webp128": "assets/units/magnet/128.webp",
+        "anim_flap": "assets/units/magnet/anim/flap/sheet.webp",
+        "anim_hit": "assets/units/magnet/anim/hit/sheet.webp",
+        "anim_idle": "assets/units/magnet/anim/idle/sheet.webp"
       },
       "prompt": "SWBY_magnet a single robot bird character with a horseshoe magnet beak and electric spark accents, red and blue magnet tips on steel grey body, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
       "updatedAt": "2026-10-17T03:10:12.421Z"
@@ -79,7 +94,10 @@
         "png256": "assets/units/prime/256.png",
         "webp256": "assets/units/prime/256.webp",
         "png128": "assets/units/prime/128.png",
-        "webp128": "assets/units/prime/128.webp"
+        "webp128": "assets/units/prime/128.webp",
+        "anim_flap": "assets/units/prime/anim/flap/sheet.webp",
+        "anim_hit": "assets/units/prime/anim/hit/sheet.webp",
+        "anim_idle": "assets/units/prime/anim/idle/sheet.webp"
       },
       "prompt": "SWBY_phoenix a single legendary phoenix chick character wreathed in golden flames with crimson feathers and a small crown of fire, regal, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
       "updatedAt": "2026-10-17T03:10:13.095Z"
