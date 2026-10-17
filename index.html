@@ -5118,6 +5118,37 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
     for (const k in checks){ let ok = false; try { ok = checks[k](); } catch(e){} if (!ok) fails.push(k); }
     return fails;
   } };
+if (window.FW){
+  /* dev FX panel — replay buttons, quality select, live tuning sliders, Copy JSON (never on release URLs) */
+  const pd = document.createElement('div'); pd.id = 'fxDev';
+  pd.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:99;background:rgba(10,7,22,.88);border:1px solid rgba(243,238,252,.3);border-radius:10px;padding:8px;max-width:190px;font:11px monospace;color:#eee;display:flex;flex-wrap:wrap;gap:4px';
+  const addBtn = (label, fn, attr) => { const b = document.createElement('button'); b.textContent = label; if (attr) b.setAttribute(attr[0], attr[1]); b.style.cssText = 'font:10px monospace;padding:2px 5px;background:#223;color:#eee;border:1px solid #556;border-radius:4px;cursor:pointer'; b.addEventListener('click', e => { e.stopPropagation(); fn(); }); pd.appendChild(b); return b; };
+  for (const ev of FX_EVENTS) addBtn(ev, () => impFx(ev), ['data-fxev', ev]);
+  const sel = document.createElement('select'); sel.style.cssText = 'font:10px monospace;background:#223;color:#eee';
+  for (const q of ['auto', 'low', 'mid', 'high']){ const o = document.createElement('option'); o.value = q; o.textContent = 'q:' + q; sel.appendChild(o); }
+  sel.addEventListener('change', () => { fxSettings.q = sel.value; IMP = impNew(sel.value === 'auto' ? null : sel.value); });
+  pd.appendChild(sel);
+  const addSlider = (label, path, min, max, step) => {
+    const w = document.createElement('label'); w.style.cssText = 'display:flex;gap:3px;align-items:center;width:100%';
+    const r = document.createElement('input'); r.type = 'range'; r.min = min; r.max = max; r.step = step; r.style.flex = '1';
+    let v = FXCFG; for (const k of path.split('.')) v = v[k];
+    r.value = v;
+    r.addEventListener('input', () => {
+      const patch = {}; let p = patch; const ks = path.split('.');
+      ks.forEach((k, ix) => { p[k] = ix === ks.length - 1 ? +r.value : (p[k] = {}); p = p[k]; });
+      FXCFG = fxCfgMerge(FXCFG, patch);
+    });
+    const tlb = document.createElement('span'); tlb.textContent = label; w.append(tlb, r); pd.appendChild(w);
+  };
+  addSlider('hs.heavy', 'hitstop.heavy', .04, .12, .005);
+  addSlider('punch.hv', 'punch.heavy', 1.05, 1.15, .005);
+  addSlider('shake.hv', 'shake.ampPx.heavy', 1, 24, 1);
+  addSlider('slowmo', 'slowmo.scale', .2, .6, .02);
+  addSlider('chromaPx', 'chroma.px', 1, 6, .5);
+  addSlider('bloomA', 'bloom.alpha', .05, .5, .02);
+  addBtn('Copy JSON', () => { try { navigator.clipboard.writeText(JSON.stringify(FXCFG, null, 2)); } catch (e) {} });
+  document.body.appendChild(pd);
+}
 resize(); reset(); state = 'menu';
 applyI18n(); renderWallet();
 requestAnimationFrame(loop);

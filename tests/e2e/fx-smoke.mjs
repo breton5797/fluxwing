@@ -62,4 +62,14 @@ await page.click('#startBtn'); await page.waitForTimeout(300);
 await page.click('#stageList button').catch(() => {}); await page.waitForTimeout(500);
 const feat2 = await page.evaluate(() => [FW.imp.feat.shake, FW.imp.q]);
 assert.deepEqual(feat2, [0, 'low']);
+
+// Task 6: dev panel exposes every event; absent on the release URL
+const btns = await page.$$eval('#fxDev [data-fxev]', els => els.map(e => e.dataset.fxev));
+assert.deepEqual(btns.sort(), (await page.evaluate(() => FW.fxEvents)).slice().sort());
+for (const ev of btns) await page.click(`#fxDev [data-fxev="${ev}"]`);
+assert.deepEqual(errors, []);
+await page.goto(`${base}/index.html`);
+await page.waitForTimeout(400);
+assert.equal(await page.$('#fxDev'), null);
+assert.equal(await page.evaluate(() => typeof window.FW), 'undefined');
 console.log('fx-smoke OK'); await b.close();
