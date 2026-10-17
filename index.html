@@ -95,6 +95,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .lbrow .me-tag{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--cool);margin-left:6px}
 .lbrow .tb{margin-right:6px;vertical-align:-3px}   /* the versus tier mark is a badge image now, not a text pill */
 .lbrow .wl{font:600 11px var(--body);color:var(--dim);margin-left:8px;letter-spacing:.02em}
+.lbrow .ub{font:700 10px var(--body);letter-spacing:.08em;margin-right:8px;opacity:.9}
 .lbempty{padding:22px 8px;text-align:center;color:var(--dim);font-size:14px}
 .lbstatus{font-size:12px;color:var(--dim);min-height:1.2em}
 .nickrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -758,7 +759,7 @@ ko:{adFail:'지금은 광고를 볼 수 없어요', ad2x:'광고 보고 코인 2
  stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 틈', tierRule2:'더 좁은 틈 · 0.5초 안개', tierRule3:'가장 좁은 틈 · 2초 안개 · 2초 안에 탭',
  idleRule:'2초 안에 탭!', idleStall:'엔진 정지!', heavyP:'무거움', gemP:'젬 +1', gemHint:'젬은 스테이지 플레이 중 1% 확률로 나와요 · {n}/{m}',
  lbRetry:'기록을 올리지 못했어요. 곧 다시 시도합니다', lbRate:'전송이 너무 잦아요. 잠시 후 다시 올립니다', lbReject:'서버가 이 기록을 받지 않았어요', vsStranded:'상대가 들어오지 않았어요. 다시 찾는 중…',
- tabVs:'대전', vsRules:'승리 +50 RP · 패배 −45 RP · AI전은 연습(RP 변동 없음)', vsPractice:'연습전 · RP 변동 없음', vsPend:'집계 중', vsNoRank:'랭크에 반영되지 않은 판이에요', vsCap:'미반영 · 같은 상대와는 하루 5판까지',
+ tabVs:'대전', vsRules:'승리 +50 RP · 패배 −50 RP · AI전은 연습(RP 변동 없음)', vsPractice:'연습전 · RP 변동 없음', vsPend:'집계 중', vsNoRank:'랭크에 반영되지 않은 판이에요', vsCap:'미반영 · 같은 상대와는 하루 5판까지',
  vsMyRank:'내 순위 {n}위 · {rp} RP · {w}승 {l}패', vsNoRow:'랭크전을 한 판 마치면 순위가 생겨요',
  seaLine:'시즌 {m} · {t} 남음', seaD:'{n}일', seaH:'{n}시간', seaTitle:'시즌 {m} 결과', seaRank:'최종 {n}위', seaUnranked:'순위 없음 · 랭크전 {n}판 미만이라 보상이 없어요', seaStat:'{rp} RP · {w}승 {l}패',
  seaClaim:'보상 받기', seaOk:'확인', seaGot:'보상을 받았어요!', seaUnit:'한정 유닛 {u}', seaDup:'{u} 이미 보유 → 젬 +{n}', seaFail:'서버에 연결하지 못했어요. 다시 시도해 주세요', seaGone:'지금은 받을 수 없는 보상이에요',
@@ -782,7 +783,7 @@ en:{adFail:'No ad available right now', ad2x:'Watch an ad: coins x2 (+{n})', adD
  stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', tierRule2:'Narrower gaps · 0.5s haze', tierRule3:'Narrowest gaps · 2s haze · tap within 2s',
  idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/{m}',
  lbRetry:"Couldn't post your score. Retrying soon", lbRate:'Posting too fast. It will be sent in a moment', lbReject:'The server did not accept this score', vsStranded:"Opponent didn't show up. Searching again…",
- tabVs:'Versus', vsRules:'Win +50 RP · Loss −45 RP · AI matches are practice (no RP)', vsPractice:'Practice · no RP change', vsPend:'pending', vsNoRank:'This match was not ranked', vsCap:'Not ranked · 5 a day per rival',
+ tabVs:'Versus', vsRules:'Win +50 RP · Loss −50 RP · AI matches are practice (no RP)', vsPractice:'Practice · no RP change', vsPend:'pending', vsNoRank:'This match was not ranked', vsCap:'Not ranked · 5 a day per rival',
  vsMyRank:'Your rank #{n} · {rp} RP · {w}W {l}L', vsNoRow:'Finish one ranked match to get a rank',
  seaLine:'Season {m} · ends in {t}', seaD:'{n} d', seaH:'{n} h', seaTitle:'SEASON {m} RESULT', seaRank:'Final rank #{n}', seaUnranked:'Unranked: fewer than {n} ranked matches. No reward.', seaStat:'{rp} RP · {w}W {l}L',
  seaClaim:'CLAIM', seaOk:'OK', seaGot:'Reward claimed!', seaUnit:'Limited unit {u}', seaDup:'{u} already owned → +{n} gems', seaFail:"Couldn't reach the server. Try again.", seaGone:'This reward cannot be claimed right now',
@@ -805,7 +806,7 @@ ja:{startSub:'ワンタップでスタート', dailyCta:'グローバルデイ�
  pt_bronze:'ブロンズ', pt_silver:'シルバー', pt_gold:'ゴールド', pt_platinum:'プラチナ', pt_diamond:'ダイヤ', pt_transcend:'超越', pt_demigod:'半神', ptUp:'ティア昇格!{t}',
  nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0{n}',
  fx_slip:'墨隠れ!', fx_fore:'予感!',
- tabVs:'対戦', vsRules:'勝利 +50 RP · 敗北 −45 RP · AI戦は練習(RP変動なし)', vsPractice:'練習試合 · RP変動なし', vsPend:'集計中', vsNoRank:'ランクに反映されない試合です', vsCap:'対象外 · 同じ相手とは1日5回まで',
+ tabVs:'対戦', vsRules:'勝利 +50 RP · 敗北 −50 RP · AI戦は練習(RP変動なし)', vsPractice:'練習試合 · RP変動なし', vsPend:'集計中', vsNoRank:'ランクに反映されない試合です', vsCap:'対象外 · 同じ相手とは1日5回まで',
  vsMyRank:'あなたの順位 {n}位 · {rp} RP · {w}勝 {l}敗', vsNoRow:'ランク戦を1試合終えると順位がつきます',
  seaLine:'シーズン{m} · 残り{t}', seaD:'{n}日', seaH:'{n}時間', seaTitle:'シーズン{m} 結果', seaRank:'最終順位 {n}位', seaUnranked:'ランク外 · ランク戦{n}試合未満のため報酬はありません', seaStat:'{rp} RP · {w}勝 {l}敗',
  seaClaim:'報酬を受け取る', seaOk:'OK', seaGot:'報酬を受け取りました!', seaUnit:'限定ユニット {u}', seaDup:'{u}は所持済み → ジェム+{n}', seaFail:'サーバーに接続できません。もう一度お試しください', seaGone:'この報酬は今は受け取れません',
@@ -826,7 +827,7 @@ zh:{startSub:'一键起飞', dailyCta:'全球每日挑战', dailyPlayed:'{d} · 
  pt_bronze:'青铜', pt_silver:'白银', pt_gold:'黄金', pt_platinum:'铂金', pt_diamond:'钻石', pt_transcend:'超凡', pt_demigod:'半神', ptUp:'段位晋升!{t}',
  nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
  fx_slip:'墨隐!', fx_fore:'预感!',
- tabVs:'对战', vsRules:'胜利 +50 RP · 失败 −45 RP · AI对战为练习(RP不变)', vsPractice:'练习赛 · RP不变', vsPend:'结算中', vsNoRank:'本局未计入段位', vsCap:'未计入 · 同一对手每天最多5局',
+ tabVs:'对战', vsRules:'胜利 +50 RP · 失败 −50 RP · AI对战为练习(RP不变)', vsPractice:'练习赛 · RP不变', vsPend:'结算中', vsNoRank:'本局未计入段位', vsCap:'未计入 · 同一对手每天最多5局',
  vsMyRank:'我的排名 第{n}名 · {rp} RP · {w}胜 {l}负', vsNoRow:'完成一局排位赛后即可上榜',
  seaLine:'第{m}赛季 · 剩余{t}', seaD:'{n}天', seaH:'{n}小时', seaTitle:'第{m}赛季结果', seaRank:'最终排名 第{n}名', seaUnranked:'未上榜 · 排位赛不足{n}局,没有奖励', seaStat:'{rp} RP · {w}胜 {l}负',
  seaClaim:'领取奖励', seaOk:'确定', seaGot:'奖励已领取!', seaUnit:'限定机体 {u}', seaDup:'已拥有{u} → 宝石+{n}', seaFail:'无法连接服务器,请重试', seaGone:'该奖励暂时无法领取',
@@ -1815,6 +1816,7 @@ $('stageScr').addEventListener('click', e => { if (e.target === $('stageScr')) $
 let lbOpen = false, overAt = 0;   // overAt: when the game-over card came up; it must be up for a moment before a tap can restart
 function flap(){
   audioInit();
+  if (state === 'menu' && vs.phase !== 'idle') return;   // versus search / room / countdown runs over the menu state: no tap may start a run until vsBegin() does
   if (state === 'menu' || state === 'over'){ if (adBusy) return; if (state === 'over' && (performance.now() - overAt < 450 || mode === 'versus')) return; if (state === 'menu'){ startFromMenu(); return; } startGame(mode); return; }
   if (state !== 'play' || dashT > 0) return;
   bird.vy = -B.flap; bird.wing = 1; squash = 1; SFX.flap(); haptic('flap'); tutFlaps++; FX.idleT = 0; FX.idleWarn = false;
@@ -4227,8 +4229,8 @@ function renderLB(){
     else note = !sb ? ' ' : vsBoardOk && vsMe && !prev ? t('seaFirst') : t('loading');   // offline: only the notice below the list
   }
   else if (vsT){   // versus ranking: the server's top 100 by RP; without the server, the RP cached on this device
-    if (sb) rows = vsBoard.map(r => ({id:r.player_id, nick:r.nick, cc:r.cc, sc:r.rp, wl:`${r.wins | 0}–${r.losses | 0}`}));
-    else if (lbState !== 'loading' && rp > 0) rows = [{id:'local', nick, cc:CC, sc:rp}];
+    if (sb) rows = vsBoard.map(r => ({id:r.player_id, nick:r.nick, cc:r.cc, sc:r.rp, wl:`${r.wins | 0}–${r.losses | 0}`, bird:r.bird}));
+    else if (lbState !== 'loading' && rp > 0) rows = [{id:'local', nick, cc:CC, sc:rp, bird:B.id}];
   }
   else if (lbState === 'online') rows = (lbTab === 'daily' ? lbDaily : lbAll).map(r => ({id:r.id, nick:r.nick, cc:r.cc, sc: lbTab === 'daily' ? r.dailyScore : r.best, bird: lbTab === 'daily' ? r.dailyBird : r.bird}));
   else if (lbState === 'offline'){
@@ -4250,6 +4252,7 @@ function renderLB(){
     nm.appendChild(document.createTextNode(showNick(r.nick || '') || '—'));
     if (me){ const tg = document.createElement('span'); tg.className = 'me-tag'; tg.textContent = t('you'); nm.appendChild(tg); }
     const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = Math.max(0, Math.floor(Number(r.sc) || 0));
+    if (bd){ const ub = document.createElement('span'); ub.className = 'ub'; ub.textContent = bd.name; ub.style.color = hsl(bd.uiCol || bd.col); sc.prepend(ub); }
     if (r.wl){ const w = document.createElement('span'); w.className = 'wl'; w.textContent = r.wl; sc.appendChild(w); }   // wins–losses
     li.append(n, f, nm, sc); list.appendChild(li);
   });
@@ -4329,9 +4332,9 @@ $('helpClose').addEventListener('click', e => { e.stopPropagation(); $('helpScr'
 $('helpScr').addEventListener('click', e => { if (e.target === $('helpScr')) $('helpScr').hidden = true; });
 
 /* ---------- versus, 1v1 or 2v2: same seeded course, the other players shown as ghosts ---------- */
-// Rank points are held by the server (supabase/schema.sql): win +50, loss -45, never below 0, one value for 1v1 and 2v2. Matches against the AI
+// Rank points are held by the server (supabase/schema.sql): win +50, loss -50, never below 0, one value for 1v1 and 2v2. Matches against the AI
 // are practice and never move them. rp is only the cache of the last server answer, shown while offline (fw27_rp2: the old fw27_rp is not read).
-const TIERS = PTIERS.map(p => p[1]), RP_WIN = 50, RP_LOSS = 45;   // the RP floors of the 7 tiers (PTIERS)
+const TIERS = PTIERS.map(p => p[1]), RP_WIN = 50, RP_LOSS = 50;   // the RP floors of the 7 tiers (PTIERS)
 function vtBadgeImg(ti, sm){ const img = document.createElement('img'); img.src = PTIER_IMG[ti]; img.alt = img.title = ptierName(ti); img.className = 'ptbadge' + (sm ? ' sm' : ''); return img; }
 let rp = clampI(store.get('fw27_rp2', 0), 0, 1e9);
 const tierOf = p => { let i = 0; TIERS.forEach((v, k) => { if (p >= v) i = k; }); return i; };
@@ -4803,7 +4806,7 @@ function vsRankReport(res){   // res: 'win' | 'lose' | 'draw' as seen by my team
     if (rk.delta > 0 && ti > ti0){ toast(t('ptUp', {t: ptierName(ti)})); confetti(LW/2, LH*.42, 90); }   // tier-up: the server's RP for this match lifted the tier
   });
 }
-// The RP part of the result line. AI: practice. Human: the server's delta once it is in, until then what it will be (+50 / -45, floor 0) marked as pending.
+// The RP part of the result line. AI: practice. Human: the server's delta once it is in, until then what it will be (+50 / -50, floor 0) marked as pending.
 function vsRpNote(ai, rk, res){
   if (ai) return t('vsPractice');
   if (!rk || rk.why) return t(rk && rk.why === 'cap' ? 'vsCap' : 'vsNoRank');
@@ -5052,14 +5055,14 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
           && eq([fx.ult, fx.ultRdy, fx.ultT, fx.ultN, fx.ultMax, fx.ultS, fx.ultE, fx.ultC, fx.ultCM, fx.ultA, fx.ultSlow, fx.ultLane, fx.ultOut, fx.carry], [0,false,0,0,0,0,0,0,0,0,0,0,0,false])
           && ULT_FX.shake < 18 && ['flash','shake','z','stop','parts','sky','ban','w'].every(k => ULT_FX[k] > TIER_FX.ultra[k]) && ULT_FX.rings.length > TIER_FX.ultra.rings.length && ULT_FX.rings[0] > TIER_FX.ultra.rings[0]
           && $('ultBtn') && $('ultName') && $('hgUlt') && L.every(l => ['ultK','ultReady','hUlt'].every(k => I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && /ULT/.test(I18N[l].hUlt) && /A/.test(I18N[l].hUlt)); },
-      vsRank: () => { const u = ['00000000-0000-4000-8000-00000000000a','00000000-0000-4000-8000-00000000000b','00000000-0000-4000-8000-00000000000c','00000000-0000-4000-8000-00000000000d'], [a, b, c, d] = u;   // server-held ranking: tier table, +50 / -45 / floor, match id, AI = practice
+      vsRank: () => { const u = ['00000000-0000-4000-8000-00000000000a','00000000-0000-4000-8000-00000000000b','00000000-0000-4000-8000-00000000000c','00000000-0000-4000-8000-00000000000d'], [a, b, c, d] = u;   // server-held ranking: tier table, +50 / -50 / floor, match id, AI = practice
         const rk0 = vs.rk, ai0 = vs.ai; vs.ai = {}; vs.rk = {}; vsRankStart(); const prac = vs.rk === null; vs.ai = ai0; vs.rk = rk0;
-        return eq(TIERS, [0,400,1000,2000,3600,5600,8000]) && eq(TIERS, PTIERS.map(p => p[1])) && eq([0,399,400,999,1000,1999,2000,3599,3600,5599,5600,7999,8000,99999].map(tierOf), [0,0,1,1,2,2,3,3,4,4,5,5,6,6]) && RP_WIN === 50 && RP_LOSS === 45
-          && eq([[0,'win'],[0,'lose'],[30,'lose'],[44,'lose'],[45,'lose'],[100,'lose'],[100,'draw'],[3990,'win']].map(([p, r]) => rpAfter(p, r)), [50,0,0,0,0,55,100,4040])
+        return eq(TIERS, [0,400,1000,2000,3600,5600,8000]) && eq(TIERS, PTIERS.map(p => p[1])) && eq([0,399,400,999,1000,1999,2000,3599,3600,5599,5600,7999,8000,99999].map(tierOf), [0,0,1,1,2,2,3,3,4,4,5,5,6,6]) && RP_WIN === 50 && RP_LOSS === 50
+          && eq([[0,'win'],[0,'lose'],[30,'lose'],[49,'lose'],[50,'lose'],[100,'lose'],[100,'draw'],[3990,'win']].map(([p, r]) => rpAfter(p, r)), [50,0,0,0,0,50,100,4040])
           && eq(vsMatchId(4294967295, [b], [a]), {id: '1z141z3.' + a + '.' + b, team: 1, mode: '1v1'}) && eq(vsMatchId(7, [a], [b]), {id: '7.' + a + '.' + b, team: 0, mode: '1v1'})
           && eq(vsMatchId(36, [d, b], [c, a]), {id: '10.' + a + '+' + c + '.' + b + '+' + d, team: 1, mode: '2v2'}) && vsMatchId(1, [a], [a]) === null && vsMatchId(1, [a], ['x']) === null && vsMatchId(1, [a], [b, c]) === null && vsMatchId(1, [a], ['']) === null
           && prac && ['ko','en','ja','zh'].every(l => { const l0 = lang; lang = l; const p = vsRpNote(true, null, 'win'), n = vsRpNote(false, null, 'win'), w = vsRpNote(false, {why:'', delta:null}, 'win'), s = vsRpNote(false, {why:'', delta:-30}, 'lose'); lang = l0;
-            return p === I18N[l].vsPractice && !/\d/.test(p) && n === I18N[l].vsNoRank && w.startsWith('+50 RP') && w.includes(I18N[l].vsPend) && s === `-30 RP (${I18N[l]['pt_' + PTIERS[tierOf(rp)][0]]})` && (l === 'en' || ['tabVs','vsRules','vsPractice','vsPend','vsNoRank','vsCap','vsMyRank','vsNoRow'].every(k => I18N[l][k] !== I18N.en[k])) && /50/.test(I18N[l].vsRules) && /45/.test(I18N[l].vsRules) && I18N[l].aiMatch !== I18N[l].vs; }); },
+            return p === I18N[l].vsPractice && !/\d/.test(p) && n === I18N[l].vsNoRank && w.startsWith('+50 RP') && w.includes(I18N[l].vsPend) && s === `-30 RP (${I18N[l]['pt_' + PTIERS[tierOf(rp)][0]]})` && (l === 'en' || ['tabVs','vsRules','vsPractice','vsPend','vsNoRank','vsCap','vsMyRank','vsNoRow'].every(k => I18N[l][k] !== I18N.en[k])) && /\+50/.test(I18N[l].vsRules) && /[−-]50/.test(I18N[l].vsRules) && !/45/.test(I18N[l].vsRules) && I18N[l].aiMatch !== I18N[l].vs; }); },
       vs2: () => { const u = ['00000000-0000-4000-8000-00000000000a','00000000-0000-4000-8000-00000000000b','00000000-0000-4000-8000-00000000000c','00000000-0000-4000-8000-00000000000d'], [a, b, c, d] = u, P = (sc, al) => ({sc, al: !!al});   // 2v2: team rule, team-sum result, practice detection
         const sv = [vs.seed, vs.ai, vs.pl, vs.myId, vs.room, vs.rk], seat = (ro, seed) => { vs.seed = seed; vs.room = null; vs.myId = ro[0].id; vsSeat(ro, 0); if (vs.ai) vsRankStart(); else vs.rk = 0; return [vs.ai, vs.pl.map(p => p.tm).join(''), vs.pl.filter(p => p.ai).length, vs.rk === null]; };
         const s1 = seat([{id: 'p1', u: ''}], 5), s3 = seat([{id: 'p1', u: a}, {id: 'p2', u: b}, {id: 'p3', u: c}], 3), s4 = seat([{id: 'p1', u: c}, {id: 'p2', u: a}, {id: 'p3', u: d}, {id: 'p4', u: b}], 4), mid = vsMatchId(4, [c, ...vs.pl.filter(p => !p.tm).map(p => p.uid)], vs.pl.filter(p => p.tm).map(p => p.uid));
