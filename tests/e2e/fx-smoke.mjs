@@ -24,4 +24,20 @@ await page.click('#dailyBtn'); await page.waitForTimeout(600);
 const fair = await page.evaluate(() => { FW.fx('near'); return FW.imp.slow; });
 assert.equal(fair, 0, 'no slowmo in daily');
 assert.deepEqual(errors, []);
+
+
+// Task 3: every FX event replays, the pool caps instead of growing, real hooks spawn particles
+await page.reload(); await page.waitForFunction(() => window.FW && window.FW.imp);
+await page.click('#startBtn'); await page.waitForTimeout(400);
+await page.click('#stageList button').catch(() => {}); await page.waitForTimeout(600);
+const flapLive = await page.evaluate(() => { FW.setFxQuality('high'); window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' })); FW.step(1 / 60, 2); return FW.imp.pool.live; });
+assert.ok(flapLive > 0, 'flap spawns pooled particles');
+const cp = await page.evaluate(() => { FW.fx('coin'); return FW.imp.coinPulse; });
+assert.ok(cp > 0, 'coin pulse set');
+for (const ev of await page.evaluate(() => FW.fxEvents)) {
+  const r = await page.evaluate(ev => { FW.fx(ev); FW.step(1 / 60, 10); FW.dbg.render(); return FW.imp.pool.live; }, ev);
+  assert.ok(Number.isInteger(r), ev);
+}
+const cap = await page.evaluate(() => { FW.setFxQuality('low'); for (let i = 0; i < 50; i++) FW.fx('death'); return [FW.imp.pool.live, FW.imp.pool.items.length]; });
+assert.ok(cap[0] <= cap[1]);
 console.log('fx-smoke OK'); await b.close();
