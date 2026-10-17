@@ -296,7 +296,7 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 
 -- =====================================================================================================
 -- VERSUS RANKING — rank points (RP) held by the server
--- One RP per player, shared by 1v1 and 2v2. Win +50, loss -45, draw 0, never below 0. Matches against the AI are
+-- One RP per player, shared by 1v1 and 2v2. Win +50, loss -50, draw 0, never below 0. Matches against the AI are
 -- practice: the client never reports them. Tiers (client, PTIERS): 0 / 400 / 1,000 / 2,000 / 3,600 / 5,600 / 8,000 RP.
 --
 -- There is still no referee: two (or four) clients play a seeded course and each decides the result on its own.
@@ -338,7 +338,7 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 --     privilege, the bookkeeping sits in the unexposed schema, helpers are not executable by clients).
 --   - Report for someone else, twice, without having registered, or change a report: no.
 --   - Claim a win it did not earn: the rival's honest report contradicts it -> void. So a cheat can always turn its
---     own LOSS into a void (report "win", or never register: a match with one team is void), i.e. dodge -45, but
+--     own LOSS into a void (report "win", or never register: a match with one team is void), i.e. dodge -50, but
 --     it gets no RP for it. Registering late to see how the match goes first is limited by the join window.
 --   - Win by outlasting the clock: if the rival never reports before the deadline (their client was kept waiting by
 --     a fake "still alive" state, they closed the tab), the lone claim stands and the rival takes the loss. Only a
@@ -589,11 +589,11 @@ create or replace function private.fw_vs_cfg(
   out report_grace interval,     -- ... but never sooner than this after the first report
   out void_after interval,       -- nobody has reported this long after the first registration: void
   out starts_per_hour integer,   -- registrations per player per rolling hour
-  out pair_cap integer,          -- matches that count (not void) against one and the same rival (the client's vsCap text says "5") ...
+  out pair_cap integer,          -- matches that count (not void) against one and the same rival (effectively unlimited: the per-rival cap is off) ...
   out pair_window interval,      -- ... per this rolling window; further ones are refused at versus_start (played unranked)
   out keep interval              -- finished matches older than this are deleted
 ) language sql immutable set search_path = '' as $$
-  select 50, 45, interval '20 seconds', interval '4 seconds', interval '5 minutes', interval '60 seconds', interval '20 minutes', 30, 5, interval '24 hours', interval '3 days';
+  select 50, 50, interval '20 seconds', interval '4 seconds', interval '5 minutes', interval '60 seconds', interval '20 minutes', 30, 1000000, interval '24 hours', interval '3 days';
 $$;
 -- Seasons and their rewards. Arrays are per tier, Bronze first (7 tiers: bronze, silver, gold, platinum, diamond,
 -- transcend, demigod). tier_rp MIRRORS THE CLIENT'S TIERS (index.html: the floors in PTIERS =
