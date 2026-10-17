@@ -1,456 +1,512 @@
 {
- "assets": [
-  {
-   "id": "bulwark",
-   "grade": "epic",
-   "paths": {
-    "png512": "assets/units/bulwark/512.png",
-    "webp512": "assets/units/bulwark/512.webp",
-    "png256": "assets/units/bulwark/256.png",
-    "webp256": "assets/units/bulwark/256.webp",
-    "png128": "assets/units/bulwark/128.png",
-    "webp128": "assets/units/bulwark/128.webp",
-    "anim_flap": "assets/units/bulwark/anim/flap/sheet.webp",
-    "anim_hit": "assets/units/bulwark/anim/hit/sheet.webp",
-    "anim_idle": "assets/units/bulwark/anim/idle/sheet.webp"
-   },
-   "prompt": "SWBY_bulwark a single round turtle-knight bird character with hexagonal shell armor panels, teal and silver, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
-   "updatedAt": "2026-10-17T03:10:06.647Z"
-  },
-  {
-   "id": "catalyst",
-   "grade": "epic",
-   "paths": {
-    "png512": "assets/units/catalyst/512.png",
-    "webp512": "assets/units/catalyst/512.webp",
-    "png256": "assets/units/catalyst/256.png",
-    "webp256": "assets/units/catalyst/256.webp",
-    "png128": "assets/units/catalyst/128.png",
-    "webp128": "assets/units/catalyst/128.webp",
-    "anim_flap": "assets/units/catalyst/anim/flap/sheet.webp",
-    "anim_hit": "assets/units/catalyst/anim/hit/sheet.webp",
-    "anim_idle": "assets/units/catalyst/anim/idle/sheet.webp"
-   },
-   "prompt": "SWBY_catalyst a single alchemist bird character with glass beaker shaped belly filled with glowing green liquid and bubbles, brass accents, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
-   "updatedAt": "2026-10-17T03:10:08.398Z"
-  },
-  {
-   "id": "mirage",
-   "grade": "rare",
-   "paths": {
-    "png512": "assets/units/mirage/512.png",
-    "webp512": "assets/units/mirage/512.webp",
-    "png256": "assets/units/mirage/256.png",
-    "webp256": "assets/units/mirage/256.webp",
-    "png128": "assets/units/mirage/128.png",
-    "webp128": "assets/units/mirage/128.webp",
-    "anim_flap": "assets/units/mirage/anim/flap/sheet.webp",
-    "anim_hit": "assets/units/mirage/anim/hit/sheet.webp",
-    "anim_idle": "assets/units/mirage/anim/idle/sheet.webp"
-   },
-   "prompt": "SWBY_mirage a single ghostly fox-bird character with translucent pale violet body and wispy afterimage trail, glowing eyes, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
-   "updatedAt": "2026-10-17T03:10:09.934Z"
-  },
-  {
-   "id": "tempo",
-   "grade": "rare",
-   "paths": {
-    "png512": "assets/units/tempo/512.png",
-    "webp512": "assets/units/tempo/512.webp",
-    "png256": "assets/units/tempo/256.png",
-    "webp256": "assets/units/tempo/256.webp",
-    "png128": "assets/units/tempo/128.png",
-    "webp128": "assets/units/tempo/128.webp",
-    "anim_flap": "assets/units/tempo/anim/flap/sheet.webp",
-    "anim_hit": "assets/units/tempo/anim/hit/sheet.webp",
-    "anim_idle": "assets/units/tempo/anim/idle/sheet.webp"
-   },
-   "prompt": "SWBY_tempo a single metronome hummingbird character with rhythmic striped wings and pendulum tail, orange and white, musical, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
-   "updatedAt": "2026-10-17T03:10:11.401Z"
-  },
-  {
-   "id": "magnet",
-   "grade": "rare",
-   "paths": {
-    "png512": "assets/units/magnet/512.png",
-    "webp512": "assets/units/magnet/512.webp",
-    "png256": "assets/units/magnet/256.png",
-    "webp256": "assets/units/magnet/256.webp",
-    "png128": "assets/units/magnet/128.png",
-    "webp128": "assets/units/magnet/128.webp",
-    "anim_flap": "assets/units/magnet/anim/flap/sheet.webp",
-    "anim_hit": "assets/units/magnet/anim/hit/sheet.webp",
-    "anim_idle": "assets/units/magnet/anim/idle/sheet.webp"
-   },
-   "prompt": "SWBY_magnet a single robot bird character with a horseshoe magnet beak and electric spark accents, red and blue magnet tips on steel grey body, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
-   "updatedAt": "2026-10-17T03:10:12.421Z"
-  },
-  {
-   "id": "prime",
-   "grade": "legend",
-   "paths": {
-    "png512": "assets/units/prime/512.png",
-    "webp512": "assets/units/prime/512.webp",
-    "png256": "assets/units/prime/256.png",
-    "webp256": "assets/units/prime/256.webp",
-    "png128": "assets/units/prime/128.png",
-    "webp128": "assets/units/prime/128.webp",
-    "anim_flap": "assets/units/prime/anim/flap/sheet.webp",
-    "anim_hit": "assets/units/prime/anim/hit/sheet.webp",
-    "anim_idle": "assets/units/prime/anim/idle/sheet.webp"
-   },
-   "prompt": "SWBY_phoenix a single legendary phoenix chick character wreathed in golden flames with crimson feathers and a small crown of fire, regal, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
-   "updatedAt": "2026-10-17T03:10:13.095Z"
-  },
-  {
-   "id": "banner-daily-1",
-   "grade": "common",
-   "paths": {
-    "png": "assets/events/banner-daily-1.png",
-    "webp": "assets/events/banner-daily-1.webp"
-   },
-   "prompt": "SWBY_banner_daily1 wide event banner for a daily challenge, small round bird racing between neon pillar gates toward a glowing calendar icon, sunset sun with scanlines, energetic, clean flat vector game art, no text",
-   "updatedAt": "2026-10-17T03:17:06.053Z"
-  },
-  {
-   "id": "icon-aegis",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/aegis.png",
-    "webp": "assets/icons/aegis.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.083Z"
-  },
-  {
-   "id": "icon-aurora",
-   "grade": "legend",
-   "paths": {
-    "png": "assets/icons/aurora.png",
-    "webp": "assets/icons/aurora.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.112Z"
-  },
-  {
-   "id": "icon-blitz",
-   "grade": "common",
-   "paths": {
-    "png": "assets/icons/blitz.png",
-    "webp": "assets/icons/blitz.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.135Z"
-  },
-  {
-   "id": "icon-bulwark",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/bulwark.png",
-    "webp": "assets/icons/bulwark.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.160Z"
-  },
-  {
-   "id": "icon-buzz",
-   "grade": "rare",
-   "paths": {
-    "png": "assets/icons/buzz.png",
-    "webp": "assets/icons/buzz.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.182Z"
-  },
-  {
-   "id": "icon-catalyst",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/catalyst.png",
-    "webp": "assets/icons/catalyst.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.206Z"
-  },
-  {
-   "id": "icon-chrono",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/chrono.png",
-    "webp": "assets/icons/chrono.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.229Z"
-  },
-  {
-   "id": "icon-goliath",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/goliath.png",
-    "webp": "assets/icons/goliath.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.251Z"
-  },
-  {
-   "id": "icon-kraken",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/kraken.png",
-    "webp": "assets/icons/kraken.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.277Z"
-  },
-  {
-   "id": "icon-magnet",
-   "grade": "rare",
-   "paths": {
-    "png": "assets/icons/magnet.png",
-    "webp": "assets/icons/magnet.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.302Z"
-  },
-  {
-   "id": "icon-mirage",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/mirage.png",
-    "webp": "assets/icons/mirage.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.325Z"
-  },
-  {
-   "id": "icon-mochi",
-   "grade": "rare",
-   "paths": {
-    "png": "assets/icons/mochi.png",
-    "webp": "assets/icons/mochi.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.353Z"
-  },
-  {
-   "id": "icon-monarch",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/monarch.png",
-    "webp": "assets/icons/monarch.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.381Z"
-  },
-  {
-   "id": "icon-neko",
-   "grade": "rare",
-   "paths": {
-    "png": "assets/icons/neko.png",
-    "webp": "assets/icons/neko.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.411Z"
-  },
-  {
-   "id": "icon-nimbus",
-   "grade": "common",
-   "paths": {
-    "png": "assets/icons/nimbus.png",
-    "webp": "assets/icons/nimbus.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.447Z"
-  },
-  {
-   "id": "icon-oracle",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/oracle.png",
-    "webp": "assets/icons/oracle.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.486Z"
-  },
-  {
-   "id": "icon-phoenix",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/phoenix.png",
-    "webp": "assets/icons/phoenix.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.521Z"
-  },
-  {
-   "id": "icon-pixel",
-   "grade": "rare",
-   "paths": {
-    "png": "assets/icons/pixel.png",
-    "webp": "assets/icons/pixel.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.554Z"
-  },
-  {
-   "id": "icon-pleiad",
-   "grade": "legend",
-   "paths": {
-    "png": "assets/icons/pleiad.png",
-    "webp": "assets/icons/pleiad.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.583Z"
-  },
-  {
-   "id": "icon-prime",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/prime.png",
-    "webp": "assets/icons/prime.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.608Z"
-  },
-  {
-   "id": "icon-pulsar",
-   "grade": "legend",
-   "paths": {
-    "png": "assets/icons/pulsar.png",
-    "webp": "assets/icons/pulsar.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.633Z"
-  },
-  {
-   "id": "icon-raijin",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/raijin.png",
-    "webp": "assets/icons/raijin.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.656Z"
-  },
-  {
-   "id": "icon-solaris",
-   "grade": "legend",
-   "paths": {
-    "png": "assets/icons/solaris.png",
-    "webp": "assets/icons/solaris.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.679Z"
-  },
-  {
-   "id": "icon-specter",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/specter.png",
-    "webp": "assets/icons/specter.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.702Z"
-  },
-  {
-   "id": "icon-tempest",
-   "grade": "legend",
-   "paths": {
-    "png": "assets/icons/tempest.png",
-    "webp": "assets/icons/tempest.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.726Z"
-  },
-  {
-   "id": "icon-tempo",
-   "grade": "rare",
-   "paths": {
-    "png": "assets/icons/tempo.png",
-    "webp": "assets/icons/tempo.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.747Z"
-  },
-  {
-   "id": "icon-titan",
-   "grade": "common",
-   "paths": {
-    "png": "assets/icons/titan.png",
-    "webp": "assets/icons/titan.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.771Z"
-  },
-  {
-   "id": "icon-volt",
-   "grade": "common",
-   "paths": {
-    "png": "assets/icons/volt.png",
-    "webp": "assets/icons/volt.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.796Z"
-  },
-  {
-   "id": "icon-zero",
-   "grade": "epic",
-   "paths": {
-    "png": "assets/icons/zero.png",
-    "webp": "assets/icons/zero.webp"
-   },
-   "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-   "updatedAt": "2026-10-17T03:50:20.822Z"
-  },
-  {
-   "id": "banner-daily-2",
-   "grade": "common",
-   "paths": {
-    "png": "assets/events/banner-daily-2.png",
-    "webp": "assets/events/banner-daily-2.webp"
-   },
-   "prompt": "SWBY_banner_daily2 wide event banner for a versus battle event, two small round birds facing off across a glowing lightning bolt, neon arena pillars left and right, dramatic magenta and cyan rim light, energetic, clean flat vector game art, no text",
-   "updatedAt": "2026-10-17T05:57:18.580Z"
-  },
-  {
-   "id": "banner-daily-3",
-   "grade": "common",
-   "paths": {
-    "png": "assets/events/banner-daily-3.png",
-    "webp": "assets/events/banner-daily-3.webp"
-   },
-   "prompt": "SWBY_banner_daily3 wide event banner for a treasure shop sale event, small round bird perched on an overflowing golden treasure chest with coins and gems, warm golden glow against a dark neon arcade background, energetic, clean flat vector game art, no text",
-   "updatedAt": "2026-10-17T05:57:18.581Z"
-  },
-  {
-   "id": "badge-rank-1",
-   "grade": "common",
-   "paths": {
-    "png": "assets/events/badge-rank-1.png",
-    "webp": "assets/events/badge-rank-1.webp"
-   },
-   "prompt": "SWBY_badge_rank1 round championship first place rank badge emblem, golden laurel wreath around a radiant gold medal with a small crown on top, shiny highlights, centered on plain dark background, flat vector game UI icon, no text",
-   "updatedAt": "2026-10-17T05:57:18.581Z"
-  },
-  {
-   "id": "badge-rank-2",
-   "grade": "common",
-   "paths": {
-    "png": "assets/events/badge-rank-2.png",
-    "webp": "assets/events/badge-rank-2.webp"
-   },
-   "prompt": "SWBY_badge_rank2 round second place rank badge emblem, silver laurel wreath around a polished silver medal with small wings, cool metallic highlights, centered on plain dark background, flat vector game UI icon, no text",
-   "updatedAt": "2026-10-17T05:57:18.581Z"
-  },
-  {
-   "id": "badge-rank-3",
-   "grade": "common",
-   "paths": {
-    "png": "assets/events/badge-rank-3.png",
-    "webp": "assets/events/badge-rank-3.webp"
-   },
-   "prompt": "SWBY_badge_rank3 round third place rank badge emblem, bronze laurel wreath around a warm bronze medal with a small star, soft copper highlights, centered on plain dark background, flat vector game UI icon, no text",
-   "updatedAt": "2026-10-17T05:57:18.581Z"
-  }
- ]
+  "assets": [
+    {
+      "id": "bulwark",
+      "grade": "epic",
+      "paths": {
+        "png512": "assets/units/bulwark/512.png",
+        "webp512": "assets/units/bulwark/512.webp",
+        "png256": "assets/units/bulwark/256.png",
+        "webp256": "assets/units/bulwark/256.webp",
+        "png128": "assets/units/bulwark/128.png",
+        "webp128": "assets/units/bulwark/128.webp",
+        "anim_flap": "assets/units/bulwark/anim/flap/sheet.webp",
+        "anim_hit": "assets/units/bulwark/anim/hit/sheet.webp",
+        "anim_idle": "assets/units/bulwark/anim/idle/sheet.webp"
+      },
+      "prompt": "SWBY_bulwark a single round turtle-knight bird character with hexagonal shell armor panels, teal and silver, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
+      "updatedAt": "2026-10-17T03:10:06.647Z"
+    },
+    {
+      "id": "catalyst",
+      "grade": "epic",
+      "paths": {
+        "png512": "assets/units/catalyst/512.png",
+        "webp512": "assets/units/catalyst/512.webp",
+        "png256": "assets/units/catalyst/256.png",
+        "webp256": "assets/units/catalyst/256.webp",
+        "png128": "assets/units/catalyst/128.png",
+        "webp128": "assets/units/catalyst/128.webp",
+        "anim_flap": "assets/units/catalyst/anim/flap/sheet.webp",
+        "anim_hit": "assets/units/catalyst/anim/hit/sheet.webp",
+        "anim_idle": "assets/units/catalyst/anim/idle/sheet.webp"
+      },
+      "prompt": "SWBY_catalyst a single alchemist bird character with glass beaker shaped belly filled with glowing green liquid and bubbles, brass accents, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
+      "updatedAt": "2026-10-17T03:10:08.398Z"
+    },
+    {
+      "id": "mirage",
+      "grade": "rare",
+      "paths": {
+        "png512": "assets/units/mirage/512.png",
+        "webp512": "assets/units/mirage/512.webp",
+        "png256": "assets/units/mirage/256.png",
+        "webp256": "assets/units/mirage/256.webp",
+        "png128": "assets/units/mirage/128.png",
+        "webp128": "assets/units/mirage/128.webp",
+        "anim_flap": "assets/units/mirage/anim/flap/sheet.webp",
+        "anim_hit": "assets/units/mirage/anim/hit/sheet.webp",
+        "anim_idle": "assets/units/mirage/anim/idle/sheet.webp"
+      },
+      "prompt": "SWBY_mirage a single ghostly fox-bird character with translucent pale violet body and wispy afterimage trail, glowing eyes, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
+      "updatedAt": "2026-10-17T03:10:09.934Z"
+    },
+    {
+      "id": "tempo",
+      "grade": "rare",
+      "paths": {
+        "png512": "assets/units/tempo/512.png",
+        "webp512": "assets/units/tempo/512.webp",
+        "png256": "assets/units/tempo/256.png",
+        "webp256": "assets/units/tempo/256.webp",
+        "png128": "assets/units/tempo/128.png",
+        "webp128": "assets/units/tempo/128.webp",
+        "anim_flap": "assets/units/tempo/anim/flap/sheet.webp",
+        "anim_hit": "assets/units/tempo/anim/hit/sheet.webp",
+        "anim_idle": "assets/units/tempo/anim/idle/sheet.webp"
+      },
+      "prompt": "SWBY_tempo a single metronome hummingbird character with rhythmic striped wings and pendulum tail, orange and white, musical, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
+      "updatedAt": "2026-10-17T03:10:11.401Z"
+    },
+    {
+      "id": "magnet",
+      "grade": "rare",
+      "paths": {
+        "png512": "assets/units/magnet/512.png",
+        "webp512": "assets/units/magnet/512.webp",
+        "png256": "assets/units/magnet/256.png",
+        "webp256": "assets/units/magnet/256.webp",
+        "png128": "assets/units/magnet/128.png",
+        "webp128": "assets/units/magnet/128.webp",
+        "anim_flap": "assets/units/magnet/anim/flap/sheet.webp",
+        "anim_hit": "assets/units/magnet/anim/hit/sheet.webp",
+        "anim_idle": "assets/units/magnet/anim/idle/sheet.webp"
+      },
+      "prompt": "SWBY_magnet a single robot bird character with a horseshoe magnet beak and electric spark accents, red and blue magnet tips on steel grey body, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
+      "updatedAt": "2026-10-17T03:10:12.421Z"
+    },
+    {
+      "id": "prime",
+      "grade": "legend",
+      "paths": {
+        "png512": "assets/units/prime/512.png",
+        "webp512": "assets/units/prime/512.webp",
+        "png256": "assets/units/prime/256.png",
+        "webp256": "assets/units/prime/256.webp",
+        "png128": "assets/units/prime/128.png",
+        "webp128": "assets/units/prime/128.webp",
+        "anim_flap": "assets/units/prime/anim/flap/sheet.webp",
+        "anim_hit": "assets/units/prime/anim/hit/sheet.webp",
+        "anim_idle": "assets/units/prime/anim/idle/sheet.webp"
+      },
+      "prompt": "SWBY_phoenix a single legendary phoenix chick character wreathed in golden flames with crimson feathers and a small crown of fire, regal, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
+      "updatedAt": "2026-10-17T03:10:13.095Z"
+    },
+    {
+      "id": "banner-daily-1",
+      "grade": "common",
+      "paths": {
+        "png": "assets/events/banner-daily-1.png",
+        "webp": "assets/events/banner-daily-1.webp"
+      },
+      "prompt": "SWBY_banner_daily1 wide event banner for a daily challenge, small round bird racing between neon pillar gates toward a glowing calendar icon, sunset sun with scanlines, energetic, clean flat vector game art, no text",
+      "updatedAt": "2026-10-17T03:17:06.053Z"
+    },
+    {
+      "id": "banner-daily-2",
+      "grade": "common",
+      "paths": {
+        "png": "assets/events/banner-daily-2.png",
+        "webp": "assets/events/banner-daily-2.webp"
+      },
+      "prompt": "SWBY_banner_daily2 wide event banner for a versus battle event, two small round birds facing off across a glowing lightning bolt, neon arena pillars left and right, dramatic magenta and cyan rim light, energetic, clean flat vector game art, no text",
+      "updatedAt": "2026-10-17T05:57:18.580Z"
+    },
+    {
+      "id": "banner-daily-3",
+      "grade": "common",
+      "paths": {
+        "png": "assets/events/banner-daily-3.png",
+        "webp": "assets/events/banner-daily-3.webp"
+      },
+      "prompt": "SWBY_banner_daily3 wide event banner for a treasure shop sale event, small round bird perched on an overflowing golden treasure chest with coins and gems, warm golden glow against a dark neon arcade background, energetic, clean flat vector game art, no text",
+      "updatedAt": "2026-10-17T05:57:18.581Z"
+    },
+    {
+      "id": "badge-rank-1",
+      "grade": "common",
+      "paths": {
+        "png": "assets/events/badge-rank-1.png",
+        "webp": "assets/events/badge-rank-1.webp"
+      },
+      "prompt": "SWBY_badge_rank1 round championship first place rank badge emblem, golden laurel wreath around a radiant gold medal with a small crown on top, shiny highlights, centered on plain dark background, flat vector game UI icon, no text",
+      "updatedAt": "2026-10-17T05:57:18.581Z"
+    },
+    {
+      "id": "badge-rank-2",
+      "grade": "common",
+      "paths": {
+        "png": "assets/events/badge-rank-2.png",
+        "webp": "assets/events/badge-rank-2.webp"
+      },
+      "prompt": "SWBY_badge_rank2 round second place rank badge emblem, silver laurel wreath around a polished silver medal with small wings, cool metallic highlights, centered on plain dark background, flat vector game UI icon, no text",
+      "updatedAt": "2026-10-17T05:57:18.581Z"
+    },
+    {
+      "id": "badge-rank-3",
+      "grade": "common",
+      "paths": {
+        "png": "assets/events/badge-rank-3.png",
+        "webp": "assets/events/badge-rank-3.webp"
+      },
+      "prompt": "SWBY_badge_rank3 round third place rank badge emblem, bronze laurel wreath around a warm bronze medal with a small star, soft copper highlights, centered on plain dark background, flat vector game UI icon, no text",
+      "updatedAt": "2026-10-17T05:57:18.581Z"
+    },
+    {
+      "id": "volt",
+      "grade": "common",
+      "paths": {
+        "png512": "assets/units/volt/512.png",
+        "webp512": "assets/units/volt/512.webp",
+        "png256": "assets/units/volt/256.png",
+        "webp256": "assets/units/volt/256.webp",
+        "png128": "assets/units/volt/128.png",
+        "webp128": "assets/units/volt/128.webp"
+      },
+      "prompt": "SWBY_volt a single plump energetic round bird character with hot pink body, cyan wing and a small lightning spark tail, cheerful hero, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
+      "updatedAt": "2026-10-17T06:46:01.466Z"
+    },
+    {
+      "id": "blitz",
+      "grade": "common",
+      "paths": {
+        "png512": "assets/units/blitz/512.png",
+        "webp512": "assets/units/blitz/512.webp",
+        "png256": "assets/units/blitz/256.png",
+        "webp256": "assets/units/blitz/256.webp",
+        "png128": "assets/units/blitz/128.png",
+        "webp128": "assets/units/blitz/128.webp"
+      },
+      "prompt": "SWBY_blitz a single sleek dart-shaped speedster bird character with long pointed beak, golden yellow body and orange racing-flame wing, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
+      "updatedAt": "2026-10-17T06:46:01.725Z"
+    },
+    {
+      "id": "nimbus",
+      "grade": "common",
+      "paths": {
+        "png512": "assets/units/nimbus/512.png",
+        "webp512": "assets/units/nimbus/512.webp",
+        "png256": "assets/units/nimbus/256.png",
+        "webp256": "assets/units/nimbus/256.webp",
+        "png128": "assets/units/nimbus/128.png",
+        "webp128": "assets/units/nimbus/128.webp"
+      },
+      "prompt": "SWBY_nimbus a single soft fluffy glider bird character with wide cloud-like wings, sky cyan body and lavender wing tips, gentle floating pose, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
+      "updatedAt": "2026-10-17T06:46:02.012Z"
+    },
+    {
+      "id": "titan",
+      "grade": "common",
+      "paths": {
+        "png512": "assets/units/titan/512.png",
+        "webp512": "assets/units/titan/512.webp",
+        "png256": "assets/units/titan/256.png",
+        "webp256": "assets/units/titan/256.webp",
+        "png128": "assets/units/titan/128.png",
+        "webp128": "assets/units/titan/128.webp"
+      },
+      "prompt": "SWBY_titan a single big burly tank bird character with broad armored green chest plate and small yellow wings, sturdy heavyweight, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
+      "updatedAt": "2026-10-17T06:46:02.380Z"
+    },
+    {
+      "id": "icon-aegis",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/aegis.png",
+        "webp": "assets/icons/aegis.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:42.827Z"
+    },
+    {
+      "id": "icon-aurora",
+      "grade": "legend",
+      "paths": {
+        "png": "assets/icons/aurora.png",
+        "webp": "assets/icons/aurora.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:42.862Z"
+    },
+    {
+      "id": "icon-blitz",
+      "grade": "common",
+      "paths": {
+        "png": "assets/icons/blitz.png",
+        "webp": "assets/icons/blitz.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:42.892Z"
+    },
+    {
+      "id": "icon-bulwark",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/bulwark.png",
+        "webp": "assets/icons/bulwark.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:42.921Z"
+    },
+    {
+      "id": "icon-buzz",
+      "grade": "rare",
+      "paths": {
+        "png": "assets/icons/buzz.png",
+        "webp": "assets/icons/buzz.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:42.945Z"
+    },
+    {
+      "id": "icon-catalyst",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/catalyst.png",
+        "webp": "assets/icons/catalyst.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:42.972Z"
+    },
+    {
+      "id": "icon-chrono",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/chrono.png",
+        "webp": "assets/icons/chrono.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:42.994Z"
+    },
+    {
+      "id": "icon-goliath",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/goliath.png",
+        "webp": "assets/icons/goliath.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.016Z"
+    },
+    {
+      "id": "icon-kraken",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/kraken.png",
+        "webp": "assets/icons/kraken.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.039Z"
+    },
+    {
+      "id": "icon-magnet",
+      "grade": "rare",
+      "paths": {
+        "png": "assets/icons/magnet.png",
+        "webp": "assets/icons/magnet.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.065Z"
+    },
+    {
+      "id": "icon-mirage",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/mirage.png",
+        "webp": "assets/icons/mirage.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.089Z"
+    },
+    {
+      "id": "icon-mochi",
+      "grade": "rare",
+      "paths": {
+        "png": "assets/icons/mochi.png",
+        "webp": "assets/icons/mochi.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.113Z"
+    },
+    {
+      "id": "icon-monarch",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/monarch.png",
+        "webp": "assets/icons/monarch.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.137Z"
+    },
+    {
+      "id": "icon-neko",
+      "grade": "rare",
+      "paths": {
+        "png": "assets/icons/neko.png",
+        "webp": "assets/icons/neko.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.160Z"
+    },
+    {
+      "id": "icon-nimbus",
+      "grade": "common",
+      "paths": {
+        "png": "assets/icons/nimbus.png",
+        "webp": "assets/icons/nimbus.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.189Z"
+    },
+    {
+      "id": "icon-oracle",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/oracle.png",
+        "webp": "assets/icons/oracle.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.212Z"
+    },
+    {
+      "id": "icon-phoenix",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/phoenix.png",
+        "webp": "assets/icons/phoenix.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.234Z"
+    },
+    {
+      "id": "icon-pixel",
+      "grade": "rare",
+      "paths": {
+        "png": "assets/icons/pixel.png",
+        "webp": "assets/icons/pixel.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.258Z"
+    },
+    {
+      "id": "icon-pleiad",
+      "grade": "legend",
+      "paths": {
+        "png": "assets/icons/pleiad.png",
+        "webp": "assets/icons/pleiad.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.282Z"
+    },
+    {
+      "id": "icon-prime",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/prime.png",
+        "webp": "assets/icons/prime.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.310Z"
+    },
+    {
+      "id": "icon-pulsar",
+      "grade": "legend",
+      "paths": {
+        "png": "assets/icons/pulsar.png",
+        "webp": "assets/icons/pulsar.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.333Z"
+    },
+    {
+      "id": "icon-raijin",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/raijin.png",
+        "webp": "assets/icons/raijin.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.357Z"
+    },
+    {
+      "id": "icon-solaris",
+      "grade": "legend",
+      "paths": {
+        "png": "assets/icons/solaris.png",
+        "webp": "assets/icons/solaris.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.380Z"
+    },
+    {
+      "id": "icon-specter",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/specter.png",
+        "webp": "assets/icons/specter.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.403Z"
+    },
+    {
+      "id": "icon-tempest",
+      "grade": "legend",
+      "paths": {
+        "png": "assets/icons/tempest.png",
+        "webp": "assets/icons/tempest.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.426Z"
+    },
+    {
+      "id": "icon-tempo",
+      "grade": "rare",
+      "paths": {
+        "png": "assets/icons/tempo.png",
+        "webp": "assets/icons/tempo.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.451Z"
+    },
+    {
+      "id": "icon-titan",
+      "grade": "common",
+      "paths": {
+        "png": "assets/icons/titan.png",
+        "webp": "assets/icons/titan.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.475Z"
+    },
+    {
+      "id": "icon-volt",
+      "grade": "common",
+      "paths": {
+        "png": "assets/icons/volt.png",
+        "webp": "assets/icons/volt.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.500Z"
+    },
+    {
+      "id": "icon-zero",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/zero.png",
+        "webp": "assets/icons/zero.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T06:46:43.523Z"
+    }
+  ]
 }
