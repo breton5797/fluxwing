@@ -1262,6 +1262,7 @@ function resize(){
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
   scale = cv.height / LH; LW = cv.width / scale;
+  if (IMP) IMP.bufs = null;
   buildSkyline();
 }
 addEventListener('resize', resize);
@@ -1392,7 +1393,101 @@ const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:
   ultSlow:0, ultLane:0, ultOut:0, carry:false });   // PULSAR: world time scale while its ultimate runs · AURORA: extra gap of its ultimate's lane (laneApply then also drops the ±140 reach) · TEMPEST: the storm chain steers the bird itself
 let FX = newFx(); const TMAX = {};
 
+/* fx-imp: runtime wiring for the impact layer — pure rules live in the fx-core block; numbers in #fxcfg */
+const FXCFG0 = (() => { try { return JSON.parse($('fxcfg').textContent); } catch (e) { return {}; } })();
+let FXCFG = fxCfgMerge(FX_DEFAULTS, FXCFG0);
+const fxSettings = { q: store.get('fw27_fxq', 'auto'), shake: store.get('fw27_fxshake', true), flash: store.get('fw27_fxflash', true) };
+const fxHw = { cores: navigator.hardwareConcurrency || 4, mem: navigator.deviceMemory || 4, dpr: window.devicePixelRatio || 1 };
+function impNew(q){
+  q = q || fxQualityPick(fxHw, fxSettings.q);
+  return { q, feat: fxFeatures(q, fxSettings, RM, fairMode()), pool: fxPool(FXCFG.pool[q]), shk: { ox: 0, oy: 0, vx: 0, vy: 0 },
+    flashCol: [0, 0, 100], flashA: 0, waves: [], caT: 0, slow: 0, gray: 0, deathT: -1, comboLvl: 0, bufs: null, rng: fxRng((Math.random() * 1e9) | 0) };
+}
+let IMP;
+function impHit(o){
+  const lv = o.level || 'light';
+  hitstop = Math.max(hitstop, hitstopFor(lv, FXCFG));
+  cam.z = Math.max(cam.z, punchFor(lv, FXCFG));
+  if (IMP.feat.shake) IMP.shk = shakeKick(IMP.shk, o.dirX || 0, o.dirY ?? 1, FXCFG.shake.ampPx[lv]);
+  if (o.col && IMP.feat.flash){ IMP.flashCol = o.col; IMP.flashA = FXCFG.flash.alpha; }
+  if (o.wave && IMP.feat.waves && IMP.waves.length < Math.min(FXCFG.wave.cap, IMP.feat.waves)) IMP.waves.push({ x: o.x ?? bird.x, y: o.y ?? bird.y, t: 0 });
+  if (o.chroma && IMP.feat.chroma) IMP.caT = Math.max(IMP.caT, FXCFG.chroma.dur);
+  if (o.slow && IMP.feat.slowmo) IMP.slow = Math.max(IMP.slow, o.slow);
+}
+function impBurst(x, y, col, layers, mul = 1){
+  for (const layer of layers){
+    const L = FXCFG.layers[layer];
+    const n = Math.round((L.n[0] + IMP.rng() * (L.n[1] - L.n[0])) * IMP.feat.partMul * mul);
+    for (const sp of burstSpec(layer, n, IMP.rng, FXCFG)){
+      poolSpawn(IMP.pool, { x, y, vx: Math.cos(sp.ang) * sp.sp, vy: Math.sin(sp.ang) * sp.sp, size: sp.size, life: sp.life,
+        drag: sp.drag, grav: sp.grav, rot: sp.rot, vr: sp.vr, layer, col, bounce: FXCFG.death.debrisBounce });
+    }
+  }
+}
+function impFx(ev, o = {}){
+  switch (ev) {
+    case 'flap': impBurst(bird.x - 8, bird.y + 6, B.wingCol, ['smoke'], .6); break;
+    case 'gate': cam.z = Math.max(cam.z, punchFor('light', FXCFG)); break;
+    case 'near': impHit({ level: 'light', col: [FXCFG.near.flashHue, 100, 70], slow: FXCFG.slowmo.near }); impBurst(bird.x + 14, bird.y, [FXCFG.near.flashHue, 100, 70], ['core', 'spark'], .7); break;
+    case 'shieldHit': impHit({ level: 'mid', dirX: -1, dirY: o.dirY || 0, col: [190, 100, 72], wave: true, chroma: true, x: bird.x, y: bird.y }); impBurst(bird.x, bird.y, [190, 100, 70], ['core', 'spark', 'debris']); break;
+    case 'shieldMulti': break;
+    case 'speed': break;
+    case 'death': impHit({ level: 'heavy', dirX: -1, dirY: .4, wave: true, chroma: true, x: bird.x, y: bird.y }); break;
+    case 'record': impBurst(bird.x, bird.y - 20, [45, 100, 60], ['core', 'spark', 'debris']); break;
+    case 'coin': impBurst(bird.x, bird.y, [48, 100, 62], ['spark'], .3); break;
+    case 'comboBreak': break;
+    case 'overdrive': impHit({ level: 'mid', col: [300, 100, 68], chroma: true }); break;
+  }
+  const hp = hapticFor(FXCFG.events[ev] && FXCFG.events[ev].haptic, HAPTIC);
+  if (hp != null) haptic(hp);
+}
+function impUpdate(rdt){
+  IMP.shk = IMP.feat.shake ? shakeStep(IMP.shk, rdt, FXCFG) : IMP.shk;
+  poolStep(IMP.pool, rdt, GROUND);
+  if (IMP.waves.length){ for (const w of IMP.waves) w.t += rdt; IMP.waves = IMP.waves.filter(w => w.t < FXCFG.wave.life); }
+  IMP.caT = Math.max(0, IMP.caT - rdt);
+  IMP.slow = Math.max(0, IMP.slow - rdt);
+  IMP.flashA = Math.max(0, IMP.flashA - rdt * 8);
+}
+function impBufs(){
+  if (IMP.bufs) return IMP.bufs;
+  const mk = k => { const c = document.createElement('canvas'); c.width = Math.max(2, cv.width / k | 0); c.height = Math.max(2, cv.height / k | 0); return c; };
+  IMP.bufs = { b4: mk(FXCFG.bloom.down) };
+  return IMP.bufs;
+}
+function impPost(){
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const W2 = cv.width, H2 = cv.height;
+  if (IMP.feat.distort) for (const w of IMP.waves){
+    const k = w.t / FXCFG.wave.life, r = (20 + k * FXCFG.wave.maxR) * scale, wx = w.x * scale, wy = w.y * scale;
+    ctx.save(); ctx.beginPath(); ctx.arc(wx, wy, r, 0, 6.283); ctx.arc(wx, wy, Math.max(1, r - 14 * scale), 0, 6.283, true); ctx.clip();
+    const sR = FXCFG.wave.refract;
+    ctx.drawImage(cv, wx - wx * sR, wy - wy * sR, W2 * sR, H2 * sR);
+    ctx.restore();
+    ctx.strokeStyle = `rgba(255,255,255,${(.35 * (1 - k)).toFixed(3)})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(wx, wy, r, 0, 6.283); ctx.stroke();
+  }
+  if (IMP.feat.bloom){
+    const b = impBufs().b4, bx = b.getContext('2d');
+    bx.clearRect(0, 0, b.width, b.height); bx.drawImage(cv, 0, 0, b.width, b.height);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = FXCFG.bloom.alpha; ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(b, 0, 0, W2, H2); ctx.restore();
+  }
+  if (IMP.feat.chroma && (IMP.caT > 0 || (IMP.feat.chromaIdle && IMP.comboLvl >= 4))){
+    const a = IMP.caT > 0 ? Math.min(.35, IMP.caT / FXCFG.chroma.dur * .35) : FXCFG.chroma.idleAlpha;
+    const px = FXCFG.chroma.px * scale;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+    ctx.drawImage(cv, -px, 0); ctx.drawImage(cv, px, 0); ctx.restore();
+  }
+  if (IMP.flashA > 0 && IMP.feat.flash){
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = hsl(IMP.flashCol, IMP.flashA); ctx.fillRect(0, 0, W2, H2); ctx.restore();
+  }
+  if (IMP.gray > 0){
+    ctx.save(); ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = `rgba(128,128,128,${IMP.gray})`; ctx.fillRect(0, 0, W2, H2); ctx.restore();
+  }
+}
+
 function reset(){
+  IMP = impNew(IMP && IMP.q);
   T = 0; timeScale = 1; hitstop = 0; shake = 0; flash = 0;
   bird.x = Math.min(LW*.3, 150); bird.y = 280; bird.vy = 0; bird.rot = 0;
   gates = []; orbs = []; hazs = []; parts = []; pops = []; trail = [];
@@ -2094,8 +2189,9 @@ function showOver(){
 
 /* ---------- update ---------- */
 function update(rdt){
+  impUpdate(rdt);
   if (hitstop > 0){ hitstop -= rdt; rdt *= .05; }
-  const target = Math.min(slowT > 0 ? POW.slowScale : 1, FX.ultSlow || 1);   // PULSAR's ultimate slows the world further than the slow power-up
+  const target = Math.min(slowT > 0 ? POW.slowScale : 1, FX.ultSlow || 1, IMP.slow > 0 ? FXCFG.slowmo.scale : 1);   // PULSAR's ultimate slows the world further than the slow power-up
   timeScale += (target - timeScale) * Math.min(1, rdt*6);
   const dt = rdt * (state === 'dying' ? .35 : timeScale);
   T += dt * (freezeT > 0 && state === 'play' ? .03 : 1); if (FX.hold && state === 'play') FX.still += dt;   // KRAKEN's held gates: their clock falls behind by exactly what T gains (KRAKEN has no time stop)
@@ -2349,7 +2445,7 @@ function render(){
   ctx.fillStyle = '#000'; ctx.fillRect(0,0,cv.width,cv.height);
   const sk = RM ? 0 : shake + FX.amb;
   const z = RM ? 1 : cam.z;
-  ctx.setTransform(scale*z,0,0,scale*z, cam.fx*(1-z)*scale + (Math.random()-.5)*sk*scale, cam.fy*(1-z)*scale + (Math.random()-.5)*sk*scale);
+  ctx.setTransform(scale*z,0,0,scale*z, cam.fx*(1-z)*scale + ((Math.random()-.5)*sk + IMP.shk.ox*IMP.feat.shake)*scale, cam.fy*(1-z)*scale + ((Math.random()-.5)*sk + IMP.shk.oy*IMP.feat.shake)*scale);
 
   const sg = ctx.createLinearGradient(0,0,0,GROUND);
   sg.addColorStop(0, hsl(pal.sky0)); sg.addColorStop(1, hsl(pal.sky1));
@@ -2480,6 +2576,7 @@ function render(){
   }
   if (flash > 0 && !RM){ ctx.fillStyle = `rgba(255,255,255,${flash*.35})`; ctx.fillRect(0,0,LW,LH); }
 
+  impPost();
   ctx.setTransform(scale,0,0,scale,0,0);
   if (feverGlow > .01 && !RM){
     const pu = .5 + .5*Math.sin(T*10), hue = ufx(B.id, 'feverHue') ?? (T*120) % 360, w = 46;
@@ -4755,6 +4852,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter, lowGravT, inkT, overT, weightT, fogT: FX.fogT}; },   // QA only: timers a player reads off the screen (lowGravT: the bot's flight model follows NIMBUS's glide; inkT: KRAKEN's ink cloak log; overT / weightT / fogT: the hazards)
   haz(k, dx, dy){ const h = {x: bird.x + (dx || 0), y: bird.y + (dy || 0), k, got:false, t:0}; if (dx == null) hazHit(h); else hazs.push(h); },   // QA only: a hazard as if touched right now, or one placed dx / dy from the bird
   get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
+  setFxQuality(q){ fxSettings.q = q; IMP = impNew(q); }, get imp(){ return IMP; }, fx: impFx, get fxEvents(){ return FX_EVENTS.slice(); },
   hold: false, step(dt, n){ for (let i = 0; i < (n || 1); i++) update(dt); },
   selfTest(){
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b), S = [0,9,10,24,25,39,40,49], fails = [];
