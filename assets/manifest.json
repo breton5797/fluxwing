@@ -120,7 +120,7 @@
         "webp": "assets/icons/aegis.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:54.766Z"
+      "updatedAt": "2026-10-17T03:50:20.083Z"
     },
     {
       "id": "icon-aurora",
@@ -130,7 +130,7 @@
         "webp": "assets/icons/aurora.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:54.863Z"
+      "updatedAt": "2026-10-17T03:50:20.112Z"
     },
     {
       "id": "icon-blitz",
@@ -140,7 +140,7 @@
         "webp": "assets/icons/blitz.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:54.949Z"
+      "updatedAt": "2026-10-17T03:50:20.135Z"
     },
     {
       "id": "icon-bulwark",
@@ -150,7 +150,7 @@
         "webp": "assets/icons/bulwark.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:55.050Z"
+      "updatedAt": "2026-10-17T03:50:20.160Z"
     },
     {
       "id": "icon-buzz",
@@ -160,7 +160,7 @@
         "webp": "assets/icons/buzz.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:55.134Z"
+      "updatedAt": "2026-10-17T03:50:20.182Z"
     },
     {
       "id": "icon-catalyst",
@@ -170,7 +170,7 @@
         "webp": "assets/icons/catalyst.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:55.225Z"
+      "updatedAt": "2026-10-17T03:50:20.206Z"
     },
     {
       "id": "icon-chrono",
@@ -180,7 +180,7 @@
         "webp": "assets/icons/chrono.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:55.305Z"
+      "updatedAt": "2026-10-17T03:50:20.229Z"
     },
     {
       "id": "icon-goliath",
@@ -190,7 +190,7 @@
         "webp": "assets/icons/goliath.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:55.414Z"
+      "updatedAt": "2026-10-17T03:50:20.251Z"
     },
     {
       "id": "icon-kraken",
@@ -200,7 +200,7 @@
         "webp": "assets/icons/kraken.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:55.508Z"
+      "updatedAt": "2026-10-17T03:50:20.277Z"
     },
     {
       "id": "icon-magnet",
@@ -210,7 +210,7 @@
         "webp": "assets/icons/magnet.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:55.594Z"
+      "updatedAt": "2026-10-17T03:50:20.302Z"
     },
     {
       "id": "icon-mirage",
@@ -220,7 +220,7 @@
         "webp": "assets/icons/mirage.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:55.679Z"
+      "updatedAt": "2026-10-17T03:50:20.325Z"
     },
     {
       "id": "icon-mochi",
@@ -230,7 +230,7 @@
         "webp": "assets/icons/mochi.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:55.725Z"
+      "updatedAt": "2026-10-17T03:50:20.353Z"
     },
     {
       "id": "icon-monarch",
@@ -240,7 +240,7 @@
         "webp": "assets/icons/monarch.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:55.800Z"
+      "updatedAt": "2026-10-17T03:50:20.381Z"
     },
     {
       "id": "icon-neko",
@@ -250,7 +250,7 @@
         "webp": "assets/icons/neko.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:55.873Z"
+      "updatedAt": "2026-10-17T03:50:20.411Z"
     },
     {
       "id": "icon-nimbus",
@@ -260,7 +260,7 @@
         "webp": "assets/icons/nimbus.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:55.939Z"
+      "updatedAt": "2026-10-17T03:50:20.447Z"
     },
     {
       "id": "icon-oracle",
@@ -270,7 +270,7 @@
         "webp": "assets/icons/oracle.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:55.981Z"
+      "updatedAt": "2026-10-17T03:50:20.486Z"
     },
     {
       "id": "icon-phoenix",
@@ -280,7 +280,7 @@
         "webp": "assets/icons/phoenix.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:56.032Z"
+      "updatedAt": "2026-10-17T03:50:20.521Z"
     },
     {
       "id": "icon-pixel",
@@ -290,7 +290,7 @@
         "webp": "assets/icons/pixel.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:56.066Z"
+      "updatedAt": "2026-10-17T03:50:20.554Z"
     },
     {
       "id": "icon-pleiad",
@@ -300,17 +300,17 @@
         "webp": "assets/icons/pleiad.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:56.102Z"
+      "updatedAt": "2026-10-17T03:50:20.583Z"
     },
     {
       "id": "icon-prime",
-      "grade": "legend",
+      "grade": "epic",
       "paths": {
         "png": "assets/icons/prime.png",
         "webp": "assets/icons/prime.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:56.138Z"
+      "updatedAt": "2026-10-17T03:50:20.608Z"
     },
     {
       "id": "icon-pulsar",
@@ -320,7 +320,7 @@
         "webp": "assets/icons/pulsar.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:56.169Z"
+      "updatedAt": "2026-10-17T03:50:20.633Z"
     },
     {
       "id": "icon-raijin",
@@ -330,7 +330,7 @@
         "webp": "assets/icons/raijin.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:56.201Z"
+      "updatedAt": "2026-10-17T03:50:20.656Z"
     },
     {
       "id": "icon-solaris",
@@ -340,7 +340,7 @@
         "webp": "assets/icons/solaris.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:56.240Z"
+      "updatedAt": "2026-10-17T03:50:20.679Z"
     },
     {
       "id": "icon-specter",
@@ -350,7 +350,7 @@
         "webp": "assets/icons/specter.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:56.281Z"
+      "updatedAt": "2026-10-17T03:50:20.702Z"
     },
     {
       "id": "icon-tempest",
@@ -360,7 +360,7 @@
         "webp": "assets/icons/tempest.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:56.351Z"
+      "updatedAt": "2026-10-17T03:50:20.726Z"
     },
     {
       "id": "icon-tempo",
@@ -370,7 +370,7 @@
         "webp": "assets/icons/tempo.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:56.389Z"
+      "updatedAt": "2026-10-17T03:50:20.747Z"
     },
     {
       "id": "icon-titan",
@@ -380,7 +380,7 @@
         "webp": "assets/icons/titan.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:56.423Z"
+      "updatedAt": "2026-10-17T03:50:20.771Z"
     },
     {
       "id": "icon-volt",
@@ -390,7 +390,7 @@
         "webp": "assets/icons/volt.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:56.454Z"
+      "updatedAt": "2026-10-17T03:50:20.796Z"
     },
     {
       "id": "icon-zero",
@@ -400,7 +400,7 @@
         "webp": "assets/icons/zero.webp"
       },
       "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
-      "updatedAt": "2026-10-17T03:17:56.489Z"
+      "updatedAt": "2026-10-17T03:50:20.822Z"
     }
   ]
 }

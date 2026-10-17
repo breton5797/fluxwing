@@ -716,7 +716,7 @@ const BIRDS = [
   { id:'mirage',  name:'MIRAGE',  rarity:2, img:1, col:[270,45,80],  wingCol:[290,80,70],  speed:1.04, flap:450, grav:1380, maxFall:660, dash:1.10, r:12.5, window:17, bonus:0, nose:16, h:13, span:26, stats:[4,3,4,3], phaseEvery:9 },
   { id:'catalyst',name:'CATALYST',rarity:2, img:1, col:[110,80,55],  wingCol:[45,90,60],   speed:0.98, flap:460, grav:1450, maxFall:690, dash:1.00, r:13.5, window:17, bonus:0, nose:15, h:14, span:28, stats:[3,3,4,3], xpMul:3 },
   { id:'bulwark', name:'BULWARK', rarity:3, img:1, col:[185,70,45],  wingCol:[200,30,70],  speed:0.95, flap:560, grav:1750, maxFall:760, dash:1.25, r:15,   window:16, bonus:0, nose:16, h:15, span:26, stats:[2,5,2,4], shieldStart:2, shieldMax:4, shieldRegen:45 },
-  { id:'prime',   name:'PHOENIX PRIME', rarity:4, img:1, col:[45,100,58], wingCol:[8,100,55], speed:1.08, flap:480, grav:1520, maxFall:720, dash:1.20, r:13.5, window:18, bonus:1, nose:18, h:13, span:30, stats:[4,4,3,4], revive:1, xpMul:2, feverAt:7 },
+  { id:'prime',   name:'PHOENIX PRIME', rarity:2, img:1, col:[45,100,58], wingCol:[8,100,55], speed:1.08, flap:480, grav:1520, maxFall:720, dash:1.20, r:13.5, window:18, bonus:1, nose:18, h:13, span:30, stats:[4,4,3,4], revive:1, xpMul:2, feverAt:7 },
   // ---- season reward: never sold, never the free trial (season). Legendary rank for power, cast scale and hangar order; its own label and badge colour ----
   { id:'monarch', name:'MONARCH', rarity:2, season:true, col:[48,70,93], wingCol:[46,100,58], uiCol:[46,100,60], speed:1.00, flap:480, grav:1500, maxFall:720, dash:1.10, r:13.5, window:17, bonus:0, nose:19, h:13, span:32, stats:[3,3,3,3], shieldStart:1, shieldRegen:25 }
 ];
@@ -2939,7 +2939,9 @@ for (const d of BIRDS) if (d.img){
 function drawUnitImg(c, d, w, o){
   const im = UNIT_IMG[d.id]; if (!im) return false;
   const s = d.span * 2.1, bob = (o && o.lite) ? 0 : w * 2;
+  if (glow){ c.save(); c.shadowColor = hsl(glow); c.shadowBlur = 22; }
   c.drawImage(im, -s/2, -s/2 - bob, s, s);
+  if (glow) c.restore();
   return true;
 }
 function drawShape(c, d, w, glow, o){
@@ -4742,7 +4744,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
           && eq(fair, [[0,0,true],[0,0,true]]) && eq(L0, [0,true]) && eq(L49, [7,true]) && fresh && !!document.querySelector('#helpScr [data-i18n="hHaz"]') && eq(Object.keys(FW.timers).filter(k => /^(overT|weightT|fogT)$/.test(k)), ['overT','weightT','fogT'])
           && Object.keys(I18N).length === 10 && Object.keys(I18N).every(l => ['hz_over','hz_weight','hz_smoke','hz_drain','hHaz'].every(k => typeof I18N[l][k] === 'string' && I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && /11/.test(I18N[l].hHaz) && /2[.,]5/.test(I18N[l].hHaz)); },
       pow: () => eq([0,.19,.2,.59,.6,.79,.8,.99].map(powKind), ['shield','shield','magnet','magnet','slow','slow','potion','potion']),
-      sk23: () => BIRDS.length === 23 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
+      sk23: () => BIRDS.length === 29 && BIRDS.every(b => SK[b.id] && SK[b.id].cd > 0 && SK[b.id].f && SK[b.id].f.cd === 18),
       ultra5: () => BIRDS.filter(b => b.rarity === 4).length === 5,
       hiddenU: () => eq(BIRDS.filter(b => b.hidden).map(b => b.id).sort(), ['aurora','pleiad','tempest']) && ROSTER.every(b => !b.hidden || owned.has(b.id)) && ROSTER.includes(birdById('solaris')) && ROSTER.includes(birdById('pulsar')) && ROSTER[0] === birdById('volt'),
       ptier: () => { const r0 = rp, on = p => { setRp(p); return [$('menuTier').textContent, $('oRank').textContent, $('menuTier').querySelector('img').src === PTIER_IMG[tierOf(p)], $('menuTier').hidden, $('oRank').hidden]; }, m0 = mode, seen = [0, 400, 5600, 8000].map(on); mode = 'versus'; const vsBronze = on(0)[4]; mode = m0; setRp(r0);   // one ladder, keyed by the versus RP: the menu and result badges follow rp
@@ -4757,13 +4759,13 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
         return ['flash','shake','parts'].every(k => up(k)) && ['z','stop','sky','ban'].every(k => up(k, 1)) && L.every((v, i) => !i || (rad(v) > rad(L[i-1]) && v.rings.length >= L[i-1].rings.length)) && TIER_FX.ultra.shake < 18
           && eq([TIER_FX.common, TIER_FX.epic].map(v => [v.rings, v.flash, v.shake, v.z, v.stop, v.parts, v.sky, v.ban, v.big]), [[[180,110],.2,3,1.07,0,0,0,1,false],[[240,110],.3,5,1.07,0,0,0,1,false]]); },
       unitFx: () => Object.keys(UNIT_ART).concat(Object.keys(UNIT_FX)).every(id => birdById(id)) && Object.values(UNIT_ART).every(f => typeof f === 'function') && ['solaris','pleiad','oracle','phoenix','zero','raijin','chrono','goliath','aegis','kraken','specter','aurora','tempest','pulsar','monarch'].every(id => UNIT_ART[id] && UNIT_FX[id])
-        && BIRDS.every(b => (b.rarity || 0) < 2 || (UNIT_ART[b.id] && typeof UNIT_FX[b.id].idle === 'function')) && eq(['castT','castMax','sigT','sigK','perfT'].map(k => newFx()[k]), [0,0,0,'',0]) && [O0, OL].every(o => o.pose === 0 && o.vy === 0) && OL.lite && !O0.lite,
+        && BIRDS.every(b => (b.rarity || 0) < 2 || b.img || (UNIT_ART[b.id] && typeof UNIT_FX[b.id].idle === 'function')) && eq(['castT','castMax','sigT','sigK','perfT'].map(k => newFx()[k]), [0,0,0,'',0]) && [O0, OL].every(o => o.pose === 0 && o.vy === 0) && OL.lite && !O0.lite,
       i18n: () => Object.keys(I18N).every(l => BIRDS.every(b => ['r_','p_','sk_','sd_'].every(p => typeof I18N[l][p + b.id] === 'string' && I18N[l][p + b.id]))),
       i18nIdx: () => I18N.ja.p_pixel.startsWith('コイン2倍'),
       price: () => eq(['volt','mochi','zero','aegis','solaris','pulsar'].map(id => priceOf(birdById(id))), [null,{coin:40000,dia:10000,gem:15},{coin:90000,dia:22000,gem:25},{coin:100000,dia:33000,gem:40},{coin:150000,dia:40000,gem:100},{coin:150000,dia:40000,gem:100}]),
       price3: () => BIRDS.every(b => { const p = priceOf(b); return b.rarity && !b.season ? CUR.every(([k]) => Number.isInteger(p[k]) && p[k] > 0) : p === null; }),
       rarity: () => { const ids = r => BIRDS.filter(b => b.rarity === r).map(b => b.id).sort();
-        return eq(RARITY_KEY, ['r_common','r_epic','r_legendary','r_mythic','r_ultra']) && eq(ids(2), ['chrono','goliath','monarch','phoenix','raijin','zero']) && eq(ids(3), ['aegis','kraken','oracle','specter'])
+        return eq(RARITY_KEY, ['r_common','r_epic','r_legendary','r_mythic','r_ultra']) && eq(ids(2), ['catalyst','chrono','goliath','mirage','monarch','phoenix','prime','raijin','zero']) && eq(ids(3), ['aegis','bulwark','kraken','oracle','specter'])
           && BIRDS.every((b, i) => !i || (b.rarity || 0) >= (BIRDS[i-1].rarity || 0)) && [2,3,4].every(r => CUR.every(([k]) => PRICE[r][k] > PRICE[r-1][k])); },
       coinTbl: () => eq(ST_SCOIN, [30,40,55,67]) && eq(ST_ORBP, [.3,.4,.5,.67]) && INCOME_X === 5 && eq([0,49,50,99,100,275].map(s => scoreCoins(s, 0)), [0,0,150,150,300,750]) && eq([1,2,3].map(tr => scoreCoins(120, tr)), [400,550,670]),
       dia: () => eq([0,9,10,24,25,39,40,49].map(diaClear), [0,0,1,1,2,2,3,3].map(i => DIA_CLEAR[i])) && [DIA_LEVEL, DIA_DAILY, ...DIA_CLEAR].every(n => Number.isInteger(n) && n > 0),

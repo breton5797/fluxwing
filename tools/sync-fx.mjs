@@ -27,7 +27,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const block = buildFxBlock();
   let out;
   if (/\/\* fx:start[\s\S]*?\/\* fx:end \*\//.test(html)) {
-    out = html.replace(/\/\* fx:start[\s\S]*?\/\* fx:end \*\//, block);
+    out = html.replace(/\/\* fx:start[\s\S]*?\/\* fx:end \*\//, () => block);
   } else {
     // first insertion: right after the main IIFE's 'use strict';
     out = html.replace("(() => {\n'use strict';", `(() => {\n'use strict';\n${block}`);

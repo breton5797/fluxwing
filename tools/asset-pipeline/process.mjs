@@ -30,7 +30,7 @@ let manifest = existsSync(join(ROOT, 'assets/manifest.json'))
 
 for (const [src, unit, grade] of UNITS) {
   const dir = join(ROOT, 'assets/_gen', src, 'nobg');
-  const files = readdirSync(dir).filter(f => f.endsWith('.png')).map(f => join(dir, f));
+  const files = existsSync(dir) ? readdirSync(dir).filter(f => f.endsWith('.png')).map(f => join(dir, f)) : [];
   if (!files.length) { console.log(unit, 'no candidates'); continue; }
   const grids = [];
   for (const f of files) grids.push(await grid(f));
