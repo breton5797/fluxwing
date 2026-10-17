@@ -10,7 +10,7 @@ mkdirSync(OUT, { recursive: true });
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
-await page.goto('http://localhost:5173/?icons=1#dev');
+await page.goto('http://127.0.0.1:5173/?icons=1#dev');
 await page.waitForFunction(() => window.FW && FW.BIRDS, null, { timeout: 10000 });
 await page.waitForTimeout(1200); // let premium unit images load
 

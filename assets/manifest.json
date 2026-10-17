@@ -83,6 +83,296 @@
       },
       "prompt": "SWBY_phoenix a single legendary phoenix chick character wreathed in golden flames with crimson feathers and a small crown of fire, regal, clean cel-shaded illustration, bold outline, vibrant saturated colors, side view, centered, plain solid background, mobile game asset, no scene, no pillars",
       "updatedAt": "2026-10-17T03:10:13.095Z"
+    },
+    {
+      "id": "icon-aegis",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/aegis.png",
+        "webp": "assets/icons/aegis.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.124Z"
+    },
+    {
+      "id": "icon-aurora",
+      "grade": "legend",
+      "paths": {
+        "png": "assets/icons/aurora.png",
+        "webp": "assets/icons/aurora.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.163Z"
+    },
+    {
+      "id": "icon-blitz",
+      "grade": "common",
+      "paths": {
+        "png": "assets/icons/blitz.png",
+        "webp": "assets/icons/blitz.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.202Z"
+    },
+    {
+      "id": "icon-bulwark",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/bulwark.png",
+        "webp": "assets/icons/bulwark.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.236Z"
+    },
+    {
+      "id": "icon-buzz",
+      "grade": "rare",
+      "paths": {
+        "png": "assets/icons/buzz.png",
+        "webp": "assets/icons/buzz.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.265Z"
+    },
+    {
+      "id": "icon-catalyst",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/catalyst.png",
+        "webp": "assets/icons/catalyst.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.304Z"
+    },
+    {
+      "id": "icon-chrono",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/chrono.png",
+        "webp": "assets/icons/chrono.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.336Z"
+    },
+    {
+      "id": "icon-goliath",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/goliath.png",
+        "webp": "assets/icons/goliath.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.366Z"
+    },
+    {
+      "id": "icon-kraken",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/kraken.png",
+        "webp": "assets/icons/kraken.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.404Z"
+    },
+    {
+      "id": "icon-magnet",
+      "grade": "rare",
+      "paths": {
+        "png": "assets/icons/magnet.png",
+        "webp": "assets/icons/magnet.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.440Z"
+    },
+    {
+      "id": "icon-mirage",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/mirage.png",
+        "webp": "assets/icons/mirage.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.504Z"
+    },
+    {
+      "id": "icon-mochi",
+      "grade": "rare",
+      "paths": {
+        "png": "assets/icons/mochi.png",
+        "webp": "assets/icons/mochi.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.552Z"
+    },
+    {
+      "id": "icon-monarch",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/monarch.png",
+        "webp": "assets/icons/monarch.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.621Z"
+    },
+    {
+      "id": "icon-neko",
+      "grade": "rare",
+      "paths": {
+        "png": "assets/icons/neko.png",
+        "webp": "assets/icons/neko.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.700Z"
+    },
+    {
+      "id": "icon-nimbus",
+      "grade": "common",
+      "paths": {
+        "png": "assets/icons/nimbus.png",
+        "webp": "assets/icons/nimbus.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.768Z"
+    },
+    {
+      "id": "icon-oracle",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/oracle.png",
+        "webp": "assets/icons/oracle.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.837Z"
+    },
+    {
+      "id": "icon-phoenix",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/phoenix.png",
+        "webp": "assets/icons/phoenix.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.902Z"
+    },
+    {
+      "id": "icon-pixel",
+      "grade": "rare",
+      "paths": {
+        "png": "assets/icons/pixel.png",
+        "webp": "assets/icons/pixel.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:20.983Z"
+    },
+    {
+      "id": "icon-pleiad",
+      "grade": "legend",
+      "paths": {
+        "png": "assets/icons/pleiad.png",
+        "webp": "assets/icons/pleiad.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:21.069Z"
+    },
+    {
+      "id": "icon-prime",
+      "grade": "legend",
+      "paths": {
+        "png": "assets/icons/prime.png",
+        "webp": "assets/icons/prime.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:21.188Z"
+    },
+    {
+      "id": "icon-pulsar",
+      "grade": "legend",
+      "paths": {
+        "png": "assets/icons/pulsar.png",
+        "webp": "assets/icons/pulsar.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:21.270Z"
+    },
+    {
+      "id": "icon-raijin",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/raijin.png",
+        "webp": "assets/icons/raijin.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:21.326Z"
+    },
+    {
+      "id": "icon-solaris",
+      "grade": "legend",
+      "paths": {
+        "png": "assets/icons/solaris.png",
+        "webp": "assets/icons/solaris.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:21.368Z"
+    },
+    {
+      "id": "icon-specter",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/specter.png",
+        "webp": "assets/icons/specter.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:21.416Z"
+    },
+    {
+      "id": "icon-tempest",
+      "grade": "legend",
+      "paths": {
+        "png": "assets/icons/tempest.png",
+        "webp": "assets/icons/tempest.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:21.472Z"
+    },
+    {
+      "id": "icon-tempo",
+      "grade": "rare",
+      "paths": {
+        "png": "assets/icons/tempo.png",
+        "webp": "assets/icons/tempo.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:21.547Z"
+    },
+    {
+      "id": "icon-titan",
+      "grade": "common",
+      "paths": {
+        "png": "assets/icons/titan.png",
+        "webp": "assets/icons/titan.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:21.589Z"
+    },
+    {
+      "id": "icon-volt",
+      "grade": "common",
+      "paths": {
+        "png": "assets/icons/volt.png",
+        "webp": "assets/icons/volt.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:21.627Z"
+    },
+    {
+      "id": "icon-zero",
+      "grade": "epic",
+      "paths": {
+        "png": "assets/icons/zero.png",
+        "webp": "assets/icons/zero.webp"
+      },
+      "prompt": "composited from in-game render (tools/asset-pipeline/capture-icons.mjs + icons.mjs)",
+      "updatedAt": "2026-10-17T03:12:21.665Z"
     }
   ]
 }
