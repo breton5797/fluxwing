@@ -18,7 +18,7 @@ export function buildFxBlock() {
       .trim();
   }).join('\n');
   const names = ['makeParticle', 'stepParticles', 'spawnCount', 'ringPhases', 'hexBurst', 'shieldHit', 'pushTrail', 'xpPopup', 'shakeOffset', 'hitstop', 'flashAlpha', 'coinBounceScale'];
-  return `/* fx:start — generated from arcade-core/fx, do not edit by hand; run: node tools/sync-fx.mjs */\n${body}\nconst FX = { ${names.join(', ')} };\n/* fx:end */`;
+  return `/* fx:start — generated from arcade-core/fx, do not edit by hand; run: node tools/sync-fx.mjs */\nconst AFX = (() => {\n${body}\nreturn { ${names.join(', ')} };\n})();\n/* fx:end */`;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

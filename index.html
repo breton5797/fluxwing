@@ -539,6 +539,7 @@ window.FW_CONFIG = { supabaseUrl: 'https://ecjeyelgcqbliavwltbc.supabase.co', su
 (() => {
 'use strict';
 /* fx:start — generated from arcade-core/fx, do not edit by hand; run: node tools/sync-fx.mjs */
+const AFX = (() => {
 // -- fx/particles.js --
 // Shared particle rules: pure stepping, no renderer coupling. Reused across arcade games.
 function makeParticle({ x, y, vx = 0, vy = 0, life = 1, g = 0, size = 3, color = '#fff', shape = 'dot' }) {
@@ -623,7 +624,8 @@ function flashAlpha(t, duration) {
 function coinBounceScale(t) {
   return 1 + 0.35 * Math.exp(-6 * t) * Math.sin(10 * t);
 }
-const FX = { makeParticle, stepParticles, spawnCount, ringPhases, hexBurst, shieldHit, pushTrail, xpPopup, shakeOffset, hitstop, flashAlpha, coinBounceScale };
+return { makeParticle, stepParticles, spawnCount, ringPhases, hexBurst, shieldHit, pushTrail, xpPopup, shakeOffset, hitstop, flashAlpha, coinBounceScale };
+})();
 /* fx:end */
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 const $ = id => document.getElementById(id);
