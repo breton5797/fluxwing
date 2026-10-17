@@ -9,13 +9,10 @@ import { makeEntry, upsertManifest } from './manifest.js';
 
 const ROOT = new URL('../..', import.meta.url).pathname;
 // [source folder in assets/_gen, in-game unit id, icon grade]
-// Default list is the phase-1 premium six; pass src:unit:grade triples as argv to run other waves.
-const UNITS = process.argv.length > 2
-  ? process.argv.slice(2).map(s => s.split(':'))
-  : [
-    ['bulwark', 'bulwark', 'epic'], ['catalyst', 'catalyst', 'epic'], ['mirage', 'mirage', 'rare'],
-    ['tempo', 'tempo', 'rare'], ['magnet', 'magnet', 'rare'], ['phoenix', 'prime', 'legend'],
-  ];
+const UNITS = [
+  ['bulwark', 'bulwark', 'epic'], ['catalyst', 'catalyst', 'epic'], ['mirage', 'mirage', 'rare'],
+  ['tempo', 'tempo', 'rare'], ['magnet', 'magnet', 'rare'], ['phoenix', 'prime', 'legend'],
+];
 const PROMPTS = JSON.parse(readFileSync(join(ROOT, 'tools/asset-pipeline/prompts.json'), 'utf8'));
 
 async function grid(file) {
