@@ -2936,7 +2936,7 @@ const UNIT_IMG = {};
 for (const d of BIRDS) if (d.img){
   const im = new Image(); im.onload = () => { UNIT_IMG[d.id] = im; }; im.src = `assets/units/${d.id}/256.webp`;
 }
-function drawUnitImg(c, d, w, o){
+function drawUnitImg(c, d, w, glow, o){
   const im = UNIT_IMG[d.id]; if (!im) return false;
   const s = d.span * 2.1, bob = (o && o.lite) ? 0 : w * 2;
   if (glow){ c.save(); c.shadowColor = hsl(glow); c.shadowBlur = 22; }
@@ -2945,7 +2945,7 @@ function drawUnitImg(c, d, w, o){
   return true;
 }
 function drawShape(c, d, w, glow, o){
-  if (d.img && drawUnitImg(c, d, w, o)) return;
+  if (d.img && drawUnitImg(c, d, w, glow, o)) return;
   const art = UNIT_ART[d.id]; if (art) return art(c, d, w, glow, o || O0);
   if (d.id === 'mochi') return drawMochi(c, d, w, glow);
   if (d.id === 'pixel') return drawPixel(c, d, w, glow);
