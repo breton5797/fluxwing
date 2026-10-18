@@ -56,3 +56,10 @@ test('the title, the share title and the install name say SWISHBY', () => {
   assert.match(html, /<meta property="og:title" content="SWISHBY 2027">/);
   assert.equal(man.short_name, 'SWISHBY');
 });
+
+test('the menu shows the SWISHBY logo image and the file ships with the page', () => {
+  const html = read('../index.html');
+  const m = html.match(/<img class="logoimg" src="(logo-swishby\.png)" alt="SWISHBY 2027"/);
+  assert.ok(m, 'menu logo image tag');
+  assert.ok(readFileSync(new URL('../' + m[1], import.meta.url)).length > 10000, 'logo file is there');
+});
