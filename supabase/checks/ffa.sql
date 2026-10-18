@@ -50,7 +50,7 @@ begin
   select array_agg(p.delta order by p.team) into d from private.fw_vs_part p where p.match_id = mid;
   if d <> array[35, 35, 0, 0] then raise exception 'deltas %', d; end if;
   if (select rp from public.fw_versus where player_id = srt[1]) <> 35 then raise exception 'rp seat1'; end if;
-  if (select wins from public.fw_versus where player_id = srt[1]) <> 1 or (select losses from public.fw_versus where player_id = srt[3]) <> 0 then raise exception 'w/l tally'; end if;   -- delta 0 counts as draw
+  if (select wins from public.fw_versus where player_id = srt[1]) <> 1 or (select losses from public.fw_versus where player_id = srt[3]) <> 1 then raise exception 'w/l tally'; end if;   -- a floored loss still counts as a loss, as in 1v1
 
   -- conflict voids
   mid := 'zz3.' || array_to_string(srt, '+');
