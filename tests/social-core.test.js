@@ -53,3 +53,41 @@ test('socNorm sanitises the social_me payload and drops junk rows', () => {
   const e = S.socNorm(null);
   assert.deepEqual(e, { code: '', friends: [], reqs: [] });
 });
+
+// ---------- Phase 3: 4-player FFA ----------
+const U = ['00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-00000000000b',
+  '00000000-0000-4000-8000-00000000000c', '00000000-0000-4000-8000-00000000000d'];
+
+test('FFA_RP is the placement table +50/+20/-20/-50 (sums to zero)', () => {
+  assert.deepEqual(S.FFA_RP, [50, 20, -20, -50]);
+});
+
+test('ffaPlaces: competition ranking by score, ties share a place', () => {
+  assert.deepEqual(S.ffaPlaces([{sc: 9}, {sc: 30}, {sc: 12}, {sc: 9}]), [3, 1, 2, 3]);
+  assert.deepEqual(S.ffaPlaces([{sc: 5}, {sc: 5}, {sc: 5}, {sc: 5}]), [1, 1, 1, 1]);
+  assert.deepEqual(S.ffaPlaces([{sc: 4}, {sc: 3}, {sc: 2}, {sc: 1}]), [1, 2, 3, 4]);
+});
+
+test('ffaRp: tie groups average their span toward zero', () => {
+  assert.deepEqual(S.ffaRp([1, 2, 3, 4]), [50, 20, -20, -50]);
+  assert.deepEqual(S.ffaRp([1, 1, 3, 4]), [35, 35, -20, -50]);   // (50+20)/2
+  assert.deepEqual(S.ffaRp([3, 1, 2, 3]), [-35, 50, 20, -35]);   // (-20-50)/2
+  assert.deepEqual(S.ffaRp([1, 1, 1, 1]), [0, 0, 0, 0]);
+  assert.deepEqual(S.ffaRp([1, 2, 2, 4]), [50, 0, 0, -50]);
+});
+
+test('ffaMatchId: sorted uids, my seat, mode ffa; bad input gives null', () => {
+  const m = S.ffaMatchId(36, [U[2], U[0], U[3], U[1]], U[2]);
+  assert.deepEqual(m, { id: '10.' + U.join('+'), team: 2, mode: 'ffa' });
+  assert.equal(S.ffaMatchId(1, [U[0], U[0], U[1], U[2]], U[0]), null);   // dupe
+  assert.equal(S.ffaMatchId(1, [U[0], U[1], U[2]], U[0]), null);         // 3 players
+  assert.equal(S.ffaMatchId(1, [U[0], U[1], U[2], 'x'], U[0]), null);    // bad uuid
+  assert.equal(S.ffaMatchId(1, U, 'not-there'), null);                    // me not in it
+});
+
+test('ffaPlaceFinal: my place is certain once no live player can pass me', () => {
+  // I died at 10; one rival alive at 4 -> places not final
+  assert.equal(S.ffaPlaceFinal({ sc: 10, al: false }, [{ sc: 4, al: true }, { sc: 20, al: false }, { sc: 1, al: false }]), 0);
+  // everyone dead -> place from scores (I am 2nd)
+  assert.equal(S.ffaPlaceFinal({ sc: 10, al: false }, [{ sc: 4, al: false }, { sc: 20, al: false }, { sc: 1, al: false }]), 2);
+});

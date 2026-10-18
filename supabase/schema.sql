@@ -591,9 +591,10 @@ create or replace function private.fw_vs_cfg(
   out starts_per_hour integer,   -- registrations per player per rolling hour
   out pair_cap integer,          -- matches that count (not void) against one and the same rival (effectively unlimited: the per-rival cap is off) ...
   out pair_window interval,      -- ... per this rolling window; further ones are refused at versus_start (played unranked)
-  out keep interval              -- finished matches older than this are deleted
+  out keep interval,             -- finished matches older than this are deleted
+  out ffa_rp integer[]           -- 4-player FFA: RP by placement, 1st..4th (ties share the average, toward zero). MIRRORS THE CLIENT'S FFA_RP
 ) language sql immutable set search_path = '' as $$
-  select 50, 50, interval '20 seconds', interval '4 seconds', interval '5 minutes', interval '60 seconds', interval '20 minutes', 30, 1000000, interval '24 hours', interval '3 days';
+  select 50, 50, interval '20 seconds', interval '4 seconds', interval '5 minutes', interval '60 seconds', interval '20 minutes', 30, 1000000, interval '24 hours', interval '3 days', array[50, 20, -20, -50];
 $$;
 -- Seasons and their rewards. Arrays are per tier, Bronze first (7 tiers: bronze, silver, gold, platinum, diamond,
 -- transcend, demigod). tier_rp MIRRORS THE CLIENT'S TIERS (index.html: the floors in PTIERS =
@@ -756,6 +757,7 @@ begin
   select * into c from private.fw_vs_cfg();
   select * into v_m from private.fw_vs_match where id = p_match for update;
   if not found or v_m.status <> 'open' then return; end if;
+  if v_m.mode = 'ffa' then perform private.fw_vs_settle_ffa(p_match); return; end if;   -- its own rules, the team branch below is untouched
 
   select count(*), count(x.o), count(distinct x.team), count(distinct x.o), min(x.o)
     into v_n, v_rep, v_teams, v_views, v_out
@@ -880,16 +882,22 @@ begin
   -- Everything that depends only on the arguments and the caller's id is checked BEFORE the season gate: these checks
   -- read no table and take no lock, so a call refused here can never do (and then roll back) a rollover.
   if p_match is null or char_length(p_match) > 160   -- length first: nothing longer reaches the regular expressions
-     or p_mode is null or p_mode not in ('1v1', '2v2') or p_team is null or p_team not in (0, 1)
+     or p_mode is null or p_mode not in ('1v1', '2v2', 'ffa') or p_team is null or p_team not in (0, 1, 2, 3)
+     or (p_mode <> 'ffa' and p_team not in (0, 1))
      or p_bird is null or not (p_bird = any (private.fw_units()))
      or char_length(coalesce(p_nick, '')) > 200 or char_length(coalesce(p_cc, '')) > 8 then
     raise exception 'fw_bad_input: unknown mode, team or unit, or a field too long' using errcode = '22023';
   end if;
-  select t0, t1 into v_t0, v_t1 from private.fw_vs_roster(p_match);
-  if cardinality(v_t0) <> (case p_mode when '2v2' then 2 else 1 end) then
-    raise exception 'fw_bad_input: roster does not fit the mode' using errcode = '22023';
+  if p_mode = 'ffa' then
+    v_t0 := private.fw_vs_roster_ffa(p_match);   -- all four seats, sorted; the seat index is the "team"
+    v_team := array_position(v_t0, v_uid) - 1;
+  else
+    select t0, t1 into v_t0, v_t1 from private.fw_vs_roster(p_match);
+    if cardinality(v_t0) <> (case p_mode when '2v2' then 2 else 1 end) then
+      raise exception 'fw_bad_input: roster does not fit the mode' using errcode = '22023';
+    end if;
+    v_team := case when v_uid = any (v_t0) then 0 when v_uid = any (v_t1) then 1 end;
   end if;
-  v_team := case when v_uid = any (v_t0) then 0 when v_uid = any (v_t1) then 1 end;
   if v_team is null then
     raise exception 'fw_vs_not_in_match: this match is between other players' using errcode = '42501';
   end if;
@@ -921,6 +929,7 @@ begin
   if v_cnt >= c.starts_per_hour then
     raise exception 'fw_rate_limited: too many ranked matches this hour' using errcode = 'P0001';
   end if;
+  if p_mode <> 'ffa' then   -- the per-rival cap is team-shaped (and effectively off, pair_cap 1,000,000): FFA skips it
   foreach v_rival in array (case v_team when 0 then v_t1 else v_t0 end) loop
     -- my registrations against this rival, whether or not the rival has registered yet (the roster is in the id: team 0 is its
     -- 2nd part, team 1 its 3rd), so the answer does not depend on which of the two got in first
@@ -933,6 +942,7 @@ begin
       raise exception 'fw_vs_pair_cap: ranked matches against this rival are used up for now' using errcode = 'P0001';
     end if;
   end loop;
+  end if;
 
   -- joinable for a short window only
   if v_m.mode <> p_mode then
@@ -966,7 +976,8 @@ begin
   if v_uid is null then
     raise exception 'fw_auth: sign-in required' using errcode = '28000';
   end if;
-  if p_match is null or char_length(p_match) > 160 or p_result is null or p_result not in ('win', 'lose', 'draw') then
+  if p_match is null or char_length(p_match) > 160 or p_result is null
+     or not (p_result in ('win', 'lose', 'draw') or private.fw_vs_ffa_vec_ok(p_result)) then
     raise exception 'fw_bad_input: unknown result' using errcode = '22023';
   end if;
   select * into c from private.fw_vs_cfg();
@@ -983,6 +994,9 @@ begin
   end if;
   if v_p.result is not null then
     raise exception 'fw_vs_reported: result already reported' using errcode = 'P0001';
+  end if;
+  if (v_m.mode = 'ffa') <> (p_result ~ '^[1-4]') then
+    raise exception 'fw_bad_input: result does not fit the mode' using errcode = '22023';
   end if;
   if v_m.status = 'open' then
     if v_now - v_p.joined_at < c.min_play then
@@ -1406,3 +1420,134 @@ grant execute on function public.friend_request(text, uuid)            to authen
 grant execute on function public.friend_respond(uuid, boolean)         to authenticated, service_role;
 grant execute on function public.friend_remove(uuid)                   to authenticated, service_role;
 grant execute on function public.social_me()                           to authenticated, service_role;
+
+-- =====================================================================================================
+-- SOCIAL — 4-PLAYER FFA (plan-social.md P3)
+-- Match id: <seed base36>.<u1>+<u2>+<u3>+<u4> (uids sorted ascending). "team" is the seat = the uid's index
+-- in that order (0..3). A report is the whole ranking as seen by the reporter, in seat order: '1,3,2,4'
+-- (competition ranking: ties share the better place). Settlement needs all four registered and either
+-- every report in and equal, or at the deadline at least TWO equal reports (one player alone may not rank
+-- the other three). RP by placement from fw_vs_cfg().ffa_rp, tie groups averaging their span toward zero.
+alter table private.fw_vs_match drop constraint if exists fw_vs_match_mode_chk;
+alter table private.fw_vs_match add constraint fw_vs_match_mode_chk check (mode in ('1v1', '2v2', 'ffa'));
+alter table private.fw_vs_part drop constraint if exists fw_vs_part_team_chk;
+alter table private.fw_vs_part add constraint fw_vs_part_team_chk check (team between 0 and 3);
+alter table private.fw_vs_part drop constraint if exists fw_vs_part_result_chk;
+alter table private.fw_vs_part add constraint fw_vs_part_result_chk
+  check (result is null or result in ('win', 'lose', 'draw') or result ~ '^[1-4](,[1-4]){3}$');
+alter table private.fw_vs_part drop constraint if exists fw_vs_part_final_chk;
+alter table private.fw_vs_part add constraint fw_vs_part_final_chk
+  check (final is null or final in ('win', 'lose', 'draw') or final ~ '^[1-4](,[1-4]){3}$');
+
+-- a well-formed competition ranking of four: values 1..4; sorted ascending, each value is its position + 1 or repeats the one before
+create or replace function private.fw_vs_ffa_vec_ok(p_vec text) returns boolean
+language plpgsql immutable set search_path = '' as $$
+declare v integer[]; srt integer[];
+begin
+  if p_vec is null or p_vec !~ '^[1-4](,[1-4]){3}$' then return false; end if;
+  v := string_to_array(p_vec, ',')::integer[];
+  select array_agg(x order by x) into srt from unnest(v) x;
+  for i in 1..4 loop
+    if srt[i] <> i and (i = 1 or srt[i] <> srt[i-1]) then return false; end if;
+  end loop;
+  return true;
+end;
+$$;
+
+create or replace function private.fw_vs_roster_ffa(p_match text) returns uuid[]
+language plpgsql immutable set search_path = '' as $$
+declare
+  c_u constant text := '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+  v text[]; ids uuid[];
+begin
+  if p_match is null or p_match !~ ('^[0-9a-z]{1,8}\.' || c_u || '(\+' || c_u || '){3}$') then
+    raise exception 'fw_bad_input: bad match id' using errcode = '22023';
+  end if;
+  ids := string_to_array(split_part(p_match, '.', 2), '+')::uuid[];
+  for i in 2..4 loop
+    if ids[i-1] >= ids[i] then
+      raise exception 'fw_bad_input: match id is not canonical' using errcode = '22023';
+    end if;
+  end loop;
+  return ids;
+end;
+$$;
+
+create or replace function private.fw_vs_settle_ffa(p_match text) returns void
+language plpgsql set search_path = '' as $$
+declare
+  c      record;
+  v_now  timestamptz := now();
+  v_m    private.fw_vs_match%rowtype;
+  v_n    integer;    -- registered
+  v_rep  integer;    -- reported
+  v_views integer;   -- distinct report vectors
+  v_top  integer;    -- reports agreeing on the most common vector
+  v_vec  text;
+  v_ranks integer[];
+  v_place integer;
+  v_k    integer;
+  v_sum  integer;
+  v_d    integer;
+  v_old  integer;
+  v_why  text;
+  r      record;
+begin
+  select * into c from private.fw_vs_cfg();
+  select * into v_m from private.fw_vs_match where id = p_match for update;
+  if not found or v_m.status <> 'open' or v_m.mode <> 'ffa' then return; end if;
+
+  select count(*), count(p.result) into v_n, v_rep from private.fw_vs_part p where p.match_id = p_match;
+  select count(*), coalesce(max(g.cnt), 0), (array_agg(g.result order by g.cnt desc))[1]
+    into v_views, v_top, v_vec
+  from (select p.result, count(*) as cnt from private.fw_vs_part p
+        where p.match_id = p_match and p.result is not null group by p.result) g;
+
+  if v_views > 1 then
+    v_why := 'conflict';                                    -- any disagreement voids: nobody referees a 4-way match
+  elsif v_n = 4 and v_rep = 4 then
+    v_why := 'agreed';
+  elsif v_rep > 0 and v_now >= greatest(v_m.started_at + c.settle_after, v_m.first_report_at + c.report_grace) then
+    v_why := case when v_n < 4 then 'short'                 -- a seat never registered: never rank an absent player
+                  when v_top >= 2 then 'timeout'            -- quorum: at least two equal reports
+                  else 'no_quorum' end;
+  elsif v_rep = 0 and v_now >= v_m.started_at + c.void_after then
+    v_why := 'no_report';
+  else
+    return;   -- still open
+  end if;
+
+  if v_why not in ('agreed', 'timeout') then
+    update private.fw_vs_match set status = 'void', why = v_why, settled_at = v_now where id = p_match;
+    return;
+  end if;
+
+  v_ranks := string_to_array(v_vec, ',')::integer[];
+  for r in select p.player_id, p.team, p.nick, p.cc, p.bird from private.fw_vs_part p where p.match_id = p_match order by p.player_id loop
+    v_place := v_ranks[r.team + 1];
+    v_k := (select count(*) from unnest(v_ranks) x where x = v_place);
+    v_sum := 0; for i in v_place..(v_place + v_k - 1) loop v_sum := v_sum + c.ffa_rp[i]; end loop;
+    v_d := trunc(v_sum::numeric / v_k);
+    insert into public.fw_versus (player_id, nick, cc, bird) values (r.player_id, r.nick, r.cc, r.bird)
+    on conflict (player_id) do nothing;
+    select v.rp into strict v_old from public.fw_versus v where v.player_id = r.player_id for update;
+    update public.fw_versus set
+      nick = r.nick, cc = r.cc, bird = r.bird,
+      rp     = greatest(0, v_old + v_d),
+      wins   = wins   + (v_d > 0)::integer,
+      losses = losses + (v_d < 0)::integer,
+      draws  = draws  + (v_d = 0)::integer,
+      updated_at = v_now
+    where player_id = r.player_id;
+    update private.fw_vs_part set
+      final = v_vec,
+      delta = greatest(0, v_old + v_d) - v_old
+    where match_id = p_match and player_id = r.player_id;
+  end loop;
+  update private.fw_vs_match set status = 'settled', outcome = null, why = v_why, settled_at = v_now where id = p_match;
+end;
+$$;
+
+revoke all on function private.fw_vs_ffa_vec_ok(text)   from public, anon, authenticated;
+revoke all on function private.fw_vs_roster_ffa(text)   from public, anon, authenticated;
+revoke all on function private.fw_vs_settle_ffa(text)   from public, anon, authenticated;
