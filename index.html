@@ -95,6 +95,21 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .lbrow .me-tag{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--cool);margin-left:6px}
 .lbrow .tb{margin-right:6px;vertical-align:-3px}   /* the versus tier mark is a badge image now, not a text pill */
 .lbrow .wl{font:600 11px var(--body);color:var(--dim);margin-left:8px;letter-spacing:.02em}
+.lbrow .ub{font:700 10px var(--body);letter-spacing:.08em;margin-right:8px;opacity:.9}
+/* friends */
+.frcode{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(243,238,252,.05)}
+.frcode .frlbl{font-size:12px;color:var(--dim)}
+.frcode b{font-family:"Bungee",Impact,sans-serif;letter-spacing:.08em;font-size:17px}
+.frrow{display:grid;grid-template-columns:14px 1.7em minmax(0,1fr) auto auto;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;font-size:15px}
+.frrow:nth-child(odd){background:rgba(243,238,252,.04)}
+.frrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frrow .bst{font-family:"Bungee",Impact,sans-serif;font-size:13px;color:var(--dim)}
+.frdot{width:9px;height:9px;border-radius:50%;background:rgba(243,238,252,.18)}
+.frdot.on{background:#3dff9a;box-shadow:0 0 8px #3dff9a}
+.frx{background:none;border:0;color:var(--dim);font-size:15px;cursor:pointer;padding:4px 7px}
+.frx:hover{color:#ff5c7a}
+.frplus{background:none;border:1px solid var(--line);border-radius:8px;color:var(--cool);font-size:13px;line-height:1;cursor:pointer;padding:3px 7px;margin-left:8px}
+.frwarn{font-size:11px;color:var(--dim);margin-top:8px}
 .lbempty{padding:22px 8px;text-align:center;color:var(--dim);font-size:14px}
 .lbstatus{font-size:12px;color:var(--dim);min-height:1.2em}
 .nickrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -117,7 +132,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 #ultBtn.ready{animation:pulse3 .9s infinite}
 @keyframes pulse3{50%{box-shadow:0 0 44px var(--ring),0 0 0 3px var(--ring)}}
 @keyframes pulse2{50%{box-shadow:0 0 38px var(--ring)}}
-#topBtns{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:8px}
+#topBtns{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:8px;z-index:4}
 .ib{position:relative;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:rgba(14,10,30,.55);color:var(--ink);font:700 15px var(--body);cursor:pointer}
 .ib::after{content:"";position:absolute;inset:-4px;border-radius:50%}   /* 46px touch target around the 38px button */
 .ib:focus-visible,#dashBtn:focus-visible{outline:2px solid var(--cool);outline-offset:3px}
@@ -198,14 +213,18 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .hg-skill{margin:0;font-size:12.5px;line-height:1.45;color:var(--gold);text-wrap:pretty}
 .hg-skill b{color:var(--ink)}
 .hg-skill.ult{color:hsl(300,100%,82%)}
-#over:not([hidden]) .card{animation:cardIn .5s cubic-bezier(.2,1.5,.4,1) both}
-@keyframes cardIn{from{opacity:0;transform:translateY(40px) scale(.88)}to{opacity:1;transform:none}}
+#over:not([hidden]) .card{animation:cardIn .38s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes cardIn{from{opacity:0;transform:scale(1.35)}70%{opacity:1;transform:scale(.96)}to{opacity:1;transform:none}}
 .rank.stamp{animation:stamp .42s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes stamp{0%{opacity:0;transform:scale(2.8) rotate(-14deg)}60%{opacity:1;transform:scale(.9) rotate(-3deg)}100%{transform:scale(1) rotate(-4deg)}}
 .newbest:not([hidden]){animation:nbGlow .9s ease-in-out infinite alternate}
 @keyframes nbGlow{to{text-shadow:0 0 14px var(--cool);transform:scale(1.06)}}
 #vibBtn.off{opacity:.4}
 #vibBtn svg{width:18px;height:18px;vertical-align:-3px}
+#pushBtn.off{opacity:.4}
+#pushBtn svg{width:18px;height:18px;vertical-align:-3px}
+.frkinds{display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--dim)}
+.frkinds label{display:flex;gap:6px;align-items:center;cursor:pointer}
 /* hangar (bird select) */
 .hangar{box-sizing:border-box;width:min(354px,100%);display:flex;flex-direction:column;gap:8px;padding:14px 16px;border:1px solid var(--line);border-radius:18px;background:rgba(14,10,30,.62);backdrop-filter:blur(4px)}
 .hg-top{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
@@ -338,7 +357,9 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
   <div id="toast" hidden></div>
   <div id="topBtns">
     <button class="ib" id="vibBtn" aria-label="Vibration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8M1.5 10.5v3M22.5 10.5v3"/></svg></button>
+    <button class="ib" id="pushBtn" aria-label="Alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
     <button class="ib" id="muteBtn" aria-label="Sound">♪</button>
+    <button class="ib" id="fxBtn" aria-label="Effects">✦</button>
     <button class="ib" id="pauseBtn" aria-label="Pause" hidden>II</button>
   </div>
   <button class="abtn" id="ultBtn" aria-label="Ultimate" hidden><span>ULT<small id="ultName"></small></span></button>
@@ -378,6 +399,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     </div>
     <div class="row">
       <button class="ghost" id="shopBtn" data-i18n="shop"></button>
+      <button class="ghost" id="frBtn" data-i18n="fr"></button>
       <button class="ghost" id="helpBtn" aria-label="Help">?</button>
       <select class="ghost" id="langSel" aria-label="Language"></select>
     </div>
@@ -448,7 +470,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="tierbox"><span class="tierbadge" id="vsTier"></span><span id="vsRp"></span></div>
       <div class="vsseason" id="vsSeason"></div>
       <div id="vsMain" class="vsbtns">
-        <div class="tabs vsmode" role="tablist"><button class="tab" role="tab" id="vsM1" data-i18n="vsM1"></button><button class="tab" role="tab" id="vsM2" data-i18n="vsM2"></button></div>
+        <div class="tabs vsmode" role="tablist"><button class="tab" role="tab" id="vsM1" data-i18n="vsM1"></button><button class="tab" role="tab" id="vsM2" data-i18n="vsM2"></button><button class="tab" role="tab" id="vsM4" data-i18n="vsM4"></button></div>
         <button class="btn" id="vsAuto"><span data-i18n="autoMatch"></span></button>
         <button class="ghost" id="vsMake" data-i18n="makeRoom"></button>
         <div class="coderow"><input id="vsCodeIn" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="Code"><button class="ghost" id="vsJoin" data-i18n="join"></button></div>
@@ -463,6 +485,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       </div>
       <div class="vsnote" data-i18n="vsRules"></div>
       <div class="vsnote" id="vsNote2" data-i18n="vs2Rules" hidden></div>
+      <div class="vsnote" id="vsNote4" data-i18n="vs4Rules" hidden></div>
       <div class="vsnote" data-i18n="seasonNote"></div>
     </div>
   </div>
@@ -505,6 +528,21 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     </div>
   </div>
 
+  <div class="overlay" id="fxScr" hidden>
+    <div class="card">
+      <div class="lbhead"><h2 class="mtitle" id="fxTitle"></h2><button class="ghost" id="fxClose" data-i18n="close"></button></div>
+      <div class="row" id="fxQRow">
+        <button class="ghost" data-fxq="auto"></button><button class="ghost" data-fxq="low"></button>
+        <button class="ghost" data-fxq="mid"></button><button class="ghost" data-fxq="high"></button>
+      </div>
+      <div class="row">
+        <button class="ghost" data-fxshake></button>
+        <button class="ghost" data-fxflash></button>
+      </div>
+      <div class="hint" id="fxRmNote" hidden></div>
+    </div>
+  </div>
+
   <div class="overlay" id="confScr" hidden>
     <div class="card confcard">
       <div id="confMsg"></div>
@@ -517,6 +555,22 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="lbhead"><h2 data-i18n="shop"></h2><button class="ghost" id="shopClose" data-i18n="close"></button></div>
       <div class="testbar" data-i18n="testBuild"></div>
       <div class="shop-list" id="shopList"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="frScr" hidden>
+    <div class="card lbcard">
+      <div class="lbhead"><h2 data-i18n="fr"></h2><button class="ghost" id="frClose" data-i18n="close"></button></div>
+      <div class="frcode"><span class="frlbl" data-i18n="frCode"></span><b id="frMyCode">—</b><button class="ghost" id="frCopy" data-i18n="frCopy"></button></div>
+      <form class="nickrow frform" id="frForm">
+        <input id="frIn" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <button class="ghost" type="submit" data-i18n="frAdd"></button>
+      </form>
+      <div id="frReqs" hidden><div class="dayline" data-i18n="frReqs"></div><ol class="lblist" id="frReqList"></ol></div>
+      <ol class="lblist" id="frList"></ol>
+      <div class="lbstatus" id="frStatus"></div>
+      <div class="frkinds"><label><input type="checkbox" id="ntKOn" checked><span data-i18n="ntKOn"></span></label><label><input type="checkbox" id="ntKBest" checked><span data-i18n="ntKBest"></span></label></div>
+      <div class="frwarn" data-i18n="frWarn"></div>
     </div>
   </div>
 
@@ -548,6 +602,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 <!-- ================= ONLINE CONFIG (Supabase) =================
      Empty values = offline build: device-only records, versus against the AI, no third-party request at all.
      Fill both in to switch on the global leaderboard and online versus (backend: supabase/schema.sql). -->
+<script type="application/json" id="fxcfg">{"hitstop":{"light":0.04,"mid":0.08,"heavy":0.12},"punch":{"light":1.05,"mid":1.09,"heavy":1.15},"shake":{"stiff":260,"damp":18,"ampPx":{"light":4,"mid":9,"heavy":16}},"flash":{"frames":2,"alpha":0.55},"wave":{"life":0.45,"maxR":220,"refract":1.03,"cap":2},"chroma":{"dur":0.2,"px":3,"idleAlpha":0.15},"bloom":{"down":4,"alpha":0.25},"slowmo":{"scale":0.3,"near":0.2},"vignette":{"hurt":0.55,"danger":0.45},"death":{"slow":0.4,"slowScale":0.3,"grayFrom":0.6,"grayTo":1.1,"debrisBounce":0.45},"layers":{"core":{"n":[1,2],"size":[18,34],"speed":[0,0],"life":[0.08,0.14],"drag":0,"grav":0},"spark":{"n":[10,18],"size":[2,4],"speed":[220,520],"life":[0.25,0.55],"drag":3.5,"grav":900},"smoke":{"n":[4,8],"size":[10,22],"speed":[30,90],"life":[0.5,0.9],"drag":2,"grav":-60},"debris":{"n":[5,10],"size":[3,7],"speed":[150,380],"life":[0.6,1.1],"drag":1,"grav":1100}},"pool":{"low":240,"mid":400,"high":640},"quality":{"partMul":{"low":0.4,"mid":0.7,"high":1},"downP90Ms":20},"combo":{"l3":20,"l4":30,"partMulL3":2,"beatHz":2},"pop":{"from":1.6,"dur":0.35},"near":{"closeFrac":0.33,"flashHue":205},"events":{"flap":{"haptic":"flap"},"gate":{"haptic":null},"near":{"haptic":"near"},"shieldHit":{"haptic":"shieldHit"},"shieldMulti":{"haptic":null},"speed":{"haptic":null},"death":{"haptic":"deathHeavy"},"record":{"haptic":"record"},"coin":{"haptic":null},"comboBreak":{"haptic":"shatter"},"overdrive":{"haptic":"overdrive"}}}</script>
 <script>
 // Only the publishable / anon key ever goes here. Never a secret or service_role key.
 window.FW_CONFIG = { supabaseUrl: 'https://ecjeyelgcqbliavwltbc.supabase.co', supabaseAnonKey: 'sb_publishable_wG1eznhHBLW33Ghrt1gNNg_c32xOXX1', auth: { apple: false } };
@@ -761,7 +816,7 @@ ko:{acct:'계정', authCta:'로그인하고 진행 저장', authSub:'코인·기
  stClear:'STAGE {n} 클리어!', tierRule0:'넓은 틈', tierRule1:'좁은 틈', tierRule2:'더 좁은 틈 · 0.5초 안개', tierRule3:'가장 좁은 틈 · 2초 안개 · 2초 안에 탭',
  idleRule:'2초 안에 탭!', idleStall:'엔진 정지!', heavyP:'무거움', gemP:'젬 +1', gemHint:'젬은 스테이지 플레이 중 1% 확률로 나와요 · {n}/{m}',
  lbRetry:'기록을 올리지 못했어요. 곧 다시 시도합니다', lbRate:'전송이 너무 잦아요. 잠시 후 다시 올립니다', lbReject:'서버가 이 기록을 받지 않았어요', vsStranded:'상대가 들어오지 않았어요. 다시 찾는 중…',
- tabVs:'대전', vsRules:'승리 +50 RP · 패배 −45 RP · AI전은 연습(RP 변동 없음)', vsPractice:'연습전 · RP 변동 없음', vsPend:'집계 중', vsNoRank:'랭크에 반영되지 않은 판이에요', vsCap:'미반영 · 같은 상대와는 하루 5판까지',
+ tabVs:'대전', vsRules:'승리 +50 RP · 패배 −50 RP · AI전은 연습(RP 변동 없음)', vsPractice:'연습전 · RP 변동 없음', vsPend:'집계 중', vsNoRank:'랭크에 반영되지 않은 판이에요', vsCap:'미반영 · 같은 상대와는 하루 5판까지',
  vsMyRank:'내 순위 {n}위 · {rp} RP · {w}승 {l}패', vsNoRow:'랭크전을 한 판 마치면 순위가 생겨요',
  seaLine:'시즌 {m} · {t} 남음', seaD:'{n}일', seaH:'{n}시간', seaTitle:'시즌 {m} 결과', seaRank:'최종 {n}위', seaUnranked:'순위 없음 · 랭크전 {n}판 미만이라 보상이 없어요', seaStat:'{rp} RP · {w}승 {l}패',
  seaClaim:'보상 받기', seaOk:'확인', seaGot:'보상을 받았어요!', seaUnit:'한정 유닛 {u}', seaDup:'{u} 이미 보유 → 젬 +{n}', seaFail:'서버에 연결하지 못했어요. 다시 시도해 주세요', seaGone:'지금은 받을 수 없는 보상이에요',
@@ -785,7 +840,7 @@ en:{acct:'Account', authCta:'Sign in to save progress', authSub:'Coins, units an
  stClear:'STAGE {n} CLEAR!', tierRule0:'Wide gaps', tierRule1:'Narrow gaps', tierRule2:'Narrower gaps · 0.5s haze', tierRule3:'Narrowest gaps · 2s haze · tap within 2s',
  idleRule:'TAP WITHIN 2s!', idleStall:'ENGINE STALL!', heavyP:'HEAVY', gemP:'GEM +1', gemHint:'Gems drop at 1% during stage play · {n}/{m}',
  lbRetry:"Couldn't post your score. Retrying soon", lbRate:'Posting too fast. It will be sent in a moment', lbReject:'The server did not accept this score', vsStranded:"Opponent didn't show up. Searching again…",
- tabVs:'Versus', vsRules:'Win +50 RP · Loss −45 RP · AI matches are practice (no RP)', vsPractice:'Practice · no RP change', vsPend:'pending', vsNoRank:'This match was not ranked', vsCap:'Not ranked · 5 a day per rival',
+ tabVs:'Versus', vsRules:'Win +50 RP · Loss −50 RP · AI matches are practice (no RP)', vsPractice:'Practice · no RP change', vsPend:'pending', vsNoRank:'This match was not ranked', vsCap:'Not ranked · 5 a day per rival',
  vsMyRank:'Your rank #{n} · {rp} RP · {w}W {l}L', vsNoRow:'Finish one ranked match to get a rank',
  seaLine:'Season {m} · ends in {t}', seaD:'{n} d', seaH:'{n} h', seaTitle:'SEASON {m} RESULT', seaRank:'Final rank #{n}', seaUnranked:'Unranked: fewer than {n} ranked matches. No reward.', seaStat:'{rp} RP · {w}W {l}L',
  seaClaim:'CLAIM', seaOk:'OK', seaGot:'Reward claimed!', seaUnit:'Limited unit {u}', seaDup:'{u} already owned → +{n} gems', seaFail:"Couldn't reach the server. Try again.", seaGone:'This reward cannot be claimed right now',
@@ -808,7 +863,7 @@ ja:{startSub:'ワンタップでスタート', dailyCta:'グローバルデイ�
  pt_bronze:'ブロンズ', pt_silver:'シルバー', pt_gold:'ゴールド', pt_platinum:'プラチナ', pt_diamond:'ダイヤ', pt_transcend:'超越', pt_demigod:'半神', ptUp:'ティア昇格!{t}',
  nCoin:'コイン\u00a0{n}', nDia:'ダイヤ\u00a0{n}', nGem:'ジェム\u00a0{n}',
  fx_slip:'墨隠れ!', fx_fore:'予感!',
- tabVs:'対戦', vsRules:'勝利 +50 RP · 敗北 −45 RP · AI戦は練習(RP変動なし)', vsPractice:'練習試合 · RP変動なし', vsPend:'集計中', vsNoRank:'ランクに反映されない試合です', vsCap:'対象外 · 同じ相手とは1日5回まで',
+ tabVs:'対戦', vsRules:'勝利 +50 RP · 敗北 −50 RP · AI戦は練習(RP変動なし)', vsPractice:'練習試合 · RP変動なし', vsPend:'集計中', vsNoRank:'ランクに反映されない試合です', vsCap:'対象外 · 同じ相手とは1日5回まで',
  vsMyRank:'あなたの順位 {n}位 · {rp} RP · {w}勝 {l}敗', vsNoRow:'ランク戦を1試合終えると順位がつきます',
  seaLine:'シーズン{m} · 残り{t}', seaD:'{n}日', seaH:'{n}時間', seaTitle:'シーズン{m} 結果', seaRank:'最終順位 {n}位', seaUnranked:'ランク外 · ランク戦{n}試合未満のため報酬はありません', seaStat:'{rp} RP · {w}勝 {l}敗',
  seaClaim:'報酬を受け取る', seaOk:'OK', seaGot:'報酬を受け取りました!', seaUnit:'限定ユニット {u}', seaDup:'{u}は所持済み → ジェム+{n}', seaFail:'サーバーに接続できません。もう一度お試しください', seaGone:'この報酬は今は受け取れません',
@@ -829,7 +884,7 @@ zh:{startSub:'一键起飞', dailyCta:'全球每日挑战', dailyPlayed:'{d} · 
  pt_bronze:'青铜', pt_silver:'白银', pt_gold:'黄金', pt_platinum:'铂金', pt_diamond:'钻石', pt_transcend:'超凡', pt_demigod:'半神', ptUp:'段位晋升!{t}',
  nCoin:'金币\u00a0{n}', nDia:'钻石\u00a0{n}', nGem:'宝石\u00a0{n}',
  fx_slip:'墨隐!', fx_fore:'预感!',
- tabVs:'对战', vsRules:'胜利 +50 RP · 失败 −45 RP · AI对战为练习(RP不变)', vsPractice:'练习赛 · RP不变', vsPend:'结算中', vsNoRank:'本局未计入段位', vsCap:'未计入 · 同一对手每天最多5局',
+ tabVs:'对战', vsRules:'胜利 +50 RP · 失败 −50 RP · AI对战为练习(RP不变)', vsPractice:'练习赛 · RP不变', vsPend:'结算中', vsNoRank:'本局未计入段位', vsCap:'未计入 · 同一对手每天最多5局',
  vsMyRank:'我的排名 第{n}名 · {rp} RP · {w}胜 {l}负', vsNoRow:'完成一局排位赛后即可上榜',
  seaLine:'第{m}赛季 · 剩余{t}', seaD:'{n}天', seaH:'{n}小时', seaTitle:'第{m}赛季结果', seaRank:'最终排名 第{n}名', seaUnranked:'未上榜 · 排位赛不足{n}局,没有奖励', seaStat:'{rp} RP · {w}胜 {l}负',
  seaClaim:'领取奖励', seaOk:'确定', seaGot:'奖励已领取!', seaUnit:'限定机体 {u}', seaDup:'已拥有{u} → 宝石+{n}', seaFail:'无法连接服务器,请重试', seaGone:'该奖励暂时无法领取',
@@ -856,6 +911,37 @@ vi:{startSub:'Một chạm là bay', dailyCta:'THỬ THÁCH TOÀN CẦU HÔM NAY
  pt_bronze:'Đồng', pt_silver:'Bạc', pt_gold:'Vàng', pt_platinum:'Bạch kim', pt_diamond:'Kim cương', pt_transcend:'Siêu việt', pt_demigod:'Bán thần', ptUp:'THĂNG HẠNG! {t}', hz_over:'QUÁ TỐC', hz_weight:'TẠ NẶNG', hz_smoke:'KHÓI MÙ', hz_drain:'XẢ ĐIỆN', hHaz:'Vật cản — từ STAGE 11, những đĩa gai màu tối viền đỏ xuất hiện giữa các cổng. Chạm vào sẽ dính một trong số: Quá tốc (nhanh hơn trong 3 giây), Tạ nặng (nặng hơn trong 3 giây), Khói mù (2,5 giây sương mù) hoặc Xả điện (thanh lướt, năng lượng kỹ năng và combo về 0). Khi có khiên, đang lướt hoặc bất tử, chúng vỡ tan mà không gây hại. Chỉ có ở chế độ stage.'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
+// Social keys (friends / alerts), merged the same way: en is the fallback for the other six languages.
+const I18N_S = {
+ko:{fr:'친구', frCode:'내 친구 코드', frCopy:'복사', frCopied:'복사했어요. 친구에게 보내세요', frAdd:'요청', frReqs:'받은 요청', frOk:'수락', frNo:'거절',
+ frEmpty:'아직 친구가 없어요. 위 코드를 공유해 보세요', frSent:'친구 요청을 보냈어요', frNow:'친구가 되었어요!', frSelf:'자기 자신은 추가할 수 없어요',
+ frDupe:'이미 친구이거나 요청 중이에요', frCap:'친구 한도에 도달했어요', frRate:'오늘은 더 요청할 수 없어요', frBad:'그 코드를 찾을 수 없어요',
+ frFail:'지금은 요청할 수 없어요', frDel:'삭제', frOnline:'접속 중', frPlus:'친구 요청', frWarn:'친구 목록은 이 기기의 게스트 계정에 묶여 있어요. 브라우저 데이터를 지우면 사라집니다',
+ vsM4:'FFA', searching4:'FFA 플레이어 찾는 중… {s}초 · {n}/4', vsIn4:'FFA · {n}/4 참가', vs4Rules:'4인 각개전 · 점수 순위로 RP +50/+20/−20/−50 · 동점은 평균 · AI가 한 자리라도 끼면 연습전',
+ push:'친구 알림', ntOn:'{n}님이 접속했어요', ntBest:'{n}님이 최고기록 {s}점!', ntInApp:'브라우저 알림이 차단되어 인앱 알림만 표시해요', ntKOn:'접속 알림', ntKBest:'기록 알림',
+},
+en:{fr:'Friends', frCode:'My friend code', frCopy:'Copy', frCopied:'Copied. Send it to a friend', frAdd:'Request', frReqs:'Requests', frOk:'Accept', frNo:'Decline',
+ frEmpty:'No friends yet. Share the code above', frSent:'Friend request sent', frNow:'You are now friends!', frSelf:'That is your own code',
+ frDupe:'Already friends or already requested', frCap:'Friend list is full', frRate:'No more requests today', frBad:'No player with that code',
+ frFail:'Could not send the request', frDel:'Remove', frOnline:'Online', frPlus:'Add friend', frWarn:'Friends are tied to this device\'s guest account. Clearing browser data loses them',
+ vsM4:'FFA', searching4:'Finding FFA players… {s}s · {n}/4', vsIn4:'FFA · {n}/4 in', vs4Rules:'4-player free-for-all · RP by placement +50/+20/−20/−50 · ties share the average · any AI seat makes it practice',
+ push:'Friend alerts', ntOn:'{n} is online', ntBest:'{n} set a new best: {s}!', ntInApp:'Browser notifications are blocked — showing in-app alerts only', ntKOn:'Online alerts', ntKBest:'Record alerts',
+},
+ja:{fr:'フレンド', frCode:'フレンドコード', frCopy:'コピー', frCopied:'コピーしました', frAdd:'申請', frReqs:'受信した申請', frOk:'承認', frNo:'拒否',
+ frEmpty:'まだフレンドがいません。コードを共有しましょう', frSent:'申請を送りました', frNow:'フレンドになりました！', frSelf:'自分は追加できません',
+ frDupe:'すでにフレンドか申請中です', frCap:'フレンド上限に達しました', frRate:'今日はこれ以上申請できません', frBad:'そのコードは見つかりません',
+ frFail:'いま申請できません', frDel:'削除', frOnline:'オンライン', frPlus:'フレンド申請', frWarn:'フレンドはこの端末のゲストアカウントに紐づきます',
+ vsM4:'FFA', searching4:'FFAプレイヤーを探しています… {s}秒 · {n}/4', vsIn4:'FFA · {n}/4 参加', vs4Rules:'4人個人戦 · 順位でRP +50/+20/−20/−50 · 同点は平均 · AIが入ると練習試合',
+ push:'フレンド通知', ntOn:'{n}さんが接続しました', ntBest:'{n}さんが最高記録 {s}点！', ntInApp:'ブラウザ通知がブロックされているため、アプリ内通知のみ表示します', ntKOn:'接続通知', ntKBest:'記録通知',
+},
+zh:{fr:'好友', frCode:'我的好友码', frCopy:'复制', frCopied:'已复制', frAdd:'申请', frReqs:'收到的申请', frOk:'接受', frNo:'拒绝',
+ frEmpty:'还没有好友。分享上面的好友码吧', frSent:'已发送好友申请', frNow:'已成为好友！', frSelf:'不能添加自己',
+ frDupe:'已是好友或已申请', frCap:'好友已满', frRate:'今天不能再申请了', frBad:'找不到该好友码',
+ frFail:'暂时无法申请', frDel:'删除', frOnline:'在线', frPlus:'加好友', frWarn:'好友绑定在本设备的访客账号上',
+ vsM4:'FFA', searching4:'正在寻找FFA玩家… {s}秒 · {n}/4', vsIn4:'FFA · {n}/4 已加入', vs4Rules:'4人混战 · 按名次结算RP +50/+20/−20/−50 · 平分名次取平均 · 有AI则为练习赛',
+ push:'好友提醒', ntOn:'{n}上线了', ntBest:'{n}刷新最高分 {s}！', ntInApp:'浏览器通知被拦截，仅显示应用内提醒', ntKOn:'上线提醒', ntKBest:'纪录提醒',
+}};
+for (const l in I18N) Object.assign(I18N[l], I18N_S.en, I18N_S[l] || {});
 const birdById = id => BIRDS.find(b => b.id === id);
 let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
 
@@ -906,7 +992,7 @@ function applyI18n(){
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   $('dashBtn').setAttribute('aria-label', t('dashK'));
   $('pauseBtn').setAttribute('aria-label', t('pauseK'));
-  $('vibBtn').setAttribute('aria-label', t('vib'));
+  $('vibBtn').setAttribute('aria-label', t('vib')); $('pushBtn').setAttribute('aria-label', t('push'));
   updateDaily(); renderLB(); renderHangar();
 }
 const sel = $('langSel');
@@ -997,6 +1083,256 @@ function challengeResult(ch, mode, score){
   return { beat: score > ch.score, by: Math.abs(score - ch.score) };
 }
 /* hit-loop:end */
+/* fx-core:start — pure impact-fx rules: config, quality, shake spring, particle pool, event curves. No DOM, no clock, no game globals. tests/helpers/fx.js extracts and runs this block; numbers ship in fx-config.json via the #fxcfg tag (scripts/fx-inline.mjs). */
+const FX_EVENTS = ['flap', 'gate', 'near', 'shieldHit', 'shieldMulti', 'speed', 'death', 'record', 'coin', 'comboBreak', 'overdrive'];
+const FX_DEFAULTS = Object.freeze({
+  hitstop: { light: .04, mid: .08, heavy: .12 },
+  punch: { light: 1.05, mid: 1.09, heavy: 1.15 },
+  shake: { stiff: 260, damp: 18, ampPx: { light: 4, mid: 9, heavy: 16 } },
+  flash: { frames: 2, alpha: .55 },
+  wave: { life: .45, maxR: 220, refract: 1.03, cap: 2 },
+  chroma: { dur: .2, px: 3, idleAlpha: .15 },
+  bloom: { down: 4, alpha: .25 },
+  slowmo: { scale: .3, near: .2 },
+  vignette: { hurt: .55, danger: .45 },
+  death: { slow: .4, slowScale: .3, grayFrom: .6, grayTo: 1.1, debrisBounce: .45 },
+  layers: {
+    core:   { n: [1, 2],   size: [18, 34], speed: [0, 0],     life: [.08, .14], drag: 0,   grav: 0 },
+    spark:  { n: [10, 18], size: [2, 4],   speed: [220, 520], life: [.25, .55], drag: 3.5, grav: 900 },
+    smoke:  { n: [4, 8],   size: [10, 22], speed: [30, 90],   life: [.5, .9],   drag: 2,   grav: -60 },
+    debris: { n: [5, 10],  size: [3, 7],   speed: [150, 380], life: [.6, 1.1],  drag: 1,   grav: 1100 }
+  },
+  pool: { low: 240, mid: 400, high: 640 },
+  quality: { partMul: { low: .4, mid: .7, high: 1 }, downP90Ms: 20 },
+  combo: { l3: 20, l4: 30, partMulL3: 2, beatHz: 2 },
+  pop: { from: 1.6, dur: .35 },
+  near: { closeFrac: .33, flashHue: 205 },
+  events: {
+    flap: { haptic: 'flap' }, gate: { haptic: null }, near: { haptic: 'near' },
+    shieldHit: { haptic: 'shieldHit' }, shieldMulti: { haptic: null }, speed: { haptic: null },
+    death: { haptic: 'deathHeavy' }, record: { haptic: 'record' }, coin: { haptic: null },
+    comboBreak: { haptic: 'shatter' }, overdrive: { haptic: 'overdrive' }
+  }
+});
+const FX_RANGES = {
+  'hitstop.light': [.04, .06], 'hitstop.mid': [.06, .1], 'hitstop.heavy': [.1, .12],
+  'punch.light': [1.05, 1.08], 'punch.mid': [1.08, 1.12], 'punch.heavy': [1.12, 1.15],
+  'shake.stiff': [60, 600], 'shake.damp': [4, 40],
+  'shake.ampPx.light': [1, 8], 'shake.ampPx.mid': [4, 14], 'shake.ampPx.heavy': [8, 24],
+  'flash.frames': [1, 2], 'flash.alpha': [.1, .8],
+  'wave.life': [.2, .8], 'wave.maxR': [80, 400], 'wave.refract': [1.01, 1.08], 'wave.cap': [1, 3],
+  'chroma.dur': [.05, .5], 'chroma.px': [1, 6], 'chroma.idleAlpha': [0, .3],
+  'bloom.down': [2, 8], 'bloom.alpha': [.05, .5],
+  'slowmo.scale': [.2, .6], 'slowmo.near': [0, .5],
+  'vignette.hurt': [0, 1], 'vignette.danger': [0, 1],
+  'death.slow': [.2, .6], 'death.slowScale': [.2, .5], 'death.grayFrom': [.3, 1], 'death.grayTo': [.6, 1.5], 'death.debrisBounce': [0, .9],
+  'pool.low': [64, 2048], 'pool.mid': [64, 2048], 'pool.high': [64, 2048],
+  'quality.downP90Ms': [10, 40],
+  'combo.l3': [12, 40], 'combo.l4': [20, 60], 'combo.partMulL3': [1, 3], 'combo.beatHz': [.5, 6],
+  'pop.from': [1.1, 2.2], 'pop.dur': [.1, .8],
+  'near.closeFrac': [.1, .6], 'near.flashHue': [0, 360]
+};
+const fxClamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+function fxCfgMerge(def, over, path = '') {
+  const out = Array.isArray(def) ? def.slice() : { ...def };
+  if (Array.isArray(def)) {
+    if (Array.isArray(over) && over.length === def.length && over.every(v => typeof v === 'number')) return over.slice();
+    return out;
+  }
+  for (const k of Object.keys(def)) {
+    const p = path ? `${path}.${k}` : k, d = def[k], o = over && over[k];
+    if (typeof d === 'object' && d !== null) out[k] = fxCfgMerge(d, o, p);
+    else if (typeof o === typeof d && o !== undefined && o !== null) out[k] = FX_RANGES[p] ? fxClamp(o, FX_RANGES[p][0], FX_RANGES[p][1]) : o;
+  }
+  return out;
+}
+function fxQualityPick(hw, saved) {
+  if (saved && saved !== 'auto') return saved;
+  const cores = hw.cores || 4, mem = hw.mem || 4;
+  if (cores <= 4 || mem <= 3) return 'low';
+  if (cores <= 6) return 'mid';
+  return 'high';
+}
+function fxQualityStep(q, p90Ms) {
+  if (p90Ms <= 20) return q;
+  return q === 'high' ? 'mid' : 'low';
+}
+function fxFeatures(q, a11y, rm, fair) {
+  const low = q === 'low', high = q === 'high';
+  return {
+    distort: !low && !rm,
+    chroma: !low && !rm,
+    chromaIdle: high && !rm,
+    bloom: high && !rm,
+    partMul: ({ low: .4, mid: .7, high: 1 })[q] * (rm ? .5 : 1),
+    shake: (rm || !a11y.shake) ? 0 : 1,
+    flash: !rm && !!a11y.flash,
+    slowmo: !rm && !fair,
+    waves: low ? 0 : high ? 2 : 1
+  };
+}
+const hitstopFor = (level, cfg) => fxClamp(cfg.hitstop[level] ?? cfg.hitstop.mid, .04, .12);
+const punchFor = (level, cfg) => fxClamp(cfg.punch[level] ?? cfg.punch.mid, 1.05, 1.15);
+function shakeKick(s, dx, dy, amp) {
+  const d = Math.hypot(dx, dy) || 1;
+  return { ox: s.ox, oy: s.oy, vx: s.vx + dx / d * amp * 40, vy: s.vy + dy / d * amp * 40 };
+}
+function shakeStep(s, dt, cfg) {
+  const { stiff, damp } = cfg.shake;
+  const vx = s.vx + (-stiff * s.ox - damp * s.vx) * dt, vy = s.vy + (-stiff * s.oy - damp * s.vy) * dt;
+  return { ox: s.ox + vx * dt, oy: s.oy + vy * dt, vx, vy };
+}
+/* Immutability exception (plan §Task1): fxPool/poolSpawn/poolStep mutate the pool in place — the brief
+   requires object pooling and the baseline shows parts.filter realloc cost. Limited to these functions. */
+function fxPool(n) { return { items: Array.from({ length: n }, () => ({ alive: false })), live: 0, cursor: 0 }; }
+function poolSpawn(pool, init) {
+  const n = pool.items.length;
+  for (let k = 0; k < n; k++) {
+    const i = (pool.cursor + k) % n, it = pool.items[i];
+    if (it.alive) continue;
+    pool.cursor = (i + 1) % n;
+    it.alive = true; it.t = 0; it.layer = 'spark'; it.size = 3; it.rot = 0; it.vr = 0; it.col = [0, 0, 100]; it.drag = 0; it.grav = 0; it.bounce = 0;
+    Object.assign(it, init);
+    pool.live++;
+    return i;
+  }
+  return -1;
+}
+function poolStep(pool, dt, groundY) {
+  for (const it of pool.items) {
+    if (!it.alive) continue;
+    it.t += dt;
+    if (it.t >= it.life) { it.alive = false; pool.live--; continue; }
+    const g = it.grav || (it.layer === 'debris' ? 1100 : it.layer === 'spark' ? 900 : it.layer === 'smoke' ? -60 : 0);
+    it.vy += g * dt;
+    if (it.drag) { const f = 1 / (1 + it.drag * dt); it.vx *= f; it.vy *= f; }
+    it.x += it.vx * dt; it.y += it.vy * dt;
+    if (it.vr) it.rot += it.vr * dt;
+    if (it.layer === 'debris' && it.y > groundY && it.vy > 0) { it.y = groundY; it.vy = -it.vy * (it.bounce || .45); }
+  }
+}
+function fxRng(seed) {
+  let a = seed | 0;
+  return () => { a = a + 0x6D2B79F5 | 0; let r = Math.imul(a ^ a >>> 15, 1 | a); r = r + Math.imul(r ^ r >>> 7, 61 | r) ^ r; return ((r ^ r >>> 14) >>> 0) / 4294967296; };
+}
+const fxLerp = (a, b, k) => a + (b - a) * k;
+const fxRange = (r, rng) => fxLerp(r[0], r[1], rng());
+function burstSpec(layer, n, rng, cfg) {
+  const L = cfg.layers[layer], out = [];
+  for (let i = 0; i < n; i++) {
+    out.push({
+      layer, ang: rng() * 6.2832, sp: fxRange(L.speed, rng), size: fxRange(L.size, rng),
+      life: fxRange(L.life, rng), drag: L.drag, grav: L.grav, rot: rng() * 6.2832, vr: (rng() - .5) * 14
+    });
+  }
+  return out;
+}
+function gradCol(k, ev) {
+  if (k <= .5) { const t = k * 2; return [ev[0], ev[1], ev[2] + (100 - ev[2]) * (1 - t)]; }
+  const t = (k - .5) * 2;
+  return [ev[0], ev[1], ev[2] + (12 - ev[2]) * t];
+}
+const decel = (v, dt, drag) => v / (1 + drag * dt);
+function easeOutBack(t) { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+function popScale(t, from = 1.6) { return 1 + (from - 1) * (1 - easeOutBack(fxClamp(t, 0, 1))); }
+function comboLevel(combo, tier, cfg) {
+  if (tier >= 2) return combo >= cfg.combo.l4 ? 4 : combo >= cfg.combo.l3 ? 3 : 2;
+  return tier;
+}
+function deathPhase(t, cfg) {
+  const d = cfg.death;
+  return {
+    scale: t < d.slow ? d.slowScale : .35,
+    explode: t >= d.slow,
+    flash: t >= d.slow && t < d.slow + .07,
+    gray: fxClamp((t - d.grayFrom) / (d.grayTo - d.grayFrom), 0, 1)
+  };
+}
+function shieldRings(n, cfg) {
+  const out = [];
+  for (let i = 0; i < n; i++) out.push({ rMul: 1 + i * .22, spin: (i % 2 ? -1 : 1) * (.8 + i * .5), hue: (185 + i * 40) % 360 });
+  return out;
+}
+const arcsOn = (n, cfg) => n >= 3;
+const sfxRoute = (ev, files, synth) => files && files[ev] ? 'file' : synth && synth[ev] ? 'synth' : null;
+const hapticFor = (ev, table) => (table && ev in table) ? table[ev] : null;
+/* fx-core:end */
+
+/* social-core:start — pure social logic (friends / alerts / FFA). No DOM, no globals, no Date.now():
+   tests/helpers/social.js extracts this block with new Function, like fx-core. */
+const SOC_ALPH = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';   // Crockford base32: no I, L, O, U
+const fcNorm = s => String(s == null ? '' : s).toUpperCase().replace(/O/g, '0').replace(/[IL]/g, '1')
+  .replace(/[^0-9A-Z]/g, '').split('').filter(c => SOC_ALPH.includes(c)).join('');
+const fcOk = s => fcNorm(s).length === 8;
+const fcFmt = s => s ? String(s).slice(0, 4) + '-' + String(s).slice(4) : '';
+const friendErrKey = m => { const s = String(m || '');
+  return /fw_friend_self/.test(s) ? 'frSelf' : /fw_friend_dupe/.test(s) ? 'frDupe' : /fw_friend_cap/.test(s) ? 'frCap'
+    : /fw_rate_limited/.test(s) ? 'frRate' : /fw_bad_input/.test(s) ? 'frBad' : 'frFail'; };
+const SOC_UID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+function socNorm(d){
+  const out = { code: '', friends: [], reqs: [] };
+  if (!d || typeof d !== 'object') return out;
+  out.code = fcOk(d.code) ? fcNorm(d.code) : '';
+  for (const f of Array.isArray(d.friends) ? d.friends : []){
+    if (!f || typeof f !== 'object' || !SOC_UID.test(f.player_id)) continue;
+    out.friends.push({ id: f.player_id, nick: String(f.nick || ''), cc: String(f.cc || ''), bird: String(f.bird || ''),
+      best: Math.max(0, f.best | 0), rp: Math.max(0, f.rp | 0), online: !!f.online });
+  }
+  for (const r of Array.isArray(d.reqs) ? d.reqs : []){
+    if (!r || typeof r !== 'object' || !SOC_UID.test(r.from_id)) continue;
+    out.reqs.push({ id: r.from_id, nick: String(r.nick || '') });
+  }
+  return out;
+}
+// ---- 4-player FFA: placement ranking and RP. Mirrors the server (supabase/schema.sql fw_vs_cfg.ffa_rp,
+//      fw_vs_settle_ffa); tests/vs-rules keeps the two tables identical.
+const FFA_RP = [50, 20, -20, -50];
+function ffaPlaces(players){   // competition ranking by score: ties share the better place (1,2,2,4)
+  const sc = players.map(p => p.sc | 0);
+  return sc.map(v => 1 + sc.filter(w => w > v).length);
+}
+function ffaRp(places){        // a tie group of k at place p takes the average of FFA_RP[p-1 .. p+k-2], toward zero
+  return places.map(p => {
+    const k = places.filter(q => q === p).length;
+    let s = 0; for (let i = p - 1; i < p - 1 + k; i++) s += FFA_RP[i];
+    return Math.trunc(s / k);
+  });
+}
+function ffaMatchId(seed, uids, me){
+  if (!Array.isArray(uids) || uids.length !== 4 || !uids.every(u => SOC_UID.test(u)) || new Set(uids).size !== 4) return null;
+  const a = [...uids].sort(), team = a.indexOf(me);
+  if (team < 0) return null;
+  return { id: (seed >>> 0).toString(36) + '.' + a.join('+'), team, mode: 'ffa' };
+}
+function ffaPlaceFinal(me, others){   // 0 = not final yet; else my place once nobody flying can still pass or tie my score
+  if (me.al) return 0;
+  for (const o of others) if (o.al && (o.sc | 0) <= (me.sc | 0)) return 0;   // somebody flying could still pass or tie me
+  return 1 + others.filter(o => (o.sc | 0) > (me.sc | 0)).length;   // live players above me stay above: scores only grow
+}
+// ---- friend alerts: routing (master toggle, per-kind toggles, permission, tab visibility, artifact) and feed merging
+const NOTIF_KINDS = ['on', 'best'];
+function notifyRoute(kind, st){
+  if (!NOTIF_KINDS.includes(kind) || !st || !st.on || !st.kinds || !st.kinds[kind]) return 'none';
+  if (!st.hidden) return 'toast';
+  return st.perm === 'granted' && !st.art ? 'os' : 'none';   // the artifact iframe never gets Notification permission
+}
+function notifText(kind, nick, val){
+  return kind === 'on' ? { k: 'ntOn', v: { n: nick } } : kind === 'best' ? { k: 'ntBest', v: { n: nick, s: val | 0 } } : null;
+}
+function feedMerge(since, rows){
+  const out = { since: since | 0, rows: [] };
+  for (const r of Array.isArray(rows) ? rows : []){
+    if (!r || !Number.isInteger(r.id) || r.id <= (since | 0) || !NOTIF_KINDS.includes(r.kind)) continue;
+    out.rows.push({ id: r.id, kind: r.kind, nick: String(r.nick || ''), val: r.val | 0 });
+  }
+  out.rows.sort((a, b) => a.id - b.id);
+  if (out.rows.length) out.since = out.rows[out.rows.length - 1].id;
+  return out;
+}
+// the FFA match is decided: everyone is down, or I fly alone with a score no finished run can reach
+const ffaDone = (me, oth) => oth.every(o => !o.al)
+  && (!me.al || (oth.length > 0 && (me.sc | 0) > Math.max(...oth.map(o => o.sc | 0))));
+/* social-core:end */
 /* ads:start — rewarded / interstitial rules and the ad-provider adapters: pure, no DOM, no storage, no clock of its own (now and wait come in). tests/ads.test.js runs this block as it stands (tests/helpers/ads.js). */
 const AD_CFG = Object.freeze({ interEvery: 3, interGapMs: 180000, timeoutMs: 30000, stubMs: 3000 });
 const AD_STUB_MODES = Object.freeze(['ok', 'fail', 'skip', 'none']);
@@ -1079,7 +1415,9 @@ const FS_CFG = Object.freeze({ v: 1, maxBytes: 16384, stN: 50, owned0: Object.fr
 const FS_KEYS = Object.freeze(['fw27_wallet2', 'fw27_owned', 'fw27_pass', 'fw27_starter', 'fw27_best', 'fw27_bestg', 'fw27_stg2', 'fw27_stage2',
   'fw27_bird', 'fw27_nick', 'fw27_tut', 'fw27_rookie_runs', 'fw27_dstreak', 'fw27_dbonus', 'fw27_vsclaim']);
 const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_stg', 'fw27_stage', 'fw27_lang', 'fw27_mute', 'fw27_vib', 'fw27_ads', 'fw27_trial', 'fw27_rp2',
-  'fw27_rej', 'fw27_vsmode', 'fw27_dg', 'fw27_daily_', 'fw27_sync']);
+  'fw27_rej', 'fw27_vsmode', 'fw27_dg', 'fw27_daily_', 'fw27_sync',
+  'fw27_fxq', 'fw27_fxshake', 'fw27_fxflash',   // fx quality and accessibility: per-device hardware/comfort choices
+  'fw27_push', 'fw27_pushk', 'fw27_feed2']);    // friend alerts: the toggle follows this device's Notification permission; feed2 is this device's read cursor
 const fsI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
 const fsDay = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
 const fsId = v => typeof v === 'string' && /^[a-z]{1,12}$/.test(v) && v !== 'constructor';
@@ -1263,8 +1601,17 @@ const SFX = {
 // Haptic patterns (ms on/off). Android Chrome supports these; iOS Safari ignores web vibration.
 let vibOn = store.get('fw27_vib', true);
 const HAPTIC = { flap:6, perfect:14, combo5:[20,30,40], fever:[30,40,30,40,90], power:[25,30,45], shieldBreak:[90,30,40],
-  dash:[35,15,60], shatter:18, ready:[12,40,12], zone:[40,60,40,60,120], newBest:[80,40,80,40,200], death:[60,30,150], stamp:35 };
+  dash:[35,15,60], shatter:18, ready:[12,40,12], zone:[40,60,40,60,120], newBest:[80,40,80,40,200], death:[60,30,150], stamp:35,
+  shieldHit:[40,20,70], deathHeavy:[80,30,120,40,200], record:[60,40,60,40,60,40,250], near:10, overdrive:[20,20,20,20,120] };
 function haptic(k){ if (!vibOn) return; const p = typeof k === 'string' ? HAPTIC[k] : k; try { navigator.vibrate && navigator.vibrate(p); } catch(e){} }
+/* fx sound hook: per-event route — a loaded sample in SFX_FILES wins, else the synth; single-file build ships none */
+const SFX_FILES = {};
+const SFX_EV = { flap: 'flap', gate: 'pass', near: 'perfect', shieldHit: 'shield', death: 'die', record: 'fanfare', coin: 'orb', comboBreak: 'shatter', overdrive: 'fever' };
+function sfx(ev, arg){
+  const key = SFX_EV[ev] || ev, route = sfxRoute(key, SFX_FILES, SFX);
+  if (route === 'file'){ try { const b = SFX_FILES[key], src = ac.createBufferSource(); src.buffer = b; src.connect(master); src.start(); } catch (e) {} }
+  else if (route === 'synth') SFX[key](arg);
+}
 
 /* ---------- zones ---------- */
 const ZONES = [
@@ -1340,7 +1687,124 @@ const newFx = () => ({ fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:
   ultSlow:0, ultLane:0, ultOut:0, carry:false });   // PULSAR: world time scale while its ultimate runs · AURORA: extra gap of its ultimate's lane (laneApply then also drops the ±140 reach) · TEMPEST: the storm chain steers the bird itself
 let FX = newFx(); const TMAX = {};
 
+/* fx-imp: runtime wiring for the impact layer — pure rules live in the fx-core block; numbers in #fxcfg */
+const FXCFG0 = (() => { try { return JSON.parse($('fxcfg').textContent); } catch (e) { return {}; } })();
+let FXCFG = fxCfgMerge(FX_DEFAULTS, FXCFG0);
+const fxSettings = { q: store.get('fw27_fxq', 'auto'), shake: store.get('fw27_fxshake', true), flash: store.get('fw27_fxflash', true) };
+const fxHw = { cores: navigator.hardwareConcurrency || 4, mem: navigator.deviceMemory || 4, dpr: window.devicePixelRatio || 1 };
+function impNew(q){
+  q = q || fxQualityPick(fxHw, fxSettings.q);
+  return { q, feat: fxFeatures(q, fxSettings, RM, fairMode()), pool: fxPool(FXCFG.pool[q]), shk: { ox: 0, oy: 0, vx: 0, vy: 0 },
+    flashCol: [0, 0, 100], flashA: 0, waves: [], caT: 0, slow: 0, gray: 0, deathT: -1, comboLvl: 0, coinPulse: 0, crackT: 0, rayT: 0, stampT: -1, glassT: 0, rng: fxRng((Math.random() * 1e9) | 0) };
+}
+let IMP;
+function impHit(o){
+  const lv = o.level || 'light';
+  hitstop = Math.max(hitstop, hitstopFor(lv, FXCFG));
+  cam.z = Math.max(cam.z, punchFor(lv, FXCFG));
+  if (IMP.feat.shake) IMP.shk = shakeKick(IMP.shk, o.dirX || 0, o.dirY ?? 1, FXCFG.shake.ampPx[lv]);
+  if (o.col && IMP.feat.flash){ IMP.flashCol = o.col; IMP.flashA = FXCFG.flash.alpha; }
+  if (o.wave && IMP.feat.waves && IMP.waves.length < Math.min(FXCFG.wave.cap, IMP.feat.waves)) IMP.waves.push({ x: o.x ?? bird.x, y: o.y ?? bird.y, t: 0 });
+  if (o.chroma && IMP.feat.chroma) IMP.caT = Math.max(IMP.caT, FXCFG.chroma.dur);
+  if (o.slow && IMP.feat.slowmo) IMP.slow = Math.max(IMP.slow, o.slow);
+}
+function impBurst(x, y, col, layers, mul = 1){
+  for (const layer of layers){
+    const L = FXCFG.layers[layer];
+    const n = Math.round((L.n[0] + IMP.rng() * (L.n[1] - L.n[0])) * IMP.feat.partMul * mul * (IMP.comboLvl >= 3 ? FXCFG.combo.partMulL3 : 1));
+    for (const sp of burstSpec(layer, n, IMP.rng, FXCFG)){
+      poolSpawn(IMP.pool, { x, y, vx: Math.cos(sp.ang) * sp.sp, vy: Math.sin(sp.ang) * sp.sp, size: sp.size, life: sp.life,
+        drag: sp.drag, grav: sp.grav, rot: sp.rot, vr: sp.vr, layer, col, bounce: FXCFG.death.debrisBounce });
+    }
+  }
+}
+function impFx(ev, o = {}){
+  switch (ev) {
+    case 'flap': impBurst(bird.x - 8, bird.y + 6, B.wingCol, ['smoke'], .6); break;
+    case 'gate': cam.z = Math.max(cam.z, punchFor('light', FXCFG)); break;
+    case 'near': impHit({ level: 'light', col: [FXCFG.near.flashHue, 100, 70], slow: FXCFG.slowmo.near }); impBurst(bird.x + 14, bird.y, [FXCFG.near.flashHue, 100, 70], ['core', 'spark'], .7); break;
+    case 'shieldHit': impHit({ level: 'mid', dirX: -1, dirY: o.dirY || 0, col: [190, 100, 72], wave: true, chroma: true, x: bird.x, y: bird.y }); impBurst(bird.x, bird.y, [190, 100, 70], ['core', 'spark', 'debris']); break;
+    case 'shieldMulti': break;
+    case 'speed': break;
+    case 'death': impHit({ level: 'heavy', dirX: -1, dirY: .4, wave: true, chroma: true, x: bird.x, y: bird.y }); break;
+    case 'record': impBurst(bird.x, bird.y - 20, [45, 100, 60], ['core', 'spark', 'debris']); IMP.rayT = 1.2; IMP.stampT = 0; break;
+    case 'coin': IMP.coinPulse = 1; impBurst(bird.x, bird.y, [48, 100, 62], ['spark'], .3); break;
+    case 'comboBreak': IMP.glassT = .4; impBurst(LW / 2, 112, [0, 0, 80], ['debris'], .8); sfx('comboBreak'); break;
+    case 'overdrive': impHit({ level: 'mid', col: [300, 100, 68], chroma: true }); banner('OVERDRIVE', [300, 100, 68], 1.4); sfx('overdrive'); break;
+  }
+  const hp = hapticFor(FXCFG.events[ev] && FXCFG.events[ev].haptic, HAPTIC);
+  if (hp != null) haptic(hp);
+}
+function impUpdate(rdt){
+  IMP.shk = IMP.feat.shake ? shakeStep(IMP.shk, rdt, FXCFG) : IMP.shk;
+  poolStep(IMP.pool, rdt, GROUND);
+  if (IMP.waves.length){ for (const w of IMP.waves) w.t += rdt; IMP.waves = IMP.waves.filter(w => w.t < FXCFG.wave.life); }
+  IMP.caT = Math.max(0, IMP.caT - rdt);
+  IMP.slow = Math.max(0, IMP.slow - rdt);
+  IMP.flashA = Math.max(0, IMP.flashA - rdt * 8);
+  IMP.coinPulse = Math.max(0, IMP.coinPulse - rdt * 3);
+  IMP.crackT = Math.max(0, IMP.crackT - rdt);
+  IMP.rayT = Math.max(0, IMP.rayT - rdt);
+  IMP.glassT = Math.max(0, IMP.glassT - rdt);
+  if (IMP.stampT >= 0) IMP.stampT += rdt;
+}
+function impHud(){
+  if (IMP.comboLvl >= 2 && state === 'play' && IMP.feat.flash){
+    const beat = .5 + .5 * Math.sin(T * 6.283 * FXCFG.combo.beatHz);
+    ctx.save(); ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = .12 * beat * (IMP.comboLvl >= 3 ? 1.4 : 1);
+    ctx.fillStyle = hsl([(T * 120) % 360, 100, 60]); ctx.fillRect(0, 0, LW, LH); ctx.restore();
+  }
+  if (IMP.rayT > 0 && IMP.feat.flash){
+    const a = Math.min(.2, IMP.rayT * .2);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(LW / 2, LH * .3); ctx.rotate((1.2 - IMP.rayT) * .6);
+    ctx.fillStyle = `hsla(45,100%,70%,${a.toFixed(3)})`;
+    for (let i = 0; i < 12; i++){ ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(LW, -LW * .06); ctx.lineTo(LW, LW * .06); ctx.fill(); }
+    ctx.restore();
+  }
+  if (IMP.stampT >= 0 && IMP.stampT < 1.4){
+    const k = Math.min(1, IMP.stampT / .25), sc = 2.2 - 1.2 * easeOutBack(k);
+    ctx.save(); ctx.translate(LW / 2, LH * .42); ctx.rotate(-.14); ctx.scale(sc, sc); ctx.globalAlpha = Math.min(1, (1.4 - IMP.stampT) * 3);
+    ctx.font = `34px Bungee, ${SYS}`; ctx.textAlign = 'center';
+    ctx.fillStyle = 'hsl(48,100%,62%)'; ctx.shadowColor = 'hsl(48,100%,60%)'; ctx.shadowBlur = 24; ctx.fillText('NEW RECORD', 0, 0);
+    ctx.restore();
+  } else if (IMP.stampT >= 1.4) IMP.stampT = -1;
+  if (IMP.stampT >= .25 && IMP.stampT < .25 + 1/30 && IMP.feat.shake) IMP.shk = shakeKick(IMP.shk, 0, 1, FXCFG.shake.ampPx.mid);
+  if (IMP.glassT > 0){
+    ctx.save(); ctx.translate(LW / 2, 112); ctx.strokeStyle = `hsla(0,0%,95%,${Math.min(.8, IMP.glassT * 2).toFixed(3)})`; ctx.lineWidth = 1.3;
+    for (let i = 0; i < 7; i++){ const an = i * .9 + .3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(an) * (26 + i * 5), Math.sin(an) * (18 + i * 4)); ctx.stroke(); }
+    ctx.restore();
+  }
+}
+function impPost(){
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const W2 = cv.width, H2 = cv.height;
+  if (IMP.feat.distort) for (const w of IMP.waves){
+    // shockwave: expanding double ring + trailing dashed ring — no frame copies on the CPU-raster budget (review C1)
+    const k = w.t / FXCFG.wave.life, r = (20 + k * FXCFG.wave.maxR) * scale, wx = w.x * scale, wy = w.y * scale, aW = (1 - k);
+    ctx.save();
+    ctx.strokeStyle = `rgba(255,255,255,${(.4 * aW).toFixed(3)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(wx, wy, r, 0, 6.283); ctx.stroke();
+    ctx.strokeStyle = `rgba(255,255,255,${(.18 * aW).toFixed(3)})`; ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(wx, wy, Math.max(1, r - 9 * scale), 0, 6.283); ctx.stroke();
+    ctx.setLineDash([6, 10]); ctx.lineDashOffset = -w.t * 300; ctx.strokeStyle = `rgba(180,220,255,${(.25 * aW).toFixed(3)})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(wx, wy, r * .72, 0, 6.283); ctx.stroke();
+    ctx.restore();
+  }
+  if (IMP.feat.bloom && (IMP.flashA > 0 || IMP.waves.length || IMP.caT > 0)){
+    const w0 = IMP.waves[0], bxc = (w0 ? w0.x : bird.x) * scale, byc = (w0 ? w0.y : bird.y) * scale, R = 190 * scale;
+    const g = ctx.createRadialGradient(bxc, byc, R * .1, bxc, byc, R);
+    const aB = FXCFG.bloom.alpha * Math.max(IMP.flashA, IMP.caT > 0 ? .4 : 0, IMP.waves.length ? .5 : 0);
+    g.addColorStop(0, `rgba(255,255,255,${aB.toFixed(3)})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g; ctx.fillRect(bxc - R, byc - R, R * 2, R * 2); ctx.restore();
+  }
+  if (IMP.flashA > 0 && IMP.feat.flash){
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = hsl(IMP.flashCol, IMP.flashA); ctx.fillRect(0, 0, W2, H2); ctx.restore();
+  }
+  if (IMP.gray > 0){
+    ctx.save(); ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = `rgba(128,128,128,${IMP.gray})`; ctx.fillRect(0, 0, W2, H2); ctx.restore();
+  }
+}
+
 function reset(){
+  IMP = impNew(IMP && IMP.q);
   T = 0; timeScale = 1; hitstop = 0; shake = 0; flash = 0;
   bird.x = Math.min(LW*.3, 150); bird.y = 280; bird.vy = 0; bird.rot = 0;
   gates = []; orbs = []; hazs = []; parts = []; pops = []; trail = [];
@@ -1621,10 +2085,12 @@ $('stageScr').addEventListener('click', e => { if (e.target === $('stageScr')) $
 let lbOpen = false, overAt = 0;   // overAt: when the game-over card came up; it must be up for a moment before a tap can restart
 function flap(){
   audioInit();
+  if (state === 'menu' && vs.phase !== 'idle') return;   // versus search / room / countdown runs over the menu state: no tap may start a run until vsBegin() does
   if (state === 'menu' || state === 'over'){ if (adBusy) return; if (state === 'over' && (performance.now() - overAt < 450 || mode === 'versus')) return; if (state === 'menu'){ startFromMenu(); return; } startGame(mode); return; }
   if (state !== 'play' || dashT > 0) return;
   bird.vy = -B.flap; bird.wing = 1; squash = 1; SFX.flap(); haptic('flap'); tutFlaps++; FX.idleT = 0; FX.idleWarn = false;
   for (let i=0;i<5;i++) part(bird.x-6, bird.y+6, -60-Math.random()*80, 40+Math.random()*80, .35, B.wingCol, 2);
+  impFx('flap'); if (IMP.q !== 'low') ghosts.push({x: bird.x, y: bird.y, rot: bird.rot, life: .12});
 }
 function dash(){
   if (state !== 'play' || dashMeter < 1 || dashT > 0) return;
@@ -1641,7 +2107,7 @@ addEventListener('keydown', e => {
   if (e.repeat) return;
   const tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' && (e.code === 'Space' || e.code === 'Enter')) return;
-  if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else closeLB(); } return; }
+  if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else if (!$('frScr').hidden) frClose(); else closeLB(); } return; }
   if (state === 'menu' && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')){ e.preventDefault(); pickBird(ROSTER.indexOf(B) + (e.code === 'ArrowRight' ? 1 : -1)); return; }
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){ e.preventDefault(); if (state==='paused') togglePause(); else flap(); }
   else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyD' || e.code === 'KeyE'){ e.preventDefault(); dash(); }
@@ -1681,6 +2147,25 @@ $('muteBtn').addEventListener('click', e => {
 $('muteBtn').style.opacity = muted ? .4 : 1;
 $('vibBtn').classList.toggle('off', !vibOn);
 $('vibBtn').addEventListener('click', e => { e.stopPropagation(); vibOn = !vibOn; store.set('fw27_vib', vibOn); $('vibBtn').classList.toggle('off', !vibOn); haptic([30,40,30]); });
+{ const FXTXT = { ko: { fxT: '이펙트', fxAuto: '자동', fxLow: '낮음', fxMid: '중간', fxHigh: '높음', fxShake: '화면 흔들림', fxFlash: '화면 플래시', fxRm: '시스템의 동작 줄이기 설정이 켜져 있어 흔들림·플래시가 꺼집니다' },
+    en: { fxT: 'Effects', fxAuto: 'Auto', fxLow: 'Low', fxMid: 'Mid', fxHigh: 'High', fxShake: 'Screen shake', fxFlash: 'Screen flash', fxRm: 'Reduced motion is on: shake and flash stay off' } };
+  for (const l in I18N) for (const k in FXTXT.en) I18N[l][k] = (FXTXT[l] || FXTXT.en)[k]; }
+function renderFxScr(){
+  $('fxTitle').textContent = t('fxT');
+  document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => { const q = b.dataset.fxq; b.textContent = t('fx' + q[0].toUpperCase() + q.slice(1)); b.classList.toggle('primary', fxSettings.q === q); });
+  const sh = document.querySelector('[data-fxshake]'), fl = document.querySelector('[data-fxflash]');
+  sh.textContent = `${t('fxShake')}: ${fxSettings.shake && !RM ? 'ON' : 'OFF'}`;
+  fl.textContent = `${t('fxFlash')}: ${fxSettings.flash && !RM ? 'ON' : 'OFF'}`;
+  sh.disabled = fl.disabled = RM;
+  $('fxRmNote').hidden = !RM; if (RM) $('fxRmNote').textContent = t('fxRm');
+}
+function fxApply(){ store.set('fw27_fxq', fxSettings.q); store.set('fw27_fxshake', fxSettings.shake); store.set('fw27_fxflash', fxSettings.flash); IMP = impNew(fxSettings.q === 'auto' ? null : fxSettings.q); renderFxScr(); }
+$('fxBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); if (state === 'play') togglePause(); renderFxScr(); $('fxScr').hidden = false; lbOpen = true; });
+$('fxClose').addEventListener('click', e => { e.stopPropagation(); $('fxScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden; });
+$('fxScr').addEventListener('pointerdown', e => { if (e.target === $('fxScr')) $('fxClose').click(); });
+document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); fxSettings.q = b.dataset.fxq; fxApply(); }));
+document.querySelector('[data-fxshake]').addEventListener('click', e => { e.stopPropagation(); fxSettings.shake = !fxSettings.shake; fxApply(); });
+document.querySelector('[data-fxflash]').addEventListener('click', e => { e.stopPropagation(); fxSettings.flash = !fxSettings.flash; fxApply(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause(); adPlaySync(); });
 
 function togglePause(){
@@ -1889,7 +2374,7 @@ const shards = (x,y,col,n) => bits(x,y,n,()=>col,420,.8,0);
 function addScore(p){
   score += p; scorePunch = 1;
   if (!newBestShown && runBestRef > 0 && score > runBestRef){
-    newBestShown = true; banner(t('newRec'), [48,100,62], 1.7); SFX.fanfare(); haptic('newBest'); confetti(bird.x + 60, bird.y, 46);
+    newBestShown = true; banner(t('newRec'), [48,100,62], 1.7); SFX.fanfare(); confetti(bird.x + 60, bird.y, 46); impFx('record'); IMP.rayT = 1.2; IMP.stampT = 0;
   }
 }
 
@@ -1913,7 +2398,7 @@ function die(why = 'gate'){
     banner(t('fx_rewind'), [40,90,62], 1.1); haptic('fever'); tone(1400, .5, 'sine', .14, -1200); tone(300, .5, 'triangle', .1, 900, .05);
     return;
   }
-  state = 'dying'; deathT = 0; SFX.die(); haptic('death'); vsOnMyDeath();
+  state = 'dying'; deathT = 0; IMP.deathT = 0; impFx('death'); SFX.die(); vsOnMyDeath();
   shake = 18; flash = .6; hitstop = .14;
   cam.fx = bird.x; cam.fy = bird.y; cam.tz = 1.32; ring(bird.x, bird.y, LW, [0,100,62], .8, 10); banners = [];
   if (!deathFx(B.id)) for (let i=0;i<46;i++){ const a = Math.random()*6.28, s = 80+Math.random()*360; part(bird.x, bird.y, Math.cos(a)*s, Math.sin(a)*s, .9+Math.random()*.6, Math.random()<.5?pal.a:pal.b, 2+Math.random()*3); }
@@ -1938,7 +2423,7 @@ function openCont(){
 function closeCont(go){
   clearInterval(contTimer); $('contScr').hidden = true;
   if (!go){ showOver(); return; }
-  contUsed = true; state = 'play'; FX.fogT = 0; overT = weightT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; setGod(2.5); hurtT = 0;
+  contUsed = true; state = 'play'; IMP = impNew(IMP.q); FX.fogT = 0; overT = weightT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; setGod(2.5); hurtT = 0;
   cam.tz = 1; cam.fx = LW/2; cam.fy = LH/2;
   for (const g of gates) if (Math.abs(g.x + g.w/2 - bird.x) < 140) g.broken = true;
   $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false; $('ultBtn').hidden = !ultOn();
@@ -2042,10 +2527,11 @@ function showOver(){
 
 /* ---------- update ---------- */
 function update(rdt){
+  impUpdate(rdt);
   if (hitstop > 0){ hitstop -= rdt; rdt *= .05; }
-  const target = Math.min(slowT > 0 ? POW.slowScale : 1, FX.ultSlow || 1);   // PULSAR's ultimate slows the world further than the slow power-up
+  const target = Math.min(slowT > 0 ? POW.slowScale : 1, FX.ultSlow || 1, IMP.slow > 0 ? FXCFG.slowmo.scale : 1);   // PULSAR's ultimate slows the world further than the slow power-up
   timeScale += (target - timeScale) * Math.min(1, rdt*6);
-  const dt = rdt * (state === 'dying' ? .35 : timeScale);
+  const dt = rdt * (state === 'dying' ? deathPhase(deathT, FXCFG).scale : timeScale);
   T += dt * (freezeT > 0 && state === 'play' ? .03 : 1); if (FX.hold && state === 'play') FX.still += dt;   // KRAKEN's held gates: their clock falls behind by exactly what T gains (KRAKEN has no time stop)
   shake = Math.max(0, shake - rdt*40); flash = Math.max(0, flash - rdt*1.8); FX.amb = Math.max(0, FX.amb - rdt*12);
   FX.castT = Math.max(0, FX.castT - rdt); FX.sigT = Math.max(0, FX.sigT - rdt); FX.perfT = Math.max(0, FX.perfT - rdt);   // up here so they also run out while dying
@@ -2082,7 +2568,16 @@ function update(rdt){
     return;
   }
   if (state === 'dying'){
-    deathT += rdt; bird.vy += 1600*dt; bird.y = Math.min(GROUND - bird.r, bird.y + bird.vy*dt); bird.rot += 8*dt;
+    deathT += rdt;
+    { const ph = deathPhase(deathT, FXCFG);
+      if (ph.explode && IMP.deathT >= 0){ IMP.deathT = -1;
+        if (IMP.feat.flash){ IMP.flashCol = [0, 0, 100]; IMP.flashA = FXCFG.flash.alpha; }
+        if (IMP.feat.shake) IMP.shk = shakeKick(IMP.shk, -1, .4, FXCFG.shake.ampPx.heavy);
+        impBurst(bird.x, bird.y, pal.a.slice(), ['core', 'spark', 'smoke', 'debris'], 1.4);
+      }
+      IMP.gray = ph.gray;
+    }
+    bird.vy += 1600*dt; bird.y = Math.min(GROUND - bird.r, bird.y + bird.vy*dt); bird.rot += 8*dt;
     if (deathT > 1.1){ if (canContinue()) openCont(); else showOver(); }
     return;
   }
@@ -2155,7 +2650,7 @@ function update(rdt){
         if (bird.y - hr < top || bird.y + hr > bot){
           if (invuln > 0 || godT > 0 || freezeT > 0){ if (godT > 0) sigFx(B.id, 'block', g); }
           else if (cloneT > 0){ cloneHit(); }
-          else if (shields > 0){ breakShield(); if (PK.shieldBurst){ g.broken = true; g.flash = 1; shards(g.x + g.w/2, bird.y, [50,100,72], 24); sigFx(B.id, 'burst', g); } }
+          else if (shields > 0){ breakShield(bird.y < gY(g) ? -1 : 1); if (PK.shieldBurst){ g.broken = true; g.flash = 1; shards(g.x + g.w/2, bird.y, [50,100,72], 24); sigFx(B.id, 'burst', g); } }
           else if (PK.inkSlip && inkT > 0 && FX.inkLock === 0){   // KRAKEN ink cloak: while ink is out and the cloak is not locked, a fatal gate hit dissolves the gate instead. The ink is spent on the spot, the cloak locks for PK.inkSlip scored gates (the dissolved gate does not count), and the combo is lost
             inkT = 0; FX.inkLock = PK.inkSlip; g.broken = g.slip = true; g.flash = 1; invuln = .6; combo = 0; tier = 0;
             hitstop = Math.max(hitstop, .12); banner(t('fx_slip'), [285,80,70], 1, false); haptic('shatter'); sigFx(B.id, 'slip', g); }
@@ -2211,17 +2706,22 @@ function update(rdt){
         dashMeter = Math.min(1, dashMeter + .34*B.dash); skillCharge = Math.min(1, skillCharge + (FX.resoT > 0 || sure ? 0 : PK.perfCharge));
         if (PK.veil && !sure && FX.threads < 3 && ++FX.threadP >= PK.veil){ FX.threadP = 0; FX.threads++; sigFx(B.id, 'thread', g); }   // AURORA: every PK.veil Perfects weave one thread, three at most; a full set stops counting
         SFX.perfect(combo); perfectFx(B.id, g); flash = Math.max(flash, .18); hitstop = .06; shake = Math.max(shake, 4);
+        { const pl = comboLevel(combo, tier, FXCFG); if (pl >= 4 && IMP.comboLvl < 4) impFx('overdrive'); IMP.comboLvl = pl; }
+        impFx('near'); if (g.minClear < perfWin() * FXCFG.near.closeFrac) pop('CLOSE!', bird.x + 10, bird.y - 52, [FXCFG.near.flashHue, 100, 72], true);
         g.flash = 1; cam.z = Math.max(cam.z, 1.035);
         { const cy2 = gY(g), gp2 = gGap(g); ring(g.x + g.w, bird.y < cy2 ? cy2 - gp2/2 : cy2 + gp2/2, 95, tier === 2 ? [300,100,68] : pal.a, .45, 3); }
         pop(combo > 1 ? `${t('perfectP')} x${combo}  +${pts}` : `${t('perfectP')} +${pts}`, bird.x+10, bird.y-30, pal.a, true);
-        for (let i=0;i<16;i++) part(g.x+g.w, bird.y, 60+Math.random()*200, (Math.random()-.5)*260, .6, pal.a, 2.5);
+        impBurst(g.x + g.w, bird.y, pal.a.slice(), ['spark']);
       } else {
         if (tier === 2 && PK.comboGuard && !guardUsed){
           guardUsed = true; addScore(1); pop(t('fx_guard'), bird.x, bird.y+36, [45,100,62], true); ring(bird.x, bird.y, 110, [45,100,62], .5, 5); haptic('power'); SFX.ready(); sigFx(B.id, 'guard', g);
         } else {
           if (combo > 1) pop(t('comboBreak'), bird.x, bird.y+36, [0,0,70]);
           if (tier === 2) banner(t('feverEnd'), [0,0,78], .9, false);
+          const comboWas = combo;
           combo = PK.comboKeep ? Math.floor(combo * PK.comboKeep) : 0; tier = combo >= Math.min(5, PK.feverAt - 3) ? 1 : 0; addScore(1); SFX.pass(); if (combo > 0) sigFx(B.id, 'keep', g);
+          if (comboWas > 4) impFx('comboBreak');
+          IMP.comboLvl = comboLevel(combo, tier, FXCFG); impFx('gate');
         }
         dashMeter = Math.min(1, dashMeter + .08*B.dash); ultFill(0, live);
       }
@@ -2254,11 +2754,11 @@ function update(rdt){
     if (o.got) continue;
     const dx = bird.x - o.x, dy = bird.y - o.y, d = Math.hypot(dx,dy);
     const mr = o.k === 'gem' ? 110 : rushT > 0 ? 240 : magnetT > 0 ? 190 : PK.magnet;
-    if (mr && (o.k === 'orb' || o.k === 'gem') && d < mr && d > 0){ o.x += dx/d * 520*dt; o.y += dy/d * 520*dt; }
+    if (mr && (o.k === 'orb' || o.k === 'gem') && d < mr && d > 0){ o.x += dx/d * 520*dt; o.y += dy/d * 520*dt; o.pull = 1; }
     if (d < bird.r + (o.k==='orb'?10:o.k==='gem'?22:16)){
       o.got = true;
       if (o.k === 'orb' && PK.orbShieldEvery && Math.floor((orbsGot + (rushT > 0 ? 2 : 1)) / PK.orbShieldEvery) > Math.floor(orbsGot / PK.orbShieldEvery) && shields < PK.shieldMax){ shields++; popT = 0; pop(t('shieldP') + ' +1', bird.x, bird.y-34, [48,100,62], true); SFX.power(); haptic('power'); }
-      if (o.k === 'orb'){ orbsGot += rushT > 0 ? 2 : 1; dashMeter = Math.min(1, dashMeter + .05*B.dash); SFX.orb(); for (let i=0;i<6;i++) part(o.x,o.y,(Math.random()-.5)*160,(Math.random()-.5)*160,.35,[48,100,65],2); }
+      if (o.k === 'orb'){ orbsGot += rushT > 0 ? 2 : 1; dashMeter = Math.min(1, dashMeter + .05*B.dash); SFX.orb(); for (let i=0;i<6;i++) part(o.x,o.y,(Math.random()-.5)*160,(Math.random()-.5)*160,.35,[48,100,65],2); IMP.coinPulse = 1; impBurst(o.x, o.y, [48,100,62], ['spark'], .3); }
       else if (o.k === 'gem'){ W.gems++; FX.gemsRun++; saveW(); pop(t('gemP'), bird.x, bird.y-34, [335,100,72], true); ring(bird.x, bird.y, 160, [335,100,72], .6, 6); flash = Math.max(flash, .3); SFX.power(); haptic('power'); }
       else {
         SFX.power(); haptic('power');
@@ -2282,22 +2782,22 @@ function cloneHit(){
   cloneT = 0; invuln = 1; hurtT = .35; shards(bird.x - 26, bird.y, [270,40,30], 24); ring(bird.x, bird.y, 140, B.uiCol || B.col, .5, 6);
   pop(t('sk_zero'), bird.x, bird.y - 34, B.uiCol || B.col, true); haptic('shieldBreak'); SFX.shield(); shake = 10; sigFx(B.id, 'clone');
 }
-function breakShield(){
-  hurtT = .45;
+function breakShield(dirY){
+  hurtT = Math.max(.45, FXCFG.vignette.hurt);
+  impFx('shieldHit', { dirY: dirY || 0 }); IMP.crackT = .3;
   shields = Math.max(0, shields - 1); invuln = POW.shieldInv; popT = -1;
   const bc = ufx(B.id, 'breakCol');   // a unit may recolour the pieces of its own shield
   shards(bird.x, bird.y, bc || [190,100,78], 22); ring(bird.x, bird.y, 170, bc || [190,100,78], .5, 7); SFX.shield(); haptic('shieldBreak'); shake = 10; flash = .3;
   pop(t('shieldBreak'), bird.x, bird.y-34, [190,100,70]);
-  for (let i=0;i<20;i++){ const a=Math.random()*6.28; part(bird.x,bird.y,Math.cos(a)*220,Math.sin(a)*220,.5,bc || [190,100,70],2.5); }
 }
 
 /* ---------- render ---------- */
 function render(){
   ctx.setTransform(1,0,0,1,0,0);
   ctx.fillStyle = '#000'; ctx.fillRect(0,0,cv.width,cv.height);
-  const sk = RM ? 0 : shake + FX.amb;
+  const sk = IMP.feat.shake ? shake + FX.amb : 0;
   const z = RM ? 1 : cam.z;
-  ctx.setTransform(scale*z,0,0,scale*z, cam.fx*(1-z)*scale + (Math.random()-.5)*sk*scale, cam.fy*(1-z)*scale + (Math.random()-.5)*sk*scale);
+  ctx.setTransform(scale*z,0,0,scale*z, cam.fx*(1-z)*scale + ((Math.random()-.5)*sk + IMP.shk.ox*IMP.feat.shake)*scale, cam.fy*(1-z)*scale + ((Math.random()-.5)*sk + IMP.shk.oy*IMP.feat.shake)*scale);
 
   const sg = ctx.createLinearGradient(0,0,0,GROUND);
   sg.addColorStop(0, hsl(pal.sky0)); sg.addColorStop(1, hsl(pal.sky1));
@@ -2325,9 +2825,10 @@ function render(){
   drawSky(sky1, .3, hsl(pal.sky0,1,1), GROUND, true);
   }
   skyEvent();   // unit sky effects sit behind the gates so they never hide a gap
-  if ((dashT > 0 || feverGlow > .3) && !RM){
+  if ((dashT > 0 || potionT > 0 || rushT > 0 || feverGlow > .3 || IMP.comboLvl >= 3) && !RM){
+    const band = !(dashT > 0 || feverGlow > .3);   // speed states and L3 keep the lines to the top/bottom 30% bands
     ctx.strokeStyle = dashT > 0 ? hsl(B.wingCol,.35) : hsl([(T*160)%360,100,70],.18); ctx.lineWidth = 2;
-    for (let i=0;i<14;i++){ const y = (i*47 + T*900) % GROUND, x = (LW + 40) - ((T*1800 + i*173) % (LW + 260)); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 70 + (i%3)*30, y); ctx.stroke(); }
+    for (let i=0;i<14;i++){ let y = (i*47 + T*900) % GROUND; if (band) y = y < GROUND/2 ? y * .3 : GROUND - (GROUND - y) * .3; const x = (LW + 40) - ((T*1800 + i*173) % (LW + 260)); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 70 + (i%3)*30, y); ctx.stroke(); }
   }
 
   if (state === 'menu') drawFlock(1/60);
@@ -2349,6 +2850,10 @@ function render(){
 
   for (const o of orbs){
     const bob = Math.sin(o.t*5)*3;
+    if (o.pull && !o.got){ const dxp = bird.x - o.x, dyp = bird.y - o.y, dp = Math.hypot(dxp, dyp) || 1;
+      ctx.fillStyle = 'hsla(48,100%,65%,.4)';
+      for (let i = 1; i <= 2; i++){ ctx.beginPath(); ctx.arc(o.x - dxp/dp*i*9, o.y + bob - dyp/dp*i*9, 2.4 - i*.7, 0, 6.283); ctx.fill(); }
+    }
     if (o.k === 'orb'){
       ctx.save(); ctx.translate(o.x, o.y + bob); ctx.rotate(o.t*2);
       ctx.shadowColor = 'hsl(48,100%,60%)'; ctx.shadowBlur = 14;
@@ -2386,6 +2891,19 @@ function render(){
     else ctx.fillRect(p.x-p.size/2, p.y-p.size/2, p.size, p.size);
   }
   ctx.globalAlpha = 1;
+  if (IMP.pool.live){
+    ctx.save();
+    for (const q of IMP.pool.items){
+      if (!q.alive) continue;
+      const k = q.t / q.life, col = gradCol(k, q.col);
+      ctx.globalAlpha = 1 - k;
+      if (q.layer === 'core'){ ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = hsl(col, .9); ctx.beginPath(); ctx.arc(q.x, q.y, q.size * (1 - k * .5), 0, 6.283); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
+      else if (q.layer === 'smoke'){ ctx.fillStyle = hsl(col, .35); ctx.beginPath(); ctx.arc(q.x, q.y, q.size * (1 + k), 0, 6.283); ctx.fill(); }
+      else if (q.layer === 'debris'){ ctx.save(); ctx.fillStyle = hsl(col); ctx.translate(q.x, q.y); ctx.rotate(q.rot); ctx.beginPath(); for (let i = 0; i < 6; i++){ const a = i / 6 * 6.283; ctx.lineTo(Math.cos(a) * q.size, Math.sin(a) * q.size); } ctx.closePath(); ctx.fill(); ctx.restore(); }
+      else { ctx.fillStyle = hsl(col); ctx.fillRect(q.x - q.size / 2, q.y - q.size / 2, q.size, q.size); }
+    }
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
   for (const q of rings){
     const k = q.life/q.max0; ctx.globalAlpha = k; ctx.strokeStyle = hsl(q.col); ctx.lineWidth = Math.max(.5, q.w*k);
     ctx.shadowColor = hsl(q.col); ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.28); ctx.stroke();
@@ -2398,10 +2916,11 @@ function render(){
   }
 
   if (state !== 'dying' && state !== 'over' && state !== 'cont') drawBird();
+  if (IMP.comboLvl >= 3 && state === 'play' && !RM){ ctx.save(); ctx.strokeStyle = hsl([(T*200)%360,100,66], .5); ctx.lineWidth = 2; ctx.setLineDash([10, 14]); ctx.lineDashOffset = -T*80; ctx.beginPath(); ctx.arc(bird.x, bird.y, bird.r*2.6, 0, 6.283); ctx.stroke(); ctx.restore(); }
   drawRival();
 
   for (const p of pops){
-    const a = 1 - Math.max(0,(p.t-.6)/.5), s = p.big ? 1 + Math.max(0,.25-p.t)*2 : 1;
+    const a = 1 - Math.max(0,(p.t-.6)/.5), s = p.big ? popScale(Math.min(1, p.t / FXCFG.pop.dur), FXCFG.pop.from) : 1;
     ctx.save(); ctx.globalAlpha = a; ctx.translate(p.x, p.y); ctx.scale(s,s);
     ctx.font = `${p.big?18:14}px Bungee, ${SYS}`; ctx.textAlign = 'center';
     ctx.fillStyle = hsl(p.col); ctx.shadowColor = hsl(p.col); ctx.shadowBlur = 10; ctx.fillText(p.text, 0, 0);
@@ -2426,8 +2945,9 @@ function render(){
     vd.addColorStop(0,'rgba(0,0,0,0)'); vd.addColorStop(1, `rgba(255,40,70,${danger*(.25 + .2*pz)})`); ctx.fillStyle = vd; ctx.fillRect(0,0,LW,LH);
     if (danger > .4){ ctx.save(); ctx.font = `22px Bungee, ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(255,70,90,${.6 + .4*pz})`; ctx.shadowColor = 'rgba(255,40,70,.9)'; ctx.shadowBlur = 14; ctx.fillText('!', bird.x, bird.y - bird.r*2.4); ctx.restore(); }
   }
-  if (flash > 0 && !RM){ ctx.fillStyle = `rgba(255,255,255,${flash*.35})`; ctx.fillRect(0,0,LW,LH); }
+  if (flash > 0 && IMP.feat.flash){ ctx.fillStyle = `rgba(255,255,255,${flash*.35})`; ctx.fillRect(0,0,LW,LH); }
 
+  impPost();
   ctx.setTransform(scale,0,0,scale,0,0);
   if (feverGlow > .01 && !RM){
     const pu = .5 + .5*Math.sin(T*10), hue = ufx(B.id, 'feverHue') ?? (T*120) % 360, w = 46;
@@ -2435,6 +2955,7 @@ function render(){
     edge(0,0,w,0, 0,0,w,LH); edge(LW,0,LW-w,0, LW-w,0,w,LH); edge(0,0,0,w, 0,0,LW,w); edge(0,LH,0,LH-w, 0,LH-w,LW,w);
   }
   pillBot = 0; if (state === 'play' || state === 'paused' || state === 'dying') drawHUD();
+  impHud();
   for (const b of banners){
     const k = b.t / b.dur, inT = .16, outT = .2;
     const e = k < inT ? 1 - Math.pow(1 - k/inT, 3) : k > 1 - outT ? 1 - (k - (1-outT))/outT : 1;
@@ -2979,18 +3500,32 @@ function drawBird(){
   const skA = godT > 0 || boostT > 0 || lowGravT > 0 || autoT > 0 || rushT > 0 || foreT > 0 || freezeT > 0;
   if (skA && !U.active){ ctx.strokeStyle = hsl(godT > 0 ? [45,100,62] : (B.uiCol || B.col), .6 + .3*Math.sin(T*14)); ctx.lineWidth = 3; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(0,0,bird.r*2.1 + Math.sin(T*10)*3,0,6.28); ctx.stroke(); ctx.shadowBlur = 0; }
   if (potionT > 0){ for (let i=0;i<10;i++){ const a = T*4 + i*.628; ctx.fillStyle = `hsla(${(i*36 + T*300)%360},100%,65%,.8)`; ctx.beginPath(); ctx.arc(Math.cos(a)*bird.r*2, Math.sin(a)*bird.r*2, 2.2, 0, 6.28); ctx.fill(); } }
-  if (U.shields) U.shields(vs); else for (let k = 0; k < shields; k++){
-    const R = (bird.r + 10 + k*6) * vs, hue = U.shieldHue || 190;
-    ctx.save(); ctx.rotate(T*1.4*(k % 2 ? -1 : 1) + k*.5); ctx.shadowColor = `hsl(${hue},100%,60%)`; ctx.shadowBlur = 18;
+  if (U.shields) U.shields(vs); else { const sr = shieldRings(shields, FXCFG); for (let k = 0; k < shields; k++){
+    const R = (bird.r + 10 + k*6) * vs, hue = U.shieldHue || sr[k].hue, crack = k === shields - 1 ? IMP.crackT : 0;
+    ctx.save(); ctx.rotate(T*1.4*sr[k].spin + k*.5); ctx.shadowColor = `hsl(${hue},100%,60%)`; ctx.shadowBlur = 18;
     ctx.strokeStyle = `hsla(${hue},100%,72%,${.6+.25*Math.sin(T*8 + k)})`; ctx.fillStyle = `hsla(${hue},100%,60%,${k ? .04 : .10})`; ctx.lineWidth = 2.5 - k*.5;
     ctx.beginPath(); for (let i=0;i<6;i++){ const a = i/6*6.283; ctx.lineTo(Math.cos(a)*R, Math.sin(a)*R); } ctx.closePath(); ctx.fill(); ctx.stroke();
+    if (crack > 0){ ctx.strokeStyle = `hsla(0,0%,100%,${crack*2.4})`; ctx.lineWidth = 1.4; ctx.beginPath(); for (let i=0;i<4;i++){ const a = i*1.7 + .4; ctx.moveTo(Math.cos(a)*R*.4, Math.sin(a)*R*.4); ctx.lineTo(Math.cos(a+.3)*R, Math.sin(a+.3)*R); } ctx.stroke(); }
     ctx.restore();
+  }
+  if (arcsOn(shields, FXCFG) && !RM){ ctx.save(); ctx.strokeStyle = 'hsla(195,100%,80%,.7)'; ctx.lineWidth = 1.2;
+    for (let j = 0; j < 2; j++){ const a0 = T*7 + j*3.1, r0 = (bird.r + 10) * vs, r1 = (bird.r + 10 + (shields-1)*6) * vs; ctx.beginPath(); ctx.moveTo(Math.cos(a0)*r0, Math.sin(a0)*r0);
+      for (let i = 1; i <= 3; i++){ const rr = r0 + (r1 - r0) * i / 3, aa = a0 + Math.sin(T*31 + i*2.7 + j) * .25; ctx.lineTo(Math.cos(aa)*rr, Math.sin(aa)*rr); } ctx.stroke(); }
+    ctx.restore(); }
   }
   if (giantT > 0) vs *= 1 + Math.min(1, (TMAX.giant - giantT) * 5, giantT * 4);
   if (phaseT > 0) ctx.globalAlpha = RM ? .6 : .52 + .15*Math.sin(T*18.85);   // ghosting: 3Hz (was 4.8Hz) and a little more solid, steady with reduced motion
   ctx.rotate(bird.rot); ctx.scale(vs*(1 - .12*squash), vs*(1 + .22*squash));
   const o = {lite:false, pose:0, vy:bird.vy}; if (U.opt) U.opt(o);
   drawShape(ctx, B, bird.wing, dashT > 0 ? B.wingCol : tier === 2 ? [(T*240)%360,100,64] : (B.uiCol || B.col), o); unitFront(B);
+  if (IMP.feat.chroma && (IMP.caT > 0 || (IMP.feat.chromaIdle && IMP.comboLvl >= 4))){
+    // chromatic split on the subject only — a full-frame split needs a frame copy we cannot afford (review C1)
+    const px = FXCFG.chroma.px, aC = IMP.caT > 0 ? Math.min(.4, IMP.caT / FXCFG.chroma.dur * .4) : FXCFG.chroma.idleAlpha;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = aC;
+    ctx.translate(-px, 0); drawShape(ctx, B, bird.wing, [185, 100, 60], o);
+    ctx.translate(px * 2, 0); drawShape(ctx, B, bird.wing, [340, 100, 60], o);
+    ctx.restore();
+  }
   ctx.restore();
 }
 /* ---------- unit fx: state-dependent looks and moments ----------
@@ -3627,7 +4162,7 @@ function celebrate(b){
 }
 let confCb = null;
 function confirmDlg(msg, yes){ $('confMsg').textContent = msg; confCb = yes; $('confScr').hidden = false; lbOpen = true; SFX.click(); }
-function confClose(){ $('confScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden; $('confYes').textContent = t('buy'); }   // the sign-out dialog relabels the button; every close puts it back
+function confClose(){ $('confScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('frScr').hidden; $('confYes').textContent = t('buy'); }   // the sign-out dialog relabels the button; every close puts it back
 $('confYes').addEventListener('click', e => { e.stopPropagation(); const f = confCb; confCb = null; confClose(); if (f) f(); });
 $('confNo').addEventListener('click', e => { e.stopPropagation(); confCb = null; confClose(); });
 const COST_KEY = {coin:'nCoin', dia:'nDia', gem:'nGem'};
@@ -3682,6 +4217,10 @@ function drawHUD(){
   ctx.shadowColor = hsl(pal.a); ctx.shadowBlur = 16;
   { const sp = 1 + scorePunch*.38; ctx.save(); ctx.translate(LW/2, 68); ctx.scale(sp, sp); ctx.fillText(score, 0, 18); ctx.restore(); }
   ctx.shadowBlur = 0;
+  { const cs = 1 + IMP.coinPulse*.35; ctx.save(); ctx.translate(LW/2, 96); ctx.scale(cs, cs);
+    ctx.font = `700 12px "Chakra Petch", ${SYS}`; ctx.fillStyle = 'hsl(48,100%,62%)';
+    ctx.beginPath(); ctx.arc(-16, -4, 4.5, 0, 6.283); ctx.fill();
+    ctx.fillStyle = 'rgba(243,238,252,.9)'; ctx.textAlign = 'left'; ctx.fillText(String(orbsGot), -8, 0); ctx.textAlign = 'center'; ctx.restore(); }
   if (combo > 1){
     ctx.font = `16px Bungee, ${SYS}`; ctx.fillStyle = hsl(pal.a);
     if (tier === 2) ctx.fillStyle = hsl([(T*240)%360,100,66]); else if (tier === 1) ctx.fillStyle = 'hsl(28,100%,62%)';
@@ -4112,8 +4651,8 @@ function renderLB(){
     else note = !sb ? ' ' : vsBoardOk && vsMe && !prev ? t('seaFirst') : t('loading');   // offline: only the notice below the list
   }
   else if (vsT){   // versus ranking: the server's top 100 by RP; without the server, the RP cached on this device
-    if (sb) rows = vsBoard.map(r => ({id:r.player_id, nick:r.nick, cc:r.cc, sc:r.rp, wl:`${r.wins | 0}–${r.losses | 0}`}));
-    else if (lbState !== 'loading' && rp > 0) rows = [{id:'local', nick, cc:CC, sc:rp}];
+    if (sb) rows = vsBoard.map(r => ({id:r.player_id, nick:r.nick, cc:r.cc, sc:r.rp, wl:`${r.wins | 0}–${r.losses | 0}`, bird:r.bird}));
+    else if (lbState !== 'loading' && rp > 0) rows = [{id:'local', nick, cc:CC, sc:rp, bird:B.id}];
   }
   else if (lbState === 'online') rows = (lbTab === 'daily' ? lbDaily : lbAll).map(r => ({id:r.id, nick:r.nick, cc:r.cc, sc: lbTab === 'daily' ? r.dailyScore : r.best, bird: lbTab === 'daily' ? r.dailyBird : r.bird}));
   else if (lbState === 'offline'){
@@ -4134,7 +4673,9 @@ function renderLB(){
     const bd = birdById(r.bird); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
     nm.appendChild(document.createTextNode(showNick(r.nick || '') || '—'));
     if (me){ const tg = document.createElement('span'); tg.className = 'me-tag'; tg.textContent = t('you'); nm.appendChild(tg); }
+    else { const fb = frPlusBtn(r.id); if (fb) nm.appendChild(fb); }
     const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = Math.max(0, Math.floor(Number(r.sc) || 0));
+    if (bd){ const ub = document.createElement('span'); ub.className = 'ub'; ub.textContent = bd.name; ub.style.color = hsl(bd.uiCol || bd.col); sc.prepend(ub); }
     if (r.wl){ const w = document.createElement('span'); w.className = 'wl'; w.textContent = r.wl; sc.appendChild(w); }   // wins–losses
     li.append(n, f, nm, sc); list.appendChild(li);
   });
@@ -4153,7 +4694,8 @@ function renderLB(){
 function openLB(tab){
   lbTab = tab || (mode === 'daily' || state === 'menu' ? 'daily' : 'all');
   lbOpen = true; $('nickIn').value = nick; $('lbScr').hidden = false; renderLB(); renderAcct(); if (sb) refreshBoards();
-  online().then(() => { if (needSync) syncLocal(); if (lbTab === 'vs' && !$('lbScr').hidden) refreshVsBoard(); });
+  online().then(async () => { if (needSync) syncLocal(); if (lbTab === 'vs' && !$('lbScr').hidden) refreshVsBoard();
+    if (sb && uid && !socReady && await socSync() && !$('lbScr').hidden) renderLB(); });   // first open: learn who is already a friend, then redraw the + buttons
 }
 function closeLB(){ lbOpen = false; $('lbScr').hidden = true; statusMsg = nickMsg = ''; if (state === 'menu') cloudMenu(); }   // a cloud apply deferred behind this card runs now
 $('lbBtn').addEventListener('click', e => { e.stopPropagation(); openLB('daily'); });
@@ -4170,6 +4712,115 @@ $('nickForm').addEventListener('submit', e => {
   if (myDoc) submitScore(0, 0, 'endless', dayKey());
   renderLB();
 });
+
+/* ---------- friends (social): list, requests, codes. Server: social_me / friend_request / friend_respond / friend_remove ---------- */
+let SOC = { code: '', friends: [], reqs: [] };
+let socReady = false;   // true after the first social_me answer: the + button must not guess at friendships
+async function socRpc(fn, a){ let r = await vsRpc(fn, a); if (r.error && sbAuthErr(r) && await sbReauth()) r = await vsRpc(fn, a); return r; }
+async function socSync(){ if (!sb || !uid) return false; const r = await socRpc('social_me'); if (r.error || !r.data) return false; SOC = socNorm(r.data); socReady = true; return true; }
+function frOpen(){
+  $('frScr').hidden = false; lbOpen = true; $('frStatus').textContent = t('loading'); renderFr();
+  online().then(async () => { if (sb && await socSync()){ $('frStatus').textContent = ''; } else $('frStatus').textContent = t('offline'); renderFr(); });
+}
+function frClose(){ $('frScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('vsScr').hidden; }
+async function frAct(fn, args, okKey){
+  const r = await socRpc(fn, args);
+  if (r.error){ toast(t(friendErrKey(r.error.message))); return false; }
+  if (r.data && r.data.status === 'unknown'){ toast(t('frBad')); return false; }   // bad code: the server answered (and kept the spent request)
+  if (okKey) toast(t(r.data && r.data.status === 'friends' ? 'frNow' : okKey));
+  await socSync(); renderFr(); return true;
+}
+function renderFr(){
+  $('frMyCode').textContent = SOC.code ? fcFmt(SOC.code) : '—';
+  const rq = $('frReqList'); rq.textContent = ''; $('frReqs').hidden = !SOC.reqs.length;
+  for (const q of SOC.reqs){
+    const li = document.createElement('li'); li.className = 'frrow';
+    const d = document.createElement('span'); d.className = 'frdot';
+    const f = document.createElement('span'); f.textContent = '';
+    const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = showNick(q.nick) || '—';
+    const ok = document.createElement('button'); ok.className = 'frplus'; ok.textContent = t('frOk');
+    ok.addEventListener('click', e => { e.stopPropagation(); frAct('friend_respond', {p_from: q.id, p_accept: true}, 'frNow'); });
+    const no = document.createElement('button'); no.className = 'frx'; no.textContent = t('frNo');
+    no.addEventListener('click', e => { e.stopPropagation(); frAct('friend_respond', {p_from: q.id, p_accept: false}, ''); });
+    li.append(d, f, nm, ok, no); rq.appendChild(li);
+  }
+  const L = $('frList'); L.textContent = '';
+  if (!SOC.friends.length){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('frEmpty'); L.appendChild(li); return; }
+  for (const fr of SOC.friends){
+    const li = document.createElement('li'); li.className = 'frrow';
+    const d = document.createElement('span'); d.className = 'frdot' + (fr.online ? ' on' : ''); if (fr.online) d.title = t('frOnline');
+    const fl = document.createElement('span'); fl.textContent = flag(fr.cc);
+    const nm = document.createElement('span'); nm.className = 'nm';
+    const bd = birdById(fr.bird); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
+    nm.appendChild(document.createTextNode(showNick(fr.nick) || '—'));
+    const b = document.createElement('span'); b.className = 'bst'; b.textContent = fr.best;
+    const x = document.createElement('button'); x.className = 'frx'; x.textContent = '✕'; x.title = t('frDel');
+    x.addEventListener('click', e => { e.stopPropagation(); frAct('friend_remove', {p_uid: fr.id}, ''); });
+    li.append(d, fl, nm, b, x); L.appendChild(li);
+  }
+}
+$('frBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); SFX.click(); frOpen(); });
+$('frClose').addEventListener('click', e => { e.stopPropagation(); frClose(); });
+$('frScr').addEventListener('click', e => { if (e.target === $('frScr')) frClose(); });
+$('frCopy').addEventListener('click', async e => {
+  e.stopPropagation(); if (!SOC.code) return;
+  try { await navigator.clipboard.writeText(fcFmt(SOC.code)); toast(t('frCopied')); }
+  catch(err){ const i = $('frIn'); i.value = fcFmt(SOC.code); i.select(); toast(t('frCopied')); }
+});
+$('frForm').addEventListener('submit', async e => {
+  e.preventDefault(); e.stopPropagation();
+  const v = fcNorm($('frIn').value); if (!fcOk(v)){ toast(t('frBad')); return; }
+  if (await frAct('friend_request', {p_code: v}, 'frSent')) $('frIn').value = '';
+});
+/* friend alerts: the server feed is polled (visible 30 s / hidden 60 s); social_hello also keeps last_seen fresh.
+   Display is routed by notifyRoute: master bell (fw27_push, default off) + per-kind checks (fw27_pushk). */
+const IS_ART = !!(window.claude && typeof window.claude.use === 'function');   // the claude.ai artifact shell
+let pushOn = !!store.get('fw27_push', 0);
+let pushK = (k => ({ on: k.on !== 0, best: k.best !== 0 }))(Object(store.get('fw27_pushk', {})));
+let feedSince = clampI(store.get('fw27_feed2', 0), 0, Number.MAX_SAFE_INTEGER), feedNext = 0;
+function socShow(rows){
+  const st = { on: pushOn, kinds: pushK, perm: typeof Notification !== 'undefined' ? Notification.permission : 'denied', hidden: document.hidden, art: IS_ART };
+  for (const r of rows){
+    const route = notifyRoute(r.kind, st), tx = notifText(r.kind, showNick(r.nick) || 'Pilot', r.val);
+    if (route === 'none' || !tx) continue;
+    if (route === 'toast') toast(t(tx.k, tx.v));
+    else try { new Notification('SWISHBY', { body: t(tx.k, tx.v) }); } catch(e){}
+  }
+}
+let socBusy = false;
+async function socPoll(){
+  if (!sb || !uid || socBusy) return;
+  socBusy = true; try {
+  const r = await socRpc('social_hello', { p_since: feedSince });
+  if (r.error || !r.data) return;   // finally releases the flag
+  const m = feedMerge(feedSince, r.data.rows);
+  feedSince = Math.max(m.since, Number(r.data.max) || 0); store.set('fw27_feed2', feedSince);
+  if (m.rows.length) socShow(m.rows);
+  if (!$('frScr').hidden && await socSync()) renderFr();   // keep the open friends list fresh
+  } finally { socBusy = false; }
+}
+setInterval(() => { const now = Date.now(); if (now < feedNext) return; feedNext = now + (document.hidden ? 60000 : 30000); socPoll(); }, 5000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden){ feedNext = Date.now() + 30000; socPoll(); } });
+function renderPushBtn(){ $('pushBtn').classList.toggle('off', !pushOn); $('ntKOn').checked = pushK.on; $('ntKBest').checked = pushK.best; }
+$('pushBtn').addEventListener('click', e => {
+  e.stopPropagation(); audioInit(); SFX.click();
+  pushOn = !pushOn; store.set('fw27_push', pushOn ? 1 : 0); renderPushBtn();
+  if (pushOn && typeof Notification !== 'undefined' && !IS_ART){
+    if (Notification.permission === 'default') Notification.requestPermission().then(p => { if (p === 'denied') toast(t('ntInApp')); });
+    else if (Notification.permission === 'denied') toast(t('ntInApp'));
+  }
+});
+for (const [id, key] of [['ntKOn', 'on'], ['ntKBest', 'best']])
+  $(id).addEventListener('change', e => { pushK = Object.assign({}, pushK, { [key]: e.target.checked }); store.set('fw27_pushk', { on: pushK.on ? 1 : 0, best: pushK.best ? 1 : 0 }); });
+renderPushBtn();
+
+// one-tap friend request from a leaderboard row (uuid rows only)
+function frPlusBtn(id){
+  if (!socReady || !sb || !uid || id === uid || !VS_UID.test(id) || SOC.friends.some(f => f.id === id)) return null;
+  const b = document.createElement('button'); b.className = 'frplus'; b.textContent = '+'; b.title = t('frPlus');
+  b.addEventListener('click', e => { e.stopPropagation(); b.disabled = true; frAct('friend_request', {p_uid: id}, 'frSent'); });
+  return b;
+}
 
 /* ---------- daily countdown ---------- */
 function updateDaily(){
@@ -4214,9 +4865,9 @@ $('helpClose').addEventListener('click', e => { e.stopPropagation(); $('helpScr'
 $('helpScr').addEventListener('click', e => { if (e.target === $('helpScr')) $('helpScr').hidden = true; });
 
 /* ---------- versus, 1v1 or 2v2: same seeded course, the other players shown as ghosts ---------- */
-// Rank points are held by the server (supabase/schema.sql): win +50, loss -45, never below 0, one value for 1v1 and 2v2. Matches against the AI
+// Rank points are held by the server (supabase/schema.sql): win +50, loss -50, never below 0, one value for 1v1 and 2v2. Matches against the AI
 // are practice and never move them. rp is only the cache of the last server answer, shown while offline (fw27_rp2: the old fw27_rp is not read).
-const TIERS = PTIERS.map(p => p[1]), RP_WIN = 50, RP_LOSS = 45;   // the RP floors of the 7 tiers (PTIERS)
+const TIERS = PTIERS.map(p => p[1]), RP_WIN = 50, RP_LOSS = 50;   // the RP floors of the 7 tiers (PTIERS)
 function vtBadgeImg(ti, sm){ const img = document.createElement('img'); img.src = PTIER_IMG[ti]; img.alt = img.title = ptierName(ti); img.className = 'ptbadge' + (sm ? ' sm' : ''); return img; }
 let rp = clampI(store.get('fw27_rp2', 0), 0, 1e9);
 const tierOf = p => { let i = 0; TIERS.forEach((v, k) => { if (p >= v) i = k; }); return i; };
@@ -4329,7 +4980,7 @@ function netInit(){
   return p;
 }
 const sanitizeId = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 14) || 'x';
-const NET_VER = 'v5-';   // versus rooms are per protocol / balance version: old builds never meet new ones (v3: pick handshake in the lobby, addressed "go"; v4: players publish their id for the server-held ranking; v5: 2v2 — its own lobby m-lobby-2v2, quick rooms m-<host>-<seed>, code rooms 5000-9999)
+const NET_VER = 'v6-';   // versus rooms are per protocol / balance version: old builds never meet new ones (v4: ids for the server-held ranking; v5: 2v2 — lobby m-lobby-2v2, quick rooms m-<host>-<seed>, code rooms 5000-9999; v6: 4-player FFA — lobby m-lobby-ffa, code rooms re-cut 1000-3999 / 4000-6999 / 7000-9999)
 // State sends are throttled: at most one per NET_TX ms per channel (the newest state wins), so a player stays near 5 messages/s
 // whatever the caller does. Supabase Realtime counts every message sent and delivered against the project's messages-per-second quota.
 const NET_TX = 180, NET_HB = 2000, VS_SEND = 200;
@@ -4408,12 +5059,13 @@ async function netJoin(name){
 // vs.ai: number of AI seats (any AI = practice, no RP).
 const vs = {phase: 'idle', lobby: null, room: null, seed: 0, host: false, myId: myPeer, oppId: '', opp: null, ai: null, waitT: 0, timer: 0,
   lastSend: 0, myFinal: null, result: '', tok: 0, pick: '', pickAt: 0, want: '', skip: new Set(), strT: 0, rk: null,
-  md: store.get('fw27_vsmode', 1) === 2 ? 2 : 1, sz: 1, pl: [], qr: null, off: 0, offSig: '', offAt: 0, ro: null, ak: 0, akH: '', akAt: 0, ex: 0, cn: 1, sc0: -1, seen: new Set()};
+  md: [2, 4].includes(store.get('fw27_vsmode', 1)) ? store.get('fw27_vsmode', 1) : 1, sz: 1, place: 0, pl: [], qr: null, off: 0, offSig: '', offAt: 0, ro: null, ak: 0, akH: '', akAt: 0, ex: 0, cn: 1, sc0: -1, seen: new Set()};
 const vsRival = o => Object.assign({id: '', uid: '', tm: 1, nick: '', bird: 'volt', sc: 0, al: true, fin: null, g: 0, ai: null, gone: false, dx: 34, y: 300, vis: 300, from: 300, t0: 0, dur: VS_SEND, rx: 0, ref: null}, o);
 function vsShow(main){ $('vsMain').hidden = !main; $('vsWait').hidden = main; if (main){ $('vsRoster').textContent = ''; $('vsFill').hidden = true; } }
 function vsSetMode(n){
-  vs.md = n === 2 ? 2 : 1; store.set('fw27_vsmode', vs.md);
-  $('vsM1').setAttribute('aria-selected', vs.md === 1); $('vsM2').setAttribute('aria-selected', vs.md === 2); $('vsNote2').hidden = vs.md !== 2;
+  vs.md = n === 4 ? 4 : n === 2 ? 2 : 1; store.set('fw27_vsmode', vs.md);
+  $('vsM1').setAttribute('aria-selected', vs.md === 1); $('vsM2').setAttribute('aria-selected', vs.md === 2); $('vsM4').setAttribute('aria-selected', vs.md === 4);
+  $('vsNote2').hidden = vs.md !== 2; $('vsNote4').hidden = vs.md !== 4;
 }
 function openVs(){ renderVsBadge(); vsSetMode(vs.md); vsShow(true); $('vsScr').hidden = false; lbOpen = true; netInit().then(vsSync); }
 function closeVsScr(){ $('vsScr').hidden = true; lbOpen = false; }
@@ -4423,15 +5075,15 @@ function vsLeave(){
   if (vs.room){ vs.room.leave(); vs.room = null; }
 }
 // tok: every reset invalidates whatever join is still in flight, so a cancelled search can never leave a ghost in the lobby or a room
-function vsReset(){ vsLeave(); vs.tok++; Object.assign(vs, {phase: 'idle', seed: 0, host: false, oppId: '', opp: null, ai: null, myFinal: null, result: '', pick: '', want: '', pl: [], qr: null, off: 0, offSig: '', ro: null, ak: 0, akH: '', ex: 0, cn: 1}); }
+function vsReset(){ vsLeave(); vs.tok++; Object.assign(vs, {phase: 'idle', seed: 0, host: false, oppId: '', opp: null, ai: null, myFinal: null, result: '', place: 0, pick: '', want: '', pl: [], qr: null, off: 0, offSig: '', ro: null, ak: 0, akH: '', ex: 0, cn: 1}); }
 // Quick match. keep/skip carry the remaining search time and the peers already given up on when a stranded player goes back to searching.
 // 1v1 and 2v2 seekers wait in two different lobbies, so the two kinds can never be matched with each other.
 async function vsAuto(keep, skip, sz){
   await netInit(); if (netKind === 'none'){ toast(t('onlineNA')); return; }
-  vsReset(); const tok = vs.tok, duo = (vs.sz = sz || vs.md) === 2; vs.phase = 'search'; vsShow(false); $('vsCode').textContent = ''; vs.waitT = keep > 0 ? keep : 60; vs.skip = skip || new Set();
+  vsReset(); const tok = vs.tok, gsz = (vs.sz = sz || vs.md), duo = gsz >= 2; vs.phase = 'search'; vsShow(false); $('vsCode').textContent = ''; vs.waitT = keep > 0 ? keep : 60; vs.skip = skip || new Set();
   $('vsScr').hidden = false; lbOpen = true; $('menu').hidden = false; $('wallet').hidden = false;   // a requeue after the instant match switch: bring the search panel (and the menu behind it) back
-  $('vsStatus').textContent = duo ? t('searching2', {s: vs.waitT, n: 1}) : t('searching', {s: vs.waitT});
-  let lb; try { lb = await netJoin(duo ? 'm-lobby-2v2' : 'fw-lobby'); } catch(e){ if (tok === vs.tok){ toast(t('onlineNA')); vsShow(true); vs.phase = 'idle'; } return; }
+  $('vsStatus').textContent = duo ? t(gsz === 4 ? 'searching4' : 'searching2', {s: vs.waitT, n: 1}) : t('searching', {s: vs.waitT});
+  let lb; try { lb = await netJoin(duo ? (gsz === 4 ? 'm-lobby-ffa' : 'm-lobby-2v2') : 'fw-lobby'); } catch(e){ if (tok === vs.tok){ toast(t('onlineNA')); vsShow(true); vs.phase = 'idle'; } return; }
   if (tok !== vs.tok){ lb.leave(); return; }
   vs.lobby = lb;
   if (duo){ lb.set({wait: Date.now(), bird: B.id, rp, u: sb && uid ? uid : ''}); lb.onChange(vsTryQuad); vsTryQuad(); }
@@ -4508,7 +5160,7 @@ function vsTryQuad(){
   if (vs.phase !== 'search' || !vs.lobby) return;
   const ps = vs.lobby.peers(), me = ps.find(p => p.me); if (!me) return; vs.myId = me.id;
   const C = vsCands(ps, p => p.st.wait).sort((a, b) => ((a.st.wait || 0) - (b.st.wait || 0)) || (a.id < b.id ? -1 : 1)); vs.cn = C.length;
-  $('vsStatus').textContent = t('searching2', {s: Math.max(0, vs.waitT), n: Math.min(4, C.length)});
+  $('vsStatus').textContent = t(vs.sz === 4 ? 'searching4' : 'searching2', {s: Math.max(0, vs.waitT), n: Math.min(4, C.length)});
   const m = vsAssemble(vs.lobby, ps, me, C, C.length >= 4 ? 4 : C.length > 1 && C.some(p => p.st.ex) ? C.length : 0, true); if (!m) return;
   const lb = vs.lobby; clearInterval(vs.timer); vs.timer = 0; vs.lobby = null; vs.qr = m; vs.seed = m.seed; vs.off = vs.ak = 0; vs.offSig = ''; vs.seen = new Set();
   setTimeout(() => lb.leave(), 1500);   // stay visible for a moment so the three others see the {on} before we vanish
@@ -4519,21 +5171,21 @@ function vsQuadTick(){   // once a second while searching for a 2v2
   if (vs.off && Date.now() - vs.offAt > 4000){ const ps = vs.lobby.peers(); for (const r of vs.ro || []){ const p = ps.find(q => q.id === r.id); if (p && !p.me && (p.st || {}).ak !== vs.off) vs.skip.add(r.id); } }
   vsTryQuad();
   // time is up: alone → AIs at once; with others → the host's offer takes us within a moment; whatever goes wrong, never wait past 12 s
-  if (vs.phase === 'search' && vs.waitT <= 0 && (vs.cn < 2 || (vs.waitT <= -6 && !vs.ak) || vs.waitT <= -12)){ toast(t('aiFallback')); vsStartAi(2); }
+  if (vs.phase === 'search' && vs.waitT <= 0 && (vs.cn < 2 || (vs.waitT <= -6 && !vs.ak) || vs.waitT <= -12)){ toast(t('aiFallback')); vsStartAi(vs.sz); }
 }
-// Code rooms: the code carries the size (5000-9999 = 2v2), so whoever joins by code lands in the kind of room that was created.
-const vsCodeSz = code => Number(code) >= 5000 ? 2 : 1;
-async function vsMake(){ await netInit(); if (netKind === 'none'){ toast(t('onlineNA')); return; } const code = String(vs.md === 2 ? 5000 + Math.floor(Math.random()*5000) : 1000 + Math.floor(Math.random()*4000)); vsReset(); vs.sz = vs.md; vsEnterRoom('c-' + code, code); }
+// Code rooms: the code carries the size (1000-3999 = 1v1, 4000-6999 = 2v2, 7000-9999 = FFA), so whoever joins by code lands in the kind of room that was created.
+const vsCodeSz = code => Number(code) >= 7000 ? 4 : Number(code) >= 4000 ? 2 : 1;
+async function vsMake(){ await netInit(); if (netKind === 'none'){ toast(t('onlineNA')); return; } const code = String(vs.md === 4 ? 7000 + Math.floor(Math.random()*3000) : vs.md === 2 ? 4000 + Math.floor(Math.random()*3000) : 1000 + Math.floor(Math.random()*3000)); vsReset(); vs.sz = vs.md; vsEnterRoom('c-' + code, code); }
 async function vsJoinCode(){
   const code = ($('vsCodeIn').value || '').replace(/\D/g, '').slice(0, 4); if (code.length !== 4){ $('vsCodeIn').focus(); return; }
   await netInit(); if (netKind === 'none'){ toast(t('onlineNA')); return; } vsReset(); vs.sz = vsCodeSz(code); vsEnterRoom('c-' + code, code);
 }
 async function vsEnterRoom(name, code){
-  const tok = vs.tok, duo = vs.sz === 2;
+  const tok = vs.tok, duo = vs.sz >= 2;
   vs.phase = 'room'; vsShow(false); $('vsCode').textContent = code;
   // Quick match: the pairing IS the match — switch to the play screen at once (menu and overlay down, the banner on the
   // stage) and let the room handshake finish behind the countdown. Code rooms keep the panel: the code must stay readable.
-  if (code) $('vsStatus').textContent = t('shareCode') + ' · ' + (duo ? t('vsIn', {n: 1}) : t('waitingOpp'));
+  if (code) $('vsStatus').textContent = t('shareCode') + ' · ' + (duo ? t(vs.sz === 4 ? 'vsIn4' : 'vsIn', {n: 1}) : t('waitingOpp'));
   else { closeVsScr(); $('menu').hidden = true; $('wallet').hidden = true; banner(t('matchFound'), [140,80,62], 1.1); }
   let rm; try { rm = await netJoin(name); } catch(e){ if (tok !== vs.tok) return; if (!code) return vsRequeue(); toast(t('onlineNA')); vsShow(true); vs.phase = 'idle'; return; }
   if (tok !== vs.tok){ rm.leave(); return; }
@@ -4550,7 +5202,7 @@ async function vsEnterRoom(name, code){
 // Stranded in an empty quick-match room: back to searching with the time that is left, or the AI when there is none.
 function vsRequeue(){
   const left = vs.waitT, skip = vs.skip, sz = vs.sz; if (vs.want) skip.add(vs.want);
-  if (sz === 2 && vs.qr){ for (const r of vs.qr.ro) if (r.id !== vs.myId && !vs.seen.has(r.id)) skip.add(r.id); }   // only the members who never came in
+  if (sz >= 2 && vs.qr){ for (const r of vs.qr.ro) if (r.id !== vs.myId && !vs.seen.has(r.id)) skip.add(r.id); }   // only the members who never came in
   if (left <= 5){ toast(t('aiFallback')); vsReset(); vsStartAi(sz); return; }
   toast(t('vsStranded')); vsAuto(left, skip, sz);
 }
@@ -4564,7 +5216,7 @@ function vsRoom2(ps, me, others){
     else if (h && h.st && h.st.on === q.seed){ vs.room.set({on: q.seed}); m = q; }
   } else {
     const C = vsCands(ps, p => p.st.ready).sort((a, b) => a.id < b.id ? -1 : 1), k = Math.min(4, C.length);
-    $('vsStatus').textContent = t('shareCode') + ' · ' + t('vsIn', {n: k});
+    $('vsStatus').textContent = t('shareCode') + ' · ' + t(vs.sz === 4 ? 'vsIn4' : 'vsIn', {n: k});
     $('vsRoster').textContent = C.slice(0, 4).map(p => showNick((p.st || {}).nick || '') || t('opp')).join(' · ');
     $('vsFill').hidden = k < 2 || k > 3; $('vsFill').disabled = !!me.st.fl;
     m = vsAssemble(vs.room, ps, me, C, k === 4 ? 4 : k > 1 && C.some(p => p.st.fl) ? k : 0, false);
@@ -4577,7 +5229,7 @@ function vsOnRoom(){
   const ps = vs.room.peers(), me = ps.find(p => p.me), others = ps.filter(p => !p.me);
   if (me) vs.myId = me.id;
   if (vs.phase === 'room'){
-    if (vs.sz === 2){ if (me) vsRoom2(ps, me, others); return; }
+    if (vs.sz >= 2){ if (me) vsRoom2(ps, me, others); return; }
     // "go" is addressed (vs = the opponent's id): a third player walking into a room that is already playing can neither start nor be started
     const eng = p => (p.st && p.st.vs) || '';
     const o = others.find(p => p.st && p.st.go && eng(p) === vs.myId) || others.find(p => p.st && p.st.ready && !eng(p));   // ready: its state has arrived
@@ -4628,7 +5280,7 @@ function vsSeat(ro, lv){
   vs.ai = n || null;
   vs.pl = keys.map((k, i) => {
     if (i === mi) return null;
-    const team = tm[i] ^ tm[mi], dx = team ? 36 + 32*foe++ : -32;
+    const team = vs.sz === 4 ? 1 : tm[i] ^ tm[mi], dx = team ? 36 + 32*foe++ : -32;   // FFA: all three are rivals, staggered ahead
     if (i >= ro.length){ const ai = vsAiNew(i - ro.length, lv); return vsRival({tm: team, dx, ai, nick: 'AI ' + (i - ro.length + 1), bird: ai.bird}); }
     const o = ps.find(p => p.id === ro[i].id), st = (o && o.st) || {};
     return vsRival({id: ro[i].id, uid: VS_UID.test(ro[i].u) ? ro[i].u : '', tm: team, dx, nick: showNick(st.nick || ''), bird: st.bird || 'volt'});
@@ -4636,7 +5288,7 @@ function vsSeat(ro, lv){
 }
 function vsCountdown(){
   vs.phase = 'count'; closeVsScr(); $('menu').hidden = true; $('wallet').hidden = true;   // straight to the play screen: the countdown runs over the stage, never behind the menu
-  if (vs.sz === 2){ vsSeat(vs.qr.ro, vs.qr.lv); if (vs.ai) toast(t('vsAiFill')); }
+  if (vs.sz >= 2){ vsSeat(vs.qr.ro, vs.qr.lv); if (vs.ai) toast(t('vsAiFill')); }
   else {
     const o = vs.room && vs.room.peers().find(p => p.id === vs.oppId), st = (o && o.st) || {};
     vs.pl = [vsRival({id: vs.oppId, bird: st.bird || 'volt', nick: showNick(st.nick || ''), uid: VS_UID.test(st.u) ? st.u : ''})];   // taken once, when the pairing is made
@@ -4660,7 +5312,8 @@ function vsMatchId(seed, mine, theirs){   // mine / theirs: player ids of my tea
 // delta: the RP the server applied (null until it has).
 function vsRankStart(mine, theirs){
   vs.rk = null; if (vs.ai) return;   // practice: any AI seat
-  const m = sb && uid ? vsMatchId(vs.seed, mine || [uid, ...vs.pl.filter(p => !p.tm).map(p => p.uid)], theirs || vs.pl.filter(p => p.tm).map(p => p.uid)) : null;   // a player without an id: not ranked, no call
+  const m = sb && uid ? (vs.sz === 4 ? ffaMatchId(vs.seed, [uid, ...vs.pl.map(p => p.uid)], uid)
+    : vsMatchId(vs.seed, mine || [uid, ...vs.pl.filter(p => !p.tm).map(p => p.uid)], theirs || vs.pl.filter(p => p.tm).map(p => p.uid))) : null;   // a player without an id: not ranked, no call
   const rk = vs.rk = {id: m ? m.id : '', why: m ? '' : 'off', delta: null, res: '', t0: 0, p: null};
   if (!m) return;
   rk.p = vsRpc('versus_start', {p_match: m.id, p_mode: m.mode, p_team: m.team, p_nick: nick, p_cc: CC, p_bird: B.id}).then(r => {
@@ -4688,11 +5341,11 @@ function vsRankReport(res){   // res: 'win' | 'lose' | 'draw' as seen by my team
     if (rk.delta > 0 && ti > ti0){ toast(t('ptUp', {t: ptierName(ti)})); confetti(LW/2, LH*.42, 90); }   // tier-up: the server's RP for this match lifted the tier
   });
 }
-// The RP part of the result line. AI: practice. Human: the server's delta once it is in, until then what it will be (+50 / -45, floor 0) marked as pending.
+// The RP part of the result line. AI: practice. Human: the server's delta once it is in, until then what it will be (+50 / -50, floor 0) marked as pending.
 function vsRpNote(ai, rk, res){
   if (ai) return t('vsPractice');
   if (!rk || rk.why) return t(rk && rk.why === 'cap' ? 'vsCap' : 'vsNoRank');
-  const live = rk.delta == null, d = live ? rpAfter(rp, res) - rp : rk.delta;
+  const live = rk.delta == null, d = live ? (vs.sz === 4 ? Math.max(-rp, FFA_RP[Math.min(4, Math.max(1, vs.place || 4)) - 1]) : rpAfter(rp, res) - rp) : rk.delta;
   return `${d > 0 ? '+' : d < 0 ? '' : '±'}${d} RP ` + (live ? '· ' + t('vsPend') : `(${ptierName(tierOf(rp))})`);
 }
 function vsBegin(){
@@ -4704,9 +5357,9 @@ function vsBegin(){
 // Practice against the AI alone: one AI rival (1v1), or an AI teammate and two AI opponents (2v2).
 function vsStartAi(sz){
   vsLeave(); closeVsScr(); $('menu').hidden = true; $('wallet').hidden = true;   // same instant switch as a found match: the AI countdown runs on the play screen
-  const ti = tierOf(rp); vs.sz = sz === 2 ? 2 : 1; vs.qr = null; vs.myId = myPeer;
+  const ti = tierOf(rp); vs.sz = sz === 4 ? 4 : sz === 2 ? 2 : 1; vs.qr = null; vs.myId = myPeer;
   vs.seed = (Math.random()*4294967296) >>> 0 || 9;
-  if (vs.sz === 2) vsSeat([{id: vs.myId, u: ''}], ti);
+  if (vs.sz >= 2) vsSeat([{id: vs.myId, u: ''}], ti);
   else { const ai = vsAiNew(0, ti); vs.ai = 1; vs.pl = [vsRival({ai, bird: ai.bird, nick: 'AI'})]; }
   vs.phase = 'count'; let n = 3; banner('3', [0,100,62], .9);
   const it = setInterval(() => { n--; if (n > 0) banner(String(n), [0,100,62], .9); else { clearInterval(it); vsBegin(); } }, 900);
@@ -4759,6 +5412,7 @@ function vsSides(){   // [my team, the other team], me first
 const vsSum = a => a.reduce((n, p) => n + p.sc, 0);
 function vsResolve(){
   if (vs.result || mode !== 'versus') return;
+  if (vs.sz === 4) return vsResolveFfa();
   vsAiRun();
   const [a, b] = vsSides(), r = vsOutcome(a, b);
   if (r) return vsFinish(r, false);
@@ -4773,9 +5427,37 @@ function vsFinish(res, forfeit){
   vsFillOver();
   setTimeout(() => vsLeave(), 1500);
 }
+// FFA: the match ends when nobody is flying; places by score (ties share), RP by placement (server-settled).
+function vsResolveFfa(){
+  vsAiRun();
+  const me = {sc: vs.myFinal ?? score, al: vs.myFinal === null};
+  const oth = vs.pl.map(p => ({sc: p.al ? p.sc : (p.fin ?? p.sc), al: p.al && !p.gone}));
+  if (ffaDone(me, oth)) return vsFinishFfa();   // includes the sole-survivor lock: finish instead of flying into the report deadline
+  if (vs.myFinal !== null && state === 'over'){
+    const pl = ffaPlaceFinal(me, oth);
+    $('oPlace').textContent = t('watching') + (pl ? `  #${pl}` : '');
+    vsFillOver();
+  }
+}
+function vsFinishFfa(){
+  vsAiRun(true);
+  const E = [{sc: vs.myFinal ?? score, uid: sb && uid ? uid : ''}, ...vs.pl.map(p => ({sc: p.al ? p.sc : (p.fin ?? p.sc), uid: p.uid}))];
+  const places = ffaPlaces(E);
+  vs.place = places[0]; vs.result = vs.place === 1 ? 'win' : 'p' + vs.place; vs.phase = 'done';
+  if (!vs.ai){   // report = the whole ranking, in sorted-uid order; the server settles once reports agree
+    const ids = E.map(e => e.uid), sorted = [...ids].sort();
+    vsRankReport(sorted.map(u => places[ids.indexOf(u)]).join(','));
+  }
+  if (vs.place === 1){ banner(t('youWin'), [48,100,62], 1.6); SFX.fanfare(); haptic('newBest'); confetti(bird.x, bird.y, 60); }
+  else banner('#' + vs.place, [190,80,66], 1.3);
+  if (state === 'play'){ vs.myFinal = score; if (vs.room) vs.room.set({al: 0, sc: score}); state = 'dying'; deathT = .6; $('dashBtn').hidden = $('skillBtn').hidden = $('pauseBtn').hidden = true; }
+  vsFillOver();
+  setTimeout(() => vsLeave(), 1500);
+}
 function vsFillOver(){
   if (mode !== 'versus') return;
   const ttl = $('oTitle'); if (!ttl) return; ttl.hidden = false;
+  if (vs.sz === 4) return vsFillOverFfa();
   const [a, b] = vsSides(), duo = vs.sz === 2;
   if (vs.result){
     ttl.textContent = vs.result === 'win' ? t('youWin') : vs.result === 'lose' ? t('youLose') : t('drawR');
@@ -4793,6 +5475,24 @@ function vsFillOver(){
     for (const p of team){ const row = document.createElement('span'), nm = document.createElement('i'), sc = document.createElement('em'); nm.textContent = (p.me ? t('you') + ' · ' + nick : p.nick || t('opp')) + (p.al ? '' : ' ✕'); sc.textContent = p.sc; row.append(nm, sc); col.appendChild(row); }
     box.appendChild(col);
   });
+}
+function vsFillOverFfa(){
+  const ttl = $('oTitle'); if (!ttl) return; ttl.hidden = false;
+  const E = [{sc: vs.myFinal ?? score, al: vs.myFinal === null, me: true, nick}, ...vs.pl.map(p => ({sc: p.al ? p.sc : (p.fin ?? p.sc), al: p.al && !p.gone, nick: p.nick || (p.ai ? 'AI' : t('opp'))}))];
+  const places = ffaPlaces(E);
+  if (vs.result){
+    ttl.textContent = vs.place === 1 ? t('youWin') : '#' + vs.place;
+    ttl.style.color = vs.place === 1 ? 'var(--gold)' : 'var(--ink)';
+    $('oPlace').textContent = `#${vs.place} / 4  ·  ${vsRpNote(!!vs.ai, vs.rk, vs.result)}`;
+  } else { ttl.textContent = t('vsVs'); ttl.style.color = 'var(--cool)'; }
+  $('oMode').textContent = `FFA · ${B.name}`;
+  const box = $('oTeams'); box.hidden = false;
+  const rows = E.map((e, i) => ({pl: places[i], nick: e.me ? t('you') + ' · ' + nick : e.nick, sc: e.sc, al: e.al})).sort((x, y) => x.pl - y.pl);
+  const sig = JSON.stringify([rows, lang]); if (box.dataset.sig === sig) return; box.dataset.sig = sig; box.textContent = '';
+  const col = document.createElement('div'); col.className = 'vsteam';
+  for (const r of rows){ const row = document.createElement('span'), nm = document.createElement('i'), sc = document.createElement('em');
+    nm.textContent = `#${r.pl} ${(r.nick || t('opp')).slice(0, 12)}${r.al ? ' …' : ''}`; sc.textContent = r.sc; row.append(nm, sc); col.appendChild(row); }
+  box.appendChild(col);
 }
 // Ghosts of the other players (lite bodies, no shadowBlur). 1v1: the rival, a red ring. 2v2: the teammate behind me in a solid double ring with
 // the team tag, the two opponents ahead in dashed rings — told apart by ring style, side and label, not by colour alone.
@@ -4816,8 +5516,15 @@ function drawRival(){
   ctx.fillText(t('you'), bird.x, bird.y + bird.r*2.4 + 8); ctx.restore();
 }
 // 2v2 HUD: my team's sum against the other's, in the slot the best-score tracker uses in the other modes.
-const vsHudOn = () => mode === 'versus' && vs.sz === 2 && vs.phase === 'play';
+const vsHudOn = () => mode === 'versus' && vs.sz >= 2 && vs.phase === 'play';
 function drawVsHud(){
+  if (vs.sz === 4){   // FFA: my live place
+    const pl = 1 + vs.pl.filter(p => (p.al ? p.sc : (p.fin ?? p.sc)) > score).length, y = combo > 1 ? 124 : 112, w = vs.ai ? 150 : 96;
+    ctx.fillStyle = 'rgba(7,5,15,.55)'; roundRect(LW/2 - w/2, y, w, 20, 10); ctx.fill();
+    ctx.font = `700 12px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = 'hsl(190,100%,72%)';
+    ctx.fillText(`#${pl} / 4${vs.ai ? ' · ' + t('vsPracTag') : ''}`, LW/2, y + 14);
+    return;
+  }
   const [a, b] = vsSides(), y = combo > 1 ? 124 : 112, mid = vs.ai ? t('vsPracTag') : ':', g = vs.ai ? 30 : 8, w = vs.ai ? 216 : 168;   // an AI seat: the header says practice
   ctx.fillStyle = 'rgba(7,5,15,.55)'; roundRect(LW/2 - w/2, y, w, 20, 10); ctx.fill();
   ctx.font = `700 12px "Chakra Petch", ${SYS}`; ctx.textAlign = 'right'; ctx.fillStyle = 'hsl(190,100%,72%)'; ctx.fillText(`${t('vsUs')} ${vsSum(a)}`, LW/2 - g, y + 14);
@@ -4829,6 +5536,7 @@ $('vsClose').addEventListener('click', e => { e.stopPropagation(); vsReset(); cl
 $('vsScr').addEventListener('click', e => { if (e.target === $('vsScr') && vs.phase === 'idle') closeVsScr(); });
 $('vsM1').addEventListener('click', e => { e.stopPropagation(); vsSetMode(1); });
 $('vsM2').addEventListener('click', e => { e.stopPropagation(); vsSetMode(2); });
+$('vsM4').addEventListener('click', e => { e.stopPropagation(); vsSetMode(4); });
 $('vsAuto').addEventListener('click', e => { e.stopPropagation(); audioInit(); vsAuto(); });
 $('vsMake').addEventListener('click', e => { e.stopPropagation(); audioInit(); vsMake(); });
 $('vsJoin').addEventListener('click', e => { e.stopPropagation(); audioInit(); vsJoinCode(); });
@@ -4840,15 +5548,23 @@ renderVsBadge();
 
 /* ---------- loop ---------- */
 let last = performance.now();
+const fxFrameMs = []; let fxFrameI = 0;
 function loop(now){
   const rdt = Math.min(.034, (now - last)/1000); last = now;
+  if (fxSettings.q === 'auto' && state === 'play'){
+    fxFrameMs[fxFrameI++ % 120] = rdt * 1000;
+    if (fxFrameI % 120 === 0){ const srt = fxFrameMs.slice().sort((a, b) => a - b), p90 = srt[Math.floor(srt.length * .9)];
+      const q2 = fxQualityStep(IMP.q, p90); if (q2 !== IMP.q) IMP = impNew(q2); }
+  }
   if (state !== 'paused' && !(window.FW && window.FW.hold)) update(rdt);
   render(); drawHangarPreview(); musicTick(); tutTick(rdt); if (state === 'play' || state === 'dying' || state === 'over') vsTick(rdt);
   adPlaySync();
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { cloud: {get rec(){ return fsRec; }, snap: () => fsSnap(store.get), pull: cloudPull, push: cloudPush, get dirty(){ return fsDirty; }}, vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
+if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { cloud: {get rec(){ return fsRec; }, snap: () => fsSnap(store.get), pull: cloudPull, push: cloudPush, get dirty(){ return fsDirty; }}, vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear,
+  soc: {notifyRoute, notifText, feedMerge, fcNorm, fcOk, fcFmt, socNorm, show: socShow, get on(){ return pushOn; }, get k(){ return pushK; }},
+  eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get hazards(){ return hazs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot, ultCharge: FX.ult, ultLive: ultLive()}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots
@@ -4856,6 +5572,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter, lowGravT, inkT, overT, weightT, fogT: FX.fogT}; },   // QA only: timers a player reads off the screen (lowGravT: the bot's flight model follows NIMBUS's glide; inkT: KRAKEN's ink cloak log; overT / weightT / fogT: the hazards)
   haz(k, dx, dy){ const h = {x: bird.x + (dx || 0), y: bird.y + (dy || 0), k, got:false, t:0}; if (dx == null) hazHit(h); else hazs.push(h); },   // QA only: a hazard as if touched right now, or one placed dx / dy from the bird
   get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
+  setFxQuality(q){ fxSettings.q = q; IMP = impNew(q); }, comboLevelOf: (c, tr) => comboLevel(c, tr, FXCFG), get imp(){ return IMP; }, fx: impFx, get fxEvents(){ return FX_EVENTS.slice(); },
   hold: false, step(dt, n){ for (let i = 0; i < (n || 1); i++) update(dt); },
   selfTest(){
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b), S = [0,9,10,24,25,39,40,49], fails = [];
@@ -4930,14 +5647,24 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
           && eq([fx.ult, fx.ultRdy, fx.ultT, fx.ultN, fx.ultMax, fx.ultS, fx.ultE, fx.ultC, fx.ultCM, fx.ultA, fx.ultSlow, fx.ultLane, fx.ultOut, fx.carry], [0,false,0,0,0,0,0,0,0,0,0,0,0,false])
           && ULT_FX.shake < 18 && ['flash','shake','z','stop','parts','sky','ban','w'].every(k => ULT_FX[k] > TIER_FX.ultra[k]) && ULT_FX.rings.length > TIER_FX.ultra.rings.length && ULT_FX.rings[0] > TIER_FX.ultra.rings[0]
           && $('ultBtn') && $('ultName') && $('hgUlt') && L.every(l => ['ultK','ultReady','hUlt'].every(k => I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && /ULT/.test(I18N[l].hUlt) && /A/.test(I18N[l].hUlt)); },
-      vsRank: () => { const u = ['00000000-0000-4000-8000-00000000000a','00000000-0000-4000-8000-00000000000b','00000000-0000-4000-8000-00000000000c','00000000-0000-4000-8000-00000000000d'], [a, b, c, d] = u;   // server-held ranking: tier table, +50 / -45 / floor, match id, AI = practice
+      vsRank: () => { const u = ['00000000-0000-4000-8000-00000000000a','00000000-0000-4000-8000-00000000000b','00000000-0000-4000-8000-00000000000c','00000000-0000-4000-8000-00000000000d'], [a, b, c, d] = u;   // server-held ranking: tier table, +50 / -50 / floor, match id, AI = practice
         const rk0 = vs.rk, ai0 = vs.ai; vs.ai = {}; vs.rk = {}; vsRankStart(); const prac = vs.rk === null; vs.ai = ai0; vs.rk = rk0;
-        return eq(TIERS, [0,400,1000,2000,3600,5600,8000]) && eq(TIERS, PTIERS.map(p => p[1])) && eq([0,399,400,999,1000,1999,2000,3599,3600,5599,5600,7999,8000,99999].map(tierOf), [0,0,1,1,2,2,3,3,4,4,5,5,6,6]) && RP_WIN === 50 && RP_LOSS === 45
-          && eq([[0,'win'],[0,'lose'],[30,'lose'],[44,'lose'],[45,'lose'],[100,'lose'],[100,'draw'],[3990,'win']].map(([p, r]) => rpAfter(p, r)), [50,0,0,0,0,55,100,4040])
+        return eq(TIERS, [0,400,1000,2000,3600,5600,8000]) && eq(TIERS, PTIERS.map(p => p[1])) && eq([0,399,400,999,1000,1999,2000,3599,3600,5599,5600,7999,8000,99999].map(tierOf), [0,0,1,1,2,2,3,3,4,4,5,5,6,6]) && RP_WIN === 50 && RP_LOSS === 50
+          && eq([[0,'win'],[0,'lose'],[30,'lose'],[49,'lose'],[50,'lose'],[100,'lose'],[100,'draw'],[3990,'win']].map(([p, r]) => rpAfter(p, r)), [50,0,0,0,0,50,100,4040])
           && eq(vsMatchId(4294967295, [b], [a]), {id: '1z141z3.' + a + '.' + b, team: 1, mode: '1v1'}) && eq(vsMatchId(7, [a], [b]), {id: '7.' + a + '.' + b, team: 0, mode: '1v1'})
           && eq(vsMatchId(36, [d, b], [c, a]), {id: '10.' + a + '+' + c + '.' + b + '+' + d, team: 1, mode: '2v2'}) && vsMatchId(1, [a], [a]) === null && vsMatchId(1, [a], ['x']) === null && vsMatchId(1, [a], [b, c]) === null && vsMatchId(1, [a], ['']) === null
           && prac && ['ko','en','ja','zh'].every(l => { const l0 = lang; lang = l; const p = vsRpNote(true, null, 'win'), n = vsRpNote(false, null, 'win'), w = vsRpNote(false, {why:'', delta:null}, 'win'), s = vsRpNote(false, {why:'', delta:-30}, 'lose'); lang = l0;
-            return p === I18N[l].vsPractice && !/\d/.test(p) && n === I18N[l].vsNoRank && w.startsWith('+50 RP') && w.includes(I18N[l].vsPend) && s === `-30 RP (${I18N[l]['pt_' + PTIERS[tierOf(rp)][0]]})` && (l === 'en' || ['tabVs','vsRules','vsPractice','vsPend','vsNoRank','vsCap','vsMyRank','vsNoRow'].every(k => I18N[l][k] !== I18N.en[k])) && /50/.test(I18N[l].vsRules) && /45/.test(I18N[l].vsRules) && I18N[l].aiMatch !== I18N[l].vs; }); },
+            return p === I18N[l].vsPractice && !/\d/.test(p) && n === I18N[l].vsNoRank && w.startsWith('+50 RP') && w.includes(I18N[l].vsPend) && s === `-30 RP (${I18N[l]['pt_' + PTIERS[tierOf(rp)][0]]})` && (l === 'en' || ['tabVs','vsRules','vsPractice','vsPend','vsNoRank','vsCap','vsMyRank','vsNoRow'].every(k => I18N[l][k] !== I18N.en[k])) && /\+50/.test(I18N[l].vsRules) && /[−-]50/.test(I18N[l].vsRules) && !/45/.test(I18N[l].vsRules) && I18N[l].aiMatch !== I18N[l].vs; }); },
+      vsFfa: () => { const u = ['00000000-0000-4000-8000-00000000000a','00000000-0000-4000-8000-00000000000b','00000000-0000-4000-8000-00000000000c','00000000-0000-4000-8000-00000000000d'], [a, b, c, d] = u;   // FFA: placement RP, match id, code ranges
+        const m = ffaMatchId(36, [c, a, d, b], c);
+        return eq(FFA_RP, [50, 20, -20, -50]) && FFA_RP.reduce((x, y) => x + y, 0) === 0
+          && eq(ffaPlaces([{sc:9},{sc:30},{sc:12},{sc:9}]), [3,1,2,3]) && eq(ffaPlaces([{sc:5},{sc:5},{sc:5},{sc:5}]), [1,1,1,1])
+          && eq(ffaRp([1,2,3,4]), [50,20,-20,-50]) && eq(ffaRp([1,1,3,4]), [35,35,-20,-50]) && eq(ffaRp([3,1,2,3]), [-35,50,20,-35]) && eq(ffaRp([1,2,2,4]), [50,0,0,-50])
+          && !!m && m.mode === 'ffa' && m.team === 2 && m.id === '10.' + [a,b,c,d].join('+')
+          && ffaMatchId(1, [a,a,b,c], a) === null && ffaMatchId(1, [a,b,c], a) === null && ffaMatchId(1, [a,b,c,d], 'x') === null
+          && ffaPlaceFinal({sc:10, al:false}, [{sc:4, al:true},{sc:20, al:false},{sc:1, al:false}]) === 0
+          && ffaPlaceFinal({sc:10, al:false}, [{sc:4, al:false},{sc:20, al:false},{sc:1, al:false}]) === 2
+          && ['ko','en','ja','zh'].every(l => ['searching4','vsIn4','vs4Rules'].every(k => I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && I18N[l].vsM4 === 'FFA'); },
       vs2: () => { const u = ['00000000-0000-4000-8000-00000000000a','00000000-0000-4000-8000-00000000000b','00000000-0000-4000-8000-00000000000c','00000000-0000-4000-8000-00000000000d'], [a, b, c, d] = u, P = (sc, al) => ({sc, al: !!al});   // 2v2: team rule, team-sum result, practice detection
         const sv = [vs.seed, vs.ai, vs.pl, vs.myId, vs.room, vs.rk], seat = (ro, seed) => { vs.seed = seed; vs.room = null; vs.myId = ro[0].id; vsSeat(ro, 0); if (vs.ai) vsRankStart(); else vs.rk = 0; return [vs.ai, vs.pl.map(p => p.tm).join(''), vs.pl.filter(p => p.ai).length, vs.rk === null]; };
         const s1 = seat([{id: 'p1', u: ''}], 5), s3 = seat([{id: 'p1', u: a}, {id: 'p2', u: b}, {id: 'p3', u: c}], 3), s4 = seat([{id: 'p1', u: c}, {id: 'p2', u: a}, {id: 'p3', u: d}, {id: 'p4', u: b}], 4), mid = vsMatchId(4, [c, ...vs.pl.filter(p => !p.tm).map(p => p.uid)], vs.pl.filter(p => p.tm).map(p => p.uid));
@@ -4947,7 +5674,7 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
           && eq([vsOutcome([P(10), P(5)], [P(9), P(5)]), vsOutcome([P(10), P(5)], [P(9), P(6)]), vsOutcome([P(3), P(4)], [P(20), P(0)]), vsOutcome([P(30), P(0)], [P(14), P(15, 1)]), vsOutcome([P(30), P(0)], [P(14), P(17, 1)]), vsOutcome([P(8, 1), P(0)], [P(4), P(3)]), vsOutcome([P(7, 1), P(0)], [P(4), P(3)]), vsOutcome([P(9, 1), P(9, 1)], [P(0, 1), P(0, 1)])], ['win','draw','lose','','lose','win','',''])
           && eq([vsOutcome([P(5, 1)], [P(4)]), vsOutcome([P(4, 1)], [P(4)]), vsOutcome([P(3)], [P(4, 1)]), vsOutcome([P(4)], [P(4)]), vsOutcome([P(4)], [P(9, 1)])], ['win','','lose','draw','lose'])
           && eq(s1, [3, '110', 3, true]) && s3[0] === 1 && s3[2] === 1 && s3[3] === true && eq(s4, [null, '011', 0, false]) && mid && mid.id === '4.' + a + '+' + c + '.' + b + '+' + d && mid.team === 0
-          && eq([vsCodeSz('1000'), vsCodeSz('4999'), vsCodeSz('5000'), vsCodeSz('9999'), vsCodeSz('0042')], [1,1,2,2,1])
+          && eq([vsCodeSz('1000'), vsCodeSz('3999'), vsCodeSz('4000'), vsCodeSz('6999'), vsCodeSz('7000'), vsCodeSz('9999'), vsCodeSz('0042')], [1,1,2,2,4,4,1])
           && ['ko','en','ja','zh'].every(l => ['searching2','vsIn','vsFillBtn','vsAiFill','vs2Rules','vsUs','vsThem','vsMate','vsPracTag'].every(k => I18N[l][k] && (l === 'en' || I18N[l][k] !== I18N.en[k])) && I18N[l].vsM1 === '1v1' && I18N[l].vsM2 === '2v2' && I18N[l].searching2.includes('{n}') && I18N[l].vsIn.includes('{n}')); },
       season: () => { const U = Date.UTC, a = '00000000-0000-4000-8000-00000000000a', b = '00000000-0000-4000-8000-00000000000b';   // seasons: KST month ids and ends, the reward a claim adds, the claim record
         const R = (s, rank, tier, dia, gems, unit) => ({season: s, rank, tier, rp: 1, wins: 1, losses: 0, draws: 0, matches: 1, reward: rank ? {dia, gems, unit: unit || null, unit_gems: 30} : null});
@@ -4979,6 +5706,37 @@ if (location.hash === '#dev' && /^(localhost|127\.0\.0\.1)$/.test(location.hostn
     for (const k in checks){ let ok = false; try { ok = checks[k](); } catch(e){} if (!ok) fails.push(k); }
     return fails;
   } };
+if (window.FW){
+  /* dev FX panel — replay buttons, quality select, live tuning sliders, Copy JSON (never on release URLs) */
+  const pd = document.createElement('div'); pd.id = 'fxDev';
+  pd.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:99;background:rgba(10,7,22,.88);border:1px solid rgba(243,238,252,.3);border-radius:10px;padding:8px;max-width:190px;font:11px monospace;color:#eee;display:flex;flex-wrap:wrap;gap:4px';
+  const addBtn = (label, fn, attr) => { const b = document.createElement('button'); b.textContent = label; if (attr) b.setAttribute(attr[0], attr[1]); b.style.cssText = 'font:10px monospace;padding:2px 5px;background:#223;color:#eee;border:1px solid #556;border-radius:4px;cursor:pointer'; b.addEventListener('click', e => { e.stopPropagation(); fn(); }); pd.appendChild(b); return b; };
+  for (const ev of FX_EVENTS) addBtn(ev, () => impFx(ev), ['data-fxev', ev]);
+  const sel = document.createElement('select'); sel.style.cssText = 'font:10px monospace;background:#223;color:#eee';
+  for (const q of ['auto', 'low', 'mid', 'high']){ const o = document.createElement('option'); o.value = q; o.textContent = 'q:' + q; sel.appendChild(o); }
+  sel.addEventListener('change', () => { fxSettings.q = sel.value; IMP = impNew(sel.value === 'auto' ? null : sel.value); });
+  pd.appendChild(sel);
+  const addSlider = (label, path, min, max, step) => {
+    const w = document.createElement('label'); w.style.cssText = 'display:flex;gap:3px;align-items:center;width:100%';
+    const r = document.createElement('input'); r.type = 'range'; r.min = min; r.max = max; r.step = step; r.style.flex = '1';
+    let v = FXCFG; for (const k of path.split('.')) v = v[k];
+    r.value = v;
+    r.addEventListener('input', () => {
+      const patch = {}; let p = patch; const ks = path.split('.');
+      ks.forEach((k, ix) => { p[k] = ix === ks.length - 1 ? +r.value : (p[k] = {}); p = p[k]; });
+      FXCFG = fxCfgMerge(FXCFG, patch);
+    });
+    const tlb = document.createElement('span'); tlb.textContent = label; w.append(tlb, r); pd.appendChild(w);
+  };
+  addSlider('hs.heavy', 'hitstop.heavy', .04, .12, .005);
+  addSlider('punch.hv', 'punch.heavy', 1.05, 1.15, .005);
+  addSlider('shake.hv', 'shake.ampPx.heavy', 1, 24, 1);
+  addSlider('slowmo', 'slowmo.scale', .2, .6, .02);
+  addSlider('chromaPx', 'chroma.px', 1, 6, .5);
+  addSlider('bloomA', 'bloom.alpha', .05, .5, .02);
+  addBtn('Copy JSON', () => { try { navigator.clipboard.writeText(JSON.stringify(FXCFG, null, 2)); } catch (e) {} });
+  document.body.appendChild(pd);
+}
 resize(); reset(); state = 'menu';
 applyI18n(); renderWallet();
 requestAnimationFrame(loop);
