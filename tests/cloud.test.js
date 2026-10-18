@@ -153,3 +153,9 @@ test('a deferred merged save is re-merged with what the run earned meanwhile bef
   const idle = S({ w: { coins: 160 } });                          // nothing of its own beyond the coins already counted
   assert.ok(C.fsSame(C.fsLater({ s: merged, local: idle }, idle), merged));   // nothing happened since the defer: apply as agreed
 });
+
+test('the account modal stacks above the leaderboard it is opened from', () => {
+  // authScr sits before lbScr in the DOM, so without an explicit z-index the
+  // leaderboard card paints over the account modal and taps look dead.
+  assert.match(html, /#authScr\{z-index:/);
+});
