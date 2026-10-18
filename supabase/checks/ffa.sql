@@ -20,7 +20,8 @@ begin
   if private.fw_vs_ffa_vec_ok('1,3,2,4') is not true then raise exception 'vec 1,3,2,4'; end if;
   if private.fw_vs_ffa_vec_ok('1,1,3,4') is not true then raise exception 'vec ties'; end if;
   if private.fw_vs_ffa_vec_ok('1,1,2,4') then raise exception 'vec bad ties accepted'; end if;
-  if private.fw_vs_ffa_vec_ok('1,2,3,3') then raise exception 'vec 1,2,3,3 accepted'; end if;
+  if private.fw_vs_ffa_vec_ok('1,2,3,3') is not true then raise exception 'vec 1,2,3,3 is a valid tie at 3rd'; end if;
+  if private.fw_vs_ffa_vec_ok('2,2,3,4') then raise exception 'vec without a 1st accepted'; end if;
 
   -- all four register; wrong seat refused
   for i in 1..4 loop
