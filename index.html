@@ -110,13 +110,6 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .frx:hover{color:#ff5c7a}
 .frplus{background:none;border:1px solid var(--line);border-radius:8px;color:var(--cool);font-size:13px;line-height:1;cursor:pointer;padding:3px 7px;margin-left:8px}
 .frwarn{font-size:11px;color:var(--dim);margin-top:8px}
-/* guilds */
-.gdrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--dim)}
-.gdrow input{width:84px;background:rgba(243,238,252,.06);border:1px solid var(--line);border-radius:8px;padding:6px 8px;color:var(--ink);font:600 14px var(--body)}
-.gdauto{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--dim);margin:6px 0;cursor:pointer}
-#gdForm .btn{width:100%;margin-top:6px}
-.gdact{display:flex;gap:10px;margin-top:10px}
-.gdcond{font-size:11px;color:var(--dim);margin-left:8px}
 .lbempty{padding:22px 8px;text-align:center;color:var(--dim);font-size:14px}
 .lbstatus{font-size:12px;color:var(--dim);min-height:1.2em}
 .nickrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -405,7 +398,6 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     <div class="row">
       <button class="ghost" id="shopBtn" data-i18n="shop"></button>
       <button class="ghost" id="frBtn" data-i18n="fr"></button>
-      <button class="ghost" id="gdBtn" data-i18n="gd"></button>
       <button class="ghost" id="helpBtn" aria-label="Help">?</button>
       <select class="ghost" id="langSel" aria-label="Language"></select>
     </div>
@@ -545,31 +537,6 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="lbhead"><h2 data-i18n="shop"></h2><button class="ghost" id="shopClose" data-i18n="close"></button></div>
       <div class="testbar" data-i18n="testBuild"></div>
       <div class="shop-list" id="shopList"></div>
-    </div>
-  </div>
-
-  <div class="overlay" id="gdScr" hidden>
-    <div class="card lbcard">
-      <div class="lbhead"><h2 data-i18n="gd"></h2><button class="ghost" id="gdClose" data-i18n="close"></button></div>
-      <div id="gdHome" hidden>
-        <form class="nickrow" id="gdSearch"><input id="gdQ" maxlength="14" autocomplete="off" spellcheck="false"><button class="ghost" type="submit" data-i18n="gdFind"></button></form>
-        <ol class="lblist" id="gdList"></ol>
-        <div class="dayline" data-i18n="gdCreate"></div>
-        <form id="gdForm">
-          <div class="nickrow"><input id="gdName" maxlength="14" autocomplete="off" spellcheck="false"></div>
-          <div class="gdrow"><label data-i18n="gdMinBest"></label><input id="gdMB" type="number" min="0" max="100000" value="0"><label data-i18n="gdMinRp"></label><input id="gdMR" type="number" min="0" max="1000000" value="0"></div>
-          <label class="gdauto"><input type="checkbox" id="gdAuto"><span data-i18n="gdAuto"></span></label>
-          <button class="btn alt sm" id="gdCreateBtn" type="submit"></button>
-        </form>
-      </div>
-      <div id="gdMine" hidden>
-        <div class="frcode"><b id="gdMyName"></b><span class="frlbl" id="gdMyInfo"></span></div>
-        <div id="gdApps" hidden><div class="dayline" data-i18n="gdReqs"></div><ol class="lblist" id="gdAppList"></ol></div>
-        <div class="dayline" data-i18n="gdMembers"></div>
-        <ol class="lblist" id="gdMemList"></ol>
-        <div class="gdact"><button class="ghost" id="gdLeaveBtn" data-i18n="gdLeave"></button><button class="ghost" id="gdDisbandBtn" data-i18n="gdDisband" hidden></button></div>
-      </div>
-      <div class="lbstatus" id="gdStatus"></div>
     </div>
   </div>
 
@@ -924,7 +891,7 @@ vi:{startSub:'Một chạm là bay', dailyCta:'THỬ THÁCH TOÀN CẦU HÔM NAY
  pt_bronze:'Đồng', pt_silver:'Bạc', pt_gold:'Vàng', pt_platinum:'Bạch kim', pt_diamond:'Kim cương', pt_transcend:'Siêu việt', pt_demigod:'Bán thần', ptUp:'THĂNG HẠNG! {t}', hz_over:'QUÁ TỐC', hz_weight:'TẠ NẶNG', hz_smoke:'KHÓI MÙ', hz_drain:'XẢ ĐIỆN', hHaz:'Vật cản — từ STAGE 11, những đĩa gai màu tối viền đỏ xuất hiện giữa các cổng. Chạm vào sẽ dính một trong số: Quá tốc (nhanh hơn trong 3 giây), Tạ nặng (nặng hơn trong 3 giây), Khói mù (2,5 giây sương mù) hoặc Xả điện (thanh lướt, năng lượng kỹ năng và combo về 0). Khi có khiên, đang lướt hoặc bất tử, chúng vỡ tan mà không gây hại. Chỉ có ở chế độ stage.'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
-// Social keys (friends / alerts / guilds), merged the same way: en is the fallback for the other six languages.
+// Social keys (friends / alerts), merged the same way: en is the fallback for the other six languages.
 const I18N_S = {
 ko:{fr:'친구', frCode:'내 친구 코드', frCopy:'복사', frCopied:'복사했어요. 친구에게 보내세요', frAdd:'요청', frReqs:'받은 요청', frOk:'수락', frNo:'거절',
  frEmpty:'아직 친구가 없어요. 위 코드를 공유해 보세요', frSent:'친구 요청을 보냈어요', frNow:'친구가 되었어요!', frSelf:'자기 자신은 추가할 수 없어요',
@@ -932,28 +899,28 @@ ko:{fr:'친구', frCode:'내 친구 코드', frCopy:'복사', frCopied:'복사�
  frFail:'지금은 요청할 수 없어요', frDel:'삭제', frOnline:'접속 중', frPlus:'친구 요청', frWarn:'친구 목록은 이 기기의 게스트 계정에 묶여 있어요. 브라우저 데이터를 지우면 사라집니다',
  vsM4:'FFA', searching4:'FFA 플레이어 찾는 중… {s}초 · {n}/4', vsIn4:'FFA · {n}/4 참가', vs4Rules:'4인 각개전 · 점수 순위로 RP +50/+20/−20/−50 · 동점은 평균 · AI가 한 자리라도 끼면 연습전',
  push:'친구 알림', ntOn:'{n}님이 접속했어요', ntBest:'{n}님이 최고기록 {s}점!', ntInApp:'브라우저 알림이 차단되어 인앱 알림만 표시해요', ntKOn:'접속 알림', ntKBest:'기록 알림',
- gd:'길드', gdFind:'검색', gdCreate:'길드 만들기 · 코인 300,000', gdCreateBtn:'창설 (−300,000 코인)', gdMinBest:'최고기록 ≥', gdMinRp:'시즌 RP ≥', gdAuto:'조건 충족 시 자동 가입', gdApply:'가입 신청', gdApplied:'신청했어요. 길드장의 승인을 기다리세요', gdJoined:'길드에 가입했어요!', gdCreated:'길드를 창설했어요!', gdNeed:'코인이 부족해요 (300,000 필요)', gdLeave:'탈퇴', gdDisband:'해산', gdKick:'추방', gdTransfer:'위임', gdMembers:'길드원', gdReqs:'가입 신청', gdEmpty:'검색 결과가 없어요', gdCond:'기록 ≥{b} · RP ≥{r}', gdAutoTag:'자동가입', gdDupe:'이미 있는 이름이에요', gdMember:'이미 길드에 소속되어 있어요', gdUnmet:'가입 조건을 충족하지 못했어요', gdFull:'길드 정원(30명)이 가득 찼어요', gdCool:'길드 창설은 하루 한 번이에요', gdOwner:'길드장은 위임하거나 해산해야 해요', gdBad:'요청이 올바르지 않아요', gdFail:'지금은 처리할 수 없어요'},
+},
 en:{fr:'Friends', frCode:'My friend code', frCopy:'Copy', frCopied:'Copied. Send it to a friend', frAdd:'Request', frReqs:'Requests', frOk:'Accept', frNo:'Decline',
  frEmpty:'No friends yet. Share the code above', frSent:'Friend request sent', frNow:'You are now friends!', frSelf:'That is your own code',
  frDupe:'Already friends or already requested', frCap:'Friend list is full', frRate:'No more requests today', frBad:'No player with that code',
  frFail:'Could not send the request', frDel:'Remove', frOnline:'Online', frPlus:'Add friend', frWarn:'Friends are tied to this device\'s guest account. Clearing browser data loses them',
  vsM4:'FFA', searching4:'Finding FFA players… {s}s · {n}/4', vsIn4:'FFA · {n}/4 in', vs4Rules:'4-player free-for-all · RP by placement +50/+20/−20/−50 · ties share the average · any AI seat makes it practice',
  push:'Friend alerts', ntOn:'{n} is online', ntBest:'{n} set a new best: {s}!', ntInApp:'Browser notifications are blocked — showing in-app alerts only', ntKOn:'Online alerts', ntKBest:'Record alerts',
- gd:'Guild', gdFind:'Search', gdCreate:'Found a guild · 300,000 coins', gdCreateBtn:'Found (−300,000 coins)', gdMinBest:'Best ≥', gdMinRp:'Season RP ≥', gdAuto:'Auto-join when requirements are met', gdApply:'Apply', gdApplied:'Applied. Waiting for the owner', gdJoined:'Joined the guild!', gdCreated:'Guild founded!', gdNeed:'Not enough coins (300,000 needed)', gdLeave:'Leave', gdDisband:'Disband', gdKick:'Kick', gdTransfer:'Make owner', gdMembers:'Members', gdReqs:'Applications', gdEmpty:'No guilds found', gdCond:'Best ≥{b} · RP ≥{r}', gdAutoTag:'auto-join', gdDupe:'That name is taken', gdMember:'Already in a guild', gdUnmet:'Requirements not met', gdFull:'This guild is full (30)', gdCool:'One guild creation per day', gdOwner:'The owner must transfer or disband first', gdBad:'Bad request', gdFail:'Could not do that right now'},
+},
 ja:{fr:'フレンド', frCode:'フレンドコード', frCopy:'コピー', frCopied:'コピーしました', frAdd:'申請', frReqs:'受信した申請', frOk:'承認', frNo:'拒否',
  frEmpty:'まだフレンドがいません。コードを共有しましょう', frSent:'申請を送りました', frNow:'フレンドになりました！', frSelf:'自分は追加できません',
  frDupe:'すでにフレンドか申請中です', frCap:'フレンド上限に達しました', frRate:'今日はこれ以上申請できません', frBad:'そのコードは見つかりません',
  frFail:'いま申請できません', frDel:'削除', frOnline:'オンライン', frPlus:'フレンド申請', frWarn:'フレンドはこの端末のゲストアカウントに紐づきます',
  vsM4:'FFA', searching4:'FFAプレイヤーを探しています… {s}秒 · {n}/4', vsIn4:'FFA · {n}/4 参加', vs4Rules:'4人個人戦 · 順位でRP +50/+20/−20/−50 · 同点は平均 · AIが入ると練習試合',
  push:'フレンド通知', ntOn:'{n}さんが接続しました', ntBest:'{n}さんが最高記録 {s}点！', ntInApp:'ブラウザ通知がブロックされているため、アプリ内通知のみ表示します', ntKOn:'接続通知', ntKBest:'記録通知',
- gd:'ギルド', gdFind:'検索', gdCreate:'ギルド設立 · コイン300,000', gdCreateBtn:'設立 (−300,000コイン)', gdMinBest:'最高記録 ≥', gdMinRp:'シーズンRP ≥', gdAuto:'条件を満たせば自動加入', gdApply:'加入申請', gdApplied:'申請しました。承認をお待ちください', gdJoined:'ギルドに加入しました！', gdCreated:'ギルドを設立しました！', gdNeed:'コインが足りません（300,000必要）', gdLeave:'脱退', gdDisband:'解散', gdKick:'追放', gdTransfer:'委任', gdMembers:'メンバー', gdReqs:'加入申請', gdEmpty:'見つかりません', gdCond:'記録 ≥{b} · RP ≥{r}', gdAutoTag:'自動加入', gdDupe:'その名前は使われています', gdMember:'すでにギルドに所属しています', gdUnmet:'加入条件を満たしていません', gdFull:'定員（30名）です', gdCool:'ギルド設立は1日1回です', gdOwner:'ギルド長は委任か解散が必要です', gdBad:'不正なリクエストです', gdFail:'いまは処理できません'},
+},
 zh:{fr:'好友', frCode:'我的好友码', frCopy:'复制', frCopied:'已复制', frAdd:'申请', frReqs:'收到的申请', frOk:'接受', frNo:'拒绝',
  frEmpty:'还没有好友。分享上面的好友码吧', frSent:'已发送好友申请', frNow:'已成为好友！', frSelf:'不能添加自己',
  frDupe:'已是好友或已申请', frCap:'好友已满', frRate:'今天不能再申请了', frBad:'找不到该好友码',
  frFail:'暂时无法申请', frDel:'删除', frOnline:'在线', frPlus:'加好友', frWarn:'好友绑定在本设备的访客账号上',
  vsM4:'FFA', searching4:'正在寻找FFA玩家… {s}秒 · {n}/4', vsIn4:'FFA · {n}/4 已加入', vs4Rules:'4人混战 · 按名次结算RP +50/+20/−20/−50 · 平分名次取平均 · 有AI则为练习赛',
  push:'好友提醒', ntOn:'{n}上线了', ntBest:'{n}刷新最高分 {s}！', ntInApp:'浏览器通知被拦截，仅显示应用内提醒', ntKOn:'上线提醒', ntKBest:'纪录提醒',
- gd:'公会', gdFind:'搜索', gdCreate:'创建公会 · 金币300,000', gdCreateBtn:'创建 (−300,000金币)', gdMinBest:'最高分 ≥', gdMinRp:'赛季RP ≥', gdAuto:'满足条件自动加入', gdApply:'申请加入', gdApplied:'已申请，等待会长批准', gdJoined:'已加入公会！', gdCreated:'公会创建成功！', gdNeed:'金币不足（需要300,000）', gdLeave:'退出', gdDisband:'解散', gdKick:'移除', gdTransfer:'转让', gdMembers:'成员', gdReqs:'入会申请', gdEmpty:'没有找到公会', gdCond:'最高分 ≥{b} · RP ≥{r}', gdAutoTag:'自动加入', gdDupe:'名称已被使用', gdMember:'已在公会中', gdUnmet:'未满足加入条件', gdFull:'公会已满（30人）', gdCool:'每天只能创建一次公会', gdOwner:'会长需先转让或解散', gdBad:'请求无效', gdFail:'暂时无法处理'}};
+}};
 for (const l in I18N) Object.assign(I18N[l], I18N_S.en, I18N_S[l] || {});
 const birdById = id => BIRDS.find(b => b.id === id);
 let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
@@ -1271,7 +1238,7 @@ const sfxRoute = (ev, files, synth) => files && files[ev] ? 'file' : synth && sy
 const hapticFor = (ev, table) => (table && ev in table) ? table[ev] : null;
 /* fx-core:end */
 
-/* social-core:start — pure social logic (friends / alerts / FFA / guilds). No DOM, no globals, no Date.now():
+/* social-core:start — pure social logic (friends / alerts / FFA). No DOM, no globals, no Date.now():
    tests/helpers/social.js extracts this block with new Function, like fx-core. */
 const SOC_ALPH = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';   // Crockford base32: no I, L, O, U
 const fcNorm = s => String(s == null ? '' : s).toUpperCase().replace(/O/g, '0').replace(/[IL]/g, '1')
@@ -1340,24 +1307,6 @@ function feedMerge(since, rows){
   }
   out.rows.sort((a, b) => a.id - b.id);
   if (out.rows.length) out.since = out.rows[out.rows.length - 1].id;
-  return out;
-}
-// ---- guilds: creation cost (local wallet, trusted like the shop) and the pay-once state machine.
-//      The token travels to guild_create; a lost answer retried with the same token charges exactly once.
-const GUILD_COST = 300000;
-const guildCostOk = w => !!w && (w.coins | 0) >= GUILD_COST;
-const guildReqOk = (req, me) => !!req && !!me && (me.best | 0) >= (req.min_best | 0) && (me.rp | 0) >= (req.min_rp | 0);
-const gdFailKind = e => e && typeof e === 'object' && typeof e.code === 'string' && e.code ? 'server' : 'net';
-function gpayNext(prev, ev){
-  const p = prev && typeof prev === 'object' && typeof prev.st === 'string' ? prev : { st: 'idle', tok: '' };
-  const out = { st: p.st, tok: p.tok || '', pay: false };
-  switch (ev && ev.type){
-    case 'start': if (p.st !== 'pending'){ out.st = 'pending'; out.tok = String(ev.tok || ''); } break;
-    case 'ok': case 'mine':
-      if (p.st === 'pending'){ out.st = 'paid'; out.pay = true; } break;
-    case 'fail': case 'none':
-      if (p.st === 'pending'){ out.st = 'idle'; out.tok = ''; } break;
-  }
   return out;
 }
 /* social-core:end */
@@ -2030,7 +1979,7 @@ addEventListener('keydown', e => {
   if (e.repeat) return;
   const tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' && (e.code === 'Space' || e.code === 'Enter')) return;
-  if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else if (!$('frScr').hidden) frClose(); else if (!$('gdScr').hidden) gdClose(); else closeLB(); } return; }
+  if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else if (!$('frScr').hidden) frClose(); else closeLB(); } return; }
   if (state === 'menu' && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')){ e.preventDefault(); pickBird(ROSTER.indexOf(B) + (e.code === 'ArrowRight' ? 1 : -1)); return; }
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){ e.preventDefault(); if (state==='paused') togglePause(); else flap(); }
   else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyD' || e.code === 'KeyE'){ e.preventDefault(); dash(); }
@@ -4085,7 +4034,7 @@ function celebrate(b){
 }
 let confCb = null;
 function confirmDlg(msg, yes){ $('confMsg').textContent = msg; confCb = yes; $('confScr').hidden = false; lbOpen = true; SFX.click(); }
-function confClose(){ $('confScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('frScr').hidden || !$('gdScr').hidden; }
+function confClose(){ $('confScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('frScr').hidden; }
 $('confYes').addEventListener('click', e => { e.stopPropagation(); const f = confCb; confCb = null; confClose(); if (f) f(); });
 $('confNo').addEventListener('click', e => { e.stopPropagation(); confCb = null; confClose(); });
 const COST_KEY = {coin:'nCoin', dia:'nDia', gem:'nGem'};
@@ -4490,7 +4439,7 @@ function frOpen(){
   $('frScr').hidden = false; lbOpen = true; $('frStatus').textContent = t('loading'); renderFr();
   online().then(async () => { if (sb && await socSync()){ $('frStatus').textContent = ''; } else $('frStatus').textContent = t('offline'); renderFr(); });
 }
-function frClose(){ $('frScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('vsScr').hidden || !$('gdScr').hidden; }
+function frClose(){ $('frScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('vsScr').hidden; }
 async function frAct(fn, args, okKey){
   const r = await socRpc(fn, args);
   if (r.error){ toast(t(friendErrKey(r.error.message))); return false; }
@@ -4588,124 +4537,6 @@ function frPlusBtn(id){
   b.addEventListener('click', e => { e.stopPropagation(); b.disabled = true; frAct('friend_request', {p_uid: id}, 'frSent'); });
   return b;
 }
-
-/* ---------- guilds: search / create (client-wallet cost, pay-once token) / members / applications ---------- */
-let GD = null, gdList = [];
-const gdErrKey = m => { const x = String(m || '');
-  return /fw_guild_dupe/.test(x) ? 'gdDupe' : /fw_guild_member/.test(x) ? 'gdMember' : /fw_guild_req_unmet/.test(x) ? 'gdUnmet'
-    : /fw_guild_full/.test(x) ? 'gdFull' : /fw_rate_limited/.test(x) ? 'gdCool' : /fw_guild_owner/.test(x) ? 'gdOwner'
-    : /fw_bad_input/.test(x) ? 'gdBad' : 'gdFail'; };
-const gdPayLoad = () => { const o = Object(store.get('fw27_gpay', null) || {}); return { st: typeof o.st === 'string' ? o.st : 'idle', tok: typeof o.tok === 'string' ? o.tok : '', args: Object(o.args || null) }; };
-const gdTok = () => { const a = new Uint8Array(12); (self.crypto || {getRandomValues: x => { for (let i = 0; i < x.length; i++) x[i] = Math.random()*256|0; }}).getRandomValues(a);
-  return [...a].map(b => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[b % 62]).join(''); };
-function gdPaySet(gp, args){ if (gp.pay){ W.coins = Math.max(0, W.coins - GUILD_COST); saveW(); renderWallet(); toast(t('gdCreated')); SFX.fanfare(); }
-  store.set('fw27_gpay', gp.st === 'pending' ? { st: 'pending', tok: gp.tok, args: args || gdPayLoad().args } : { st: 'idle', tok: '' }); }
-// the one place a create is sent: the same token (and arguments) every retry, so the server charges once.
-// Only a SERVER answer may settle the payment either way; a transport error leaves it pending for the next try.
-async function gdCreateSend(gp){
-  const a = gp.args || {};
-  const r = await socRpc('guild_create', { p_name: a.name, p_tok: gp.tok, p_min_best: a.mb | 0, p_min_rp: a.mr | 0, p_auto: !!a.auto });
-  if (!r.error){ gdPaySet(gpayNext(gp, { type: r.data && r.data.already ? 'mine' : 'ok' })); return true; }
-  if (gdFailKind(r.error) === 'server'){ gdPaySet(gpayNext(gp, { type: 'fail' })); toast(t(gdErrKey(r.error.message))); }
-  return false;   // net: still pending, same token next time
-}
-async function gdSync(){
-  if (!sb || !uid) return false;
-  const r = await socRpc('guild_me'); if (r.error || !r.data) return false;
-  GD = r.data;
-  const gp = gdPayLoad();   // a creation whose answer was lost: re-send the SAME token; the server answers ok / already / an fw_* error
-  if (gp.st === 'pending' && gp.tok && (await gdCreateSend(gp))){ const q2 = await socRpc('guild_me'); if (!q2.error && q2.data) GD = q2.data; }
-  if (!GD.guild){ const q = await socRpc('guild_search', { p_q: ($('gdQ').value || '').trim(), p_limit: 20 }); gdList = !q.error && Array.isArray(q.data) ? q.data : []; }
-  return true;
-}
-function gdOpen(){
-  $('gdScr').hidden = false; lbOpen = true; $('gdStatus').textContent = t('loading'); renderGd();
-  online().then(async () => { $('gdStatus').textContent = (sb && await gdSync()) ? '' : t('offline'); renderGd(); });
-}
-function gdClose(){ $('gdScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('vsScr').hidden || !$('frScr').hidden; }
-async function gdAct(fn, args, okKey){
-  const r = await socRpc(fn, args);
-  if (r.error){ toast(t(gdErrKey(r.error.message))); return false; }
-  if (okKey) toast(t(okKey));
-  await gdSync(); renderGd(); return true;
-}
-function gdMemberRow(m, mine){
-  const li = document.createElement('li'); li.className = 'frrow';
-  const d = document.createElement('span'); d.className = 'frdot' + (m.role === 'owner' ? ' on' : '');
-  const f = document.createElement('span'); f.textContent = m.role === 'owner' ? '👑' : '';
-  const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = showNick(m.nick || '') || '—';
-  const b = document.createElement('span'); b.className = 'bst'; b.textContent = m.best | 0;
-  li.append(d, f, nm, b);
-  if (mine && GD.role === 'owner' && m.player_id !== uid){
-    const tr = document.createElement('button'); tr.className = 'frplus'; tr.textContent = t('gdTransfer');
-    tr.addEventListener('click', e => { e.stopPropagation(); confirmDlg(t('gdTransfer') + ' — ' + (showNick(m.nick || '') || '—') + '?', () => gdAct('guild_transfer', {p_uid: m.player_id}, '')); });
-    const x = document.createElement('button'); x.className = 'frx'; x.textContent = '✕'; x.title = t('gdKick');
-    x.addEventListener('click', e => { e.stopPropagation(); gdAct('guild_kick', {p_uid: m.player_id}, ''); });
-    li.append(tr, x);
-  }
-  return li;
-}
-function renderGd(){
-  const inG = !!(GD && GD.guild);
-  $('gdHome').hidden = inG; $('gdMine').hidden = !inG;
-  if (!inG){
-    const L = $('gdList'); L.textContent = '';
-    if (!gdList.length){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('gdEmpty'); L.appendChild(li); }
-    for (const g of gdList.slice(0, 20)){
-      const li = document.createElement('li'); li.className = 'frrow';
-      const d = document.createElement('span'); d.className = 'frdot' + (g.auto_join ? ' on' : ''); if (g.auto_join) d.title = t('gdAutoTag');
-      const n = document.createElement('span'); n.textContent = `${g.members | 0}`;
-      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = g.name;
-      const c = document.createElement('span'); c.className = 'gdcond'; c.textContent = t('gdCond', {b: g.min_best | 0, r: g.min_rp | 0});
-      const a = document.createElement('button'); a.className = 'frplus'; a.textContent = t('gdApply');
-      a.addEventListener('click', async e => { e.stopPropagation(); a.disabled = true;
-        const r = await socRpc('guild_apply', {p_id: g.id});
-        if (r.error) toast(t(gdErrKey(r.error.message)));
-        else toast(t(r.data && r.data.status === 'joined' ? 'gdJoined' : 'gdApplied'));
-        await gdSync(); renderGd(); });
-      li.append(d, n, nm, c, a); L.appendChild(li);
-    }
-    $('gdCreateBtn').textContent = t('gdCreateBtn');
-    $('gdCreateBtn').disabled = !guildCostOk(W) || gdPayLoad().st === 'pending';
-    return;
-  }
-  $('gdMyName').textContent = GD.guild.name;
-  $('gdMyInfo').textContent = `${GD.guild.members | 0}/30 · ` + t('gdCond', {b: GD.guild.min_best | 0, r: GD.guild.min_rp | 0}) + (GD.guild.auto_join ? ' · ' + t('gdAutoTag') : '');
-  const apps = Array.isArray(GD.apps) ? GD.apps : [];
-  $('gdApps').hidden = !(GD.role === 'owner' && apps.length);
-  const A = $('gdAppList'); A.textContent = '';
-  for (const q of apps){
-    const li = document.createElement('li'); li.className = 'frrow';
-    const d = document.createElement('span'); d.className = 'frdot';
-    const f = document.createElement('span'); f.textContent = '';
-    const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = `${showNick(q.nick || '') || '—'} · ${q.best | 0} · ${q.rp | 0}RP`;
-    const ok = document.createElement('button'); ok.className = 'frplus'; ok.textContent = t('frOk');
-    ok.addEventListener('click', e => { e.stopPropagation(); gdAct('guild_decide', {p_uid: q.player_id, p_accept: true}, ''); });
-    const no = document.createElement('button'); no.className = 'frx'; no.textContent = t('frNo');
-    no.addEventListener('click', e => { e.stopPropagation(); gdAct('guild_decide', {p_uid: q.player_id, p_accept: false}, ''); });
-    li.append(d, f, nm, ok, no); A.appendChild(li);
-  }
-  const M = $('gdMemList'); M.textContent = '';
-  for (const m of Array.isArray(GD.members) ? GD.members : []) M.appendChild(gdMemberRow(m, true));
-  $('gdLeaveBtn').hidden = GD.role === 'owner';
-  $('gdDisbandBtn').hidden = GD.role !== 'owner';
-}
-$('gdBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); SFX.click(); gdOpen(); });
-$('gdClose').addEventListener('click', e => { e.stopPropagation(); gdClose(); });
-$('gdScr').addEventListener('click', e => { if (e.target === $('gdScr')) gdClose(); });
-$('gdSearch').addEventListener('submit', async e => { e.preventDefault(); e.stopPropagation(); await gdSync(); renderGd(); });
-$('gdForm').addEventListener('submit', async e => {
-  e.preventDefault(); e.stopPropagation();
-  const name = ($('gdName').value || '').trim(); if (name.length < 2) return;
-  if (!guildCostOk(W)){ toast(t('gdNeed')); return; }
-  const args = { name, mb: clampI(Number($('gdMB').value), 0, 100000), mr: clampI(Number($('gdMR').value), 0, 1000000), auto: $('gdAuto').checked };
-  const gp = gpayNext(gdPayLoad(), { type: 'start', tok: gdTok() }); gp.args = args;
-  gdPaySet(gp, args); $('gdCreateBtn').disabled = true;
-  await gdCreateSend(gp);
-  await gdSync(); renderGd();
-});
-$('gdLeaveBtn').addEventListener('click', e => { e.stopPropagation(); gdAct('guild_leave', {}, ''); });
-$('gdDisbandBtn').addEventListener('click', e => { e.stopPropagation(); confirmDlg(t('gdDisband') + ' — ' + ((GD && GD.guild && GD.guild.name) || '') + '?', () => gdAct('guild_disband', {}, '')); });
 
 /* ---------- daily countdown ---------- */
 function updateDaily(){
@@ -5449,7 +5280,7 @@ function loop(now){
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
 if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear,
   soc: {notifyRoute, notifText, feedMerge, fcNorm, fcOk, fcFmt, socNorm, show: socShow, get on(){ return pushOn; }, get k(){ return pushK; }},
-  gld: {GUILD_COST, guildCostOk, guildReqOk, gpayNext, get pay(){ return store.get('fw27_gpay', null); }}, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
+  eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get hazards(){ return hazs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot, ultCharge: FX.ult, ultLive: ultLive()}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots

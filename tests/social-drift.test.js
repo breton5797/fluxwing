@@ -11,19 +11,9 @@ test('friend code alphabet: client Crockford base32 matches the server column ch
   assert.match(sql, /c_alph constant text := '0123456789ABCDEFGHJKMNPQRSTVWXYZ'/);
 });
 
-test('guild cost: GUILD_COST, the i18n button texts and the schema comment all say 300,000', () => {
-  assert.match(html, /const GUILD_COST = 300000;/);
-  const texts = [...html.matchAll(/gdCreateBtn:'([^']+)'/g)].map(m => m[1]);
-  assert.equal(texts.length, 4);
-  for (const x of texts) assert.ok(/300[,.]?000/.test(x), x);
-  assert.match(sql, /Creation costs 300,000 coins/);
-});
-
-test('guild bounds: capacity 30 and name 2..14 on both sides', () => {
-  assert.match(sql, /members between 0 and 30/);
-  assert.match(sql, /g\.members >= 30/);
-  assert.match(sql, /char_length\(name\) between 2 and 14/);
-  assert.match(html, /maxlength="14"[^>]*spellcheck="false"/);
+test('guilds are gone: no guild identifiers left in the client or the schema', () => {
+  assert.doesNotMatch(html, /GUILD_COST|gpayNext|gdScr|fw27_gpay/);
+  assert.doesNotMatch(sql, /guild/i);
 });
 
 test('alert batching lives in fw_social_cfg and the poll stays polite', () => {
@@ -40,8 +30,7 @@ test('every new social i18n key exists in ko/en/ja/zh', () => {
     const m = line.match(/^(ko|en|ja|zh):\{/); if (m) cur = m[1];
     if (cur) seg[cur] = (seg[cur] || '') + line + '\n';   // a language's lines run until the next language header
   }
-  for (const k of ['fr', 'frCode', 'frWarn', 'push', 'ntOn', 'ntBest', 'ntKOn', 'ntKBest', 'vsM4', 'searching4', 'vsIn4', 'vs4Rules',
-    'gd', 'gdCreateBtn', 'gdApply', 'gdUnmet', 'gdFull', 'gdOwner'])
+  for (const k of ['fr', 'frCode', 'frWarn', 'push', 'ntOn', 'ntBest', 'ntKOn', 'ntKBest', 'vsM4', 'searching4', 'vsIn4', 'vs4Rules'])
     for (const l of ['ko', 'en', 'ja', 'zh'])
       assert.match(seg[l], new RegExp(`\\b${k}:'`), `${l}.${k}`);
 });
