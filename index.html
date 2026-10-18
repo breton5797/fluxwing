@@ -1309,6 +1309,9 @@ function feedMerge(since, rows){
   if (out.rows.length) out.since = out.rows[out.rows.length - 1].id;
   return out;
 }
+// the FFA match is decided: everyone is down, or I fly alone with a score no finished run can reach
+const ffaDone = (me, oth) => oth.every(o => !o.al)
+  && (!me.al || (oth.length > 0 && (me.sc | 0) > Math.max(...oth.map(o => o.sc | 0))));
 /* social-core:end */
 /* ads:start — rewarded / interstitial rules and the ad-provider adapters: pure, no DOM, no storage, no clock of its own (now and wait come in). tests/ads.test.js runs this block as it stands (tests/helpers/ads.js). */
 const AD_CFG = Object.freeze({ interEvery: 3, interGapMs: 180000, timeoutMs: 30000, stubMs: 3000 });
@@ -4413,7 +4416,8 @@ function renderLB(){
 function openLB(tab){
   lbTab = tab || (mode === 'daily' || state === 'menu' ? 'daily' : 'all');
   lbOpen = true; $('nickIn').value = nick; $('lbScr').hidden = false; renderLB(); if (sb) refreshBoards();
-  online().then(() => { if (needSync) syncLocal(); if (lbTab === 'vs' && !$('lbScr').hidden) refreshVsBoard(); });
+  online().then(async () => { if (needSync) syncLocal(); if (lbTab === 'vs' && !$('lbScr').hidden) refreshVsBoard();
+    if (sb && uid && !socReady && await socSync() && !$('lbScr').hidden) renderLB(); });   // first open: learn who is already a friend, then redraw the + buttons
 }
 function closeLB(){ lbOpen = false; $('lbScr').hidden = true; statusMsg = nickMsg = ''; }
 $('lbBtn').addEventListener('click', e => { e.stopPropagation(); openLB('daily'); });
@@ -4433,8 +4437,9 @@ $('nickForm').addEventListener('submit', e => {
 
 /* ---------- friends (social): list, requests, codes. Server: social_me / friend_request / friend_respond / friend_remove ---------- */
 let SOC = { code: '', friends: [], reqs: [] };
+let socReady = false;   // true after the first social_me answer: the + button must not guess at friendships
 async function socRpc(fn, a){ let r = await vsRpc(fn, a); if (r.error && sbAuthErr(r) && await sbReauth()) r = await vsRpc(fn, a); return r; }
-async function socSync(){ if (!sb || !uid) return false; const r = await socRpc('social_me'); if (r.error || !r.data) return false; SOC = socNorm(r.data); return true; }
+async function socSync(){ if (!sb || !uid) return false; const r = await socRpc('social_me'); if (r.error || !r.data) return false; SOC = socNorm(r.data); socReady = true; return true; }
 function frOpen(){
   $('frScr').hidden = false; lbOpen = true; $('frStatus').textContent = t('loading'); renderFr();
   online().then(async () => { if (sb && await socSync()){ $('frStatus').textContent = ''; } else $('frStatus').textContent = t('offline'); renderFr(); });
@@ -4443,6 +4448,7 @@ function frClose(){ $('frScr').hidden = true; lbOpen = !$('shopScr').hidden || !
 async function frAct(fn, args, okKey){
   const r = await socRpc(fn, args);
   if (r.error){ toast(t(friendErrKey(r.error.message))); return false; }
+  if (r.data && r.data.status === 'unknown'){ toast(t('frBad')); return false; }   // bad code: the server answered (and kept the spent request)
   if (okKey) toast(t(r.data && r.data.status === 'friends' ? 'frNow' : okKey));
   await socSync(); renderFr(); return true;
 }
@@ -4532,7 +4538,7 @@ renderPushBtn();
 
 // one-tap friend request from a leaderboard row (uuid rows only)
 function frPlusBtn(id){
-  if (!sb || !uid || id === uid || !VS_UID.test(id) || SOC.friends.some(f => f.id === id)) return null;
+  if (!socReady || !sb || !uid || id === uid || !VS_UID.test(id) || SOC.friends.some(f => f.id === id)) return null;
   const b = document.createElement('button'); b.className = 'frplus'; b.textContent = '+'; b.title = t('frPlus');
   b.addEventListener('click', e => { e.stopPropagation(); b.disabled = true; frAct('friend_request', {p_uid: id}, 'frSent'); });
   return b;
@@ -5148,7 +5154,7 @@ function vsResolveFfa(){
   vsAiRun();
   const me = {sc: vs.myFinal ?? score, al: vs.myFinal === null};
   const oth = vs.pl.map(p => ({sc: p.al ? p.sc : (p.fin ?? p.sc), al: p.al && !p.gone}));
-  if (!me.al && oth.every(o => !o.al)) return vsFinishFfa();
+  if (ffaDone(me, oth)) return vsFinishFfa();   // includes the sole-survivor lock: finish instead of flying into the report deadline
   if (vs.myFinal !== null && state === 'over'){
     const pl = ffaPlaceFinal(me, oth);
     $('oPlace').textContent = t('watching') + (pl ? `  #${pl}` : '');

@@ -16,6 +16,17 @@ test('guilds are gone: no guild identifiers left in the client or the schema', (
   assert.doesNotMatch(sql, /guild/i);
 });
 
+test('an unknown friend code spends the daily request: the server answers, never raises (L5)', () => {
+  assert.match(sql, /if v_to is null then return jsonb_build_object\('status', 'unknown'\); end if;/);
+  assert.doesNotMatch(sql, /fw_bad_input: unknown friend code/);
+  assert.match(html, /status === 'unknown'/);                      // the client turns it into the frBad toast
+});
+
+test('the + button waits for the first friends sync (L9)', () => {
+  assert.match(html, /let socReady = false/);
+  assert.match(html, /function frPlusBtn\(id\)\{\n  if \(!socReady \|\| !sb/);
+});
+
 test('alert batching lives in fw_social_cfg and the poll stays polite', () => {
   assert.match(sql, /interval '15 minutes', interval '10 minutes', interval '3 days'/);   // hello_gap, best_gap, feed_keep
   assert.match(html, /document\.hidden \? 60000 : 30000/);

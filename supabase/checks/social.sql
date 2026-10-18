@@ -49,9 +49,10 @@ begin
   r := private.fw_social_me();
   if jsonb_array_length(r->'friends') <> 0 then raise exception 'remove not mutual'; end if;
 
-  -- unknown code refused
-  ok := false; begin perform private.fw_friend_request('ZZZZZZZZ', null); exception when others then ok := sqlerrm like 'fw_bad_input%'; end;
-  if not ok then raise exception 'unknown code not refused'; end if;
+  -- unknown code answers 'unknown' and still spends a daily request (probes cost quota, L5)
+  r := private.fw_friend_request('ZZZZZZZZ', null);
+  if r->>'status' <> 'unknown' then raise exception 'unknown code not answered'; end if;
+  if (select s.req_count from private.fw_social s where s.player_id = u2) < 1 then raise exception 'probe did not spend a request'; end if;
 
   -- alerts: befriend again (as u1 — the previous check left us as u2), then hello fans out exactly one 'on' row
   perform set_config('request.jwt.claim.sub', u1::text, true); perform set_config('request.jwt.claims', json_build_object('sub', u1, 'role', 'authenticated')::text, true);

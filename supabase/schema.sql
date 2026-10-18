@@ -1299,7 +1299,8 @@ begin
   -- resolve the target
   if p_code is not null then
     select s.player_id into v_to from private.fw_social s where s.code = upper(p_code);
-    if v_to is null then raise exception 'fw_bad_input: unknown friend code' using errcode = '22023'; end if;
+    -- unknown code: answer instead of raising, so the spent request above COMMITS — probing codes costs quota
+    if v_to is null then return jsonb_build_object('status', 'unknown'); end if;
   elsif p_uid is not null then
     v_to := p_uid;
     if not exists (select 1 from public.fw_scores sc where sc.player_id = v_to)

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 export const readIndex = () => readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
 const NAMES = ['SOC_ALPH', 'fcNorm', 'fcOk', 'fcFmt', 'friendErrKey', 'socNorm', 'notifyRoute', 'notifText', 'feedMerge',
-  'ffaPlaces', 'ffaRp', 'ffaMatchId', 'ffaPlaceFinal', 'FFA_RP'];
+  'ffaPlaces', 'ffaRp', 'ffaMatchId', 'ffaPlaceFinal', 'ffaDone', 'FFA_RP'];
 export function loadSocial(html = readIndex()) {
   const m = html.match(/\/\* social-core:start[\s\S]*?\/\* social-core:end \*\//);
   if (!m) throw new Error('social-core block not found in index.html');
