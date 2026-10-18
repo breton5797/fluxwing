@@ -591,9 +591,10 @@ create or replace function private.fw_vs_cfg(
   out starts_per_hour integer,   -- registrations per player per rolling hour
   out pair_cap integer,          -- matches that count (not void) against one and the same rival (effectively unlimited: the per-rival cap is off) ...
   out pair_window interval,      -- ... per this rolling window; further ones are refused at versus_start (played unranked)
-  out keep interval              -- finished matches older than this are deleted
+  out keep interval,             -- finished matches older than this are deleted
+  out ffa_rp integer[]           -- 4-player FFA: RP by placement, 1st..4th (ties share the average, toward zero). MIRRORS THE CLIENT'S FFA_RP
 ) language sql immutable set search_path = '' as $$
-  select 50, 50, interval '20 seconds', interval '4 seconds', interval '5 minutes', interval '60 seconds', interval '20 minutes', 30, 1000000, interval '24 hours', interval '3 days';
+  select 50, 50, interval '20 seconds', interval '4 seconds', interval '5 minutes', interval '60 seconds', interval '20 minutes', 30, 1000000, interval '24 hours', interval '3 days', array[50, 20, -20, -50];
 $$;
 -- Seasons and their rewards. Arrays are per tier, Bronze first (7 tiers: bronze, silver, gold, platinum, diamond,
 -- transcend, demigod). tier_rp MIRRORS THE CLIENT'S TIERS (index.html: the floors in PTIERS =
@@ -756,6 +757,7 @@ begin
   select * into c from private.fw_vs_cfg();
   select * into v_m from private.fw_vs_match where id = p_match for update;
   if not found or v_m.status <> 'open' then return; end if;
+  if v_m.mode = 'ffa' then perform private.fw_vs_settle_ffa(p_match); return; end if;   -- its own rules, the team branch below is untouched
 
   select count(*), count(x.o), count(distinct x.team), count(distinct x.o), min(x.o)
     into v_n, v_rep, v_teams, v_views, v_out
@@ -880,16 +882,22 @@ begin
   -- Everything that depends only on the arguments and the caller's id is checked BEFORE the season gate: these checks
   -- read no table and take no lock, so a call refused here can never do (and then roll back) a rollover.
   if p_match is null or char_length(p_match) > 160   -- length first: nothing longer reaches the regular expressions
-     or p_mode is null or p_mode not in ('1v1', '2v2') or p_team is null or p_team not in (0, 1)
+     or p_mode is null or p_mode not in ('1v1', '2v2', 'ffa') or p_team is null or p_team not in (0, 1, 2, 3)
+     or (p_mode <> 'ffa' and p_team not in (0, 1))
      or p_bird is null or not (p_bird = any (private.fw_units()))
      or char_length(coalesce(p_nick, '')) > 200 or char_length(coalesce(p_cc, '')) > 8 then
     raise exception 'fw_bad_input: unknown mode, team or unit, or a field too long' using errcode = '22023';
   end if;
-  select t0, t1 into v_t0, v_t1 from private.fw_vs_roster(p_match);
-  if cardinality(v_t0) <> (case p_mode when '2v2' then 2 else 1 end) then
-    raise exception 'fw_bad_input: roster does not fit the mode' using errcode = '22023';
+  if p_mode = 'ffa' then
+    v_t0 := private.fw_vs_roster_ffa(p_match);   -- all four seats, sorted; the seat index is the "team"
+    v_team := array_position(v_t0, v_uid) - 1;
+  else
+    select t0, t1 into v_t0, v_t1 from private.fw_vs_roster(p_match);
+    if cardinality(v_t0) <> (case p_mode when '2v2' then 2 else 1 end) then
+      raise exception 'fw_bad_input: roster does not fit the mode' using errcode = '22023';
+    end if;
+    v_team := case when v_uid = any (v_t0) then 0 when v_uid = any (v_t1) then 1 end;
   end if;
-  v_team := case when v_uid = any (v_t0) then 0 when v_uid = any (v_t1) then 1 end;
   if v_team is null then
     raise exception 'fw_vs_not_in_match: this match is between other players' using errcode = '42501';
   end if;
@@ -921,6 +929,7 @@ begin
   if v_cnt >= c.starts_per_hour then
     raise exception 'fw_rate_limited: too many ranked matches this hour' using errcode = 'P0001';
   end if;
+  if p_mode <> 'ffa' then   -- the per-rival cap is team-shaped (and effectively off, pair_cap 1,000,000): FFA skips it
   foreach v_rival in array (case v_team when 0 then v_t1 else v_t0 end) loop
     -- my registrations against this rival, whether or not the rival has registered yet (the roster is in the id: team 0 is its
     -- 2nd part, team 1 its 3rd), so the answer does not depend on which of the two got in first
@@ -933,6 +942,7 @@ begin
       raise exception 'fw_vs_pair_cap: ranked matches against this rival are used up for now' using errcode = 'P0001';
     end if;
   end loop;
+  end if;
 
   -- joinable for a short window only
   if v_m.mode <> p_mode then
@@ -966,7 +976,8 @@ begin
   if v_uid is null then
     raise exception 'fw_auth: sign-in required' using errcode = '28000';
   end if;
-  if p_match is null or char_length(p_match) > 160 or p_result is null or p_result not in ('win', 'lose', 'draw') then
+  if p_match is null or char_length(p_match) > 160 or p_result is null
+     or not (p_result in ('win', 'lose', 'draw') or private.fw_vs_ffa_vec_ok(p_result)) then
     raise exception 'fw_bad_input: unknown result' using errcode = '22023';
   end if;
   select * into c from private.fw_vs_cfg();
@@ -983,6 +994,9 @@ begin
   end if;
   if v_p.result is not null then
     raise exception 'fw_vs_reported: result already reported' using errcode = 'P0001';
+  end if;
+  if (v_m.mode = 'ffa') <> (p_result ~ '^[1-4]') then
+    raise exception 'fw_bad_input: result does not fit the mode' using errcode = '22023';
   end if;
   if v_m.status = 'open' then
     if v_now - v_p.joined_at < c.min_play then
@@ -1171,6 +1185,816 @@ do $do$
 begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
     perform cron.schedule('fw_vs_rollover', '0 15 * * *', 'set statement_timeout = 0; select private.fw_vs_tick();');
+    perform cron.schedule('fw_social_feed_gc', '30 15 * * *',
+      'set statement_timeout = 0; delete from private.fw_social_feed where at < now() - interval ''3 days'';');
   end if;
+end
+$do$;
+
+-- =====================================================================================================
+-- SOCIAL — FRIENDS (plan-social.md P1)
+-- Mutual friendships made with a server-issued 8-char Crockford-base32 friend code (or a uuid picked from
+-- a leaderboard / versus screen). Everything a client writes goes through the definer RPCs below; the only
+-- readable table is public.fw_friends, and RLS lets a player see no rows but their own.
+create table if not exists private.fw_social (
+  player_id uuid        primary key references auth.users (id) on delete cascade,
+  code      text        not null unique,
+  last_seen timestamptz,
+  hello_at  timestamptz,          -- last time friends were told "online" (15 min batching, P2)
+  req_day   date,                 -- friend requests sent today (rate limit)
+  req_count integer     not null default 0,
+  created_at timestamptz not null default now(),
+  constraint fw_social_code_chk check (code ~ '^[0-9A-HJKMNP-TV-Z]{8}$')
+);
+alter table private.fw_social enable row level security;   -- no policy: not exposed
+revoke all on table private.fw_social from public, anon, authenticated;
+
+create table if not exists public.fw_friends (
+  a     uuid not null references auth.users (id) on delete cascade,
+  b     uuid not null references auth.users (id) on delete cascade,
+  since timestamptz not null default now(),
+  primary key (a, b),
+  constraint fw_friends_ord_chk check (a < b)
+);
+create index if not exists fw_friends_b on public.fw_friends (b);
+alter table public.fw_friends enable row level security;
+drop policy if exists fw_friends_read on public.fw_friends;
+create policy fw_friends_read on public.fw_friends for select to authenticated
+using ((select auth.uid()) in (a, b));
+revoke all on table public.fw_friends from public, anon, authenticated;
+grant select on table public.fw_friends to authenticated;
+grant select, insert, update, delete on table public.fw_friends to service_role;
+
+create table if not exists private.fw_friend_req (
+  from_id uuid not null references auth.users (id) on delete cascade,
+  to_id   uuid not null references auth.users (id) on delete cascade,
+  at      timestamptz not null default now(),
+  primary key (from_id, to_id),
+  constraint fw_friend_req_self_chk check (from_id <> to_id)
+);
+create index if not exists fw_friend_req_to on private.fw_friend_req (to_id);
+alter table private.fw_friend_req enable row level security;
+revoke all on table private.fw_friend_req from public, anon, authenticated;
+
+-- the caller's social row, created (with a fresh code) on first touch. Locked FOR UPDATE when p_lock.
+create or replace function private.fw_social_row(p_uid uuid, p_lock boolean default false) returns private.fw_social
+language plpgsql security definer set search_path = '' as $$
+declare
+  c_alph constant text := '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  v_row  private.fw_social%rowtype;
+  v_code text;
+begin
+  if p_lock then
+    select * into v_row from private.fw_social where player_id = p_uid for update;
+  else
+    select * into v_row from private.fw_social where player_id = p_uid;
+  end if;
+  if found then return v_row; end if;
+  for i in 1..20 loop
+    v_code := '';
+    for j in 1..8 loop v_code := v_code || substr(c_alph, 1 + floor(random() * 32)::integer, 1); end loop;
+    begin
+      insert into private.fw_social (player_id, code) values (p_uid, v_code)
+      on conflict (player_id) do nothing returning * into v_row;             -- a concurrent first touch: take that row
+      if v_row.player_id is null then
+        if p_lock then select * into strict v_row from private.fw_social where player_id = p_uid for update;
+        else select * into strict v_row from private.fw_social where player_id = p_uid; end if;
+      end if;
+      return v_row;
+    exception
+      when unique_violation then null;     -- code collision: roll again
+      when foreign_key_violation then raise exception 'fw_auth: unknown player' using errcode = '28000';
+    end;
+  end loop;
+  raise exception 'fw_social_code: could not issue a code' using errcode = 'P0001';
+end;
+$$;
+
+-- caps and limits, in one place
+create or replace function private.fw_social_cfg(
+  out friend_cap integer, out pending_cap integer, out req_per_day integer,
+  out online_window interval, out hello_gap interval, out best_gap interval, out feed_keep interval
+) language sql immutable set search_path = '' as $$
+  select 100, 30, 200, interval '2 minutes', interval '15 minutes', interval '10 minutes', interval '3 days';
+$$;
+
+create or replace function private.fw_friend_request(p_code text, p_uid uuid) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  c    record := private.fw_social_cfg();
+  v_me uuid   := (select auth.uid());
+  v_to uuid;
+  v_today date := (now() at time zone 'utc')::date;
+  v_row private.fw_social%rowtype;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_me::text, 2));   -- serialise this caller's friend writes
+  v_row := private.fw_social_row(v_me, true);
+  -- rate limit per UTC day
+  if v_row.req_day is distinct from v_today then v_row.req_day := v_today; v_row.req_count := 0; end if;
+  if v_row.req_count >= c.req_per_day then
+    raise exception 'fw_rate_limited: too many friend requests today' using errcode = 'P0001';
+  end if;
+  update private.fw_social set req_day = v_row.req_day, req_count = v_row.req_count + 1 where player_id = v_me;
+  -- resolve the target
+  if p_code is not null then
+    select s.player_id into v_to from private.fw_social s where s.code = upper(p_code);
+    if v_to is null then raise exception 'fw_bad_input: unknown friend code' using errcode = '22023'; end if;
+  elsif p_uid is not null then
+    v_to := p_uid;
+    if not exists (select 1 from public.fw_scores sc where sc.player_id = v_to)
+       and not exists (select 1 from public.fw_versus v where v.player_id = v_to) then
+      raise exception 'fw_bad_input: unknown player' using errcode = '22023';
+    end if;
+  else
+    raise exception 'fw_bad_input: code or uuid required' using errcode = '22023';
+  end if;
+  if v_to = v_me then raise exception 'fw_friend_self: that is you' using errcode = 'P0001'; end if;
+  if exists (select 1 from public.fw_friends f where f.a = least(v_me, v_to) and f.b = greatest(v_me, v_to)) then
+    raise exception 'fw_friend_dupe: already friends' using errcode = 'P0001';
+  end if;
+  if (select count(*) from public.fw_friends f where v_me in (f.a, f.b)) >= c.friend_cap
+     or (select count(*) from public.fw_friends f where v_to in (f.a, f.b)) >= c.friend_cap then
+    raise exception 'fw_friend_cap: friend list is full' using errcode = 'P0001';
+  end if;
+  -- a request the other way makes the friendship at once
+  if exists (select 1 from private.fw_friend_req r where r.from_id = v_to and r.to_id = v_me) then
+    insert into public.fw_friends (a, b) values (least(v_me, v_to), greatest(v_me, v_to)) on conflict do nothing;
+    delete from private.fw_friend_req r where (r.from_id, r.to_id) in ((v_me, v_to), (v_to, v_me));
+    return jsonb_build_object('status', 'friends');
+  end if;
+  if exists (select 1 from private.fw_friend_req r where r.from_id = v_me and r.to_id = v_to) then
+    raise exception 'fw_friend_dupe: already requested' using errcode = 'P0001';
+  end if;
+  if (select count(*) from private.fw_friend_req r where r.from_id = v_me) >= c.pending_cap then
+    raise exception 'fw_friend_cap: too many pending requests' using errcode = 'P0001';
+  end if;
+  insert into private.fw_friend_req (from_id, to_id) values (v_me, v_to);
+  return jsonb_build_object('status', 'sent');
+end;
+$$;
+
+create or replace function private.fw_friend_respond(p_from uuid, p_accept boolean) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  c    record := private.fw_social_cfg();
+  v_me uuid := (select auth.uid());
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_from is null or p_accept is null then raise exception 'fw_bad_input: bad arguments' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_me::text, 2));
+  if not exists (select 1 from private.fw_friend_req r where r.from_id = p_from and r.to_id = v_me) then
+    raise exception 'fw_bad_input: no such request' using errcode = '22023';
+  end if;
+  delete from private.fw_friend_req r where (r.from_id, r.to_id) in ((p_from, v_me), (v_me, p_from));
+  if p_accept then
+    if (select count(*) from public.fw_friends f where v_me in (f.a, f.b)) >= c.friend_cap
+       or (select count(*) from public.fw_friends f where p_from in (f.a, f.b)) >= c.friend_cap then
+      raise exception 'fw_friend_cap: friend list is full' using errcode = 'P0001';
+    end if;
+    insert into public.fw_friends (a, b) values (least(v_me, p_from), greatest(v_me, p_from)) on conflict do nothing;
+  end if;
+  return jsonb_build_object('status', case when p_accept then 'friends' else 'declined' end);
+end;
+$$;
+
+create or replace function private.fw_friend_remove(p_uid uuid) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := (select auth.uid());
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_uid is null then raise exception 'fw_bad_input: bad arguments' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_me::text, 2));
+  delete from public.fw_friends f where f.a = least(v_me, p_uid) and f.b = greatest(v_me, p_uid);
+  delete from private.fw_friend_req r where (r.from_id, r.to_id) in ((v_me, p_uid), (p_uid, v_me));
+  return jsonb_build_object('status', 'removed');
+end;
+$$;
+
+-- everything the friends screen needs, in one call
+create or replace function private.fw_social_me() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  c    record := private.fw_social_cfg();
+  v_me uuid := (select auth.uid());
+  v_row private.fw_social%rowtype;
+  v_friends jsonb;
+  v_reqs jsonb;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  v_row := private.fw_social_row(v_me);
+  select coalesce(jsonb_agg(jsonb_build_object(
+      'player_id', o.uid, 'nick', coalesce(sc.nick, vs.nick, 'Pilot'), 'cc', coalesce(sc.cc, vs.cc, ''),
+      'bird', coalesce(sc.bird, vs.bird, ''), 'best', coalesce(sc.best, 0), 'rp', coalesce(vs.rp, 0),
+      'online', (s.last_seen is not null and s.last_seen > now() - c.online_window)) order by coalesce(sc.best, 0) desc), '[]'::jsonb)
+    into v_friends
+  from (select case when f.a = v_me then f.b else f.a end as uid from public.fw_friends f where v_me in (f.a, f.b)) o
+  left join public.fw_scores  sc on sc.player_id = o.uid
+  left join public.fw_versus  vs on vs.player_id = o.uid
+  left join private.fw_social s  on s.player_id = o.uid;
+  select coalesce(jsonb_agg(jsonb_build_object('from_id', r.from_id, 'nick', coalesce(sc.nick, vs.nick, 'Pilot')) order by r.at desc), '[]'::jsonb)
+    into v_reqs
+  from private.fw_friend_req r
+  left join public.fw_scores sc on sc.player_id = r.from_id
+  left join public.fw_versus vs on vs.player_id = r.from_id
+  where r.to_id = v_me;
+  return jsonb_build_object('code', v_row.code, 'friends', v_friends, 'reqs', v_reqs);
+end;
+$$;
+
+create or replace function public.friend_request(p_code text default null, p_uid uuid default null) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_friend_request(p_code, p_uid); $$;
+create or replace function public.friend_respond(p_from uuid, p_accept boolean) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_friend_respond(p_from, p_accept); $$;
+create or replace function public.friend_remove(p_uid uuid) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_friend_remove(p_uid); $$;
+create or replace function public.social_me() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_social_me(); $$;
+
+revoke all on function private.fw_social_row(uuid, boolean)            from public, anon, authenticated;
+revoke all on function private.fw_social_cfg()                         from public, anon, authenticated;
+revoke all on function private.fw_friend_request(text, uuid)           from public, anon, authenticated;
+revoke all on function private.fw_friend_respond(uuid, boolean)        from public, anon, authenticated;
+revoke all on function private.fw_friend_remove(uuid)                  from public, anon, authenticated;
+revoke all on function private.fw_social_me()                          from public, anon, authenticated;
+revoke all on function public.friend_request(text, uuid)               from public, anon, authenticated;
+revoke all on function public.friend_respond(uuid, boolean)            from public, anon, authenticated;
+revoke all on function public.friend_remove(uuid)                      from public, anon, authenticated;
+revoke all on function public.social_me()                              from public, anon, authenticated;
+grant execute on function private.fw_friend_request(text, uuid)        to authenticated, service_role;
+grant execute on function private.fw_friend_respond(uuid, boolean)     to authenticated, service_role;
+grant execute on function private.fw_friend_remove(uuid)               to authenticated, service_role;
+grant execute on function private.fw_social_me()                       to authenticated, service_role;
+grant execute on function public.friend_request(text, uuid)            to authenticated, service_role;
+grant execute on function public.friend_respond(uuid, boolean)         to authenticated, service_role;
+grant execute on function public.friend_remove(uuid)                   to authenticated, service_role;
+grant execute on function public.social_me()                           to authenticated, service_role;
+
+-- =====================================================================================================
+-- SOCIAL — 4-PLAYER FFA (plan-social.md P3)
+-- Match id: <seed base36>.<u1>+<u2>+<u3>+<u4> (uids sorted ascending). "team" is the seat = the uid's index
+-- in that order (0..3). A report is the whole ranking as seen by the reporter, in seat order: '1,3,2,4'
+-- (competition ranking: ties share the better place). Settlement needs all four registered and either
+-- every report in and equal, or at the deadline at least TWO equal reports (one player alone may not rank
+-- the other three). RP by placement from fw_vs_cfg().ffa_rp, tie groups averaging their span toward zero.
+alter table private.fw_vs_match drop constraint if exists fw_vs_match_mode_chk;
+alter table private.fw_vs_match add constraint fw_vs_match_mode_chk check (mode in ('1v1', '2v2', 'ffa'));
+alter table private.fw_vs_part drop constraint if exists fw_vs_part_team_chk;
+alter table private.fw_vs_part add constraint fw_vs_part_team_chk check (team between 0 and 3);
+alter table private.fw_vs_part drop constraint if exists fw_vs_part_result_chk;
+alter table private.fw_vs_part add constraint fw_vs_part_result_chk
+  check (result is null or result in ('win', 'lose', 'draw') or result ~ '^[1-4](,[1-4]){3}$');
+alter table private.fw_vs_part drop constraint if exists fw_vs_part_final_chk;
+alter table private.fw_vs_part add constraint fw_vs_part_final_chk
+  check (final is null or final in ('win', 'lose', 'draw') or final ~ '^[1-4](,[1-4]){3}$');
+
+-- a well-formed competition ranking of four: values 1..4; sorted ascending, each value is its position + 1 or repeats the one before
+create or replace function private.fw_vs_ffa_vec_ok(p_vec text) returns boolean
+language plpgsql immutable set search_path = '' as $$
+declare v integer[]; srt integer[];
+begin
+  if p_vec is null or p_vec !~ '^[1-4](,[1-4]){3}$' then return false; end if;
+  v := string_to_array(p_vec, ',')::integer[];
+  select array_agg(x order by x) into srt from unnest(v) x;
+  for i in 1..4 loop
+    if srt[i] <> i and (i = 1 or srt[i] <> srt[i-1]) then return false; end if;
+  end loop;
+  return true;
+end;
+$$;
+
+create or replace function private.fw_vs_roster_ffa(p_match text) returns uuid[]
+language plpgsql immutable set search_path = '' as $$
+declare
+  c_u constant text := '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+  v text[]; ids uuid[];
+begin
+  if p_match is null or p_match !~ ('^[0-9a-z]{1,8}\.' || c_u || '(\+' || c_u || '){3}$') then
+    raise exception 'fw_bad_input: bad match id' using errcode = '22023';
+  end if;
+  ids := string_to_array(split_part(p_match, '.', 2), '+')::uuid[];
+  for i in 2..4 loop
+    if ids[i-1] >= ids[i] then
+      raise exception 'fw_bad_input: match id is not canonical' using errcode = '22023';
+    end if;
+  end loop;
+  return ids;
+end;
+$$;
+
+create or replace function private.fw_vs_settle_ffa(p_match text) returns void
+language plpgsql set search_path = '' as $$
+declare
+  c      record;
+  v_now  timestamptz := now();
+  v_m    private.fw_vs_match%rowtype;
+  v_n    integer;    -- registered
+  v_rep  integer;    -- reported
+  v_views integer;   -- distinct report vectors
+  v_top  integer;    -- reports agreeing on the most common vector
+  v_vec  text;
+  v_ranks integer[];
+  v_place integer;
+  v_k    integer;
+  v_sum  integer;
+  v_d    integer;
+  v_old  integer;
+  v_why  text;
+  r      record;
+begin
+  select * into c from private.fw_vs_cfg();
+  select * into v_m from private.fw_vs_match where id = p_match for update;
+  if not found or v_m.status <> 'open' or v_m.mode <> 'ffa' then return; end if;
+
+  select count(*), count(p.result) into v_n, v_rep from private.fw_vs_part p where p.match_id = p_match;
+  select count(*), coalesce(max(g.cnt), 0), (array_agg(g.result order by g.cnt desc))[1]
+    into v_views, v_top, v_vec
+  from (select p.result, count(*) as cnt from private.fw_vs_part p
+        where p.match_id = p_match and p.result is not null group by p.result) g;
+
+  if v_views > 1 then
+    v_why := 'conflict';                                    -- any disagreement voids: nobody referees a 4-way match
+  elsif v_n = 4 and v_rep = 4 then
+    v_why := 'agreed';
+  elsif v_rep > 0 and v_now >= greatest(v_m.started_at + c.settle_after, v_m.first_report_at + c.report_grace) then
+    v_why := case when v_n < 4 then 'short'                 -- a seat never registered: never rank an absent player
+                  when v_top >= 2 then 'timeout'            -- quorum: at least two equal reports
+                  else 'no_quorum' end;
+  elsif v_rep = 0 and v_now >= v_m.started_at + c.void_after then
+    v_why := 'no_report';
+  else
+    return;   -- still open
+  end if;
+
+  if v_why not in ('agreed', 'timeout') then
+    update private.fw_vs_match set status = 'void', why = v_why, settled_at = v_now where id = p_match;
+    return;
+  end if;
+
+  v_ranks := string_to_array(v_vec, ',')::integer[];
+  for r in select p.player_id, p.team, p.nick, p.cc, p.bird from private.fw_vs_part p where p.match_id = p_match order by p.player_id loop
+    v_place := v_ranks[r.team + 1];
+    v_k := (select count(*) from unnest(v_ranks) x where x = v_place);
+    v_sum := 0; for i in v_place..(v_place + v_k - 1) loop v_sum := v_sum + c.ffa_rp[i]; end loop;
+    v_d := trunc(v_sum::numeric / v_k);
+    insert into public.fw_versus (player_id, nick, cc, bird) values (r.player_id, r.nick, r.cc, r.bird)
+    on conflict (player_id) do nothing;
+    select v.rp into strict v_old from public.fw_versus v where v.player_id = r.player_id for update;
+    update public.fw_versus set
+      nick = r.nick, cc = r.cc, bird = r.bird,
+      rp     = greatest(0, v_old + v_d),
+      wins   = wins   + (v_d > 0)::integer,
+      losses = losses + (v_d < 0)::integer,
+      draws  = draws  + (v_d = 0)::integer,
+      updated_at = v_now
+    where player_id = r.player_id;
+    update private.fw_vs_part set
+      final = v_vec,
+      delta = greatest(0, v_old + v_d) - v_old
+    where match_id = p_match and player_id = r.player_id;
+  end loop;
+  update private.fw_vs_match set status = 'settled', outcome = null, why = v_why, settled_at = v_now where id = p_match;
+end;
+$$;
+
+revoke all on function private.fw_vs_ffa_vec_ok(text)   from public, anon, authenticated;
+revoke all on function private.fw_vs_roster_ffa(text)   from public, anon, authenticated;
+revoke all on function private.fw_vs_settle_ffa(text)   from public, anon, authenticated;
+
+-- =====================================================================================================
+-- SOCIAL — FRIEND ALERTS (plan-social.md P2)
+-- The feed table is the source of truth; clients POLL it (visible 30 s / hidden 60 s) through
+-- social_hello(p_since), which also refreshes last_seen (the friends-list online dot). A realtime
+-- signal was considered and dropped (P0: polling-first); the batching below keeps the table small:
+-- 'on' at most once per hello_gap per player, 'best' folded per pair inside best_gap.
+create table if not exists private.fw_social_feed (
+  id      bigint      generated always as identity primary key,
+  to_id   uuid        not null references auth.users (id) on delete cascade,
+  from_id uuid        not null references auth.users (id) on delete cascade,
+  kind    text        not null,
+  val     integer     not null default 0,
+  at      timestamptz not null default now(),
+  constraint fw_social_feed_kind_chk check (kind in ('on', 'best'))
+);
+create index if not exists fw_social_feed_to on private.fw_social_feed (to_id, id);
+create index if not exists fw_social_feed_fold on private.fw_social_feed (to_id, from_id, kind, at);
+alter table private.fw_social_feed enable row level security;
+revoke all on table private.fw_social_feed from public, anon, authenticated;
+
+create or replace function private.fw_social_hello(p_since bigint) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  c     record := private.fw_social_cfg();
+  v_me  uuid   := (select auth.uid());
+  v_now timestamptz := now();
+  v_row private.fw_social%rowtype;
+  v_rows jsonb;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  v_row := private.fw_social_row(v_me, true);
+  update private.fw_social set last_seen = v_now where player_id = v_me;
+  -- came (back) online: only when the previous sighting is older than the online window (a player who stayed
+  -- on just keeps polling), and then at most once per hello_gap
+  if (v_row.last_seen is null or v_row.last_seen < v_now - c.online_window)
+     and (v_row.hello_at is null or v_row.hello_at < v_now - c.hello_gap) then
+    update private.fw_social set hello_at = v_now where player_id = v_me;
+    insert into private.fw_social_feed (to_id, from_id, kind)
+    select case when f.a = v_me then f.b else f.a end, v_me, 'on' from public.fw_friends f where v_me in (f.a, f.b);
+  end if;
+  delete from private.fw_social_feed where to_id = v_me and at < v_now - c.feed_keep;
+  select coalesce(jsonb_agg(jsonb_build_object('id', x.id, 'from_id', x.from_id, 'nick', coalesce(sc.nick, vs.nick, 'Pilot'),
+           'kind', x.kind, 'val', x.val, 'at', x.at) order by x.id), '[]'::jsonb)
+    into v_rows
+  from (select * from private.fw_social_feed d where d.to_id = v_me and d.id > coalesce(p_since, 0)
+        and d.at > v_now - interval '1 hour' order by d.id limit 50) x   -- stale backlog is skipped, the cursor (max below) still passes it
+  left join public.fw_scores sc on sc.player_id = x.from_id
+  left join public.fw_versus vs on vs.player_id = x.from_id;
+  return jsonb_build_object('rows', v_rows,
+    'max', coalesce((select max(d.id) from private.fw_social_feed d where d.to_id = v_me), coalesce(p_since, 0)));
+end;
+$$;
+
+-- a new endless best tells the friends (folded per pair inside best_gap)
+create or replace function private.fw_scores_best_notify() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare c record := private.fw_social_cfg(); v_now timestamptz := now(); r record;
+begin
+  if tg_op = 'UPDATE' and new.best <= old.best then return new; end if;
+  if new.best <= 0 then return new; end if;
+  for r in select case when f.a = new.player_id then f.b else f.a end as fid from public.fw_friends f where new.player_id in (f.a, f.b) loop
+    -- fold inside best_gap by replacing (a fresh id): an updated-in-place row would hide behind the reader's cursor
+    delete from private.fw_social_feed d
+    where d.to_id = r.fid and d.from_id = new.player_id and d.kind = 'best' and d.at > v_now - c.best_gap;
+    insert into private.fw_social_feed (to_id, from_id, kind, val) values (r.fid, new.player_id, 'best', new.best);
+  end loop;
+  return new;
+end;
+$$;
+drop trigger if exists fw_scores_best_notify on public.fw_scores;
+create trigger fw_scores_best_notify after insert or update of best on public.fw_scores
+for each row execute function private.fw_scores_best_notify();
+
+create or replace function public.social_hello(p_since bigint default 0) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_social_hello(p_since); $$;
+
+revoke all on function private.fw_social_hello(bigint)       from public, anon, authenticated;
+revoke all on function private.fw_scores_best_notify()       from public, anon, authenticated;
+revoke all on function public.social_hello(bigint)           from public, anon, authenticated;
+grant execute on function private.fw_social_hello(bigint)    to authenticated, service_role;
+grant execute on function public.social_hello(bigint)        to authenticated, service_role;
+
+-- =====================================================================================================
+-- SOCIAL — GUILDS (plan-social.md P4)
+-- Creation costs 300,000 coins on the CLIENT wallet (trusted, like the shop; the server cannot see coins).
+-- Server guardrails instead: one owned guild and one membership per player, a 24 h creation cooldown, a
+-- recorded best > 0, and an idempotency token so a lost answer retried charges the wallet exactly once.
+-- Admission: the owner sets min_best / min_rp and approval or auto-join; the server checks the real
+-- fw_scores / fw_versus rows, so a client cannot talk its way past the requirements.
+create table if not exists public.fw_guilds (
+  id         bigint      generated always as identity primary key,
+  name       text        not null,
+  owner      uuid        not null references auth.users (id) on delete cascade,
+  min_best   integer     not null default 0,
+  min_rp     integer     not null default 0,
+  auto_join  boolean     not null default false,
+  members    smallint    not null default 1,
+  created_at timestamptz not null default now(),
+  constraint fw_guilds_name_chk check (char_length(name) between 2 and 14 and name !~ '[\u0001-\u001F\u007F-\u009F<>]'),
+  constraint fw_guilds_req_chk  check (min_best between 0 and 100000 and min_rp between 0 and 1000000),
+  constraint fw_guilds_members_chk check (members between 0 and 30)
+);
+create unique index if not exists fw_guilds_name_uq on public.fw_guilds (lower(name));
+alter table public.fw_guilds enable row level security;
+drop policy if exists fw_guilds_read on public.fw_guilds;
+create policy fw_guilds_read on public.fw_guilds for select to authenticated using (true);
+revoke all on table public.fw_guilds from public, anon, authenticated;
+grant select (id, name, owner, min_best, min_rp, auto_join, members) on table public.fw_guilds to authenticated;
+grant select, insert, update, delete on table public.fw_guilds to service_role;
+
+create table if not exists public.fw_guild_members (
+  player_id uuid        primary key references auth.users (id) on delete cascade,
+  guild_id  bigint      not null references public.fw_guilds (id) on delete cascade,
+  role      text        not null default 'member',
+  joined_at timestamptz not null default now(),
+  constraint fw_guild_members_role_chk check (role in ('owner', 'member'))
+);
+create index if not exists fw_guild_members_gid on public.fw_guild_members (guild_id);
+alter table public.fw_guild_members enable row level security;
+drop policy if exists fw_guild_members_read on public.fw_guild_members;
+create policy fw_guild_members_read on public.fw_guild_members for select to authenticated using (true);
+revoke all on table public.fw_guild_members from public, anon, authenticated;
+grant select (player_id, guild_id, role) on table public.fw_guild_members to authenticated;
+grant select, insert, update, delete on table public.fw_guild_members to service_role;
+
+create table if not exists private.fw_guild_apps (
+  guild_id  bigint      not null references public.fw_guilds (id) on delete cascade,
+  player_id uuid        not null references auth.users (id) on delete cascade,
+  at        timestamptz not null default now(),
+  primary key (guild_id, player_id)
+);
+alter table private.fw_guild_apps enable row level security;
+revoke all on table private.fw_guild_apps from public, anon, authenticated;
+
+create table if not exists private.fw_guild_pay (
+  player_id uuid        not null references auth.users (id) on delete cascade,
+  tok       text        not null,
+  guild_id  bigint,
+  at        timestamptz not null default now(),
+  primary key (player_id, tok),
+  constraint fw_guild_pay_tok_chk check (tok ~ '^[A-Za-z0-9]{8,32}$')
+);
+alter table private.fw_guild_pay enable row level security;
+revoke all on table private.fw_guild_pay from public, anon, authenticated;
+
+-- same cleaning rule as nicknames, but a refused guild name is an error, not a silent 'Pilot'
+create or replace function private.fw_guild_name(p_name text) returns text
+language plpgsql immutable set search_path = '' as $$
+declare n text;
+begin
+  n := left(btrim(regexp_replace(
+         regexp_replace(coalesce(p_name, ''), '[\u0001-\u001F\u007F-\u009F​-‏ -‮⁠-⁩﻿<>]', '', 'g'),
+         '\s+', ' ', 'g')), 14);
+  if char_length(n) < 2 or private.fw_nick_bad(n) then
+    raise exception 'fw_bad_input: that guild name is not allowed' using errcode = '22023';
+  end if;
+  return n;
+end;
+$$;
+
+create or replace function private.fw_guild_row(p_id bigint) returns jsonb
+language sql security definer set search_path = '' as $$
+  select jsonb_build_object('id', g.id, 'name', g.name, 'owner', g.owner, 'min_best', g.min_best, 'min_rp', g.min_rp,
+    'auto_join', g.auto_join, 'members', g.members)
+  from public.fw_guilds g where g.id = p_id;
+$$;
+
+create or replace function private.fw_guild_create(p_name text, p_tok text, p_min_best integer, p_min_rp integer, p_auto boolean) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_me uuid := (select auth.uid()); v_now timestamptz := now();
+  v_name text; v_gid bigint; v_pay private.fw_guild_pay%rowtype;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_tok is null or p_tok !~ '^[A-Za-z0-9]{8,32}$' or p_min_best is null or p_min_rp is null or p_auto is null
+     or p_min_best not between 0 and 100000 or p_min_rp not between 0 and 1000000 then
+    raise exception 'fw_bad_input: bad arguments' using errcode = '22023';
+  end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_me::text, 3));
+  select * into v_pay from private.fw_guild_pay y where y.player_id = v_me and y.tok = p_tok;
+  if found then   -- the lost-answer retry: same token, same guild, charge once on the client
+    return jsonb_build_object('guild', private.fw_guild_row(v_pay.guild_id), 'already', true);
+  end if;
+  v_name := private.fw_guild_name(p_name);
+  if exists (select 1 from public.fw_guild_members m where m.player_id = v_me) then
+    raise exception 'fw_guild_member: already in a guild' using errcode = 'P0001';
+  end if;
+  if exists (select 1 from private.fw_guild_pay y where y.player_id = v_me and y.at > v_now - interval '24 hours') then
+    raise exception 'fw_rate_limited: one guild creation per day' using errcode = 'P0001';
+  end if;
+  if not exists (select 1 from public.fw_scores s where s.player_id = v_me and s.best > 0) then
+    raise exception 'fw_guild_req_unmet: play a run before founding a guild' using errcode = 'P0001';
+  end if;
+  begin
+    insert into public.fw_guilds (name, owner, min_best, min_rp, auto_join)
+    values (v_name, v_me, p_min_best, p_min_rp, p_auto) returning id into v_gid;
+  exception
+    when unique_violation then raise exception 'fw_guild_dupe: that name is taken' using errcode = 'P0001';
+    when foreign_key_violation then raise exception 'fw_auth: unknown player' using errcode = '28000';
+  end;
+  insert into public.fw_guild_members (player_id, guild_id, role) values (v_me, v_gid, 'owner');
+  insert into private.fw_guild_pay (player_id, tok, guild_id) values (v_me, p_tok, v_gid);
+  return jsonb_build_object('guild', private.fw_guild_row(v_gid), 'already', false);
+end;
+$$;
+
+create or replace function private.fw_guild_mine(p_uid uuid, p_lock boolean default false) returns public.fw_guild_members
+language plpgsql security definer set search_path = '' as $$
+declare m public.fw_guild_members%rowtype;
+begin
+  select * into m from public.fw_guild_members x where x.player_id = p_uid;
+  if not found then raise exception 'fw_guild_none: not in a guild' using errcode = 'P0001'; end if;
+  if p_lock then
+    perform 1 from public.fw_guilds g where g.id = m.guild_id for update;
+    select * into m from public.fw_guild_members x where x.player_id = p_uid;   -- re-read under the lock: a concurrent kick/leave/transfer may have moved it
+    if not found or m.guild_id is null then raise exception 'fw_guild_none: not in a guild' using errcode = 'P0001'; end if;
+  end if;
+  return m;
+end;
+$$;
+
+create or replace function private.fw_guild_update(p_min_best integer, p_min_rp integer, p_auto boolean) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := (select auth.uid()); m public.fw_guild_members%rowtype;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_min_best is null or p_min_rp is null or p_auto is null
+     or p_min_best not between 0 and 100000 or p_min_rp not between 0 and 1000000 then
+    raise exception 'fw_bad_input: bad arguments' using errcode = '22023';
+  end if;
+  m := private.fw_guild_mine(v_me, true);
+  if m.role <> 'owner' then raise exception 'fw_guild_owner_only: owner only' using errcode = '42501'; end if;
+  update public.fw_guilds set min_best = p_min_best, min_rp = p_min_rp, auto_join = p_auto where id = m.guild_id;
+  return private.fw_guild_row(m.guild_id);
+end;
+$$;
+
+create or replace function private.fw_guild_apply(p_id bigint) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_me uuid := (select auth.uid()); g public.fw_guilds%rowtype;
+  v_best integer; v_rp integer;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_id is null then raise exception 'fw_bad_input: bad arguments' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_me::text, 3));
+  if exists (select 1 from public.fw_guild_members m where m.player_id = v_me) then
+    raise exception 'fw_guild_member: already in a guild' using errcode = 'P0001';
+  end if;
+  select * into g from public.fw_guilds where id = p_id for update;
+  if not found then raise exception 'fw_bad_input: no such guild' using errcode = '22023'; end if;
+  if g.members >= 30 then raise exception 'fw_guild_full: this guild is full' using errcode = 'P0001'; end if;
+  select coalesce(max(s.best), 0) into v_best from public.fw_scores s where s.player_id = v_me;
+  select coalesce(max(v.rp), 0) into v_rp from public.fw_versus v where v.player_id = v_me;
+  if v_best < g.min_best or v_rp < g.min_rp then
+    raise exception 'fw_guild_req_unmet: requirements not met' using errcode = 'P0001';
+  end if;
+  if g.auto_join then
+    insert into public.fw_guild_members (player_id, guild_id, role) values (v_me, g.id, 'member');
+    update public.fw_guilds set members = members + 1 where id = g.id;
+    delete from private.fw_guild_apps a where a.player_id = v_me;
+    return jsonb_build_object('status', 'joined', 'guild', private.fw_guild_row(g.id));
+  end if;
+  insert into private.fw_guild_apps (guild_id, player_id) values (g.id, v_me)
+  on conflict (guild_id, player_id) do update set at = now();
+  return jsonb_build_object('status', 'applied');
+end;
+$$;
+
+create or replace function private.fw_guild_decide(p_uid uuid, p_accept boolean) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := (select auth.uid()); m public.fw_guild_members%rowtype; g public.fw_guilds%rowtype;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_uid is null or p_accept is null then raise exception 'fw_bad_input: bad arguments' using errcode = '22023'; end if;
+  m := private.fw_guild_mine(v_me, true);
+  if m.role <> 'owner' then raise exception 'fw_guild_owner_only: owner only' using errcode = '42501'; end if;
+  select * into g from public.fw_guilds where id = m.guild_id;
+  if not exists (select 1 from private.fw_guild_apps a where a.guild_id = g.id and a.player_id = p_uid) then
+    raise exception 'fw_bad_input: no such application' using errcode = '22023';
+  end if;
+  delete from private.fw_guild_apps a where a.guild_id = g.id and a.player_id = p_uid;
+  if p_accept then
+    if g.members >= 30 then raise exception 'fw_guild_full: this guild is full' using errcode = 'P0001'; end if;
+    if exists (select 1 from public.fw_guild_members x where x.player_id = p_uid) then
+      raise exception 'fw_guild_member: that player joined another guild' using errcode = 'P0001';
+    end if;
+    insert into public.fw_guild_members (player_id, guild_id, role) values (p_uid, g.id, 'member');
+    update public.fw_guilds set members = members + 1 where id = g.id;
+  end if;
+  return jsonb_build_object('status', case when p_accept then 'joined' else 'declined' end);
+end;
+$$;
+
+create or replace function private.fw_guild_kick(p_uid uuid) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := (select auth.uid()); m public.fw_guild_members%rowtype;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_uid is null or p_uid = v_me then raise exception 'fw_bad_input: bad arguments' using errcode = '22023'; end if;
+  m := private.fw_guild_mine(v_me, true);
+  if m.role <> 'owner' then raise exception 'fw_guild_owner_only: owner only' using errcode = '42501'; end if;
+  delete from public.fw_guild_members x where x.player_id = p_uid and x.guild_id = m.guild_id;
+  if not found then raise exception 'fw_bad_input: not a member' using errcode = '22023'; end if;
+  update public.fw_guilds set members = members - 1 where id = m.guild_id;
+  return jsonb_build_object('status', 'kicked');
+end;
+$$;
+
+create or replace function private.fw_guild_leave() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := (select auth.uid()); m public.fw_guild_members%rowtype;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  m := private.fw_guild_mine(v_me, true);
+  if m.role = 'owner' then raise exception 'fw_guild_owner: transfer or disband first' using errcode = 'P0001'; end if;
+  delete from public.fw_guild_members x where x.player_id = v_me and x.guild_id = m.guild_id;
+  if not found then raise exception 'fw_guild_none: not in a guild' using errcode = 'P0001'; end if;
+  update public.fw_guilds set members = members - 1 where id = m.guild_id;
+  return jsonb_build_object('status', 'left');
+end;
+$$;
+
+create or replace function private.fw_guild_transfer(p_uid uuid) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := (select auth.uid()); m public.fw_guild_members%rowtype;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_uid is null or p_uid = v_me then raise exception 'fw_bad_input: bad arguments' using errcode = '22023'; end if;
+  m := private.fw_guild_mine(v_me, true);
+  if m.role <> 'owner' then raise exception 'fw_guild_owner_only: owner only' using errcode = '42501'; end if;
+  if not exists (select 1 from public.fw_guild_members x where x.player_id = p_uid and x.guild_id = m.guild_id) then
+    raise exception 'fw_bad_input: not a member' using errcode = '22023';
+  end if;
+  update public.fw_guild_members set role = 'member' where player_id = v_me;
+  update public.fw_guild_members set role = 'owner' where player_id = p_uid;
+  update public.fw_guilds set owner = p_uid where id = m.guild_id;
+  return jsonb_build_object('status', 'transferred');
+end;
+$$;
+
+create or replace function private.fw_guild_disband() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := (select auth.uid()); m public.fw_guild_members%rowtype;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  m := private.fw_guild_mine(v_me, true);
+  if m.role <> 'owner' then raise exception 'fw_guild_owner_only: owner only' using errcode = '42501'; end if;
+  delete from public.fw_guilds where id = m.guild_id;   -- members and applications cascade
+  return jsonb_build_object('status', 'disbanded');
+end;
+$$;
+
+create or replace function private.fw_guild_search(p_q text, p_limit integer) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := (select auth.uid()); v jsonb;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  select coalesce(jsonb_agg(jsonb_build_object('id', g.id, 'name', g.name, 'members', g.members,
+           'min_best', g.min_best, 'min_rp', g.min_rp, 'auto_join', g.auto_join) order by g.members desc, g.id), '[]'::jsonb)
+    into v
+  from (select * from public.fw_guilds g
+        where coalesce(p_q, '') = '' or g.name ilike regexp_replace(p_q, '([%_\\])', '\\\1', 'g') || '%'
+        order by g.members desc, g.id limit least(greatest(coalesce(p_limit, 20), 1), 50)) g;
+  return v;
+end;
+$$;
+
+create or replace function private.fw_guild_me() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := (select auth.uid()); m public.fw_guild_members%rowtype; v_members jsonb; v_apps jsonb := '[]'::jsonb;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  select * into m from public.fw_guild_members x where x.player_id = v_me;
+  if not found then return jsonb_build_object('guild', null); end if;
+  select coalesce(jsonb_agg(jsonb_build_object('player_id', x.player_id, 'role', x.role,
+           'nick', coalesce(sc.nick, vs.nick, 'Pilot'), 'best', coalesce(sc.best, 0), 'rp', coalesce(vs.rp, 0))
+           order by x.role desc, coalesce(sc.best, 0) desc), '[]'::jsonb)
+    into v_members
+  from public.fw_guild_members x
+  left join public.fw_scores sc on sc.player_id = x.player_id
+  left join public.fw_versus vs on vs.player_id = x.player_id
+  where x.guild_id = m.guild_id;
+  if m.role = 'owner' then
+    select coalesce(jsonb_agg(jsonb_build_object('player_id', a.player_id,
+             'nick', coalesce(sc.nick, vs.nick, 'Pilot'), 'best', coalesce(sc.best, 0), 'rp', coalesce(vs.rp, 0)) order by a.at), '[]'::jsonb)
+      into v_apps
+    from private.fw_guild_apps a
+    left join public.fw_scores sc on sc.player_id = a.player_id
+    left join public.fw_versus vs on vs.player_id = a.player_id
+    where a.guild_id = m.guild_id;
+  end if;
+  return jsonb_build_object('guild', private.fw_guild_row(m.guild_id), 'role', m.role, 'members', v_members, 'apps', v_apps);
+end;
+$$;
+
+create or replace function public.guild_create(p_name text, p_tok text, p_min_best integer default 0, p_min_rp integer default 0, p_auto boolean default false) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_guild_create(p_name, p_tok, p_min_best, p_min_rp, p_auto); $$;
+create or replace function public.guild_update(p_min_best integer, p_min_rp integer, p_auto boolean) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_guild_update(p_min_best, p_min_rp, p_auto); $$;
+create or replace function public.guild_apply(p_id bigint) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_guild_apply(p_id); $$;
+create or replace function public.guild_decide(p_uid uuid, p_accept boolean) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_guild_decide(p_uid, p_accept); $$;
+create or replace function public.guild_kick(p_uid uuid) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_guild_kick(p_uid); $$;
+create or replace function public.guild_leave() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_guild_leave(); $$;
+create or replace function public.guild_transfer(p_uid uuid) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_guild_transfer(p_uid); $$;
+create or replace function public.guild_disband() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_guild_disband(); $$;
+create or replace function public.guild_search(p_q text default '', p_limit integer default 20) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_guild_search(p_q, p_limit); $$;
+create or replace function public.guild_me() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_guild_me(); $$;
+
+do $do$
+declare f text;
+begin
+  foreach f in array array[
+    'private.fw_guild_name(text)', 'private.fw_guild_row(bigint)', 'private.fw_guild_mine(uuid, boolean)',
+    'private.fw_guild_create(text, text, integer, integer, boolean)', 'private.fw_guild_update(integer, integer, boolean)',
+    'private.fw_guild_apply(bigint)', 'private.fw_guild_decide(uuid, boolean)', 'private.fw_guild_kick(uuid)',
+    'private.fw_guild_leave()', 'private.fw_guild_transfer(uuid)', 'private.fw_guild_disband()',
+    'private.fw_guild_search(text, integer)', 'private.fw_guild_me()',
+    'public.guild_create(text, text, integer, integer, boolean)', 'public.guild_update(integer, integer, boolean)',
+    'public.guild_apply(bigint)', 'public.guild_decide(uuid, boolean)', 'public.guild_kick(uuid)',
+    'public.guild_leave()', 'public.guild_transfer(uuid)', 'public.guild_disband()',
+    'public.guild_search(text, integer)', 'public.guild_me()'] loop
+    execute 'revoke all on function ' || f || ' from public, anon, authenticated';
+    if f not like '%fw_guild_name%' and f not like '%fw_guild_row%' and f not like '%fw_guild_mine%' then
+      execute 'grant execute on function ' || f || ' to authenticated, service_role';
+    end if;
+  end loop;
 end
 $do$;
