@@ -1347,6 +1347,7 @@ function feedMerge(since, rows){
 const GUILD_COST = 300000;
 const guildCostOk = w => !!w && (w.coins | 0) >= GUILD_COST;
 const guildReqOk = (req, me) => !!req && !!me && (me.best | 0) >= (req.min_best | 0) && (me.rp | 0) >= (req.min_rp | 0);
+const gdFailKind = e => e && typeof e === 'object' && typeof e.code === 'string' && e.code ? 'server' : 'net';
 function gpayNext(prev, ev){
   const p = prev && typeof prev === 'object' && typeof prev.st === 'string' ? prev : { st: 'idle', tok: '' };
   const out = { st: p.st, tok: p.tok || '', pay: false };
@@ -4084,7 +4085,7 @@ function celebrate(b){
 }
 let confCb = null;
 function confirmDlg(msg, yes){ $('confMsg').textContent = msg; confCb = yes; $('confScr').hidden = false; lbOpen = true; SFX.click(); }
-function confClose(){ $('confScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden; }
+function confClose(){ $('confScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('frScr').hidden || !$('gdScr').hidden; }
 $('confYes').addEventListener('click', e => { e.stopPropagation(); const f = confCb; confCb = null; confClose(); if (f) f(); });
 $('confNo').addEventListener('click', e => { e.stopPropagation(); confCb = null; confClose(); });
 const COST_KEY = {coin:'nCoin', dia:'nDia', gem:'nGem'};
@@ -4553,14 +4554,17 @@ function socShow(rows){
     else try { new Notification('SWISHBY', { body: t(tx.k, tx.v) }); } catch(e){}
   }
 }
+let socBusy = false;
 async function socPoll(){
-  if (!sb || !uid) return;
+  if (!sb || !uid || socBusy) return;
+  socBusy = true; try {
   const r = await socRpc('social_hello', { p_since: feedSince });
-  if (r.error || !r.data) return;
+  if (r.error || !r.data) return;   // finally releases the flag
   const m = feedMerge(feedSince, r.data.rows);
-  feedSince = m.since; store.set('fw27_feed2', feedSince);
+  feedSince = Math.max(m.since, Number(r.data.max) || 0); store.set('fw27_feed2', feedSince);
   if (m.rows.length) socShow(m.rows);
   if (!$('frScr').hidden && await socSync()) renderFr();   // keep the open friends list fresh
+  } finally { socBusy = false; }
 }
 setInterval(() => { const now = Date.now(); if (now < feedNext) return; feedNext = now + (document.hidden ? 60000 : 30000); socPoll(); }, 5000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden){ feedNext = Date.now() + 30000; socPoll(); } });
@@ -4591,15 +4595,26 @@ const gdErrKey = m => { const x = String(m || '');
   return /fw_guild_dupe/.test(x) ? 'gdDupe' : /fw_guild_member/.test(x) ? 'gdMember' : /fw_guild_req_unmet/.test(x) ? 'gdUnmet'
     : /fw_guild_full/.test(x) ? 'gdFull' : /fw_rate_limited/.test(x) ? 'gdCool' : /fw_guild_owner/.test(x) ? 'gdOwner'
     : /fw_bad_input/.test(x) ? 'gdBad' : 'gdFail'; };
-const gdPayLoad = () => { const o = Object(store.get('fw27_gpay', null) || {}); return { st: typeof o.st === 'string' ? o.st : 'idle', tok: typeof o.tok === 'string' ? o.tok : '' }; };
-function gdPaySet(gp){ if (gp.pay){ W.coins = Math.max(0, W.coins - GUILD_COST); saveW(); renderWallet(); toast(t('gdCreated')); SFX.fanfare(); }
-  store.set('fw27_gpay', gp.st === 'pending' ? { st: 'pending', tok: gp.tok } : { st: 'idle', tok: '' }); }
+const gdPayLoad = () => { const o = Object(store.get('fw27_gpay', null) || {}); return { st: typeof o.st === 'string' ? o.st : 'idle', tok: typeof o.tok === 'string' ? o.tok : '', args: Object(o.args || null) }; };
+const gdTok = () => { const a = new Uint8Array(12); (self.crypto || {getRandomValues: x => { for (let i = 0; i < x.length; i++) x[i] = Math.random()*256|0; }}).getRandomValues(a);
+  return [...a].map(b => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[b % 62]).join(''); };
+function gdPaySet(gp, args){ if (gp.pay){ W.coins = Math.max(0, W.coins - GUILD_COST); saveW(); renderWallet(); toast(t('gdCreated')); SFX.fanfare(); }
+  store.set('fw27_gpay', gp.st === 'pending' ? { st: 'pending', tok: gp.tok, args: args || gdPayLoad().args } : { st: 'idle', tok: '' }); }
+// the one place a create is sent: the same token (and arguments) every retry, so the server charges once.
+// Only a SERVER answer may settle the payment either way; a transport error leaves it pending for the next try.
+async function gdCreateSend(gp){
+  const a = gp.args || {};
+  const r = await socRpc('guild_create', { p_name: a.name, p_tok: gp.tok, p_min_best: a.mb | 0, p_min_rp: a.mr | 0, p_auto: !!a.auto });
+  if (!r.error){ gdPaySet(gpayNext(gp, { type: r.data && r.data.already ? 'mine' : 'ok' })); return true; }
+  if (gdFailKind(r.error) === 'server'){ gdPaySet(gpayNext(gp, { type: 'fail' })); toast(t(gdErrKey(r.error.message))); }
+  return false;   // net: still pending, same token next time
+}
 async function gdSync(){
   if (!sb || !uid) return false;
   const r = await socRpc('guild_me'); if (r.error || !r.data) return false;
   GD = r.data;
-  let gp = gdPayLoad();   // a creation whose answer was lost: the guild exists -> pay once; it does not -> forget the token
-  if (gp.st === 'pending') gdPaySet(gpayNext(gp, { type: GD.guild && GD.role === 'owner' ? 'mine' : 'none' }));
+  const gp = gdPayLoad();   // a creation whose answer was lost: re-send the SAME token; the server answers ok / already / an fw_* error
+  if (gp.st === 'pending' && gp.tok && (await gdCreateSend(gp))){ const q2 = await socRpc('guild_me'); if (!q2.error && q2.data) GD = q2.data; }
   if (!GD.guild){ const q = await socRpc('guild_search', { p_q: ($('gdQ').value || '').trim(), p_limit: 20 }); gdList = !q.error && Array.isArray(q.data) ? q.data : []; }
   return true;
 }
@@ -4623,7 +4638,7 @@ function gdMemberRow(m, mine){
   li.append(d, f, nm, b);
   if (mine && GD.role === 'owner' && m.player_id !== uid){
     const tr = document.createElement('button'); tr.className = 'frplus'; tr.textContent = t('gdTransfer');
-    tr.addEventListener('click', e => { e.stopPropagation(); gdAct('guild_transfer', {p_uid: m.player_id}, ''); });
+    tr.addEventListener('click', e => { e.stopPropagation(); confirmDlg(t('gdTransfer') + ' — ' + (showNick(m.nick || '') || '—') + '?', () => gdAct('guild_transfer', {p_uid: m.player_id}, '')); });
     const x = document.createElement('button'); x.className = 'frx'; x.textContent = '✕'; x.title = t('gdKick');
     x.addEventListener('click', e => { e.stopPropagation(); gdAct('guild_kick', {p_uid: m.player_id}, ''); });
     li.append(tr, x);
@@ -4683,16 +4698,14 @@ $('gdForm').addEventListener('submit', async e => {
   e.preventDefault(); e.stopPropagation();
   const name = ($('gdName').value || '').trim(); if (name.length < 2) return;
   if (!guildCostOk(W)){ toast(t('gdNeed')); return; }
-  let gp = gpayNext(gdPayLoad(), { type: 'start', tok: Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 6) });
-  gdPaySet(gp); $('gdCreateBtn').disabled = true;
-  const r = await socRpc('guild_create', { p_name: name, p_tok: gp.tok,
-    p_min_best: clampI(Number($('gdMB').value), 0, 100000), p_min_rp: clampI(Number($('gdMR').value), 0, 1000000), p_auto: $('gdAuto').checked });
-  if (r.error){ gdPaySet(gpayNext(gp, { type: 'fail' })); toast(t(gdErrKey(r.error.message))); }
-  else gdPaySet(gpayNext(gp, { type: 'ok' }));
+  const args = { name, mb: clampI(Number($('gdMB').value), 0, 100000), mr: clampI(Number($('gdMR').value), 0, 1000000), auto: $('gdAuto').checked };
+  const gp = gpayNext(gdPayLoad(), { type: 'start', tok: gdTok() }); gp.args = args;
+  gdPaySet(gp, args); $('gdCreateBtn').disabled = true;
+  await gdCreateSend(gp);
   await gdSync(); renderGd();
 });
 $('gdLeaveBtn').addEventListener('click', e => { e.stopPropagation(); gdAct('guild_leave', {}, ''); });
-$('gdDisbandBtn').addEventListener('click', e => { e.stopPropagation(); gdAct('guild_disband', {}, ''); });
+$('gdDisbandBtn').addEventListener('click', e => { e.stopPropagation(); confirmDlg(t('gdDisband') + ' — ' + ((GD && GD.guild && GD.guild.name) || '') + '?', () => gdAct('guild_disband', {}, '')); });
 
 /* ---------- daily countdown ---------- */
 function updateDaily(){
@@ -5217,7 +5230,7 @@ function vsRankReport(res){   // res: 'win' | 'lose' | 'draw' as seen by my team
 function vsRpNote(ai, rk, res){
   if (ai) return t('vsPractice');
   if (!rk || rk.why) return t(rk && rk.why === 'cap' ? 'vsCap' : 'vsNoRank');
-  const live = rk.delta == null, d = live ? (vs.sz === 4 ? FFA_RP[Math.min(4, Math.max(1, vs.place || 4)) - 1] : rpAfter(rp, res) - rp) : rk.delta;
+  const live = rk.delta == null, d = live ? (vs.sz === 4 ? Math.max(-rp, FFA_RP[Math.min(4, Math.max(1, vs.place || 4)) - 1]) : rpAfter(rp, res) - rp) : rk.delta;
   return `${d > 0 ? '+' : d < 0 ? '' : '±'}${d} RP ` + (live ? '· ' + t('vsPend') : `(${ptierName(tierOf(rp))})`);
 }
 function vsBegin(){

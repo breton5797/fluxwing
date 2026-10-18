@@ -1185,6 +1185,8 @@ do $do$
 begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
     perform cron.schedule('fw_vs_rollover', '0 15 * * *', 'set statement_timeout = 0; select private.fw_vs_tick();');
+    perform cron.schedule('fw_social_feed_gc', '30 15 * * *',
+      'set statement_timeout = 0; delete from private.fw_social_feed where at < now() - interval ''3 days'';');
   end if;
 end
 $do$;
@@ -1252,7 +1254,12 @@ begin
     v_code := '';
     for j in 1..8 loop v_code := v_code || substr(c_alph, 1 + floor(random() * 32)::integer, 1); end loop;
     begin
-      insert into private.fw_social (player_id, code) values (p_uid, v_code) returning * into v_row;
+      insert into private.fw_social (player_id, code) values (p_uid, v_code)
+      on conflict (player_id) do nothing returning * into v_row;             -- a concurrent first touch: take that row
+      if v_row.player_id is null then
+        if p_lock then select * into strict v_row from private.fw_social where player_id = p_uid for update;
+        else select * into strict v_row from private.fw_social where player_id = p_uid; end if;
+      end if;
       return v_row;
     exception
       when unique_violation then null;     -- code collision: roll again
@@ -1306,7 +1313,8 @@ begin
   if exists (select 1 from public.fw_friends f where f.a = least(v_me, v_to) and f.b = greatest(v_me, v_to)) then
     raise exception 'fw_friend_dupe: already friends' using errcode = 'P0001';
   end if;
-  if (select count(*) from public.fw_friends f where v_me in (f.a, f.b)) >= c.friend_cap then
+  if (select count(*) from public.fw_friends f where v_me in (f.a, f.b)) >= c.friend_cap
+     or (select count(*) from public.fw_friends f where v_to in (f.a, f.b)) >= c.friend_cap then
     raise exception 'fw_friend_cap: friend list is full' using errcode = 'P0001';
   end if;
   -- a request the other way makes the friendship at once
@@ -1340,7 +1348,8 @@ begin
   end if;
   delete from private.fw_friend_req r where (r.from_id, r.to_id) in ((p_from, v_me), (v_me, p_from));
   if p_accept then
-    if (select count(*) from public.fw_friends f where v_me in (f.a, f.b)) >= c.friend_cap then
+    if (select count(*) from public.fw_friends f where v_me in (f.a, f.b)) >= c.friend_cap
+       or (select count(*) from public.fw_friends f where p_from in (f.a, f.b)) >= c.friend_cap then
       raise exception 'fw_friend_cap: friend list is full' using errcode = 'P0001';
     end if;
     insert into public.fw_friends (a, b) values (least(v_me, p_from), greatest(v_me, p_from)) on conflict do nothing;
@@ -1568,6 +1577,7 @@ create table if not exists private.fw_social_feed (
   constraint fw_social_feed_kind_chk check (kind in ('on', 'best'))
 );
 create index if not exists fw_social_feed_to on private.fw_social_feed (to_id, id);
+create index if not exists fw_social_feed_fold on private.fw_social_feed (to_id, from_id, kind, at);
 alter table private.fw_social_feed enable row level security;
 revoke all on table private.fw_social_feed from public, anon, authenticated;
 
@@ -1583,8 +1593,10 @@ begin
   if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
   v_row := private.fw_social_row(v_me, true);
   update private.fw_social set last_seen = v_now where player_id = v_me;
-  -- came (back) online: tell the friends, at most once per hello_gap
-  if v_row.last_seen is null or v_row.hello_at is null or v_row.hello_at < v_now - c.hello_gap then
+  -- came (back) online: only when the previous sighting is older than the online window (a player who stayed
+  -- on just keeps polling), and then at most once per hello_gap
+  if (v_row.last_seen is null or v_row.last_seen < v_now - c.online_window)
+     and (v_row.hello_at is null or v_row.hello_at < v_now - c.hello_gap) then
     update private.fw_social set hello_at = v_now where player_id = v_me;
     insert into private.fw_social_feed (to_id, from_id, kind)
     select case when f.a = v_me then f.b else f.a end, v_me, 'on' from public.fw_friends f where v_me in (f.a, f.b);
@@ -1593,10 +1605,12 @@ begin
   select coalesce(jsonb_agg(jsonb_build_object('id', x.id, 'from_id', x.from_id, 'nick', coalesce(sc.nick, vs.nick, 'Pilot'),
            'kind', x.kind, 'val', x.val, 'at', x.at) order by x.id), '[]'::jsonb)
     into v_rows
-  from (select * from private.fw_social_feed d where d.to_id = v_me and d.id > coalesce(p_since, 0) order by d.id limit 50) x
+  from (select * from private.fw_social_feed d where d.to_id = v_me and d.id > coalesce(p_since, 0)
+        and d.at > v_now - interval '1 hour' order by d.id limit 50) x   -- stale backlog is skipped, the cursor (max below) still passes it
   left join public.fw_scores sc on sc.player_id = x.from_id
   left join public.fw_versus vs on vs.player_id = x.from_id;
-  return jsonb_build_object('rows', v_rows);
+  return jsonb_build_object('rows', v_rows,
+    'max', coalesce((select max(d.id) from private.fw_social_feed d where d.to_id = v_me), coalesce(p_since, 0)));
 end;
 $$;
 
@@ -1608,11 +1622,10 @@ begin
   if tg_op = 'UPDATE' and new.best <= old.best then return new; end if;
   if new.best <= 0 then return new; end if;
   for r in select case when f.a = new.player_id then f.b else f.a end as fid from public.fw_friends f where new.player_id in (f.a, f.b) loop
-    update private.fw_social_feed set val = new.best, at = v_now
-    where to_id = r.fid and from_id = new.player_id and kind = 'best' and at > v_now - c.best_gap;
-    if not found then
-      insert into private.fw_social_feed (to_id, from_id, kind, val) values (r.fid, new.player_id, 'best', new.best);
-    end if;
+    -- fold inside best_gap by replacing (a fresh id): an updated-in-place row would hide behind the reader's cursor
+    delete from private.fw_social_feed d
+    where d.to_id = r.fid and d.from_id = new.player_id and d.kind = 'best' and d.at > v_now - c.best_gap;
+    insert into private.fw_social_feed (to_id, from_id, kind, val) values (r.fid, new.player_id, 'best', new.best);
   end loop;
   return new;
 end;
@@ -1760,7 +1773,11 @@ declare m public.fw_guild_members%rowtype;
 begin
   select * into m from public.fw_guild_members x where x.player_id = p_uid;
   if not found then raise exception 'fw_guild_none: not in a guild' using errcode = 'P0001'; end if;
-  if p_lock then perform 1 from public.fw_guilds g where g.id = m.guild_id for update; end if;
+  if p_lock then
+    perform 1 from public.fw_guilds g where g.id = m.guild_id for update;
+    select * into m from public.fw_guild_members x where x.player_id = p_uid;   -- re-read under the lock: a concurrent kick/leave/transfer may have moved it
+    if not found or m.guild_id is null then raise exception 'fw_guild_none: not in a guild' using errcode = 'P0001'; end if;
+  end if;
   return m;
 end;
 $$;
@@ -1860,7 +1877,8 @@ begin
   if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
   m := private.fw_guild_mine(v_me, true);
   if m.role = 'owner' then raise exception 'fw_guild_owner: transfer or disband first' using errcode = 'P0001'; end if;
-  delete from public.fw_guild_members x where x.player_id = v_me;
+  delete from public.fw_guild_members x where x.player_id = v_me and x.guild_id = m.guild_id;
+  if not found then raise exception 'fw_guild_none: not in a guild' using errcode = 'P0001'; end if;
   update public.fw_guilds set members = members - 1 where id = m.guild_id;
   return jsonb_build_object('status', 'left');
 end;

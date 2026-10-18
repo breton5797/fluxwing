@@ -53,6 +53,31 @@ begin
   ok := false; begin perform private.fw_friend_request('ZZZZZZZZ', null); exception when others then ok := sqlerrm like 'fw_bad_input%'; end;
   if not ok then raise exception 'unknown code not refused'; end if;
 
+  -- alerts: befriend again, then hello fans out exactly one 'on' row, and staying online repeats nothing
+  r := private.fw_friend_request(null, u2);
+  perform set_config('request.jwt.claim.sub', u2::text, true); perform set_config('request.jwt.claims', json_build_object('sub', u2, 'role', 'authenticated')::text, true);
+  r := private.fw_friend_respond(u1, true);
+  r := private.fw_social_hello(0);   -- u2 comes online
+  if (select count(*) from private.fw_social_feed where to_id = u1 and kind = 'on') <> 1 then raise exception 'hello fan-out'; end if;
+  update private.fw_social set hello_at = hello_at - interval '16 minutes' where player_id = u2;   -- gap passed but still online (last_seen fresh)
+  r := private.fw_social_hello(0);
+  if (select count(*) from private.fw_social_feed where to_id = u1 and kind = 'on') <> 1 then raise exception 'staying online must not repeat the alert'; end if;
+  update private.fw_social set hello_at = hello_at - interval '16 minutes', last_seen = last_seen - interval '10 minutes' where player_id = u2;
+  r := private.fw_social_hello(0);   -- actually came back
+  if (select count(*) from private.fw_social_feed where to_id = u1 and kind = 'on') <> 2 then raise exception 'coming back must alert again'; end if;
+  -- a new best feeds the friend once (folded), with a fresh id each time
+  update public.fw_scores set best = 20 where player_id = u2;
+  update public.fw_scores set best = 30 where player_id = u2;
+  if (select count(*) from private.fw_social_feed where to_id = u1 and kind = 'best') <> 1
+     or (select val from private.fw_social_feed where to_id = u1 and kind = 'best') <> 30 then raise exception 'best fold'; end if;
+  -- the feed is private: u1 reads only its own rows, fresh ones only, and max passes the stale backlog
+  perform set_config('request.jwt.claim.sub', u1::text, true); perform set_config('request.jwt.claims', json_build_object('sub', u1, 'role', 'authenticated')::text, true);
+  r := private.fw_social_hello(0);
+  if jsonb_array_length(r->'rows') < 2 then raise exception 'u1 should see its rows: %', r; end if;
+  update private.fw_social_feed set at = at - interval '2 hours' where to_id = u1;
+  r := private.fw_social_hello(0);
+  if jsonb_array_length(r->'rows') <> 0 or (r->>'max')::bigint <= 0 then raise exception 'stale rows must hide behind max: %', r; end if;
+
   raise notice 'PASS social.sql';
 end $$;
 rollback;

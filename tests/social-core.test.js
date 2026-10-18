@@ -155,3 +155,12 @@ test('gpayNext: the coin leaves exactly once, over any retry pattern', () => {
   assert.deepEqual(S.gpayNext({ st: 'pending', tok: 'x000000000' }, { type: 'none' }), { st: 'idle', tok: '', pay: false });
   assert.deepEqual(S.gpayNext(null, { type: 'ok' }), { st: 'idle', tok: '', pay: false });
 });
+
+// ---------- review fixes ----------
+test('gdFailKind: a server answer fails the payment, a transport error keeps it pending', () => {
+  assert.equal(S.gdFailKind({ code: 'P0001', message: 'fw_guild_dupe: taken' }), 'server');
+  assert.equal(S.gdFailKind({ code: 'PGRST202', message: 'Could not find the function' }), 'server');
+  assert.equal(S.gdFailKind({ message: 'Failed to fetch' }), 'net');
+  assert.equal(S.gdFailKind(new TypeError('NetworkError')), 'net');
+  assert.equal(S.gdFailKind(null), 'net');
+});

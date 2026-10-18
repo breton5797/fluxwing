@@ -70,6 +70,17 @@ begin
   r := private.fw_guild_disband();
   if (select count(*) from public.fw_guild_members where guild_id = gid) <> 0 then raise exception 'disband cascade'; end if;
 
+  -- capacity: a full guild refuses the 31st
+  gid := (select id from public.fw_guilds limit 1);
+  if gid is null then
+    perform pg_temp.as_user(u2);
+    r := private.fw_guild_create('Delta', 'tok55555', 0, 0, true); gid := (r->'guild'->>'id')::bigint;
+  end if;
+  update public.fw_guilds set members = 30 where id = gid;
+  perform pg_temp.as_user(u3);
+  ok := false; begin perform private.fw_guild_apply(gid); exception when others then ok := sqlerrm like 'fw_guild_full%'; end;
+  if not ok then raise exception 'full guild not refused'; end if;
+
   raise notice 'PASS guild.sql';
 end $$;
 rollback;
