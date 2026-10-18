@@ -114,6 +114,8 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .lbstatus{font-size:12px;color:var(--dim);min-height:1.2em}
 .nickrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .nickrow label{font-size:12px;color:var(--dim);letter-spacing:.06em;width:100%}
+.authcard{max-width:360px}
+.authcard .ghost{display:block;width:100%;margin:6px 0}
 .nickrow input{flex:1;min-width:0;background:rgba(243,238,252,.06);border:1px solid var(--line);border-radius:10px;padding:9px 12px;color:var(--ink);font:600 15px var(--body);user-select:text;-webkit-user-select:text;touch-action:auto}
 #dashBtnOLD{position:absolute;right:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px));width:76px;height:76px;border-radius:50%;border:2px solid var(--line);background:rgba(14,10,30,.6);color:var(--ink);font-family:"Bungee",Impact,sans-serif;font-size:14px;letter-spacing:.06em;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,box-shadow .2s,border-color .2s}
 /* action buttons: conic gauge ring around a dark core */
@@ -488,6 +490,22 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     </div>
   </div>
 
+  <div class="overlay" id="authScr" hidden>
+    <div class="card authcard">
+      <div class="lbhead"><h2 data-i18n="acct"></h2><button class="ghost" id="authClose" data-i18n="close"></button></div>
+      <div class="vsnote" id="authMsg"></div>
+      <div id="authPick">
+        <div class="vsstatus" data-i18n="authSub"></div>
+        <button class="ghost primary" id="authGoogle" data-i18n="authGoogle"></button>
+        <button class="ghost" id="authApple" data-i18n="authApple" hidden></button>
+        <form class="nickrow" id="authEmailForm"><input id="authEmailIn" type="email" autocomplete="email" maxlength="254"><button class="ghost" type="submit" data-i18n="authSend"></button></form>
+      </div>
+      <form class="nickrow" id="authCodeForm" hidden><input id="authCodeIn" inputmode="numeric" autocomplete="one-time-code" maxlength="12"><button class="ghost" type="submit" data-i18n="authVerify"></button></form>
+      <div id="authTaken" hidden><button class="ghost primary" id="authTakenGo" data-i18n="authTakenGo"></button></div>
+      <div id="authAsk" hidden><div class="vsstatus" id="cloudAcct"></div><div class="vsstatus" id="cloudDev"></div><button class="ghost primary" id="cloudMerge" data-i18n="cloudMerge"></button><button class="ghost" id="cloudPullBtn" data-i18n="cloudPull"></button></div>
+      <div id="authOutBox" hidden><div class="vsstatus" id="authWho"></div><button class="ghost" id="authOutBtn" data-i18n="authOut"></button></div>
+    </div>
+  </div>
   <div class="overlay" id="seaScr" hidden>
     <div class="card seacard">
       <div class="over-title" id="seaTitle" style="color:var(--gold)"></div>
@@ -576,6 +594,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
         <input id="nickIn" maxlength="14" autocomplete="off" spellcheck="false">
         <button class="ghost" type="submit" data-i18n="save"></button>
       </form>
+      <div class="nickrow acctrow" id="acctRow" hidden><span id="acctLbl"></span><button class="ghost" type="button" id="acctBtn"></button></div>
     </div>
   </div>
 </div>
@@ -586,7 +605,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 <script type="application/json" id="fxcfg">{"hitstop":{"light":0.04,"mid":0.08,"heavy":0.12},"punch":{"light":1.05,"mid":1.09,"heavy":1.15},"shake":{"stiff":260,"damp":18,"ampPx":{"light":4,"mid":9,"heavy":16}},"flash":{"frames":2,"alpha":0.55},"wave":{"life":0.45,"maxR":220,"refract":1.03,"cap":2},"chroma":{"dur":0.2,"px":3,"idleAlpha":0.15},"bloom":{"down":4,"alpha":0.25},"slowmo":{"scale":0.3,"near":0.2},"vignette":{"hurt":0.55,"danger":0.45},"death":{"slow":0.4,"slowScale":0.3,"grayFrom":0.6,"grayTo":1.1,"debrisBounce":0.45},"layers":{"core":{"n":[1,2],"size":[18,34],"speed":[0,0],"life":[0.08,0.14],"drag":0,"grav":0},"spark":{"n":[10,18],"size":[2,4],"speed":[220,520],"life":[0.25,0.55],"drag":3.5,"grav":900},"smoke":{"n":[4,8],"size":[10,22],"speed":[30,90],"life":[0.5,0.9],"drag":2,"grav":-60},"debris":{"n":[5,10],"size":[3,7],"speed":[150,380],"life":[0.6,1.1],"drag":1,"grav":1100}},"pool":{"low":240,"mid":400,"high":640},"quality":{"partMul":{"low":0.4,"mid":0.7,"high":1},"downP90Ms":20},"combo":{"l3":20,"l4":30,"partMulL3":2,"beatHz":2},"pop":{"from":1.6,"dur":0.35},"near":{"closeFrac":0.33,"flashHue":205},"events":{"flap":{"haptic":"flap"},"gate":{"haptic":null},"near":{"haptic":"near"},"shieldHit":{"haptic":"shieldHit"},"shieldMulti":{"haptic":null},"speed":{"haptic":null},"death":{"haptic":"deathHeavy"},"record":{"haptic":"record"},"coin":{"haptic":null},"comboBreak":{"haptic":"shatter"},"overdrive":{"haptic":"overdrive"}}}</script>
 <script>
 // Only the publishable / anon key ever goes here. Never a secret or service_role key.
-window.FW_CONFIG = { supabaseUrl: 'https://ecjeyelgcqbliavwltbc.supabase.co', supabaseAnonKey: 'sb_publishable_wG1eznhHBLW33Ghrt1gNNg_c32xOXX1' };
+window.FW_CONFIG = { supabaseUrl: 'https://ecjeyelgcqbliavwltbc.supabase.co', supabaseAnonKey: 'sb_publishable_wG1eznhHBLW33Ghrt1gNNg_c32xOXX1', auth: { apple: false } };
 </script>
 <!-- ============================================================ -->
 
@@ -601,9 +620,10 @@ const SYS = 'system-ui, "Apple SD Gothic Neo", "Noto Sans KR", "Hiragino Sans", 
 let dpr = 1, scale = 1, LW = 360;
 
 /* ---------- storage ---------- */
+let onStoreSet = null;   // the cloud save marks itself dirty here (cloud save section)
 const store = {
   get(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
-  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} if (onStoreSet) onStoreSet(k); }
 };
 
 /* ---------- i18n ---------- */
@@ -787,7 +807,7 @@ zh:[['超速驱动','{n}秒内完美判定大幅放宽'],['闪现','瞬移穿过
 SK_IDS.forEach((id,i) => { for (const l in I18N){ const tx = (SK_TXT[l] || SK_TXT.en)[i]; I18N[l]['sk_' + id] = tx[0]; I18N[l]['sd_' + id] = tx[1]; } });
 // Key-based additions (ko/en, with ja/zh for the cost labels, the newer unit texts, the versus ranking, its seasons and the season unit; anything a language lacks falls back to en). The index arrays above keep their length and order.
 const I18N_N = {
-ko:{adFail:'지금은 광고를 볼 수 없어요', ad2x:'광고 보고 코인 2배 (+{n})', adDaily2x:'광고 보고 데일리 보상 2배', startSub:'탭 한 번이면 출발', dailyCta:'글로벌 데일리 런', dailyPlayed:'{d} · 오늘 최고 {n} · {t} 후 교체', dailyFresh:'연속 {s}일 도전 · 첫 판 보상 +{c}코인 +{g}젬', dailyDone:'연속 {s}일 유지 중 · 내일 보상까지 {t}', dailyStreak:'데일리 연속 {s}일!', k1:'탭해서 날기', k2:'가장자리 스치면 PERFECT', k3:'게이지가 차면 DASH', tapNow:'탭!',
+ko:{acct:'계정', authCta:'로그인하고 진행 저장', authSub:'코인·기체·진행이 계정에 저장되고 다른 기기와 동기화돼요', authGoogle:'Google로 계속', authApple:'Apple로 계속', authSend:'이메일로 코드 받기', authEmailPh:'이메일 주소', authSent:'{e}(으)로 보낸 6자리 코드를 입력하거나 메일의 링크를 여세요', authCodePh:'6자리 코드', authVerify:'확인', authBadEmail:'이메일 주소를 확인해 주세요', authBadCode:'코드가 맞지 않거나 만료됐어요', authRate:'잠시 후 다시 시도해 주세요', authFail:'로그인하지 못했어요. 다시 시도해 주세요', authTaken:'이 계정에는 이미 다른 진행이 있어요. 그 계정으로 로그인할까요?', authTakenGo:'그 계정으로 로그인', authIn:'{e} 로그인됨', authOut:'로그아웃', authOutQ:'로그아웃하면 이 기기의 진행이 지워지고 처음부터 시작해요. 진행은 계정에 안전하게 남아 있어요.', authInApp:'앱 안의 브라우저에서는 Google 로그인이 막혀 있어요. 이메일 코드를 쓰거나 기본 브라우저로 여세요', cloudAsk:'이 계정에 저장된 진행이 있어요', cloudLine:'{w}: Lv {l} · 코인 {c} · 기체 {u}', cloudAcctW:'계정', cloudDevW:'이 기기', cloudMerge:'합치기 (권장)', cloudPull:'계정 진행만 사용', cloudLoaded:'계정 진행을 불러왔어요', cloudFail:'계정에 저장하지 못했어요. 잠시 후 다시 시도해요', adFail:'지금은 광고를 볼 수 없어요', ad2x:'광고 보고 코인 2배 (+{n})', adDaily2x:'광고 보고 데일리 보상 2배', startSub:'탭 한 번이면 출발', dailyCta:'글로벌 데일리 런', dailyPlayed:'{d} · 오늘 최고 {n} · {t} 후 교체', dailyFresh:'연속 {s}일 도전 · 첫 판 보상 +{c}코인 +{g}젬', dailyDone:'연속 {s}일 유지 중 · 내일 보상까지 {t}', dailyStreak:'데일리 연속 {s}일!', k1:'탭해서 날기', k2:'가장자리 스치면 PERFECT', k3:'게이지가 차면 DASH', tapNow:'탭!',
  whyGround0:'첫 게이트 전에 떨어졌어요 · 시작하자마자 짧게 여러 번 탭!', whyGround:'너무 낮았어요 · 바닥에 닿았어요. 조금 더 일찍 탭', whyTop:'너무 높았어요 · 위쪽 벽에 닿았어요. 게이트 앞에서는 탭을 쉬세요', whyBot:'너무 낮았어요 · 아래쪽 벽에 닿았어요. 조금 더 일찍 탭', whyGate:'게이트에 부딪혔어요 · 틈 가운데를 노리세요',
  shareBtn:'친구에게 도전장 보내기', share:'SWISHBY에서 {n}점! 넘을 수 있어?', shareDaily:'SWISHBY 데일리 {d}: {n}점 · 게이트 {g} · 콤보 x{c}. 전 세계 같은 코스, 넘을 수 있어?', shared:'공유했어요', copied:'복사했어요. 친구에게 붙여넣기 하세요', shareManual:'아래 문구를 복사해서 보내세요',
  oDailyLine:'글로벌 데일리 · {d} · 전 세계 같은 코스 · {t} 후 교체', dNew:'오늘 최고 기록! 친구에게 {n}점 도전장을 보내세요', dShort:'오늘 최고 {b}점까지 {n}점 남았어요. 한 번 더?',
@@ -811,7 +831,7 @@ ko:{adFail:'지금은 광고를 볼 수 없어요', ad2x:'광고 보고 코인 2
  ul_solaris:'천지개벽', ud_solaris:'화면의 모든 게이트가 불타 사라지고 3.5초간 무적, {n}초간 코인 비가 내린다', ul_aurora:'극야', ud_aurora:'{n}초간 모든 게이트가 내 높이의 곧고 넓은 회랑으로 열리고, 통과하면 모두 퍼펙트', ul_tempest:'허리케인', ud_tempest:'폭풍이 되어 다음 게이트 {n}개를 무적으로 휩쓸고, 대시 게이지가 가득 찬 채 안전하게 내려앉는다', ul_pleiad:'유성우', ud_pleiad:'별똥별이 쏟아져 다음 게이트 {n}개를 한꺼번에 부순다', ul_pulsar:'빅뱅', ud_pulsar:'{n}초간 세상이 느려지고 통과한 게이트는 모두 퍼펙트, 점수 3배', ultK:'궁극기', ultReady:'궁극기 준비 완료!', hUlt:'궁극기 — 울트라 유닛에는 세 번째 버튼 ULT(A)가 있어요. 게이트를 지날 때마다 게이지가 차고 퍼펙트면 더 빨리 차요. 가득 차면 눌러서 그 유닛의 궁극기를 써요. 스테이지 전용이에요.',
  r_season:'시즌 한정', seaOnly:'시즌 보상 · 대전 시즌 상위 10명', r_monarch:'군주형', p_monarch:'근위대: 실드 1개로 출발(최대 1개). 게이트 25개마다 실드를 되찾는다.', sk_monarch:'대관식', sd_monarch:'{n}초간 무적, 4초간 퍼펙트 판정이 넓어진다',
  hz_over:'과속', hz_weight:'무게추', hz_smoke:'연막', hz_drain:'방전', hHaz:'방해 아이템 — 스테이지 11부터 게이트 사이에 붉은 테두리의 검은 가시 원반이 나와요. 닿으면 과속(3초간 빨라짐)·무게추(3초간 무거워짐)·연막(2.5초 안개)·방전(대시 게이지·스킬 충전·콤보가 0) 중 하나에 걸려요. 실드가 있거나 대시·무적 중이면 아무 일 없이 터져요. 스테이지 전용이에요.'},
-en:{adFail:'No ad available right now', ad2x:'Watch an ad: coins x2 (+{n})', adDaily2x:'Watch an ad: daily reward x2', startSub:'One tap run', dailyCta:'GLOBAL DAILY RUN', dailyPlayed:'{d} · today best {n} · new in {t}', dailyFresh:'Day {s} streak run · first-run reward +{c} coins +{g} gems', dailyDone:'Day {s} streak locked · next reward in {t}', dailyStreak:'Daily streak day {s}!', k1:'TAP TO FLAP', k2:'SKIM EDGE = PERFECT', k3:'DASH WHEN FULL', tapNow:'TAP!',
+en:{acct:'Account', authCta:'Sign in to save progress', authSub:'Coins, units and progress are kept on your account and synced across devices', authGoogle:'Continue with Google', authApple:'Continue with Apple', authSend:'Email me a code', authEmailPh:'Email address', authSent:'Enter the 6-digit code sent to {e}, or open the link in the email', authCodePh:'6-digit code', authVerify:'Confirm', authBadEmail:'Please check the email address', authBadCode:'That code is wrong or expired', authRate:'Please try again in a moment', authFail:"Couldn't sign in. Please try again", authTaken:'That account already has other progress. Sign in to it?', authTakenGo:'Sign in to that account', authIn:'Signed in as {e}', authOut:'Sign out', authOutQ:'Signing out clears the progress on this device and starts fresh. Your progress stays safe on your account.', authInApp:'Google sign-in is blocked inside in-app browsers. Use an email code or open your default browser', cloudAsk:'This account already has saved progress', cloudLine:'{w}: Lv {l} · {c} coins · {u} units', cloudAcctW:'Account', cloudDevW:'This device', cloudMerge:'Merge (recommended)', cloudPull:'Use account progress only', cloudLoaded:'Loaded your account progress', cloudFail:"Couldn't save to your account. Will retry", adFail:'No ad available right now', ad2x:'Watch an ad: coins x2 (+{n})', adDaily2x:'Watch an ad: daily reward x2', startSub:'One tap run', dailyCta:'GLOBAL DAILY RUN', dailyPlayed:'{d} · today best {n} · new in {t}', dailyFresh:'Day {s} streak run · first-run reward +{c} coins +{g} gems', dailyDone:'Day {s} streak locked · next reward in {t}', dailyStreak:'Daily streak day {s}!', k1:'TAP TO FLAP', k2:'SKIM EDGE = PERFECT', k3:'DASH WHEN FULL', tapNow:'TAP!',
  whyGround0:'Fell before the first gate · tap right away, in short quick taps', whyGround:'Too low · you hit the ground. Tap sooner', whyTop:'Too high · you hit the top wall. Let it drop before the gate', whyBot:'Too low · you hit the bottom wall. Tap earlier', whyGate:'Hit the gate · aim for the middle of the gap',
  shareBtn:'CHALLENGE A FRIEND', share:'I scored {n} in SWISHBY. Can you beat me?', shareDaily:'SWISHBY Daily {d}: I scored {n} ({g} gates, combo x{c}). Same course worldwide. Can you beat me?', shared:'Shared', copied:'Copied. Paste it to a friend', shareManual:'Copy this line and send it',
  oDailyLine:'GLOBAL DAILY · {d} · same course worldwide · new in {t}', dNew:'New daily best! Dare a friend to beat {n}', dShort:'{n} short of your best today ({b}). One more run?',
@@ -1389,6 +1409,111 @@ function adMake(p, env){
 }
 const adGuardMs = prov => prov === 'stub' ? AD_CFG.timeoutMs : AD_SDK.guardMs;
 /* ads:end */
+/* cloud:start — cloud save (merge rules) and login rules: pure, no DOM, no storage, no clock (get/set come in). tests/cloud.test.js runs this block as it stands (tests/helpers/cloud.js). */
+const FS_CFG = Object.freeze({ v: 1, maxBytes: 16384, stN: 50, owned0: Object.freeze(['volt', 'blitz', 'nimbus', 'titan']) });
+// Synced to the account (public.fw_saves). Every other fw27_ key stays on this device: FS_LOCAL ("_" at the end = a prefix)
+const FS_KEYS = Object.freeze(['fw27_wallet2', 'fw27_owned', 'fw27_pass', 'fw27_starter', 'fw27_best', 'fw27_bestg', 'fw27_stg2', 'fw27_stage2',
+  'fw27_bird', 'fw27_nick', 'fw27_tut', 'fw27_rookie_runs', 'fw27_dstreak', 'fw27_dbonus', 'fw27_vsclaim']);
+const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_stg', 'fw27_stage', 'fw27_lang', 'fw27_mute', 'fw27_vib', 'fw27_ads', 'fw27_trial', 'fw27_rp2',
+  'fw27_rej', 'fw27_vsmode', 'fw27_dg', 'fw27_daily_', 'fw27_sync',
+  'fw27_fxq', 'fw27_fxshake', 'fw27_fxflash',   // fx quality and accessibility: per-device hardware/comfort choices
+  'fw27_push', 'fw27_pushk', 'fw27_feed2']);    // friend alerts: the toggle follows this device's Notification permission; feed2 is this device's read cursor
+const fsI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
+const fsDay = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
+const fsId = v => typeof v === 'string' && /^[a-z]{1,12}$/.test(v) && v !== 'constructor';
+const fsObj = v => v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+const fsArr = (a, hi) => Array.from({ length: FS_CFG.stN }, (_, i) => fsI(Array.isArray(a) ? a[i] : 0, 0, hi));
+function fsNorm(raw){
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || raw.v !== FS_CFG.v) return null;
+  const w = fsObj(raw.w), s = fsObj(raw.stg), d = fsObj(raw.ds);
+  return { v: FS_CFG.v,
+    w: { xp: fsI(w.xp, 0, 99), lvl: fsI(w.lvl, 1, 1e6), coins: fsI(w.coins, 0, 1e12), dia: fsI(w.dia, 0, 1e12), gems: fsI(w.gems, 0, 1e9) },
+    owned: [...new Set([...FS_CFG.owned0, ...(Array.isArray(raw.owned) ? raw.owned : []).filter(fsId)])].sort().slice(0, 64),
+    pass: raw.pass === true, starter: raw.starter === true, best: fsI(raw.best, 0, 1e9), bestg: fsI(raw.bestg, 0, 1e6),
+    stg: { gates: fsArr(s.gates, 1e9), score: fsArr(s.score, 1e9), clr: fsArr(s.clr, 1), open: fsI(s.open, 0, FS_CFG.stN - 1) },
+    stage: fsI(raw.stage, 0, FS_CFG.stN - 1), bird: fsId(raw.bird) ? raw.bird : 'volt',
+    nick: typeof raw.nick === 'string' ? raw.nick.slice(0, 14) : '', tut: raw.tut ? 1 : 0, rookie: fsI(raw.rookie, 0, 999),
+    ds: fsDay(d.last) ? { last: d.last, streak: fsI(d.streak, 0, 1e6) } : null, dbonus: fsDay(raw.dbonus),
+    vsg: (Array.isArray(raw.vsg) ? raw.vsg : []).filter(k => typeof k === 'string' && /^\d{6}:[0-9a-f-]{36}$/.test(k)).slice(-24) };
+}
+// The device save as the game itself reads it (same keys, same defaults)
+function fsSnap(get){
+  const vc = fsObj(get('fw27_vsclaim', null));
+  return fsNorm({ v: FS_CFG.v, w: get('fw27_wallet2', {}), owned: get('fw27_owned', FS_CFG.owned0), pass: get('fw27_pass', false), starter: get('fw27_starter', false),
+    best: get('fw27_best', 0), bestg: get('fw27_bestg', 0), stg: get('fw27_stg2', null), stage: get('fw27_stage2', 0), bird: get('fw27_bird', 'volt'),
+    nick: get('fw27_nick', '') || '', tut: get('fw27_tut', 0), rookie: get('fw27_rookie_runs', 0), ds: get('fw27_dstreak', null), dbonus: get('fw27_dbonus', ''), vsg: vc.g });
+}
+// What to store for a save. fw27_vsclaim keeps this device's pending claims (p): only the granted keys (g) travel
+function fsWrites(s, get){
+  const vc = fsObj(get('fw27_vsclaim', null)), p = fsObj(vc.p);
+  return [['fw27_wallet2', { ...s.w }], ['fw27_owned', [...s.owned]], ['fw27_pass', s.pass], ['fw27_starter', s.starter], ['fw27_best', s.best], ['fw27_bestg', s.bestg],
+    ['fw27_stg2', { gates: [...s.stg.gates], score: [...s.stg.score], clr: [...s.stg.clr], open: s.stg.open }], ['fw27_stage2', s.stage], ['fw27_bird', s.bird],
+    ['fw27_nick', s.nick || null], ['fw27_tut', s.tut], ['fw27_rookie_runs', s.rookie], ['fw27_dstreak', s.ds && { ...s.ds }], ['fw27_dbonus', s.dbonus],
+    ['fw27_vsclaim', { g: [...s.vsg], p }]];
+}
+const fsSame = (a, b) => JSON.stringify(fsNorm(a)) === JSON.stringify(fsNorm(b));
+const fsEmpty = s => s.best === 0 && s.w.coins + s.w.dia + s.w.gems === 0 && s.w.lvl === 1 && s.w.xp === 0 && !s.pass && !s.starter
+  && s.owned.every(id => FS_CFG.owned0.includes(id)) && s.stg.gates.every(g => g === 0);
+const fsTot = w => (w.lvl - 1) * 100 + w.xp;
+// l, r, b: fsNorm results. b = the copy both sides last agreed on (three-way) or null (this device's first merge with this account)
+function fsMerge(l, r, b){
+  const cur = k => b ? Math.max(0, r.w[k] + l.w[k] - b.w[k]) : l.w[k] + r.w[k];
+  const tot = b ? Math.max(0, fsTot(r.w) + fsTot(l.w) - fsTot(b.w)) : Math.max(fsTot(l.w), fsTot(r.w));
+  const pick = k => b && JSON.stringify(l[k]) !== JSON.stringify(b[k]) ? l[k] : r[k];
+  const hi = l.best >= r.best ? l : r, mx = (x, y) => x.map((v, i) => Math.max(v, y[i]));
+  const ds = !l.ds ? r.ds : !r.ds ? l.ds : l.ds.last !== r.ds.last ? (l.ds.last > r.ds.last ? l.ds : r.ds) : (l.ds.streak >= r.ds.streak ? l.ds : r.ds);
+  return fsNorm({ v: FS_CFG.v, w: { lvl: Math.floor(tot / 100) + 1, xp: tot % 100, coins: cur('coins'), dia: cur('dia'), gems: cur('gems') },
+    owned: [...l.owned, ...r.owned], pass: l.pass || r.pass, starter: l.starter || r.starter, best: hi.best, bestg: hi.bestg,
+    stg: { gates: mx(l.stg.gates, r.stg.gates), score: mx(l.stg.score, r.stg.score), clr: mx(l.stg.clr, r.stg.clr), open: Math.max(l.stg.open, r.stg.open) },
+    stage: pick('stage'), bird: pick('bird'), nick: pick('nick') || l.nick, tut: l.tut | r.tut, rookie: Math.max(l.rookie, r.rookie),
+    ds, dbonus: l.dbonus > r.dbonus ? l.dbonus : r.dbonus, vsg: [...r.vsg, ...l.vsg.filter(k => !r.vsg.includes(k))] });
+}
+// rec: this device's last sync {uid, rev, base} | null; remote: {rev, data} | null (no row yet)
+function fsPlan(rec, uid, remote, local){
+  if (rec && rec.uid && rec.uid !== uid) return 'pull';
+  if (!remote) return 'adopt';
+  if (rec && rec.uid === uid && rec.base) return 'merge3';
+  return fsEmpty(local) ? 'pull' : 'ask';
+}
+// Login rules. Auth error codes are Supabase's (error.code); messages are a fallback for older answers
+const AUTH_ERR = Object.freeze({ taken: ['identity_already_exists', 'email_exists', 'user_already_exists'],
+  rate: ['over_email_send_rate_limit', 'over_request_rate_limit', 'too_many_requests'], code: ['otp_expired', 'otp_disabled'],
+  email: ['email_address_invalid', 'validation_failed', 'email_address_not_authorized'] });
+const AUTH_Q = ['error', 'error_code', 'error_description'];
+function authErr(e){
+  if (!e || typeof e !== 'object') return 'other';
+  const c = String(e.code || e.error_code || ''), m = String(e.message || '');
+  for (const k of ['taken', 'rate', 'code', 'email']) if (AUTH_ERR[k].includes(c)) return k;
+  if (e.status === 429 || /rate limit/i.test(m)) return 'rate';
+  if (/already (been )?(registered|linked|exists)/i.test(m)) return 'taken';
+  if (/expired|invalid.*(otp|token)/i.test(m)) return 'code';
+  return 'other';
+}
+// A page the OAuth / email link came back to. Errors are stripped from the URL here (before the SDK sees them, so it cannot drop the
+// current session over one); a success hash (#access_token=…) is the SDK's to read. clean = the URL without the auth parts
+function authUrl(href){
+  const u = new URL(href), h = new URLSearchParams(u.hash.startsWith('#') && u.hash.includes('=') ? u.hash.slice(1) : '');
+  const code = u.searchParams.get('error_code') || h.get('error_code') || '', bad = u.searchParams.has('error') || h.has('error') || !!code;
+  const tok = h.has('access_token');
+  AUTH_Q.forEach(k => u.searchParams.delete(k));
+  if (bad || tok) u.hash = '';
+  return { cb: bad || tok, err: bad ? (AUTH_ERR.taken.includes(code) ? 'taken' : 'other') : '', clean: u.toString() };
+}
+const authInApp = ua => /KAKAOTALK|Instagram|FBAN|FBAV|Line\/|NAVER|DaumApps|; wv\)/i.test(String(ua || ''));
+// Which login buttons this build offers. Portal builds (FW_CONFIG.ads names a portal) never show login: portals do not allow the redirects
+function authUi(cfg, ua){
+  const c = cfg && typeof cfg === 'object' ? cfg : {}, inApp = authInApp(ua);
+  const show = !!(c.supabaseUrl && c.supabaseAnonKey) && !(typeof c.ads === 'string' && c.ads && c.ads !== 'stub');
+  return { show, google: show && !inApp, apple: show && !!(c.auth && c.auth.apple === true), email: show, inApp };
+}
+const authEmail = s => { const v = typeof s === 'string' ? s.trim().toLowerCase() : ''; return v.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) ? v : ''; };
+const authCodeOk = s => { const v = typeof s === 'string' ? s.replace(/\s+/g, '') : ''; return /^\d{6,10}$/.test(v) ? v : ''; };
+// Saves are read once at start-up and the run writes the wallet from memory: a merged save is written (and the page restarted) only from the idle menu
+const fsCanApply = (state, overlay) => state === 'menu' && !overlay;
+const fsSummary = s => ({ l: s.w.lvl, c: s.w.coins, u: s.owned.length });
+// A merged save whose apply was put off: fold in what this device did since (three-way, base = the device at defer time)
+const fsLater = (wait, now) => fsMerge(now, wait.s, wait.local);
+/* cloud:end */
 const adWait = ms => new Promise(r => setTimeout(r, ms));
 // The portal SDK, fetched like loadSdk() (Supabase): any failure (blocked, timeout, missing global) = null = no ads, the game carries on
 function adLoad(prov){
@@ -2064,7 +2189,7 @@ function startGame(m){
 function toMenu(){
   if (typeof hideTip === 'function') hideTip(); if (mode === 'versus') vsReset();
   state = 'menu'; mode = 'endless'; reset(); state = 'menu'; $('stageScr').hidden = true;
-  $('over').hidden = true; $('menu').hidden = false; $('wallet').hidden = false; updateDaily(); renderHangar(); renderWallet(); seaCheck();
+  $('over').hidden = true; $('menu').hidden = false; $('wallet').hidden = false; updateDaily(); renderHangar(); renderWallet(); seaCheck(); cloudMenu();
 }
 
 /* ---------- unit skills ---------- */
@@ -4037,7 +4162,7 @@ function celebrate(b){
 }
 let confCb = null;
 function confirmDlg(msg, yes){ $('confMsg').textContent = msg; confCb = yes; $('confScr').hidden = false; lbOpen = true; SFX.click(); }
-function confClose(){ $('confScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('frScr').hidden; }
+function confClose(){ $('confScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('frScr').hidden; $('confYes').textContent = t('buy'); }   // the sign-out dialog relabels the button; every close puts it back
 $('confYes').addEventListener('click', e => { e.stopPropagation(); const f = confCb; confCb = null; confClose(); if (f) f(); });
 $('confNo').addEventListener('click', e => { e.stopPropagation(); confCb = null; confClose(); });
 const COST_KEY = {coin:'nCoin', dia:'nDia', gem:'nGem'};
@@ -4180,7 +4305,7 @@ const SDK_SRC = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist
 const SDK_SRI = 'sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok';
 const LB_COLS = 'player_id,nick,cc,best,bird,daily_key,daily_score,daily_bird';
 const supaCfg = () => { const c = window.FW_CONFIG || {}; return c.supabaseUrl && c.supabaseAnonKey ? c : null; };
-let sdkP = null, sbC = null, lbPoll = 0, needSync = false, lastRpc = 0, reauthP = null, dbP = null, dbAt = 0, dbBusy = false;
+let sdkP = null, sbC = null, lbPoll = 0, needSync = false, lastRpc = 0, reauthP = null, dbP = null, dbAt = 0, dbBusy = false, sbUser = null;
 function loadSdk(){
   if (window.supabase && window.supabase.createClient) return Promise.resolve(true);
   if (sdkP) return sdkP;
@@ -4250,7 +4375,7 @@ function sbReauth(){
     try {
       try { await sbC.auth.signOut({scope: 'local'}); } catch(e){}
       const r = await sbC.auth.signInAnonymously(); if (r.error || !r.data || !r.data.session) throw r.error || new Error('session');
-      uid = r.data.session.user.id; myDoc = null; needSync = true; return true;
+      sbUser = r.data.session.user; uid = r.data.session.user.id; myDoc = null; needSync = true; return true;
     } catch(e){ sbOff(); return false; } finally { reauthP = null; }
   })();
 }
@@ -4260,11 +4385,11 @@ async function initSupabase(cfg){
   try {
     if (!(await loadSdk())) throw new Error('sdk');
     if (!sbC){
-      sbC = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:false}});
+      sbC = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, flowType:'implicit'}});
       sbC.auth.onAuthStateChange((ev, s) => {   // keep this callback synchronous: no Supabase calls inside it
         if (backend !== 'supa') return;
-        if (s && s.user){ if (uid !== s.user.id){ uid = s.user.id; myDoc = null; } }
-        else if (ev === 'SIGNED_OUT' && !reauthP) setTimeout(() => { if (backend === 'supa' && !reauthP) sbReauth().then(ok => { if (ok){ syncLocal(); vsSync(); } }); }, 0);
+        if (s && s.user){ sbUser = s.user; if (uid !== s.user.id){ uid = s.user.id; myDoc = null; } }
+        else if (ev === 'SIGNED_OUT' && !reauthP && !authLeaving) setTimeout(() => { if (backend === 'supa' && !reauthP) sbReauth().then(ok => { if (ok){ syncLocal(); vsSync(); } }); }, 0);
       });
     }
     const mine = id => sbC.from('fw_scores').select(LB_COLS).eq('player_id', id).maybeSingle();
@@ -4278,12 +4403,165 @@ async function initSupabase(cfg){
       session = res.data.session; me = await mine(session.user.id);
     }
     if (me.error) throw me.error;
-    uid = session.user.id; sb = sbC; backend = 'supa'; myDoc = me.data ? fromRow(me.data) : null;
+    sbUser = session.user; uid = session.user.id; sb = sbC; backend = 'supa'; myDoc = me.data ? fromRow(me.data) : null;
     lbState = 'online'; await refreshBoards();
-    if (!lbPoll) lbPoll = setInterval(() => { if (!sb || document.hidden) return; if (needSync) syncLocal(); if (lbOpen || state === 'over') refreshBoards(); if (lbOpen && lbTab === 'vs' && !$('lbScr').hidden) refreshVsBoard(); }, 20000);
+    if (!lbPoll) lbPoll = setInterval(() => { if (!sb || document.hidden) return; if (fsDirty) cloudPush(); if (needSync) syncLocal(); if (lbOpen || state === 'over') refreshBoards(); if (lbOpen && lbTab === 'vs' && !$('lbScr').hidden) refreshVsBoard(); }, 20000);
     syncLocal(); vsSync();   // RP is the server's: the cached value on this device is replaced as soon as we are online
+    authReturn(); renderAcct(); cloudPull();
   } catch(e){ sbOff(); }
 }
+/* ---------- cloud save: the account's copy of FS_KEYS (save_get / save_put, compare-and-set on rev). Pulled on sign-in and start-up,
+   pushed from the menu after a change; a merged save is written and the page restarted, from the menu only (fsCanApply) ---------- */
+const fsRecOf = r => r && typeof r === 'object' && typeof r.uid === 'string' && Number.isInteger(r.rev) && r.rev >= 0 ? {uid: r.uid, rev: r.rev, base: fsNorm(r.base)} : null;
+let fsRec = fsRecOf(store.get('fw27_sync', null));
+let fsDirty = false, fsBusy = false, fsReady = false, fsT = 0, fsWait = null, fsAskQ = null;
+const fsOn = () => AUTH_UI.show && backend === 'supa' && !!sb && !!uid && !authAnon();
+const fsOverlay = () => lbOpen || !$('authScr').hidden || !$('confScr').hidden || !$('seaScr').hidden;
+const fsMine = () => fsRec && fsRec.uid === uid ? fsRec : null;
+const fsCall = async (fn, a) => { try { return await sb.rpc(fn, a); } catch(e){ return {error: e || {}}; } };
+function fsKeep(rev, base){ fsRec = {uid, rev, base}; store.set('fw27_sync', fsRec); }
+function fsApply(s){
+  const defer = () => { fsWait = {s, local: fsSnap(store.get)}; };   // re-merged with a fresh snapshot when it is finally applied (fsLater)
+  if (!fsCanApply(state, fsOverlay() && $('authScr').hidden)){ defer(); return; }   // the merge question itself may be open
+  let last = 0; try { last = Number(sessionStorage.getItem('fw_cloud_at')) || 0; } catch(e){}
+  if (Date.now() - last < 15000){ defer(); toast(t('cloudFail')); return; }   // never a restart loop: kept, not dropped
+  fsWrites(s, store.get).forEach(([k, v]) => store.set(k, v));
+  try { sessionStorage.setItem('fw_cloud_at', String(Date.now())); sessionStorage.setItem('fw_cloud_note', '1'); } catch(e){}
+  location.reload();
+}
+// Write s as rev; on a conflict merge with what the account holds now (base: the copy both last agreed on) and try again, three times at most
+async function fsPut(rev, s, local, base){
+  for (let i = 0; i < 3; i++){
+    const r = await fsCall('save_put', {p_rev: rev, p_data: s});
+    if (r.error || !r.data) return false;
+    if (r.data.ok){ fsKeep(r.data.rev, s); if (!fsSame(s, local)) fsApply(s); return true; }
+    const now = r.data.rev > 0 ? fsNorm(r.data.data) : null;
+    if (r.data.rev > 0 && !now) return false;   // a save this build cannot read: leave it alone
+    s = now ? fsMerge(local, now, base) : local; rev = r.data.rev;
+  }
+  return false;
+}
+async function cloudPull(){
+  if (!fsOn() || fsBusy) return; fsBusy = true; fsReady = false;
+  try {
+    const r = await fsCall('save_get'); if (r.error || !r.data) return;
+    const remote = r.data.rev > 0 ? {rev: r.data.rev, data: fsNorm(r.data.data)} : null, local = fsSnap(store.get);
+    if (remote && !remote.data) return;   // newer format on the account: touch nothing, push nothing
+    const plan = fsPlan(fsRec, uid, remote, local), zero = fsNorm({v: FS_CFG.v});
+    if (plan === 'adopt'){ fsReady = await fsPut(0, local, local, null); return; }
+    if (plan === 'pull'){ const s = remote ? remote.data : zero; fsKeep(remote ? remote.rev : 0, s); fsReady = true; if (!fsSame(s, local)) fsApply(s); return; }
+    if (plan === 'merge3'){
+      const base = fsMine().base, m = fsMerge(local, remote.data, base);
+      if (fsSame(m, remote.data)){ fsKeep(remote.rev, remote.data); fsReady = true; if (!fsSame(m, local)) fsApply(m); }
+      else fsReady = await fsPut(remote.rev, m, local, base);
+      return;
+    }
+    fsAskQ = {local, remote}; fsAsk();   // 'ask'
+  } finally { fsBusy = false; }
+}
+function fsAsk(){
+  const {local, remote} = fsAskQ, a = fsSummary(remote.data), d = fsSummary(local);
+  $('cloudAcct').textContent = t('cloudLine', {w: t('cloudAcctW'), l: a.l, c: a.c.toLocaleString(), u: a.u});
+  $('cloudDev').textContent = t('cloudLine', {w: t('cloudDevW'), l: d.l, c: d.c.toLocaleString(), u: d.u});
+  authOpen('ask', 'cloudAsk');
+}
+$('cloudMerge').addEventListener('click', async e => {
+  e.stopPropagation(); const q = fsAskQ; if (!q || fsBusy) return; fsBusy = true;
+  try { const m = fsMerge(q.local, q.remote.data, null); fsAskQ = null; authClose(); fsReady = await fsPut(q.remote.rev, m, q.local, null); if (!fsReady) toast(t('cloudFail')); } finally { fsBusy = false; }
+});
+$('cloudPullBtn').addEventListener('click', e => {
+  e.stopPropagation(); const q = fsAskQ; if (!q) return; fsAskQ = null; authClose();
+  fsKeep(q.remote.rev, q.remote.data); fsReady = true; fsApply(q.remote.data);
+});
+async function cloudPush(){
+  if (!fsDirty || !fsReady || !fsOn() || fsBusy || fsAskQ || !fsCanApply(state, fsOverlay())) return;
+  fsDirty = false; fsBusy = true;
+  try {
+    const local = fsSnap(store.get), mine = fsMine();
+    if (mine && fsSame(local, mine.base)) return;
+    if (!(await fsPut(mine ? mine.rev : 0, local, local, mine ? mine.base : null))) fsDirty = true;
+  } finally { fsBusy = false; }
+}
+onStoreSet = k => { if (!FS_KEYS.includes(k) || !fsOn()) return; fsDirty = true; clearTimeout(fsT); fsT = setTimeout(cloudPush, 4000); };
+function cloudMenu(){ if (fsWait){ const w = fsWait; fsWait = null; fsApply(fsLater(w, fsSnap(store.get))); return; } if (fsDirty){ clearTimeout(fsT); fsT = setTimeout(cloudPush, 1500); } }
+document.addEventListener('visibilitychange', () => { if (document.hidden) cloudPush(); });
+// Sign-out: this device starts fresh, so the next account to sign in here never inherits this one's progress (fsPlan)
+const AUTH_WIPE = [...FS_KEYS, 'fw27_sync', 'fw27_rp2', 'fw27_rej', 'fw27_dg'];
+async function authLogout(){
+  authLeaving = true; onStoreSet = null; clearTimeout(fsT);
+  AUTH_WIPE.forEach(k => { try { localStorage.removeItem(k); } catch(e){} });
+  try { await sbC.auth.signOut({scope: 'local'}); } catch(e){}
+  location.replace(authBack());
+}
+$('authOutBtn').addEventListener('click', e => { e.stopPropagation(); authClose(); $('confYes').textContent = t('authOut'); confirmDlg(t('authOutQ'), authLogout); });
+try { if (sessionStorage.getItem('fw_cloud_note')){ sessionStorage.removeItem('fw_cloud_note'); setTimeout(() => toast(t('cloudLoaded')), 600); } } catch(e){}
+/* ---------- account login on top of the anonymous player (supabase/schema.sql CLOUD SAVE). linkIdentity / updateUser keep auth.uid(),
+   so the leaderboard row and the RP stay. An identity or email that already has an account: sign in to that one (the cloud save section offers the merge) ---------- */
+const AUTH_UI = authUi(window.FW_CONFIG, navigator.userAgent);
+const AUTH_CB = authUrl(location.href);
+if (AUTH_CB.err) history.replaceState(null, '', AUTH_CB.clean);   // the SDK never sees an auth error: the anonymous session stays as it is
+const authBack = () => location.origin + location.pathname;
+const authAnon = () => !sbUser || sbUser.is_anonymous !== false;
+let authMail = null, authTry = '', authLeaving = false;   // authMail: {email, type} while a code is awaited; authTry: the provider of the last OAuth attempt
+const AUTH_BOX = {pick: 'authPick', code: 'authCodeForm', taken: 'authTaken', ask: 'authAsk', out: 'authOutBox'};
+function authSay(k, v){ $('authMsg').textContent = k ? t(k, v) : ''; }
+function authOpen(mode, msg){
+  for (const m in AUTH_BOX) $(AUTH_BOX[m]).hidden = m !== mode;
+  $('authGoogle').hidden = !AUTH_UI.google; $('authApple').hidden = !AUTH_UI.apple;
+  $('authEmailIn').placeholder = t('authEmailPh'); $('authCodeIn').placeholder = t('authCodePh');
+  if (mode === 'out') $('authWho').textContent = t('authIn', {e: (sbUser && sbUser.email) || ''});
+  authSay(msg || (mode === 'pick' && AUTH_UI.inApp ? 'authInApp' : mode === 'code' && authMail ? 'authSent' : mode === 'taken' ? 'authTaken' : ''), {e: authMail ? authMail.email : ''});
+  $('authScr').hidden = false; lbOpen = true;
+}
+function authClose(){ $('authScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('vsScr').hidden; }
+function renderAcct(){
+  const on = AUTH_UI.show && backend === 'supa' && !!sbC; $('acctRow').hidden = !on; if (!on) return;
+  $('acctLbl').textContent = authAnon() ? t('authSub') : t('authIn', {e: (sbUser && sbUser.email) || ''});
+  $('acctBtn').textContent = authAnon() ? t('authCta') : t('acct');
+}
+async function authOAuth(p){
+  if (!sbC || backend !== 'supa') return authSay('authFail');
+  authTry = p; try { sessionStorage.setItem('fw_auth_try', p); } catch(e){}
+  const o = {provider: p, options: {redirectTo: authBack()}};
+  let r; try { r = authAnon() ? await sbC.auth.linkIdentity(o) : await sbC.auth.signInWithOAuth(o); } catch(e){ r = {error: e}; }
+  if (r && r.error) authSay(authErr(r.error) === 'rate' ? 'authRate' : 'authFail');   // on success the page navigates away
+}
+function authReturn(){
+  if (!AUTH_CB.cb) return;
+  try { authTry = sessionStorage.getItem('fw_auth_try') || ''; sessionStorage.removeItem('fw_auth_try'); } catch(e){}
+  if (!AUTH_CB.err){ history.replaceState(null, '', AUTH_CB.clean); if (!authAnon()) authDone(); return; }
+  authOpen(AUTH_CB.err === 'taken' && authTry ? 'taken' : 'pick', AUTH_CB.err === 'taken' ? 'authTaken' : 'authFail');
+}
+async function authEmailSend(raw){
+  const email = authEmail(raw); if (!email) return authSay('authBadEmail');
+  if (!sbC || !authAnon()) return authSay('authFail');
+  const back = {emailRedirectTo: authBack()}; let type = 'email_change', r;
+  try { r = await sbC.auth.updateUser({email}, back); } catch(e){ r = {error: e}; }
+  if (r.error && authErr(r.error) === 'taken'){ type = 'email'; try { r = await sbC.auth.signInWithOtp({email, options: {...back, shouldCreateUser: false}}); } catch(e){ r = {error: e}; } }
+  if (r.error){ const k = authErr(r.error); return authSay(k === 'rate' ? 'authRate' : k === 'email' ? 'authBadEmail' : 'authFail'); }
+  authMail = {email, type}; $('authCodeIn').value = ''; authOpen('code');
+}
+async function authCodeSend(raw){
+  const token = authCodeOk(raw); if (!token || !authMail) return authSay('authBadCode');
+  let r; try { r = await sbC.auth.verifyOtp({email: authMail.email, token, type: authMail.type}); } catch(e){ r = {error: e}; }
+  if (r.error) return authSay(authErr(r.error) === 'rate' ? 'authRate' : 'authBadCode');
+  if (r.data && r.data.user) sbUser = r.data.user;
+  authMail = null; authDone();
+}
+function authDone(){ authClose(); renderAcct(); toast(t('authIn', {e: (sbUser && sbUser.email) || ''})); cloudPull(); }
+$('acctBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); authOpen(authAnon() ? (authMail ? 'code' : 'pick') : 'out'); });
+$('authClose').addEventListener('click', e => { e.stopPropagation(); authClose(); if (state === 'menu') cloudMenu(); });
+$('authScr').addEventListener('click', e => { if (e.target === $('authScr')){ authClose(); if (state === 'menu') cloudMenu(); } });
+$('authGoogle').addEventListener('click', e => { e.stopPropagation(); authOAuth('google'); });
+$('authApple').addEventListener('click', e => { e.stopPropagation(); if (AUTH_UI.apple) authOAuth('apple'); });
+$('authTakenGo').addEventListener('click', async e => { e.stopPropagation(); if (!authTry || !sbC) return; try { await sbC.auth.signInWithOAuth({provider: authTry, options: {redirectTo: authBack()}}); } catch(x){ authSay('authFail'); } });
+$('authEmailForm').addEventListener('submit', e => { e.preventDefault(); authEmailSend($('authEmailIn').value); });
+$('authCodeForm').addEventListener('submit', e => { e.preventDefault(); authCodeSend($('authCodeIn').value); });
+// The confirmation link was opened somewhere else (mail app, another browser): the account is upgraded on the server; this tab learns it on refresh
+document.addEventListener('visibilitychange', async () => {
+  if (document.hidden || !authMail || authMail.type !== 'email_change' || !sbC) return;
+  try { const r = await sbC.auth.refreshSession(); const u = r.data && r.data.user; if (u && u.is_anonymous === false){ sbUser = u; authMail = null; authDone(); } } catch(e){}
+});
 // Push what this device has and the board lacks: a best or today's daily made offline, before sign-in finished, or whose submit failed.
 function syncLocal(){
   needSync = false; if (backend !== 'supa' || !uid) return;
@@ -4415,11 +4693,11 @@ function renderLB(){
 }
 function openLB(tab){
   lbTab = tab || (mode === 'daily' || state === 'menu' ? 'daily' : 'all');
-  lbOpen = true; $('nickIn').value = nick; $('lbScr').hidden = false; renderLB(); if (sb) refreshBoards();
+  lbOpen = true; $('nickIn').value = nick; $('lbScr').hidden = false; renderLB(); renderAcct(); if (sb) refreshBoards();
   online().then(async () => { if (needSync) syncLocal(); if (lbTab === 'vs' && !$('lbScr').hidden) refreshVsBoard();
     if (sb && uid && !socReady && await socSync() && !$('lbScr').hidden) renderLB(); });   // first open: learn who is already a friend, then redraw the + buttons
 }
-function closeLB(){ lbOpen = false; $('lbScr').hidden = true; statusMsg = nickMsg = ''; }
+function closeLB(){ lbOpen = false; $('lbScr').hidden = true; statusMsg = nickMsg = ''; if (state === 'menu') cloudMenu(); }   // a cloud apply deferred behind this card runs now
 $('lbBtn').addEventListener('click', e => { e.stopPropagation(); openLB('daily'); });
 $('oLbBtn').addEventListener('click', e => { e.stopPropagation(); openLB(mode === 'daily' ? 'daily' : mode === 'versus' ? 'vs' : 'all'); });
 $('lbClose').addEventListener('click', closeLB);
@@ -5284,7 +5562,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear,
+if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { cloud: {get rec(){ return fsRec; }, snap: () => fsSnap(store.get), pull: cloudPull, push: cloudPush, get dirty(){ return fsDirty; }}, vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear,
   soc: {notifyRoute, notifText, feedMerge, fcNorm, fcOk, fcFmt, socNorm, show: socShow, get on(){ return pushOn; }, get k(){ return pushK; }},
   eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get hazards(){ return hazs; }, get mode(){ return mode; },

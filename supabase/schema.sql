@@ -18,10 +18,17 @@
 --   6. Data API settings: leave "public" as the only exposed schema. Never add "private" to it.
 --   7. Put the Project URL and the publishable key (sb_publishable_... or the legacy anon key) into
 --      window.FW_CONFIG in index.html. Never the secret / service_role key.
+--   8. Authentication > Sign In / Providers: Email ON (Confirm email ON, OTP length 6), Google ON
+--      (Client ID/Secret from Google Cloud Console; see plan-auth.md appendix A). Apple later, the same way.
+--   9. Authentication > Sign In / Providers > "Allow manual linking": ON — linkIdentity() upgrades the
+--      anonymous player in place, keeping auth.uid() and with it the score and versus rows.
+--  10. Authentication > URL Configuration: Site URL https://breton5797.github.io/fluxwing/ and Redirect URLs
+--      https://breton5797.github.io/fluxwing/** plus http://localhost:5173/** (no portal domains: portal
+--      builds hide the login UI).
 --   Realtime quotas are per plan (Free: 100 messages/s and 20 presence messages/s for the whole project):
 --   one versus match costs about 20 messages/s at the client's 5 state sends per second per player.
 --   Housekeeping: Supabase has no automatic clean-up of anonymous users. Deleting an auth user deletes
---   their score row, their versus row and their season results (on delete cascade), so only prune users that
+--   their score row, their versus row, their season results and their cloud save (on delete cascade), so only prune users that
 --   have no row in public.fw_scores, none in public.fw_versus and none in public.fw_vs_standing.
 --   Versus match bookkeeping cleans itself up when a participant
 --   comes back; for players who never do, run now and then (it takes every match that old, whatever its
@@ -1171,6 +1178,109 @@ with check (
   realtime.messages.extension in ('broadcast', 'presence')
   and (select realtime.topic()) ~ '^fw-v[0-9]+-(fw-lobby|c-[0-9]{4}|m-[a-z0-9]{1,14}-[a-z0-9]{1,14})$'
 );
+
+
+-- =====================================================================================================
+-- CLOUD SAVE — one row per signed-in (NOT anonymous) player: the device save index.html syncs (cloud block, FS_KEYS).
+-- The client merges (fsMerge); the server only stores it, with a revision number for compare-and-set:
+--   save_get()             {rev: 0, data: null} when there is no row, else {rev, data, updated_at}
+--   save_put(p_rev, data)  writes only when p_rev is the stored rev (0 = no row yet): {ok: true, rev: rev + 1};
+--                          otherwise writes nothing and answers {ok: false, rev, data} so the client merges and retries.
+-- No clocks are compared anywhere: the order of writes is the rev. The economy is not checked here (as before: the
+-- wallet is the device's); what is checked is the caller (an account, not an anonymous player), the shape (a JSON
+-- object with "v": 1) and the size. Deleting the auth user deletes the row (on delete cascade).
+-- =====================================================================================================
+create table if not exists public.fw_saves (
+  player_id  uuid        primary key references auth.users (id) on delete cascade,
+  rev        bigint      not null default 1,
+  data       jsonb       not null,
+  put_day    date,
+  put_count  integer     not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint fw_saves_rev_chk  check (rev >= 1),
+  constraint fw_saves_data_chk check (jsonb_typeof(data) = 'object'),
+  constraint fw_saves_size_chk check (octet_length(data::text) <= 16384)
+);
+comment on table public.fw_saves is 'Flux Wing cloud save: one row per account. Written only by private.fw_save_put().';
+alter table public.fw_saves enable row level security;
+-- No policy on purpose: clients reach their row only through save_get / save_put.
+revoke all on table public.fw_saves from public, anon, authenticated;
+grant select, insert, update, delete on table public.fw_saves to service_role;
+
+-- The caller's id, for accounts only. Reads auth.users (not the JWT claim), so a token issued before the
+-- anonymous player was upgraded does not lock the new account out, and an anonymous player never gets a row.
+create or replace function private.fw_save_me() returns uuid
+language plpgsql stable security definer set search_path = '' as $$
+declare v_uid uuid := (select auth.uid()); v_anon boolean;
+begin
+  if v_uid is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  select u.is_anonymous into v_anon from auth.users u where u.id = v_uid;
+  if not found then raise exception 'fw_auth: unknown player' using errcode = '28000'; end if;
+  if v_anon then raise exception 'fw_save_anon: an account is required' using errcode = '42501'; end if;
+  return v_uid;
+end $$;
+
+create or replace function private.fw_save_get() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_uid uuid := private.fw_save_me(); v_row public.fw_saves%rowtype;
+begin
+  select * into v_row from public.fw_saves where player_id = v_uid;
+  if not found then return jsonb_build_object('rev', 0, 'data', null); end if;
+  return jsonb_build_object('rev', v_row.rev, 'data', v_row.data, 'updated_at', v_row.updated_at);
+end $$;
+
+create or replace function private.fw_save_put(p_rev bigint, p_data jsonb) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  c_max_bytes constant integer := 16384;   -- FS_CFG.maxBytes in index.html (tests/cloud-sql.test.js keeps the two equal)
+  c_day_cap   constant integer := 1500;    -- accepted writes per account per UTC day
+  v_uid   uuid := private.fw_save_me();
+  v_today date := (now() at time zone 'utc')::date;
+  v_row   public.fw_saves%rowtype;
+  v_rev   bigint;
+begin
+  if p_rev is null or p_rev < 0 or p_data is null or jsonb_typeof(p_data) <> 'object' or (p_data ->> 'v') is distinct from '1' then
+    raise exception 'fw_bad_input: save must be a v1 object' using errcode = '22023';
+  end if;
+  if octet_length(p_data::text) > c_max_bytes then
+    raise exception 'fw_bad_input: save too large' using errcode = '22023';
+  end if;
+  select * into v_row from public.fw_saves where player_id = v_uid for update;
+  if not found then
+    if p_rev <> 0 then return jsonb_build_object('ok', false, 'rev', 0, 'data', null); end if;
+    insert into public.fw_saves (player_id, rev, data, put_day, put_count) values (v_uid, 1, p_data, v_today, 1)
+    on conflict (player_id) do nothing returning rev into v_rev;
+    if v_rev is null then   -- another call created it first
+      select * into v_row from public.fw_saves where player_id = v_uid;
+      return jsonb_build_object('ok', false, 'rev', v_row.rev, 'data', v_row.data);
+    end if;
+    return jsonb_build_object('ok', true, 'rev', v_rev);
+  end if;
+  if v_row.rev <> p_rev then return jsonb_build_object('ok', false, 'rev', v_row.rev, 'data', v_row.data); end if;
+  if v_row.put_day is not distinct from v_today and v_row.put_count >= c_day_cap then
+    raise exception 'fw_rate_limited: daily save limit reached' using errcode = 'P0001';
+  end if;
+  update public.fw_saves set rev = rev + 1, data = p_data, updated_at = now(),
+    put_day = v_today, put_count = case when put_day is not distinct from v_today then put_count + 1 else 1 end
+  where player_id = v_uid returning rev into v_rev;
+  return jsonb_build_object('ok', true, 'rev', v_rev);
+end $$;
+
+create or replace function public.save_get() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_save_get(); $$;
+create or replace function public.save_put(p_rev bigint, p_data jsonb) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_save_put(p_rev, p_data); $$;
+
+revoke all on function private.fw_save_me()                from public, anon, authenticated;
+revoke all on function private.fw_save_get()               from public, anon, authenticated;
+revoke all on function private.fw_save_put(bigint, jsonb)  from public, anon, authenticated;
+revoke all on function public.save_get()                   from public, anon, authenticated;
+revoke all on function public.save_put(bigint, jsonb)      from public, anon, authenticated;
+grant execute on function private.fw_save_get()               to authenticated, service_role;
+grant execute on function private.fw_save_put(bigint, jsonb)  to authenticated, service_role;
+grant execute on function public.save_get()                   to authenticated, service_role;
+grant execute on function public.save_put(bigint, jsonb)      to authenticated, service_role;
 
 
 -- ---------- scheduled season rollover (pg_cron) ----------
