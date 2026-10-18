@@ -53,7 +53,8 @@ begin
   ok := false; begin perform private.fw_friend_request('ZZZZZZZZ', null); exception when others then ok := sqlerrm like 'fw_bad_input%'; end;
   if not ok then raise exception 'unknown code not refused'; end if;
 
-  -- alerts: befriend again, then hello fans out exactly one 'on' row, and staying online repeats nothing
+  -- alerts: befriend again (as u1 — the previous check left us as u2), then hello fans out exactly one 'on' row
+  perform set_config('request.jwt.claim.sub', u1::text, true); perform set_config('request.jwt.claims', json_build_object('sub', u1, 'role', 'authenticated')::text, true);
   r := private.fw_friend_request(null, u2);
   perform set_config('request.jwt.claim.sub', u2::text, true); perform set_config('request.jwt.claims', json_build_object('sub', u2, 'role', 'authenticated')::text, true);
   r := private.fw_friend_respond(u1, true);
