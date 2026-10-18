@@ -1712,7 +1712,7 @@ language plpgsql immutable set search_path = '' as $$
 declare n text;
 begin
   n := left(btrim(regexp_replace(
-         regexp_replace(coalesce(p_name, ''), '[\u0001-\u001F\u007F-\u009F​-‏ -‮⁠-⁩﻿<>]', '', 'g'),
+         regexp_replace(coalesce(p_name, ''), '[\u0001-\u001F\u007F-\u009F\u200B-\u200F\u2028-\u202E\u2060-\u2069\uFEFF<>]', '', 'g'),
          '\s+', ' ', 'g')), 14);
   if char_length(n) < 2 or private.fw_nick_bad(n) then
     raise exception 'fw_bad_input: that guild name is not allowed' using errcode = '22023';
