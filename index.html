@@ -2088,7 +2088,7 @@ function flap(){
 }
 function dash(){
   if (state !== 'play' || dashMeter < 1 || dashT > 0) return;
-  dashMeter = 0; dashT = .55 * PK.dashLen; bird.vy = 0; SFX.dash(); haptic('dash'); FX.idleT = 0; FX.idleWarn = false;
+  dashMeter = 0; dashT = .55 * PK.dashLen; bird.vy = 0; invuln = Math.max(invuln, .5); SFX.dash(); haptic('dash'); FX.idleT = 0; FX.idleWarn = false;   // the half-second of invincibility outlives a short dash, covering the exit
   shake = Math.max(shake, 8); flash = .35;
   ring(bird.x, bird.y, 210, B.wingCol, .45, 6); cam.z = Math.max(cam.z, 1.06);
   for (let i=0;i<24;i++) part(bird.x, bird.y, -200-Math.random()*300, (Math.random()-.5)*200, .5, pal.b, 3);

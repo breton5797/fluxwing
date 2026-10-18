@@ -112,3 +112,10 @@ test('daily reward gives a meaningful return reason without changing competitive
   assert.deepEqual(dailyReward(7), { coin: 650, dia: 100, gem: 4 });
   assert.deepEqual(dailyReward(30), { coin: 650, dia: 100, gem: 4 });
 });
+
+test('using the dash grants half a second of invincibility', () => {
+  const html = readIndex();
+  const m = html.match(/function dash\(\)\{[\s\S]*?\n\}/);
+  assert.ok(m, 'dash() found');
+  assert.match(m[0], /invuln = Math\.max\(invuln, \.5\)/);
+});
