@@ -33,6 +33,7 @@ test('page metadata sits in <head>, and the page starts dark', () => {
   const html = read('../index.html');
   const head = html.slice(html.indexOf('<head>'), html.indexOf('</head>'));
   for (const tag of ['<title>SWISHBY 2027</title>', '<meta name="description"', '<link rel="manifest"', '<meta name="theme-color"',
+    '<meta name="color-scheme" content="dark">',   // opts out of forced browser darkening (Samsung Internet dark mode dimmed the menu)
     '<link rel="icon"', '<link rel="apple-touch-icon"', '<meta property="og:image"', '<meta property="og:title"', '<meta name="twitter:image"'])
     assert.ok(head.includes(tag), tag + ' is not inside <head>');
   assert.equal(html.split('</head>').length, 2);
