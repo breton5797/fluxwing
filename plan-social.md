@@ -198,6 +198,11 @@ C의 세부:
 ## Implementation Steps
 
 ### Phase 0: 스파이크 — 플랫폼 제약 확인 (코드 커밋 없음, 결과는 이 문서에 기록)
+
+**스파이크 결과 (2026-10-18 실측)**
+- (a) 아티팩트 V11 실기기 확인: 랭킹 화면에 "온라인 랭킹에 연결되지 않아 이 기기 기록만 보여줍니다" → **아티팩트에서 Supabase 미연결(차단)**. 소셜 전 기능은 아티팩트에서 오프라인 안내로 숨김/비활성, 대전 인간 매칭은 기존 window.claude room 경로로 동작(무랭크).
+- (b) Notification: (a)로 인해 아티팩트에선 수신 자체가 없음 → env 가드(`isArt`)로 requestPermission 생략, 결론 확정에 추가 실측 불요.
+- (c) realtime.send: 스테이징 프로젝트 부재로 미실측 → **폴링을 정본 경로로 구현**(보일 때 30s/숨김 60s), realtime 신호는 운영 적용 시 동작하면 지연만 단축되는 enhancement. D1 폴링-우선으로 확정.
 1. **아티팩트·Realtime 실측**
    - Action:
      - (a) 아티팩트 V11에서 `initSupabase`가 성공하는지 확인. CSP 때문에 window.claude backend로 떨어지면 소셜 전체가 아티팩트에서 "오프라인 표시"가 됨
