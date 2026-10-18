@@ -121,3 +121,37 @@ test('feedMerge keeps the cursor moving and drops duplicate ids', () => {
   assert.deepEqual(S.feedMerge(9, null), { since: 9, rows: [] });
   assert.deepEqual(S.feedMerge(9, [{ id: 'x' }]), { since: 9, rows: [] });
 });
+
+// ---------- Phase 4: guilds ----------
+test('GUILD_COST and guildCostOk', () => {
+  assert.equal(S.GUILD_COST, 300000);
+  assert.equal(S.guildCostOk({ coins: 300000 }), true);
+  assert.equal(S.guildCostOk({ coins: 299999 }), false);
+  assert.equal(S.guildCostOk(null), false);
+});
+
+test('guildReqOk mirrors the server admission check (UI preview only)', () => {
+  assert.equal(S.guildReqOk({ min_best: 50, min_rp: 400 }, { best: 50, rp: 400 }), true);
+  assert.equal(S.guildReqOk({ min_best: 50, min_rp: 400 }, { best: 49, rp: 400 }), false);
+  assert.equal(S.guildReqOk({ min_best: 0, min_rp: 0 }, { best: 0, rp: 0 }), true);
+  assert.equal(S.guildReqOk(null, { best: 0, rp: 0 }), false);
+});
+
+test('gpayNext: the coin leaves exactly once, over any retry pattern', () => {
+  let st = { st: 'idle' };
+  st = S.gpayNext(st, { type: 'start', tok: 'abc123xyz9' });
+  assert.deepEqual(st, { st: 'pending', tok: 'abc123xyz9', pay: false });
+  const again = S.gpayNext(st, { type: 'start', tok: 'other' });     // a retry keeps the first token
+  assert.equal(again.tok, 'abc123xyz9');
+  st = S.gpayNext(st, { type: 'ok' });
+  assert.deepEqual(st, { st: 'paid', tok: 'abc123xyz9', pay: true });  // pay now, once
+  st = S.gpayNext(st, { type: 'ok' });
+  assert.equal(st.pay, false, 'a second ok never pays again');
+  // lost answer -> retry hits "already mine" -> still exactly one payment
+  let st2 = S.gpayNext({ st: 'pending', tok: 'ttt0000001' }, { type: 'mine' });
+  assert.deepEqual(st2, { st: 'paid', tok: 'ttt0000001', pay: true });
+  // hard failure or "no guild" clears without paying
+  assert.deepEqual(S.gpayNext({ st: 'pending', tok: 'x000000000' }, { type: 'fail' }), { st: 'idle', tok: '', pay: false });
+  assert.deepEqual(S.gpayNext({ st: 'pending', tok: 'x000000000' }, { type: 'none' }), { st: 'idle', tok: '', pay: false });
+  assert.deepEqual(S.gpayNext(null, { type: 'ok' }), { st: 'idle', tok: '', pay: false });
+});
