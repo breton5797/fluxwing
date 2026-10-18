@@ -16,3 +16,9 @@ test('fx-core does not redeclare game globals', () => {
   for (const name of ['FX', 'hitstop', 'shake', 'flash', 'slowT', 'parts', 'rings', 'pops', 'banners', 'ghosts', 'cam', 'SFX', 'HAPTIC', 'RM', 'tier', 'feverGlow'])
     assert.doesNotMatch(blk, new RegExp(`\\b(const|let|var|function)\\s+${name}\\b`), name);
 });
+
+test('social-core does not redeclare game globals', () => {
+  const blk = readIndex().match(/\/\* social-core:start[\s\S]*?\/\* social-core:end \*\//)[0];
+  for (const name of ['vs', 'W', 'sb', 'uid', 'nick', 'rp', 'toast', 't', 'store', 'SOC', 'GD'])
+    assert.doesNotMatch(blk, new RegExp(`\\b(const|let|var|function)\\s+${name}\\b`), name);
+});

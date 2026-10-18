@@ -59,3 +59,17 @@ tests/                   node:test 스위트, tests/helpers/bot.js 자동 비행
 시뮬레이션은 `Math.random`, 화면 크기, 프레임 레이트에 의존하지 않는다. 그래서 데일리 코스가 기기와 무관하게 동일하고, 테스트에서 봇이 실제 코스를 비행해 통과 가능성을 검증한다. `src/logic.js`의 `rng()` 호출 순서를 바꾸면 모든 데일리 코스가 바뀐다.
 
 `?debug`를 붙여 열면 `window.__fluxwing.peek()`으로 현재 상태를 읽을 수 있다(자동 플레이 테스트용, 읽기 전용).
+
+## 소셜 기능 운영 적용 (친구 · 알림 · 4인 FFA · 길드)
+
+클라이언트(index.html)는 머지만으로 배포되지만, 서버 쪽은 Supabase SQL Editor에서 한 번 적용해야 한다.
+
+1. `supabase/schema.sql`의 **SOCIAL — FRIENDS / FRIEND ALERTS / 4-PLAYER FFA / GUILDS** 섹션과
+   FFA로 바뀐 versus 정의(`fw_vs_cfg`의 `drop function`+재생성, `fw_versus_start/report`, `fw_vs_settle` 라우팅,
+   제약 교체 alter 4건)를 실행한다. 파일 전체를 다시 실행해도 안전하다(멱등).
+2. `supabase/checks/` 의 `social.sql`, `guild.sql`, `ffa.sql`, `versus-regress.sql`을 순서대로 실행해
+   각각 `PASS` notice를 확인한다. 전부 트랜잭션 안에서 돌고 롤백된다.
+3. 적용 전까지 클라이언트는 전부 "오프라인/미집계" 경로로 동작한다: 친구·길드 화면은 오프라인 안내,
+   FFA는 무랭크(연습 표기) 정산. 적용 후 자동으로 살아난다.
+4. claude.ai 아티팩트에서는 Supabase 연결이 차단되므로(2026-10 실측) 소셜 기능은 웹/PWA 빌드 전용이다.
+   아티팩트의 대전 인간 매칭은 기존 room 경로로 동작하며 항상 무랭크다.
