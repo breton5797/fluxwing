@@ -122,3 +122,14 @@ test('feedMerge keeps the cursor moving and drops duplicate ids', () => {
   assert.deepEqual(S.feedMerge(9, [{ id: 'x' }]), { since: 9, rows: [] });
 });
 
+// ---------- review deferred fixes ----------
+test('ffaDone: everyone down, or a sole survivor nobody can catch (L7)', () => {
+  const o = (sc, al = false) => ({ sc, al });
+  assert.equal(S.ffaDone({ sc: 10, al: false }, [o(5), o(3), o(1)]), true);           // all down
+  assert.equal(S.ffaDone({ sc: 9, al: true }, [o(5), o(3), o(1)]), true);             // alone, above every final
+  assert.equal(S.ffaDone({ sc: 5, al: true }, [o(5), o(3), o(1)]), false);            // tied with a final: keep flying
+  assert.equal(S.ffaDone({ sc: 2, al: true }, [o(5), o(3), o(1)]), false);            // behind: keep flying
+  assert.equal(S.ffaDone({ sc: 99, al: true }, [o(5), o(100, true), o(1)]), false);   // someone else still flying
+  assert.equal(S.ffaDone({ sc: 0, al: true }, []), false);                            // no opponents known yet
+});
+
