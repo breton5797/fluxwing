@@ -219,6 +219,10 @@ select.ghost option{background:#140e26;color:var(--ink)}
 @keyframes nbGlow{to{text-shadow:0 0 14px var(--cool);transform:scale(1.06)}}
 #vibBtn.off{opacity:.4}
 #vibBtn svg{width:18px;height:18px;vertical-align:-3px}
+#pushBtn.off{opacity:.4}
+#pushBtn svg{width:18px;height:18px;vertical-align:-3px}
+.frkinds{display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--dim)}
+.frkinds label{display:flex;gap:6px;align-items:center;cursor:pointer}
 /* hangar (bird select) */
 .hangar{box-sizing:border-box;width:min(354px,100%);display:flex;flex-direction:column;gap:8px;padding:14px 16px;border:1px solid var(--line);border-radius:18px;background:rgba(14,10,30,.62);backdrop-filter:blur(4px)}
 .hg-top{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
@@ -351,6 +355,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
   <div id="toast" hidden></div>
   <div id="topBtns">
     <button class="ib" id="vibBtn" aria-label="Vibration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8M1.5 10.5v3M22.5 10.5v3"/></svg></button>
+    <button class="ib" id="pushBtn" aria-label="Alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
     <button class="ib" id="muteBtn" aria-label="Sound">♪</button>
     <button class="ib" id="fxBtn" aria-label="Effects">✦</button>
     <button class="ib" id="pauseBtn" aria-label="Pause" hidden>II</button>
@@ -546,6 +551,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div id="frReqs" hidden><div class="dayline" data-i18n="frReqs"></div><ol class="lblist" id="frReqList"></ol></div>
       <ol class="lblist" id="frList"></ol>
       <div class="lbstatus" id="frStatus"></div>
+      <div class="frkinds"><label><input type="checkbox" id="ntKOn" checked><span data-i18n="ntKOn"></span></label><label><input type="checkbox" id="ntKBest" checked><span data-i18n="ntKBest"></span></label></div>
       <div class="frwarn" data-i18n="frWarn"></div>
     </div>
   </div>
@@ -891,22 +897,26 @@ ko:{fr:'친구', frCode:'내 친구 코드', frCopy:'복사', frCopied:'복사�
  frEmpty:'아직 친구가 없어요. 위 코드를 공유해 보세요', frSent:'친구 요청을 보냈어요', frNow:'친구가 되었어요!', frSelf:'자기 자신은 추가할 수 없어요',
  frDupe:'이미 친구이거나 요청 중이에요', frCap:'친구 한도에 도달했어요', frRate:'오늘은 더 요청할 수 없어요', frBad:'그 코드를 찾을 수 없어요',
  frFail:'지금은 요청할 수 없어요', frDel:'삭제', frOnline:'접속 중', frPlus:'친구 요청', frWarn:'친구 목록은 이 기기의 게스트 계정에 묶여 있어요. 브라우저 데이터를 지우면 사라집니다',
- vsM4:'FFA', searching4:'FFA 플레이어 찾는 중… {s}초 · {n}/4', vsIn4:'FFA · {n}/4 참가', vs4Rules:'4인 각개전 · 점수 순위로 RP +50/+20/−20/−50 · 동점은 평균 · AI가 한 자리라도 끼면 연습전'},
+ vsM4:'FFA', searching4:'FFA 플레이어 찾는 중… {s}초 · {n}/4', vsIn4:'FFA · {n}/4 참가', vs4Rules:'4인 각개전 · 점수 순위로 RP +50/+20/−20/−50 · 동점은 평균 · AI가 한 자리라도 끼면 연습전',
+ push:'친구 알림', ntOn:'{n}님이 접속했어요', ntBest:'{n}님이 최고기록 {s}점!', ntInApp:'브라우저 알림이 차단되어 인앱 알림만 표시해요', ntKOn:'접속 알림', ntKBest:'기록 알림'},
 en:{fr:'Friends', frCode:'My friend code', frCopy:'Copy', frCopied:'Copied. Send it to a friend', frAdd:'Request', frReqs:'Requests', frOk:'Accept', frNo:'Decline',
  frEmpty:'No friends yet. Share the code above', frSent:'Friend request sent', frNow:'You are now friends!', frSelf:'That is your own code',
  frDupe:'Already friends or already requested', frCap:'Friend list is full', frRate:'No more requests today', frBad:'No player with that code',
  frFail:'Could not send the request', frDel:'Remove', frOnline:'Online', frPlus:'Add friend', frWarn:'Friends are tied to this device\'s guest account. Clearing browser data loses them',
- vsM4:'FFA', searching4:'Finding FFA players… {s}s · {n}/4', vsIn4:'FFA · {n}/4 in', vs4Rules:'4-player free-for-all · RP by placement +50/+20/−20/−50 · ties share the average · any AI seat makes it practice'},
+ vsM4:'FFA', searching4:'Finding FFA players… {s}s · {n}/4', vsIn4:'FFA · {n}/4 in', vs4Rules:'4-player free-for-all · RP by placement +50/+20/−20/−50 · ties share the average · any AI seat makes it practice',
+ push:'Friend alerts', ntOn:'{n} is online', ntBest:'{n} set a new best: {s}!', ntInApp:'Browser notifications are blocked — showing in-app alerts only', ntKOn:'Online alerts', ntKBest:'Record alerts'},
 ja:{fr:'フレンド', frCode:'フレンドコード', frCopy:'コピー', frCopied:'コピーしました', frAdd:'申請', frReqs:'受信した申請', frOk:'承認', frNo:'拒否',
  frEmpty:'まだフレンドがいません。コードを共有しましょう', frSent:'申請を送りました', frNow:'フレンドになりました！', frSelf:'自分は追加できません',
  frDupe:'すでにフレンドか申請中です', frCap:'フレンド上限に達しました', frRate:'今日はこれ以上申請できません', frBad:'そのコードは見つかりません',
  frFail:'いま申請できません', frDel:'削除', frOnline:'オンライン', frPlus:'フレンド申請', frWarn:'フレンドはこの端末のゲストアカウントに紐づきます',
- vsM4:'FFA', searching4:'FFAプレイヤーを探しています… {s}秒 · {n}/4', vsIn4:'FFA · {n}/4 参加', vs4Rules:'4人個人戦 · 順位でRP +50/+20/−20/−50 · 同点は平均 · AIが入ると練習試合'},
+ vsM4:'FFA', searching4:'FFAプレイヤーを探しています… {s}秒 · {n}/4', vsIn4:'FFA · {n}/4 参加', vs4Rules:'4人個人戦 · 順位でRP +50/+20/−20/−50 · 同点は平均 · AIが入ると練習試合',
+ push:'フレンド通知', ntOn:'{n}さんが接続しました', ntBest:'{n}さんが最高記録 {s}点！', ntInApp:'ブラウザ通知がブロックされているため、アプリ内通知のみ表示します', ntKOn:'接続通知', ntKBest:'記録通知'},
 zh:{fr:'好友', frCode:'我的好友码', frCopy:'复制', frCopied:'已复制', frAdd:'申请', frReqs:'收到的申请', frOk:'接受', frNo:'拒绝',
  frEmpty:'还没有好友。分享上面的好友码吧', frSent:'已发送好友申请', frNow:'已成为好友！', frSelf:'不能添加自己',
  frDupe:'已是好友或已申请', frCap:'好友已满', frRate:'今天不能再申请了', frBad:'找不到该好友码',
  frFail:'暂时无法申请', frDel:'删除', frOnline:'在线', frPlus:'加好友', frWarn:'好友绑定在本设备的访客账号上',
- vsM4:'FFA', searching4:'正在寻找FFA玩家… {s}秒 · {n}/4', vsIn4:'FFA · {n}/4 已加入', vs4Rules:'4人混战 · 按名次结算RP +50/+20/−20/−50 · 平分名次取平均 · 有AI则为练习赛'}};
+ vsM4:'FFA', searching4:'正在寻找FFA玩家… {s}秒 · {n}/4', vsIn4:'FFA · {n}/4 已加入', vs4Rules:'4人混战 · 按名次结算RP +50/+20/−20/−50 · 平分名次取平均 · 有AI则为练习赛',
+ push:'好友提醒', ntOn:'{n}上线了', ntBest:'{n}刷新最高分 {s}！', ntInApp:'浏览器通知被拦截，仅显示应用内提醒', ntKOn:'上线提醒', ntKBest:'纪录提醒'}};
 for (const l in I18N) Object.assign(I18N[l], I18N_S.en, I18N_S[l] || {});
 const birdById = id => BIRDS.find(b => b.id === id);
 let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
@@ -958,7 +968,7 @@ function applyI18n(){
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   $('dashBtn').setAttribute('aria-label', t('dashK'));
   $('pauseBtn').setAttribute('aria-label', t('pauseK'));
-  $('vibBtn').setAttribute('aria-label', t('vib'));
+  $('vibBtn').setAttribute('aria-label', t('vib')); $('pushBtn').setAttribute('aria-label', t('push'));
   updateDaily(); renderLB(); renderHangar();
 }
 const sel = $('langSel');
@@ -1274,6 +1284,26 @@ function ffaPlaceFinal(me, others){   // 0 = not final yet; else my place once n
   if (me.al) return 0;
   for (const o of others) if (o.al && (o.sc | 0) <= (me.sc | 0)) return 0;   // somebody flying could still pass or tie me
   return 1 + others.filter(o => (o.sc | 0) > (me.sc | 0)).length;   // live players above me stay above: scores only grow
+}
+// ---- friend alerts: routing (master toggle, per-kind toggles, permission, tab visibility, artifact) and feed merging
+const NOTIF_KINDS = ['on', 'best'];
+function notifyRoute(kind, st){
+  if (!NOTIF_KINDS.includes(kind) || !st || !st.on || !st.kinds || !st.kinds[kind]) return 'none';
+  if (!st.hidden) return 'toast';
+  return st.perm === 'granted' && !st.art ? 'os' : 'none';   // the artifact iframe never gets Notification permission
+}
+function notifText(kind, nick, val){
+  return kind === 'on' ? { k: 'ntOn', v: { n: nick } } : kind === 'best' ? { k: 'ntBest', v: { n: nick, s: val | 0 } } : null;
+}
+function feedMerge(since, rows){
+  const out = { since: since | 0, rows: [] };
+  for (const r of Array.isArray(rows) ? rows : []){
+    if (!r || !Number.isInteger(r.id) || r.id <= (since | 0) || !NOTIF_KINDS.includes(r.kind)) continue;
+    out.rows.push({ id: r.id, kind: r.kind, nick: String(r.nick || ''), val: r.val | 0 });
+  }
+  out.rows.sort((a, b) => a.id - b.id);
+  if (out.rows.length) out.since = out.rows[out.rows.length - 1].id;
+  return out;
 }
 /* social-core:end */
 /* ads:start — rewarded / interstitial rules and the ad-provider adapters: pure, no DOM, no storage, no clock of its own (now and wait come in). tests/ads.test.js runs this block as it stands (tests/helpers/ads.js). */
@@ -4454,6 +4484,45 @@ $('frForm').addEventListener('submit', async e => {
   const v = fcNorm($('frIn').value); if (!fcOk(v)){ toast(t('frBad')); return; }
   if (await frAct('friend_request', {p_code: v}, 'frSent')) $('frIn').value = '';
 });
+/* friend alerts: the server feed is polled (visible 30 s / hidden 60 s); social_hello also keeps last_seen fresh.
+   Display is routed by notifyRoute: master bell (fw27_push, default off) + per-kind checks (fw27_pushk). */
+const IS_ART = !!(window.claude && typeof window.claude.use === 'function');   // the claude.ai artifact shell
+let pushOn = !!store.get('fw27_push', 0);
+let pushK = (k => ({ on: k.on !== 0, best: k.best !== 0 }))(Object(store.get('fw27_pushk', {})));
+let feedSince = clampI(store.get('fw27_feed2', 0), 0, Number.MAX_SAFE_INTEGER), feedNext = 0;
+function socShow(rows){
+  const st = { on: pushOn, kinds: pushK, perm: typeof Notification !== 'undefined' ? Notification.permission : 'denied', hidden: document.hidden, art: IS_ART };
+  for (const r of rows){
+    const route = notifyRoute(r.kind, st), tx = notifText(r.kind, showNick(r.nick) || 'Pilot', r.val);
+    if (route === 'none' || !tx) continue;
+    if (route === 'toast') toast(t(tx.k, tx.v));
+    else try { new Notification('SWISHBY', { body: t(tx.k, tx.v) }); } catch(e){}
+  }
+}
+async function socPoll(){
+  if (!sb || !uid) return;
+  const r = await socRpc('social_hello', { p_since: feedSince });
+  if (r.error || !r.data) return;
+  const m = feedMerge(feedSince, r.data.rows);
+  feedSince = m.since; store.set('fw27_feed2', feedSince);
+  if (m.rows.length) socShow(m.rows);
+  if (!$('frScr').hidden && await socSync()) renderFr();   // keep the open friends list fresh
+}
+setInterval(() => { const now = Date.now(); if (now < feedNext) return; feedNext = now + (document.hidden ? 60000 : 30000); socPoll(); }, 5000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden){ feedNext = Date.now() + 30000; socPoll(); } });
+function renderPushBtn(){ $('pushBtn').classList.toggle('off', !pushOn); $('ntKOn').checked = pushK.on; $('ntKBest').checked = pushK.best; }
+$('pushBtn').addEventListener('click', e => {
+  e.stopPropagation(); audioInit(); SFX.click();
+  pushOn = !pushOn; store.set('fw27_push', pushOn ? 1 : 0); renderPushBtn();
+  if (pushOn && typeof Notification !== 'undefined' && !IS_ART){
+    if (Notification.permission === 'default') Notification.requestPermission().then(p => { if (p === 'denied') toast(t('ntInApp')); });
+    else if (Notification.permission === 'denied') toast(t('ntInApp'));
+  }
+});
+for (const [id, key] of [['ntKOn', 'on'], ['ntKBest', 'best']])
+  $(id).addEventListener('change', e => { pushK = Object.assign({}, pushK, { [key]: e.target.checked }); store.set('fw27_pushk', { on: pushK.on ? 1 : 0, best: pushK.best ? 1 : 0 }); });
+renderPushBtn();
+
 // one-tap friend request from a leaderboard row (uuid rows only)
 function frPlusBtn(id){
   if (!sb || !uid || id === uid || !VS_UID.test(id) || SOC.friends.some(f => f.id === id)) return null;
@@ -5202,7 +5271,8 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
+if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear,
+  soc: {notifyRoute, notifText, feedMerge, fcNorm, fcOk, fcFmt, socNorm, show: socShow, get on(){ return pushOn; }, get k(){ return pushK; }}, eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get hazards(){ return hazs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot, ultCharge: FX.ult, ultLive: ultLive()}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots

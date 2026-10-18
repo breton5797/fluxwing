@@ -1551,3 +1551,81 @@ $$;
 revoke all on function private.fw_vs_ffa_vec_ok(text)   from public, anon, authenticated;
 revoke all on function private.fw_vs_roster_ffa(text)   from public, anon, authenticated;
 revoke all on function private.fw_vs_settle_ffa(text)   from public, anon, authenticated;
+
+-- =====================================================================================================
+-- SOCIAL — FRIEND ALERTS (plan-social.md P2)
+-- The feed table is the source of truth; clients POLL it (visible 30 s / hidden 60 s) through
+-- social_hello(p_since), which also refreshes last_seen (the friends-list online dot). A realtime
+-- signal was considered and dropped (P0: polling-first); the batching below keeps the table small:
+-- 'on' at most once per hello_gap per player, 'best' folded per pair inside best_gap.
+create table if not exists private.fw_social_feed (
+  id      bigint      generated always as identity primary key,
+  to_id   uuid        not null references auth.users (id) on delete cascade,
+  from_id uuid        not null references auth.users (id) on delete cascade,
+  kind    text        not null,
+  val     integer     not null default 0,
+  at      timestamptz not null default now(),
+  constraint fw_social_feed_kind_chk check (kind in ('on', 'best'))
+);
+create index if not exists fw_social_feed_to on private.fw_social_feed (to_id, id);
+alter table private.fw_social_feed enable row level security;
+revoke all on table private.fw_social_feed from public, anon, authenticated;
+
+create or replace function private.fw_social_hello(p_since bigint) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  c     record := private.fw_social_cfg();
+  v_me  uuid   := (select auth.uid());
+  v_now timestamptz := now();
+  v_row private.fw_social%rowtype;
+  v_rows jsonb;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  v_row := private.fw_social_row(v_me, true);
+  update private.fw_social set last_seen = v_now where player_id = v_me;
+  -- came (back) online: tell the friends, at most once per hello_gap
+  if v_row.last_seen is null or v_row.hello_at is null or v_row.hello_at < v_now - c.hello_gap then
+    update private.fw_social set hello_at = v_now where player_id = v_me;
+    insert into private.fw_social_feed (to_id, from_id, kind)
+    select case when f.a = v_me then f.b else f.a end, v_me, 'on' from public.fw_friends f where v_me in (f.a, f.b);
+  end if;
+  delete from private.fw_social_feed where to_id = v_me and at < v_now - c.feed_keep;
+  select coalesce(jsonb_agg(jsonb_build_object('id', x.id, 'from_id', x.from_id, 'nick', coalesce(sc.nick, vs.nick, 'Pilot'),
+           'kind', x.kind, 'val', x.val, 'at', x.at) order by x.id), '[]'::jsonb)
+    into v_rows
+  from (select * from private.fw_social_feed d where d.to_id = v_me and d.id > coalesce(p_since, 0) order by d.id limit 50) x
+  left join public.fw_scores sc on sc.player_id = x.from_id
+  left join public.fw_versus vs on vs.player_id = x.from_id;
+  return jsonb_build_object('rows', v_rows);
+end;
+$$;
+
+-- a new endless best tells the friends (folded per pair inside best_gap)
+create or replace function private.fw_scores_best_notify() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare c record := private.fw_social_cfg(); v_now timestamptz := now(); r record;
+begin
+  if tg_op = 'UPDATE' and new.best <= old.best then return new; end if;
+  if new.best <= 0 then return new; end if;
+  for r in select case when f.a = new.player_id then f.b else f.a end as fid from public.fw_friends f where new.player_id in (f.a, f.b) loop
+    update private.fw_social_feed set val = new.best, at = v_now
+    where to_id = r.fid and from_id = new.player_id and kind = 'best' and at > v_now - c.best_gap;
+    if not found then
+      insert into private.fw_social_feed (to_id, from_id, kind, val) values (r.fid, new.player_id, 'best', new.best);
+    end if;
+  end loop;
+  return new;
+end;
+$$;
+drop trigger if exists fw_scores_best_notify on public.fw_scores;
+create trigger fw_scores_best_notify after insert or update of best on public.fw_scores
+for each row execute function private.fw_scores_best_notify();
+
+create or replace function public.social_hello(p_since bigint default 0) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_social_hello(p_since); $$;
+
+revoke all on function private.fw_social_hello(bigint)       from public, anon, authenticated;
+revoke all on function private.fw_scores_best_notify()       from public, anon, authenticated;
+revoke all on function public.social_hello(bigint)           from public, anon, authenticated;
+grant execute on function private.fw_social_hello(bigint)    to authenticated, service_role;
+grant execute on function public.social_hello(bigint)        to authenticated, service_role;

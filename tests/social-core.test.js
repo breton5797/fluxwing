@@ -91,3 +91,33 @@ test('ffaPlaceFinal: my place is certain once no live player can pass me', () =>
   // everyone dead -> place from scores (I am 2nd)
   assert.equal(S.ffaPlaceFinal({ sc: 10, al: false }, [{ sc: 4, al: false }, { sc: 20, al: false }, { sc: 1, al: false }]), 2);
 });
+
+// ---------- Phase 2: friend alerts + toggle ----------
+test('notifyRoute truth table: master off or kind off silences everything', () => {
+  const st = (o = {}) => ({ on: true, kinds: { on: true, best: true }, perm: 'granted', hidden: false, art: false, ...o });
+  assert.equal(S.notifyRoute('on', st({ on: false })), 'none');
+  assert.equal(S.notifyRoute('best', st({ kinds: { on: true, best: false } })), 'none');
+  assert.equal(S.notifyRoute('on', st()), 'toast');                                   // visible tab -> in-app toast
+  assert.equal(S.notifyRoute('on', st({ hidden: true })), 'os');                      // hidden + granted -> OS notification
+  assert.equal(S.notifyRoute('on', st({ hidden: true, perm: 'denied' })), 'none');
+  assert.equal(S.notifyRoute('on', st({ hidden: true, art: true })), 'none');         // artifact: never OS
+  assert.equal(S.notifyRoute('on', st({ art: true })), 'toast');
+  assert.equal(S.notifyRoute('junk', st()), 'none');
+});
+
+test('notifText picks the i18n key and fills nick / value', () => {
+  assert.deepEqual(S.notifText('on', 'Kim', 0), { k: 'ntOn', v: { n: 'Kim' } });
+  assert.deepEqual(S.notifText('best', 'Kim', 42), { k: 'ntBest', v: { n: 'Kim', s: 42 } });
+  assert.equal(S.notifText('junk', 'Kim', 1), null);
+});
+
+test('feedMerge keeps the cursor moving and drops duplicate ids', () => {
+  const a = S.feedMerge(0, [{ id: 3, kind: 'on', nick: 'A' }, { id: 5, kind: 'best', nick: 'B', val: 9 }]);
+  assert.equal(a.since, 5);
+  assert.equal(a.rows.length, 2);
+  const b = S.feedMerge(a.since, [{ id: 5, kind: 'best', nick: 'B', val: 9 }, { id: 7, kind: 'on', nick: 'C' }]);
+  assert.equal(b.since, 7);
+  assert.deepEqual(b.rows.map(r => r.id), [7]);
+  assert.deepEqual(S.feedMerge(9, null), { since: 9, rows: [] });
+  assert.deepEqual(S.feedMerge(9, [{ id: 'x' }]), { since: 9, rows: [] });
+});
