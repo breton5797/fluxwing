@@ -1174,3 +1174,235 @@ begin
   end if;
 end
 $do$;
+
+-- =====================================================================================================
+-- SOCIAL — FRIENDS (plan-social.md P1)
+-- Mutual friendships made with a server-issued 8-char Crockford-base32 friend code (or a uuid picked from
+-- a leaderboard / versus screen). Everything a client writes goes through the definer RPCs below; the only
+-- readable table is public.fw_friends, and RLS lets a player see no rows but their own.
+create table if not exists private.fw_social (
+  player_id uuid        primary key references auth.users (id) on delete cascade,
+  code      text        not null unique,
+  last_seen timestamptz,
+  hello_at  timestamptz,          -- last time friends were told "online" (15 min batching, P2)
+  req_day   date,                 -- friend requests sent today (rate limit)
+  req_count integer     not null default 0,
+  created_at timestamptz not null default now(),
+  constraint fw_social_code_chk check (code ~ '^[0-9A-HJKMNP-TV-Z]{8}$')
+);
+alter table private.fw_social enable row level security;   -- no policy: not exposed
+revoke all on table private.fw_social from public, anon, authenticated;
+
+create table if not exists public.fw_friends (
+  a     uuid not null references auth.users (id) on delete cascade,
+  b     uuid not null references auth.users (id) on delete cascade,
+  since timestamptz not null default now(),
+  primary key (a, b),
+  constraint fw_friends_ord_chk check (a < b)
+);
+create index if not exists fw_friends_b on public.fw_friends (b);
+alter table public.fw_friends enable row level security;
+drop policy if exists fw_friends_read on public.fw_friends;
+create policy fw_friends_read on public.fw_friends for select to authenticated
+using ((select auth.uid()) in (a, b));
+revoke all on table public.fw_friends from public, anon, authenticated;
+grant select on table public.fw_friends to authenticated;
+grant select, insert, update, delete on table public.fw_friends to service_role;
+
+create table if not exists private.fw_friend_req (
+  from_id uuid not null references auth.users (id) on delete cascade,
+  to_id   uuid not null references auth.users (id) on delete cascade,
+  at      timestamptz not null default now(),
+  primary key (from_id, to_id),
+  constraint fw_friend_req_self_chk check (from_id <> to_id)
+);
+create index if not exists fw_friend_req_to on private.fw_friend_req (to_id);
+alter table private.fw_friend_req enable row level security;
+revoke all on table private.fw_friend_req from public, anon, authenticated;
+
+-- the caller's social row, created (with a fresh code) on first touch. Locked FOR UPDATE when p_lock.
+create or replace function private.fw_social_row(p_uid uuid, p_lock boolean default false) returns private.fw_social
+language plpgsql security definer set search_path = '' as $$
+declare
+  c_alph constant text := '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  v_row  private.fw_social%rowtype;
+  v_code text;
+begin
+  if p_lock then
+    select * into v_row from private.fw_social where player_id = p_uid for update;
+  else
+    select * into v_row from private.fw_social where player_id = p_uid;
+  end if;
+  if found then return v_row; end if;
+  for i in 1..20 loop
+    v_code := '';
+    for j in 1..8 loop v_code := v_code || substr(c_alph, 1 + floor(random() * 32)::integer, 1); end loop;
+    begin
+      insert into private.fw_social (player_id, code) values (p_uid, v_code) returning * into v_row;
+      return v_row;
+    exception
+      when unique_violation then null;     -- code collision: roll again
+      when foreign_key_violation then raise exception 'fw_auth: unknown player' using errcode = '28000';
+    end;
+  end loop;
+  raise exception 'fw_social_code: could not issue a code' using errcode = 'P0001';
+end;
+$$;
+
+-- caps and limits, in one place
+create or replace function private.fw_social_cfg(
+  out friend_cap integer, out pending_cap integer, out req_per_day integer,
+  out online_window interval, out hello_gap interval, out best_gap interval, out feed_keep interval
+) language sql immutable set search_path = '' as $$
+  select 100, 30, 200, interval '2 minutes', interval '15 minutes', interval '10 minutes', interval '3 days';
+$$;
+
+create or replace function private.fw_friend_request(p_code text, p_uid uuid) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  c    record := private.fw_social_cfg();
+  v_me uuid   := (select auth.uid());
+  v_to uuid;
+  v_today date := (now() at time zone 'utc')::date;
+  v_row private.fw_social%rowtype;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_me::text, 2));   -- serialise this caller's friend writes
+  v_row := private.fw_social_row(v_me, true);
+  -- rate limit per UTC day
+  if v_row.req_day is distinct from v_today then v_row.req_day := v_today; v_row.req_count := 0; end if;
+  if v_row.req_count >= c.req_per_day then
+    raise exception 'fw_rate_limited: too many friend requests today' using errcode = 'P0001';
+  end if;
+  update private.fw_social set req_day = v_row.req_day, req_count = v_row.req_count + 1 where player_id = v_me;
+  -- resolve the target
+  if p_code is not null then
+    select s.player_id into v_to from private.fw_social s where s.code = upper(p_code);
+    if v_to is null then raise exception 'fw_bad_input: unknown friend code' using errcode = '22023'; end if;
+  elsif p_uid is not null then
+    v_to := p_uid;
+    if not exists (select 1 from public.fw_scores sc where sc.player_id = v_to)
+       and not exists (select 1 from public.fw_versus v where v.player_id = v_to) then
+      raise exception 'fw_bad_input: unknown player' using errcode = '22023';
+    end if;
+  else
+    raise exception 'fw_bad_input: code or uuid required' using errcode = '22023';
+  end if;
+  if v_to = v_me then raise exception 'fw_friend_self: that is you' using errcode = 'P0001'; end if;
+  if exists (select 1 from public.fw_friends f where f.a = least(v_me, v_to) and f.b = greatest(v_me, v_to)) then
+    raise exception 'fw_friend_dupe: already friends' using errcode = 'P0001';
+  end if;
+  if (select count(*) from public.fw_friends f where v_me in (f.a, f.b)) >= c.friend_cap then
+    raise exception 'fw_friend_cap: friend list is full' using errcode = 'P0001';
+  end if;
+  -- a request the other way makes the friendship at once
+  if exists (select 1 from private.fw_friend_req r where r.from_id = v_to and r.to_id = v_me) then
+    insert into public.fw_friends (a, b) values (least(v_me, v_to), greatest(v_me, v_to)) on conflict do nothing;
+    delete from private.fw_friend_req r where (r.from_id, r.to_id) in ((v_me, v_to), (v_to, v_me));
+    return jsonb_build_object('status', 'friends');
+  end if;
+  if exists (select 1 from private.fw_friend_req r where r.from_id = v_me and r.to_id = v_to) then
+    raise exception 'fw_friend_dupe: already requested' using errcode = 'P0001';
+  end if;
+  if (select count(*) from private.fw_friend_req r where r.from_id = v_me) >= c.pending_cap then
+    raise exception 'fw_friend_cap: too many pending requests' using errcode = 'P0001';
+  end if;
+  insert into private.fw_friend_req (from_id, to_id) values (v_me, v_to);
+  return jsonb_build_object('status', 'sent');
+end;
+$$;
+
+create or replace function private.fw_friend_respond(p_from uuid, p_accept boolean) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  c    record := private.fw_social_cfg();
+  v_me uuid := (select auth.uid());
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_from is null or p_accept is null then raise exception 'fw_bad_input: bad arguments' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_me::text, 2));
+  if not exists (select 1 from private.fw_friend_req r where r.from_id = p_from and r.to_id = v_me) then
+    raise exception 'fw_bad_input: no such request' using errcode = '22023';
+  end if;
+  delete from private.fw_friend_req r where (r.from_id, r.to_id) in ((p_from, v_me), (v_me, p_from));
+  if p_accept then
+    if (select count(*) from public.fw_friends f where v_me in (f.a, f.b)) >= c.friend_cap then
+      raise exception 'fw_friend_cap: friend list is full' using errcode = 'P0001';
+    end if;
+    insert into public.fw_friends (a, b) values (least(v_me, p_from), greatest(v_me, p_from)) on conflict do nothing;
+  end if;
+  return jsonb_build_object('status', case when p_accept then 'friends' else 'declined' end);
+end;
+$$;
+
+create or replace function private.fw_friend_remove(p_uid uuid) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := (select auth.uid());
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_uid is null then raise exception 'fw_bad_input: bad arguments' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_me::text, 2));
+  delete from public.fw_friends f where f.a = least(v_me, p_uid) and f.b = greatest(v_me, p_uid);
+  delete from private.fw_friend_req r where (r.from_id, r.to_id) in ((v_me, p_uid), (p_uid, v_me));
+  return jsonb_build_object('status', 'removed');
+end;
+$$;
+
+-- everything the friends screen needs, in one call
+create or replace function private.fw_social_me() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  c    record := private.fw_social_cfg();
+  v_me uuid := (select auth.uid());
+  v_row private.fw_social%rowtype;
+  v_friends jsonb;
+  v_reqs jsonb;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  v_row := private.fw_social_row(v_me);
+  select coalesce(jsonb_agg(jsonb_build_object(
+      'player_id', o.uid, 'nick', coalesce(sc.nick, vs.nick, 'Pilot'), 'cc', coalesce(sc.cc, vs.cc, ''),
+      'bird', coalesce(sc.bird, vs.bird, ''), 'best', coalesce(sc.best, 0), 'rp', coalesce(vs.rp, 0),
+      'online', (s.last_seen is not null and s.last_seen > now() - c.online_window)) order by coalesce(sc.best, 0) desc), '[]'::jsonb)
+    into v_friends
+  from (select case when f.a = v_me then f.b else f.a end as uid from public.fw_friends f where v_me in (f.a, f.b)) o
+  left join public.fw_scores  sc on sc.player_id = o.uid
+  left join public.fw_versus  vs on vs.player_id = o.uid
+  left join private.fw_social s  on s.player_id = o.uid;
+  select coalesce(jsonb_agg(jsonb_build_object('from_id', r.from_id, 'nick', coalesce(sc.nick, vs.nick, 'Pilot')) order by r.at desc), '[]'::jsonb)
+    into v_reqs
+  from private.fw_friend_req r
+  left join public.fw_scores sc on sc.player_id = r.from_id
+  left join public.fw_versus vs on vs.player_id = r.from_id
+  where r.to_id = v_me;
+  return jsonb_build_object('code', v_row.code, 'friends', v_friends, 'reqs', v_reqs);
+end;
+$$;
+
+create or replace function public.friend_request(p_code text default null, p_uid uuid default null) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_friend_request(p_code, p_uid); $$;
+create or replace function public.friend_respond(p_from uuid, p_accept boolean) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_friend_respond(p_from, p_accept); $$;
+create or replace function public.friend_remove(p_uid uuid) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_friend_remove(p_uid); $$;
+create or replace function public.social_me() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_social_me(); $$;
+
+revoke all on function private.fw_social_row(uuid, boolean)            from public, anon, authenticated;
+revoke all on function private.fw_social_cfg()                         from public, anon, authenticated;
+revoke all on function private.fw_friend_request(text, uuid)           from public, anon, authenticated;
+revoke all on function private.fw_friend_respond(uuid, boolean)        from public, anon, authenticated;
+revoke all on function private.fw_friend_remove(uuid)                  from public, anon, authenticated;
+revoke all on function private.fw_social_me()                          from public, anon, authenticated;
+revoke all on function public.friend_request(text, uuid)               from public, anon, authenticated;
+revoke all on function public.friend_respond(uuid, boolean)            from public, anon, authenticated;
+revoke all on function public.friend_remove(uuid)                      from public, anon, authenticated;
+revoke all on function public.social_me()                              from public, anon, authenticated;
+grant execute on function private.fw_friend_request(text, uuid)        to authenticated, service_role;
+grant execute on function private.fw_friend_respond(uuid, boolean)     to authenticated, service_role;
+grant execute on function private.fw_friend_remove(uuid)               to authenticated, service_role;
+grant execute on function private.fw_social_me()                       to authenticated, service_role;
+grant execute on function public.friend_request(text, uuid)            to authenticated, service_role;
+grant execute on function public.friend_respond(uuid, boolean)         to authenticated, service_role;
+grant execute on function public.friend_remove(uuid)                   to authenticated, service_role;
+grant execute on function public.social_me()                           to authenticated, service_role;

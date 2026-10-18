@@ -96,6 +96,20 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .lbrow .tb{margin-right:6px;vertical-align:-3px}   /* the versus tier mark is a badge image now, not a text pill */
 .lbrow .wl{font:600 11px var(--body);color:var(--dim);margin-left:8px;letter-spacing:.02em}
 .lbrow .ub{font:700 10px var(--body);letter-spacing:.08em;margin-right:8px;opacity:.9}
+/* friends */
+.frcode{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(243,238,252,.05)}
+.frcode .frlbl{font-size:12px;color:var(--dim)}
+.frcode b{font-family:"Bungee",Impact,sans-serif;letter-spacing:.08em;font-size:17px}
+.frrow{display:grid;grid-template-columns:14px 1.7em minmax(0,1fr) auto auto;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;font-size:15px}
+.frrow:nth-child(odd){background:rgba(243,238,252,.04)}
+.frrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frrow .bst{font-family:"Bungee",Impact,sans-serif;font-size:13px;color:var(--dim)}
+.frdot{width:9px;height:9px;border-radius:50%;background:rgba(243,238,252,.18)}
+.frdot.on{background:#3dff9a;box-shadow:0 0 8px #3dff9a}
+.frx{background:none;border:0;color:var(--dim);font-size:15px;cursor:pointer;padding:4px 7px}
+.frx:hover{color:#ff5c7a}
+.frplus{background:none;border:1px solid var(--line);border-radius:8px;color:var(--cool);font-size:13px;line-height:1;cursor:pointer;padding:3px 7px;margin-left:8px}
+.frwarn{font-size:11px;color:var(--dim);margin-top:8px}
 .lbempty{padding:22px 8px;text-align:center;color:var(--dim);font-size:14px}
 .lbstatus{font-size:12px;color:var(--dim);min-height:1.2em}
 .nickrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -378,6 +392,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     </div>
     <div class="row">
       <button class="ghost" id="shopBtn" data-i18n="shop"></button>
+      <button class="ghost" id="frBtn" data-i18n="fr"></button>
       <button class="ghost" id="helpBtn" aria-label="Help">?</button>
       <select class="ghost" id="langSel" aria-label="Language"></select>
     </div>
@@ -516,6 +531,21 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="lbhead"><h2 data-i18n="shop"></h2><button class="ghost" id="shopClose" data-i18n="close"></button></div>
       <div class="testbar" data-i18n="testBuild"></div>
       <div class="shop-list" id="shopList"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="frScr" hidden>
+    <div class="card lbcard">
+      <div class="lbhead"><h2 data-i18n="fr"></h2><button class="ghost" id="frClose" data-i18n="close"></button></div>
+      <div class="frcode"><span class="frlbl" data-i18n="frCode"></span><b id="frMyCode">—</b><button class="ghost" id="frCopy" data-i18n="frCopy"></button></div>
+      <form class="nickrow frform" id="frForm">
+        <input id="frIn" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <button class="ghost" type="submit" data-i18n="frAdd"></button>
+      </form>
+      <div id="frReqs" hidden><div class="dayline" data-i18n="frReqs"></div><ol class="lblist" id="frReqList"></ol></div>
+      <ol class="lblist" id="frList"></ol>
+      <div class="lbstatus" id="frStatus"></div>
+      <div class="frwarn" data-i18n="frWarn"></div>
     </div>
   </div>
 
@@ -854,6 +884,25 @@ vi:{startSub:'Một chạm là bay', dailyCta:'THỬ THÁCH TOÀN CẦU HÔM NAY
  pt_bronze:'Đồng', pt_silver:'Bạc', pt_gold:'Vàng', pt_platinum:'Bạch kim', pt_diamond:'Kim cương', pt_transcend:'Siêu việt', pt_demigod:'Bán thần', ptUp:'THĂNG HẠNG! {t}', hz_over:'QUÁ TỐC', hz_weight:'TẠ NẶNG', hz_smoke:'KHÓI MÙ', hz_drain:'XẢ ĐIỆN', hHaz:'Vật cản — từ STAGE 11, những đĩa gai màu tối viền đỏ xuất hiện giữa các cổng. Chạm vào sẽ dính một trong số: Quá tốc (nhanh hơn trong 3 giây), Tạ nặng (nặng hơn trong 3 giây), Khói mù (2,5 giây sương mù) hoặc Xả điện (thanh lướt, năng lượng kỹ năng và combo về 0). Khi có khiên, đang lướt hoặc bất tử, chúng vỡ tan mà không gây hại. Chỉ có ở chế độ stage.'}
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_N.en, I18N_N[l] || {});
+// Social keys (friends / alerts / guilds), merged the same way: en is the fallback for the other six languages.
+const I18N_S = {
+ko:{fr:'친구', frCode:'내 친구 코드', frCopy:'복사', frCopied:'복사했어요. 친구에게 보내세요', frAdd:'요청', frReqs:'받은 요청', frOk:'수락', frNo:'거절',
+ frEmpty:'아직 친구가 없어요. 위 코드를 공유해 보세요', frSent:'친구 요청을 보냈어요', frNow:'친구가 되었어요!', frSelf:'자기 자신은 추가할 수 없어요',
+ frDupe:'이미 친구이거나 요청 중이에요', frCap:'친구 한도에 도달했어요', frRate:'오늘은 더 요청할 수 없어요', frBad:'그 코드를 찾을 수 없어요',
+ frFail:'지금은 요청할 수 없어요', frDel:'삭제', frOnline:'접속 중', frPlus:'친구 요청', frWarn:'친구 목록은 이 기기의 게스트 계정에 묶여 있어요. 브라우저 데이터를 지우면 사라집니다'},
+en:{fr:'Friends', frCode:'My friend code', frCopy:'Copy', frCopied:'Copied. Send it to a friend', frAdd:'Request', frReqs:'Requests', frOk:'Accept', frNo:'Decline',
+ frEmpty:'No friends yet. Share the code above', frSent:'Friend request sent', frNow:'You are now friends!', frSelf:'That is your own code',
+ frDupe:'Already friends or already requested', frCap:'Friend list is full', frRate:'No more requests today', frBad:'No player with that code',
+ frFail:'Could not send the request', frDel:'Remove', frOnline:'Online', frPlus:'Add friend', frWarn:'Friends are tied to this device\'s guest account. Clearing browser data loses them'},
+ja:{fr:'フレンド', frCode:'フレンドコード', frCopy:'コピー', frCopied:'コピーしました', frAdd:'申請', frReqs:'受信した申請', frOk:'承認', frNo:'拒否',
+ frEmpty:'まだフレンドがいません。コードを共有しましょう', frSent:'申請を送りました', frNow:'フレンドになりました！', frSelf:'自分は追加できません',
+ frDupe:'すでにフレンドか申請中です', frCap:'フレンド上限に達しました', frRate:'今日はこれ以上申請できません', frBad:'そのコードは見つかりません',
+ frFail:'いま申請できません', frDel:'削除', frOnline:'オンライン', frPlus:'フレンド申請', frWarn:'フレンドはこの端末のゲストアカウントに紐づきます'},
+zh:{fr:'好友', frCode:'我的好友码', frCopy:'复制', frCopied:'已复制', frAdd:'申请', frReqs:'收到的申请', frOk:'接受', frNo:'拒绝',
+ frEmpty:'还没有好友。分享上面的好友码吧', frSent:'已发送好友申请', frNow:'已成为好友！', frSelf:'不能添加自己',
+ frDupe:'已是好友或已申请', frCap:'好友已满', frRate:'今天不能再申请了', frBad:'找不到该好友码',
+ frFail:'暂时无法申请', frDel:'删除', frOnline:'在线', frPlus:'加好友', frWarn:'好友绑定在本设备的访客账号上'}};
+for (const l in I18N) Object.assign(I18N[l], I18N_S.en, I18N_S[l] || {});
 const birdById = id => BIRDS.find(b => b.id === id);
 let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
 
@@ -1169,6 +1218,34 @@ const arcsOn = (n, cfg) => n >= 3;
 const sfxRoute = (ev, files, synth) => files && files[ev] ? 'file' : synth && synth[ev] ? 'synth' : null;
 const hapticFor = (ev, table) => (table && ev in table) ? table[ev] : null;
 /* fx-core:end */
+
+/* social-core:start — pure social logic (friends / alerts / FFA / guilds). No DOM, no globals, no Date.now():
+   tests/helpers/social.js extracts this block with new Function, like fx-core. */
+const SOC_ALPH = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';   // Crockford base32: no I, L, O, U
+const fcNorm = s => String(s == null ? '' : s).toUpperCase().replace(/O/g, '0').replace(/[IL]/g, '1')
+  .replace(/[^0-9A-Z]/g, '').split('').filter(c => SOC_ALPH.includes(c)).join('');
+const fcOk = s => fcNorm(s).length === 8;
+const fcFmt = s => s ? String(s).slice(0, 4) + '-' + String(s).slice(4) : '';
+const friendErrKey = m => { const s = String(m || '');
+  return /fw_friend_self/.test(s) ? 'frSelf' : /fw_friend_dupe/.test(s) ? 'frDupe' : /fw_friend_cap/.test(s) ? 'frCap'
+    : /fw_rate_limited/.test(s) ? 'frRate' : /fw_bad_input/.test(s) ? 'frBad' : 'frFail'; };
+const SOC_UID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+function socNorm(d){
+  const out = { code: '', friends: [], reqs: [] };
+  if (!d || typeof d !== 'object') return out;
+  out.code = fcOk(d.code) ? fcNorm(d.code) : '';
+  for (const f of Array.isArray(d.friends) ? d.friends : []){
+    if (!f || typeof f !== 'object' || !SOC_UID.test(f.player_id)) continue;
+    out.friends.push({ id: f.player_id, nick: String(f.nick || ''), cc: String(f.cc || ''), bird: String(f.bird || ''),
+      best: Math.max(0, f.best | 0), rp: Math.max(0, f.rp | 0), online: !!f.online });
+  }
+  for (const r of Array.isArray(d.reqs) ? d.reqs : []){
+    if (!r || typeof r !== 'object' || !SOC_UID.test(r.from_id)) continue;
+    out.reqs.push({ id: r.from_id, nick: String(r.nick || '') });
+  }
+  return out;
+}
+/* social-core:end */
 /* ads:start — rewarded / interstitial rules and the ad-provider adapters: pure, no DOM, no storage, no clock of its own (now and wait come in). tests/ads.test.js runs this block as it stands (tests/helpers/ads.js). */
 const AD_CFG = Object.freeze({ interEvery: 3, interGapMs: 180000, timeoutMs: 30000, stubMs: 3000 });
 const AD_STUB_MODES = Object.freeze(['ok', 'fail', 'skip', 'none']);
@@ -1838,7 +1915,7 @@ addEventListener('keydown', e => {
   if (e.repeat) return;
   const tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' && (e.code === 'Space' || e.code === 'Enter')) return;
-  if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else closeLB(); } return; }
+  if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else if (!$('frScr').hidden) frClose(); else closeLB(); } return; }
   if (state === 'menu' && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')){ e.preventDefault(); pickBird(ROSTER.indexOf(B) + (e.code === 'ArrowRight' ? 1 : -1)); return; }
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){ e.preventDefault(); if (state==='paused') togglePause(); else flap(); }
   else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyD' || e.code === 'KeyE'){ e.preventDefault(); dash(); }
@@ -4251,6 +4328,7 @@ function renderLB(){
     const bd = birdById(r.bird); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
     nm.appendChild(document.createTextNode(showNick(r.nick || '') || '—'));
     if (me){ const tg = document.createElement('span'); tg.className = 'me-tag'; tg.textContent = t('you'); nm.appendChild(tg); }
+    else { const fb = frPlusBtn(r.id); if (fb) nm.appendChild(fb); }
     const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = Math.max(0, Math.floor(Number(r.sc) || 0));
     if (bd){ const ub = document.createElement('span'); ub.className = 'ub'; ub.textContent = bd.name; ub.style.color = hsl(bd.uiCol || bd.col); sc.prepend(ub); }
     if (r.wl){ const w = document.createElement('span'); w.className = 'wl'; w.textContent = r.wl; sc.appendChild(w); }   // wins–losses
@@ -4288,6 +4366,71 @@ $('nickForm').addEventListener('submit', e => {
   if (myDoc) submitScore(0, 0, 'endless', dayKey());
   renderLB();
 });
+
+/* ---------- friends (social): list, requests, codes. Server: social_me / friend_request / friend_respond / friend_remove ---------- */
+let SOC = { code: '', friends: [], reqs: [] };
+async function socRpc(fn, a){ let r = await vsRpc(fn, a); if (r.error && sbAuthErr(r) && await sbReauth()) r = await vsRpc(fn, a); return r; }
+async function socSync(){ if (!sb || !uid) return false; const r = await socRpc('social_me'); if (r.error || !r.data) return false; SOC = socNorm(r.data); return true; }
+function frOpen(){
+  $('frScr').hidden = false; lbOpen = true; $('frStatus').textContent = t('loading'); renderFr();
+  online().then(async () => { if (sb && await socSync()){ $('frStatus').textContent = ''; } else $('frStatus').textContent = t('offline'); renderFr(); });
+}
+function frClose(){ $('frScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('vsScr').hidden; }
+async function frAct(fn, args, okKey){
+  const r = await socRpc(fn, args);
+  if (r.error){ toast(t(friendErrKey(r.error.message))); return false; }
+  if (okKey) toast(t(r.data && r.data.status === 'friends' ? 'frNow' : okKey));
+  await socSync(); renderFr(); return true;
+}
+function renderFr(){
+  $('frMyCode').textContent = SOC.code ? fcFmt(SOC.code) : '—';
+  const rq = $('frReqList'); rq.textContent = ''; $('frReqs').hidden = !SOC.reqs.length;
+  for (const q of SOC.reqs){
+    const li = document.createElement('li'); li.className = 'frrow';
+    const d = document.createElement('span'); d.className = 'frdot';
+    const f = document.createElement('span'); f.textContent = '';
+    const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = showNick(q.nick) || '—';
+    const ok = document.createElement('button'); ok.className = 'frplus'; ok.textContent = t('frOk');
+    ok.addEventListener('click', e => { e.stopPropagation(); frAct('friend_respond', {p_from: q.id, p_accept: true}, 'frNow'); });
+    const no = document.createElement('button'); no.className = 'frx'; no.textContent = t('frNo');
+    no.addEventListener('click', e => { e.stopPropagation(); frAct('friend_respond', {p_from: q.id, p_accept: false}, ''); });
+    li.append(d, f, nm, ok, no); rq.appendChild(li);
+  }
+  const L = $('frList'); L.textContent = '';
+  if (!SOC.friends.length){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('frEmpty'); L.appendChild(li); return; }
+  for (const fr of SOC.friends){
+    const li = document.createElement('li'); li.className = 'frrow';
+    const d = document.createElement('span'); d.className = 'frdot' + (fr.online ? ' on' : ''); if (fr.online) d.title = t('frOnline');
+    const fl = document.createElement('span'); fl.textContent = flag(fr.cc);
+    const nm = document.createElement('span'); nm.className = 'nm';
+    const bd = birdById(fr.bird); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
+    nm.appendChild(document.createTextNode(showNick(fr.nick) || '—'));
+    const b = document.createElement('span'); b.className = 'bst'; b.textContent = fr.best;
+    const x = document.createElement('button'); x.className = 'frx'; x.textContent = '✕'; x.title = t('frDel');
+    x.addEventListener('click', e => { e.stopPropagation(); frAct('friend_remove', {p_uid: fr.id}, ''); });
+    li.append(d, fl, nm, b, x); L.appendChild(li);
+  }
+}
+$('frBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); SFX.click(); frOpen(); });
+$('frClose').addEventListener('click', e => { e.stopPropagation(); frClose(); });
+$('frScr').addEventListener('click', e => { if (e.target === $('frScr')) frClose(); });
+$('frCopy').addEventListener('click', async e => {
+  e.stopPropagation(); if (!SOC.code) return;
+  try { await navigator.clipboard.writeText(fcFmt(SOC.code)); toast(t('frCopied')); }
+  catch(err){ const i = $('frIn'); i.value = fcFmt(SOC.code); i.select(); toast(t('frCopied')); }
+});
+$('frForm').addEventListener('submit', async e => {
+  e.preventDefault(); e.stopPropagation();
+  const v = fcNorm($('frIn').value); if (!fcOk(v)){ toast(t('frBad')); return; }
+  if (await frAct('friend_request', {p_code: v}, 'frSent')) $('frIn').value = '';
+});
+// one-tap friend request from a leaderboard row (uuid rows only)
+function frPlusBtn(id){
+  if (!sb || !uid || id === uid || !VS_UID.test(id) || SOC.friends.some(f => f.id === id)) return null;
+  const b = document.createElement('button'); b.className = 'frplus'; b.textContent = '+'; b.title = t('frPlus');
+  b.addEventListener('click', e => { e.stopPropagation(); b.disabled = true; frAct('friend_request', {p_uid: id}, 'frSent'); });
+  return b;
+}
 
 /* ---------- daily countdown ---------- */
 function updateDaily(){
