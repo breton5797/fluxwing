@@ -596,12 +596,12 @@ create or replace function private.fw_vs_cfg(
   out report_grace interval,     -- ... but never sooner than this after the first report
   out void_after interval,       -- nobody has reported this long after the first registration: void
   out starts_per_hour integer,   -- registrations per player per rolling hour
-  out pair_cap integer,          -- matches that count (not void) against one and the same rival (effectively unlimited: the per-rival cap is off) ...
+  out pair_cap integer,          -- ranked matches (not void) against one and the same rival, in any mode ...
   out pair_window interval,      -- ... per this rolling window; further ones are refused at versus_start (played unranked)
   out keep interval,             -- finished matches older than this are deleted
   out ffa_rp integer[]           -- 4-player FFA: RP by placement, 1st..4th (ties share the average, toward zero). MIRRORS THE CLIENT'S FFA_RP
 ) language sql immutable set search_path = '' as $$
-  select 50, 50, interval '20 seconds', interval '4 seconds', interval '5 minutes', interval '60 seconds', interval '20 minutes', 30, 1000000, interval '24 hours', interval '3 days', array[50, 20, -20, -50];
+  select 50, 50, interval '20 seconds', interval '4 seconds', interval '5 minutes', interval '60 seconds', interval '20 minutes', 30, 5, interval '24 hours', interval '3 days', array[50, 20, -20, -50];
 $$;
 -- Seasons and their rewards. Arrays are per tier, Bronze first (7 tiers: bronze, silver, gold, platinum, diamond,
 -- transcend, demigod). tier_rp MIRRORS THE CLIENT'S TIERS (index.html: the floors in PTIERS =
@@ -936,20 +936,22 @@ begin
   if v_cnt >= c.starts_per_hour then
     raise exception 'fw_rate_limited: too many ranked matches this hour' using errcode = 'P0001';
   end if;
-  if p_mode <> 'ffa' then   -- the per-rival cap is team-shaped (and effectively off, pair_cap 1,000,000): FFA skips it
-  foreach v_rival in array (case v_team when 0 then v_t1 else v_t0 end) loop
-    -- my registrations against this rival, whether or not the rival has registered yet (the roster is in the id: team 0 is its
-    -- 2nd part, team 1 its 3rd), so the answer does not depend on which of the two got in first
+  -- the per-rival cap, every mode: a 1v1/2v2 rival is anyone on the other team, an FFA rival is every other seat. The
+  -- (pair_cap + 1)th ranked match against the same rival inside pair_window is refused here, so the client plays it
+  -- unranked and says so (vsCap). Two accounts trading wins therefore move at most pair_cap * rp_win RP a day.
+  foreach v_rival in array (case when p_mode = 'ffa' then array_remove(v_t0, v_uid) when v_team = 0 then v_t1 else v_t0 end) loop
+    -- my registrations against this rival in any mode, whether or not the rival has registered yet (the roster is in the id:
+    -- an FFA id holds all four seats in its 2nd part, a team id holds team 0 in its 2nd part and team 1 in its 3rd), so the
+    -- answer does not depend on which of the two got in first
     select count(*) into v_cnt
     from private.fw_vs_part a
     join private.fw_vs_match m on m.id = a.match_id
     where a.player_id = v_uid and a.joined_at > v_now - c.pair_window and m.status <> 'void'
-      and v_rival::text = any (string_to_array(split_part(m.id, '.', case a.team when 0 then 3 else 2 end), '+'));
+      and v_rival::text = any (string_to_array(split_part(m.id, '.', case when m.mode = 'ffa' then 2 when a.team = 0 then 3 else 2 end), '+'));
     if v_cnt >= c.pair_cap then
       raise exception 'fw_vs_pair_cap: ranked matches against this rival are used up for now' using errcode = 'P0001';
     end if;
   end loop;
-  end if;
 
   -- joinable for a short window only
   if v_m.mode <> p_mode then
