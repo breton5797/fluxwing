@@ -69,6 +69,16 @@ tests/                   node:test 스위트, tests/helpers/bot.js 자동 비행
 - **포털 빌드**(CrazyGames/Poki)에는 로그인 UI가 없다(판정: 포털은 외부 로그인 리다이렉트를 허용하지 않음). 리더보드용 익명 로그인은 그대로 동작한다.
 - **로그아웃**은 이 기기의 진행을 지우고 새 익명으로 시작한다(진행은 계정에 남음) — 다음에 다른 계정으로 로그인할 때 진행이 섞이지 않게 하기 위해서다.
 
+### Apple 로그인 켜기
+
+Apple 로그인 버튼은 Supabase에서 Apple 제공자가 켜지는 순간 자동으로 나타난다(클라이언트가 `/auth/v1/settings`를 읽는다). 켜는 데 필요한 것은 Apple Developer Program 계정뿐이다.
+
+1. developer.apple.com → Certificates, Identifiers & Profiles → Identifiers → App ID(예: `com.minimalkorea.swishby`)에 **Sign in with Apple** 체크.
+2. Identifiers → **Services ID**(예: `com.minimalkorea.swishby.web`) 생성 → Sign in with Apple 설정에서 Primary App ID 선택, 도메인 `swishby.com`, Return URL `https://ecjeyelgcqbliavwltbc.supabase.co/auth/v1/callback`.
+3. Keys → **Sign in with Apple** 키 생성 → `.p8` 내려받기(한 번만 받을 수 있다), Key ID 메모. Team ID는 Membership 페이지에 있다.
+4. 이 저장소에서 `node scripts/apple-client-secret.mjs --team <Team ID> --key-id <Key ID> --client <Services ID> --p8 <AuthKey.p8>` 실행 → `apple-secret.txt` 한 줄이 생긴다(화면에 출력하지 않는다). 6개월마다 다시 만든다.
+5. Supabase → Authentication → Providers → Apple: Client IDs에 Services ID, Secret Key (for OAuth)에 `apple-secret.txt`의 한 줄, 켜기 → 저장. 게임을 새로 열면 Apple 버튼이 보인다.
+
 ## 소셜 기능 운영 적용 (친구 · 알림 · 4인 FFA)
 
 클라이언트(index.html)는 머지만으로 배포되지만, 서버 쪽은 Supabase SQL Editor에서 한 번 적용해야 한다.
