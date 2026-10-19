@@ -29,7 +29,11 @@ export const REFUSED = [
   'scheiße', 'Scheisse', 'arschloch', 'fotze', 'hurensohn', 'wichser', 'fick dich', 'arsch',
   'anjing', 'bangsat', 'kontol', 'memek', 'ngentot', 'jancok', 'goblok',
   'địt', 'ĐỊT', 'địt mẹ', 'cặc', 'đéo', 'buồi', 'đụ má', 'ditme', 'vcl',
-  'ḍit'.replace('d', 'đ').replace('̣i', 'ị')    // địt typed with a combining dot below
+  'ḍit'.replace('d', 'đ').replace('̣i', 'ị'),   // địt typed with a combining dot below
+  // Thai, Hindi (and Hindi in Latin letters)
+  'ไอ้เหี้ย', 'ควย', 'เย็ดแม่', 'กะหรี่', 'หี',
+  'चूतिया', 'चुतिया', 'मादरचोद', 'बहनचोद', 'भोसड़ी', 'रंडी',
+  'chutiya', 'Madarchod', 'behenchod', 'bhenchod', 'bhosdi', 'gandu', 'randi'
 ];
 
 export const ALLOWED = [
@@ -46,7 +50,8 @@ export const ALLOWED = [
   'Marsch', 'negeri', 'kasus', 'volonté', 'pollo', 'Montenegro',
   '고양이', '시바견', '날보지마', '자지마', '새끼고양이', '무지개새', '성교육', '비행기', '불사조',
   'たのしい', 'さくら', 'がいじん', 'ガイジン', 'パイロット', '中国', '飞行员', '日本', '妈妈',
-  'Nguyễn', 'lồng đèn', 'đĩa bay', 'buổi sáng', 'Việt Nam'
+  'Nguyễn', 'lồng đèn', 'đĩa bay', 'buổi sáng', 'Việt Nam',
+  'สมชาย', 'นักบิน', 'หีบสมบัติ', 'ประเทศไทย', 'ราหุล', 'प्रिया', 'पायलट', 'भारत', 'Randip', 'Gandalf', 'Rahul', 'Priya', 'Lund'
 ];
 
 test('nickname filter refuses the listed names', () => {
