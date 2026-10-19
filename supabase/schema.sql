@@ -1299,6 +1299,8 @@ begin
     perform cron.schedule('fw_vs_rollover', '0 15 * * *', 'set statement_timeout = 0; select private.fw_vs_tick();');
     perform cron.schedule('fw_social_feed_gc', '30 15 * * *',
       'set statement_timeout = 0; delete from private.fw_social_feed where at < now() - interval ''3 days'';');
+    perform cron.schedule('fw_client_errors_gc', '40 15 * * *',
+      'set statement_timeout = 0; delete from private.fw_client_errors where at < now() - interval ''30 days'';');
   end if;
 end
 $do$;
@@ -1755,6 +1757,52 @@ revoke all on function private.fw_scores_best_notify()       from public, anon, 
 revoke all on function public.social_hello(bigint)           from public, anon, authenticated;
 grant execute on function private.fw_social_hello(bigint)    to authenticated, service_role;
 grant execute on function public.social_hello(bigint)        to authenticated, service_role;
+
+-- ---------- CLIENT ERRORS: the game reports its own uncaught errors ----------
+-- No third-party tracker: the client (index.html errlog block) sends an uncaught error or rejection once per distinct
+-- bug, at most 5 a session, through public.report_error(). A row holds the message, the stack, a build fingerprint,
+-- the page path (never the query: an OAuth return carries a code there), the user agent and a small context object.
+-- Caps: 10 reports an hour per player and 500 an hour overall (a bug on every screen must not fill the database);
+-- over a cap the call returns false and stores nothing. Rows older than 30 days go with the pg_cron job
+-- fw_client_errors_gc (scheduled with the other jobs above). A deleted account leaves its rows without a player.
+-- Read:  select at, player_id, build, msg, left(stack, 200) as stack, url, extra
+--        from private.fw_client_errors order by at desc limit 50;
+create table if not exists private.fw_client_errors (
+  id        bigserial   primary key,
+  at        timestamptz not null default now(),
+  player_id uuid        references auth.users (id) on delete set null,
+  build     text        not null,
+  msg       text        not null,
+  stack     text,
+  url       text,
+  ua        text,
+  extra     jsonb
+);
+create index if not exists fw_client_errors_at_idx        on private.fw_client_errors (at desc);
+create index if not exists fw_client_errors_player_at_idx on private.fw_client_errors (player_id, at desc);
+alter table private.fw_client_errors enable row level security;   -- no policy: the schema is not exposed, the function below writes it
+revoke all on table private.fw_client_errors from public, anon, authenticated;
+grant select, delete on table private.fw_client_errors to service_role;
+
+create or replace function private.fw_report_error(p_msg text, p_stack text, p_build text, p_url text, p_ua text, p_extra jsonb)
+returns boolean language plpgsql security definer set search_path = '' as $$
+declare
+  v_uid uuid := (select auth.uid());
+  v_msg text := left(btrim(regexp_replace(coalesce(p_msg, ''), '\s+', ' ', 'g')), 300);
+begin
+  if v_uid is null or v_msg = '' then return false; end if;
+  if (select count(*) from private.fw_client_errors e where e.player_id = v_uid and e.at > now() - interval '1 hour') >= 10 then return false; end if;
+  if (select count(*) from private.fw_client_errors e where e.at > now() - interval '1 hour') >= 500 then return false; end if;
+  insert into private.fw_client_errors (player_id, build, msg, stack, url, ua, extra)
+  values (v_uid, left(coalesce(p_build, ''), 40), v_msg, left(p_stack, 2000), left(p_url, 200), left(p_ua, 200),
+          case when jsonb_typeof(p_extra) = 'object' and length(p_extra::text) <= 500 then p_extra else null end);
+  return true;
+end $$;
+create or replace function public.report_error(p_msg text, p_stack text, p_build text, p_url text, p_ua text, p_extra jsonb)
+returns boolean language sql security invoker set search_path = '' as $$ select private.fw_report_error(p_msg, p_stack, p_build, p_url, p_ua, p_extra); $$;
+revoke all on function private.fw_report_error(text, text, text, text, text, jsonb) from public, anon, authenticated;
+revoke all on function public.report_error(text, text, text, text, text, jsonb)     from public, anon;
+grant execute on function public.report_error(text, text, text, text, text, jsonb) to authenticated;
 
 -- ---------- testers: accounts that fly every released unit without buying it (QA) ----------
 -- The flag is a server row, never a nickname (a nickname can be typed by anyone). Add a tester with

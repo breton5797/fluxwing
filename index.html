@@ -1375,6 +1375,31 @@ function feedMerge(since, rows){
 const ffaDone = (me, oth) => oth.every(o => !o.al)
   && (!me.al || (oth.length > 0 && (me.sc | 0) > Math.max(...oth.map(o => o.sc | 0))));
 /* social-core:end */
+/* errlog:start — client error reports: the game tells its own server about uncaught errors, so bugs surface without a third-party tracker. Pure, no DOM. tests/errlog.test.js runs this block (tests/helpers/errlog.js). */
+const ERR_CFG = Object.freeze({ max: 5, msgMax: 300, stackMax: 2000, urlMax: 200, uaMax: 200 });
+// An uncaught error (Error, an ErrorEvent's message, a rejection reason of any type) → {msg, stack}, or null when it carries nothing
+function errNorm(e){
+  if (e == null) return null;
+  let raw = typeof e === 'string' ? e : typeof e.message === 'string' ? e.message : '';
+  if (!raw && typeof e !== 'object') { try { raw = String(e); } catch (x){ raw = ''; } }
+  const msg = raw.replace(/\s+/g, ' ').trim().slice(0, ERR_CFG.msgMax);
+  if (!msg || msg === 'Script error.') return null;   // a cross-origin script says nothing useful
+  const stack = typeof e.stack === 'string' ? e.stack.slice(0, ERR_CFG.stackMax) : '';
+  return { msg, stack };
+}
+// Same message + same first stack frame = same bug: reported once a session
+const errKey = n => n.msg + '\n' + (n.stack.split('\n').find(l => /^\s+at |@/.test(l)) || '');
+const errInit = () => ({ sent: [] });
+// Pure: a new state, never a mutation. ok = this report goes out (new key, under the session cap)
+function errQueue(st, key){
+  if (!st || !Array.isArray(st.sent) || st.sent.includes(key) || st.sent.length >= ERR_CFG.max) return { ok: false, st };
+  return { ok: true, st: { sent: [...st.sent, key] } };
+}
+// The page address without origin and query (an OAuth return carries ?code=… there): path + hash only
+function errUrl(href){ try { const u = new URL(href); return (u.pathname + u.hash).slice(0, ERR_CFG.urlMax); } catch (e){ return ''; } }
+// A build fingerprint with no build step: the total length of the page's inline scripts, which changes with every deploy
+const errBuild = scripts => 'L' + [...scripts].reduce((n, s) => n + (s.src ? 0 : (s.text || '').length), 0);
+/* errlog:end */
 /* ads:start — rewarded / interstitial rules and the ad-provider adapters: pure, no DOM, no storage, no clock of its own (now and wait come in). tests/ads.test.js runs this block as it stands (tests/helpers/ads.js). */
 const AD_CFG = Object.freeze({ interEvery: 3, interGapMs: 180000, timeoutMs: 30000, stubMs: 3000 });
 const AD_STUB_MODES = Object.freeze(['ok', 'fail', 'skip', 'none']);
@@ -4609,6 +4634,16 @@ async function testerCheck(){
   if (on === tester) return;
   tester = on; $('testerTag').hidden = !on; renderHangar(); if (on) toast(t('testerOn'));
 }
+// Error reports (errlog block above): an uncaught error or rejection goes to private.fw_client_errors through public.report_error(),
+// once per distinct bug, at most ERR_CFG.max a session, only once there is a server session. The server caps and truncates again.
+let errSt = errInit();
+async function errReport(e){
+  const n = errNorm(e); if (!n) return;
+  const q = errQueue(errSt, errKey(n)); errSt = q.st; if (!q.ok || backend !== 'supa' || !sbC) return;
+  try { await sbC.rpc('report_error', { p_msg: n.msg, p_stack: n.stack, p_build: errBuild(document.scripts), p_url: errUrl(location.href), p_ua: navigator.userAgent.slice(0, ERR_CFG.uaMax), p_extra: { state, mode, lang } }); } catch(x){}
+}
+window.addEventListener('error', ev => errReport(ev.error || ev.message));
+window.addEventListener('unhandledrejection', ev => errReport(ev.reason));
 $('acctBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); authOpen(authAnon() ? (authMail ? 'code' : 'pick') : 'out'); });
 $('authClose').addEventListener('click', e => { e.stopPropagation(); authClose(); if (state === 'menu') cloudMenu(); });
 $('authScr').addEventListener('click', e => { if (e.target === $('authScr')){ authClose(); if (state === 'menu') cloudMenu(); } });
