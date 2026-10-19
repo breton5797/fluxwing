@@ -18,14 +18,14 @@ for (const file of ['../index.html', '../manifest.webmanifest']){
 }
 
 // Messengers keep a link preview's image by its address, so the renamed game's picture lives at an address
-// no messenger has seen with the old picture. The file must exist next to the page.
+// no messenger has seen with the old picture, on the custom domain. The file must exist next to the page.
 test('the share image has its own SWISHBY address and the file is there', () => {
   const html = read('../index.html');
-  const m = html.match(/<meta property="og:image" content="https:\/\/breton5797\.github\.io\/fluxwing\/([^"]+)">/);
+  const m = html.match(/<meta property="og:image" content="https:\/\/swishby\.com\/([^"]+)">/);
   assert.ok(m, 'og:image missing');
   assert.equal(m[1], 'og-swishby.png');
   assert.ok(readFileSync(new URL('../' + m[1], import.meta.url)).length > 10000);
-  assert.match(html, /<meta name="twitter:image" content="https:\/\/breton5797\.github\.io\/fluxwing\/og-swishby\.png">/);
+  assert.match(html, /<meta name="twitter:image" content="https:\/\/swishby\.com\/og-swishby\.png">/);
 });
 
 // Browsers read the install manifest only from <head>, and link-preview crawlers may stop at </head>.
