@@ -1756,3 +1756,29 @@ revoke all on function public.social_hello(bigint)           from public, anon, 
 grant execute on function private.fw_social_hello(bigint)    to authenticated, service_role;
 grant execute on function public.social_hello(bigint)        to authenticated, service_role;
 
+-- ---------- testers: accounts that fly every released unit without buying it (QA) ----------
+-- The flag is a server row, never a nickname (a nickname can be typed by anyone). Add a tester with
+--   insert into private.fw_testers (player_id, note) values ('<auth.users id>', 'who');
+-- and find an id by nickname with
+--   select player_id, nick, updated_at from public.fw_scores where nick in ('민황', '브레통');
+-- The client calls public.tester_me() after start-up and after each sign-in; when true it treats every released
+-- (non-hidden) unit as owned for the session and shows a TESTER badge in the hangar. Nothing is written to the wallet,
+-- the owned list or the cloud save, so deleting the row locks the units again on the next start.
+create table if not exists private.fw_testers (
+  player_id uuid primary key references auth.users (id) on delete cascade,
+  note      text,
+  added_at  timestamptz not null default now()
+);
+alter table private.fw_testers enable row level security;   -- no policy: the schema is not exposed, the function below reads it
+revoke all on table private.fw_testers from public, anon, authenticated;
+grant select, insert, update, delete on table private.fw_testers to service_role;
+
+create or replace function private.fw_tester_me() returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from private.fw_testers x where x.player_id = (select auth.uid()));
+$$;
+create or replace function public.tester_me() returns boolean
+language sql stable security invoker set search_path = '' as $$ select private.fw_tester_me(); $$;
+revoke all on function private.fw_tester_me() from public, anon, authenticated;
+revoke all on function public.tester_me()     from public, anon;
+grant execute on function public.tester_me() to authenticated;
