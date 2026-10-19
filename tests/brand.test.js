@@ -33,6 +33,7 @@ test('page metadata sits in <head>, and the page starts dark', () => {
   const html = read('../index.html');
   const head = html.slice(html.indexOf('<head>'), html.indexOf('</head>'));
   for (const tag of ['<title>SWISHBY 2027</title>', '<meta name="description"', '<link rel="manifest"', '<meta name="theme-color"',
+    '<meta name="color-scheme" content="dark">',   // opts out of forced browser darkening (Samsung Internet dark mode dimmed the menu)
     '<link rel="icon"', '<link rel="apple-touch-icon"', '<meta property="og:image"', '<meta property="og:title"', '<meta name="twitter:image"'])
     assert.ok(head.includes(tag), tag + ' is not inside <head>');
   assert.equal(html.split('</head>').length, 2);
@@ -54,4 +55,11 @@ test('the title, the share title and the install name say SWISHBY', () => {
   assert.match(html, /<title>SWISHBY 2027<\/title>/);
   assert.match(html, /<meta property="og:title" content="SWISHBY 2027">/);
   assert.equal(man.short_name, 'SWISHBY');
+});
+
+test('the menu shows the SWISHBY logo image and the file ships with the page', () => {
+  const html = read('../index.html');
+  const m = html.match(/<img class="logoimg" src="(logo-swishby\.png)" alt="SWISHBY 2027"/);
+  assert.ok(m, 'menu logo image tag');
+  assert.ok(readFileSync(new URL('../' + m[1], import.meta.url)).length > 10000, 'logo file is there');
 });
