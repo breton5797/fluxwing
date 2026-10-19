@@ -1782,3 +1782,23 @@ language sql stable security invoker set search_path = '' as $$ select private.f
 revoke all on function private.fw_tester_me() from public, anon, authenticated;
 revoke all on function public.tester_me()     from public, anon;
 grant execute on function public.tester_me() to authenticated;
+
+-- ---------- ACCOUNT DELETION: the player deletes their own account from the game ----------
+-- Privacy law wants a way to withdraw. The client's "계정 삭제" calls public.delete_me(): one delete of the caller's
+-- auth.users row, and every game table (fw_scores, fw_saves, fw_versus, fw_vs_part, fw_vs_standing, fw_social,
+-- fw_friends, fw_friend_req, fw_social_feed, fw_testers) references auth.users (id) on delete cascade, as do the auth
+-- schema's own identities/sessions/refresh tokens. Nothing is anonymised or kept. A guest has no account to delete
+-- (the client never offers it); a call without a user does nothing and returns false.
+create or replace function private.fw_delete_me() returns boolean
+language plpgsql security definer set search_path = '' as $$
+declare v_uid uuid := (select auth.uid());
+begin
+  if v_uid is null then return false; end if;
+  delete from auth.users u where u.id = v_uid;
+  return found;
+end $$;
+create or replace function public.delete_me() returns boolean
+language sql security invoker set search_path = '' as $$ select private.fw_delete_me(); $$;
+revoke all on function private.fw_delete_me() from public, anon, authenticated;
+revoke all on function public.delete_me()     from public, anon;
+grant execute on function public.delete_me() to authenticated;
