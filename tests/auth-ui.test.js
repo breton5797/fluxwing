@@ -32,6 +32,9 @@ test('authUi: a provider switched on in the dashboard shows up; Apple stays off 
   assert.equal(C.authUi(on, ua, { google: true }).google, true);
   assert.equal(C.authUi(on, ua, null).google, true);
   assert.match(html, /\/auth\/v1\/settings/, 'the client reads the public auth settings');
+  assert.equal(C.authUi({ ...on, ads: 'none' }, ua).show, true, 'no ads is not a portal: login stays');
+  assert.equal(C.authUi({ ...on, ads: 'stub' }, ua).show, true);
+  assert.equal(C.authUi({ ...on, ads: 'poki' }, ua).show, false, 'a portal build never shows login');
 });
 
 test('every language has the new sign-in strings and the tester notice', () => {

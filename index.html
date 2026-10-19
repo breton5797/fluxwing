@@ -627,7 +627,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 <script type="application/json" id="fxcfg">{"hitstop":{"light":0.04,"mid":0.08,"heavy":0.12},"punch":{"light":1.05,"mid":1.09,"heavy":1.15},"shake":{"stiff":260,"damp":18,"ampPx":{"light":4,"mid":9,"heavy":16}},"flash":{"frames":2,"alpha":0.55},"wave":{"life":0.45,"maxR":220,"refract":1.03,"cap":2},"chroma":{"dur":0.2,"px":3,"idleAlpha":0.15},"bloom":{"down":4,"alpha":0.25},"slowmo":{"scale":0.3,"near":0.2},"vignette":{"hurt":0.55,"danger":0.45},"death":{"slow":0.4,"slowScale":0.3,"grayFrom":0.6,"grayTo":1.1,"debrisBounce":0.45},"layers":{"core":{"n":[1,2],"size":[18,34],"speed":[0,0],"life":[0.08,0.14],"drag":0,"grav":0},"spark":{"n":[10,18],"size":[2,4],"speed":[220,520],"life":[0.25,0.55],"drag":3.5,"grav":900},"smoke":{"n":[4,8],"size":[10,22],"speed":[30,90],"life":[0.5,0.9],"drag":2,"grav":-60},"debris":{"n":[5,10],"size":[3,7],"speed":[150,380],"life":[0.6,1.1],"drag":1,"grav":1100}},"pool":{"low":240,"mid":400,"high":640},"quality":{"partMul":{"low":0.4,"mid":0.7,"high":1},"downP90Ms":20},"combo":{"l3":20,"l4":30,"partMulL3":2,"beatHz":2},"pop":{"from":1.6,"dur":0.35},"near":{"closeFrac":0.33,"flashHue":205},"events":{"flap":{"haptic":"flap"},"gate":{"haptic":null},"near":{"haptic":"near"},"shieldHit":{"haptic":"shieldHit"},"shieldMulti":{"haptic":null},"speed":{"haptic":null},"death":{"haptic":"deathHeavy"},"record":{"haptic":"record"},"coin":{"haptic":null},"comboBreak":{"haptic":"shatter"},"overdrive":{"haptic":"overdrive"}}}</script>
 <script>
 // Only the publishable / anon key ever goes here. Never a secret or service_role key.
-window.FW_CONFIG = { supabaseUrl: 'https://ecjeyelgcqbliavwltbc.supabase.co', supabaseAnonKey: 'sb_publishable_wG1eznhHBLW33Ghrt1gNNg_c32xOXX1', auth: { apple: false } };
+window.FW_CONFIG = { ads: 'none', supabaseUrl: 'https://ecjeyelgcqbliavwltbc.supabase.co', supabaseAnonKey: 'sb_publishable_wG1eznhHBLW33Ghrt1gNNg_c32xOXX1', auth: { apple: false } };
 </script>
 <!-- ============================================================ -->
 
@@ -1403,7 +1403,7 @@ function adGuard(a, wait, ms){
   return { name: a.name, ready: () => { try { return !!a.ready(); } catch (e){ return false; } }, rewarded: safe(a.rewarded, AD_RW), interstitial: safe(a.interstitial, AD_IN),
     ev: k => { if (!AD_EVS.includes(k) || typeof a.ev !== 'function') return; try { a.ev(k); } catch (e){} } };
 }
-// cfg: FW_CONFIG.ads ('stub' or, later, a provider name). ?ads=ok|fail|skip|none picks the stub's answer, but only where the stub is the provider or on localhost: on a real provider it would hand out free rewards
+// cfg: FW_CONFIG.ads ('none' on swishby.com: no offers at all; 'stub' for QA; or a portal name). ?ads=ok|fail|skip|none picks the stub's answer, but only where the stub is the provider or on localhost: on a real provider it would hand out free rewards
 function adPick(search, host, cfg){
   const q = new URLSearchParams(search).get('ads'), prov = typeof cfg === 'string' && cfg ? cfg : 'stub', local = /^(localhost|127\.0\.0\.1)$/.test(host);
   if (AD_STUB_MODES.includes(q) && (prov === 'stub' || local)) return { prov: 'stub', mode: q };
@@ -1545,7 +1545,7 @@ const authInApp = ua => /KAKAOTALK|Instagram|FBAN|FBAV|Line\/|NAVER|DaumApps|; w
 // Which login buttons this build offers. Portal builds (FW_CONFIG.ads names a portal) never show login: portals do not allow the redirects
 function authUi(cfg, ua, ext){
   const c = cfg && typeof cfg === 'object' ? cfg : {}, inApp = authInApp(ua), x = ext && typeof ext === 'object' ? ext : null;
-  const show = !!(c.supabaseUrl && c.supabaseAnonKey) && !(typeof c.ads === 'string' && c.ads && c.ads !== 'stub');
+  const show = !!(c.supabaseUrl && c.supabaseAnonKey) && !(typeof c.ads === 'string' && c.ads && c.ads !== 'stub' && c.ads !== 'none');
   // ext: the project's public /auth/v1/settings "external" map once fetched, so a provider switched on in the dashboard
   // (Apple, once its key is registered) appears without a deploy; the config switch still forces Apple on
   return { show, google: show && !inApp && !(x && x.google === false), apple: show && (!!(c.auth && c.auth.apple === true) || !!(x && x.apple === true)), email: show, inApp };
