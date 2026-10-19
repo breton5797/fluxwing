@@ -53,7 +53,7 @@ test('every death hint has a Korean and an English line', () => {
 test('a share line carries the score and a link back to the game', () => {
   const run = { mode: 'endless', score: 42, gates: 17, combo: 6, day: DAY };
   assert.equal(shareMsg(T, run), `I scored 42 in SWISHBY. Can you beat me? ${SHARE_URL}?c=42`);
-  assert.equal(SHARE_URL, 'https://breton5797.github.io/fluxwing/');
+  assert.equal(SHARE_URL, 'https://swishby.com/');
 });
 
 test('a daily share line names the day and links to that day\'s challenge', () => {
