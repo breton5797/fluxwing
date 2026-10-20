@@ -117,3 +117,23 @@ Apple 로그인 버튼은 Supabase에서 Apple 제공자가 켜지는 순간 자
 - 읽기(SQL Editor): `select at, player_id, build, msg, left(stack, 200), url, extra from private.fw_client_errors order by at desc limit 50;`
   `build`는 페이지 인라인 스크립트 총 길이(`L…`)라 배포마다 달라지며, 어느 배포의 오류인지 구분하는 용도다.
 - 리허설: `bash supabase/rehearsal/run.sh supabase/rehearsal/errlog.sql`
+
+## 이용 지표 (자체 이벤트 트래킹)
+
+광고 집행 기준(D1 ≥ 35%, D7 ≥ 10%, 평균 세션 5분 이상, 튜토리얼 완료율, 구매 전환, 광고 시청)을 외부 분석 도구 없이 재기 위해,
+게임이 이벤트를 서버 테이블 `private.fw_events`에 직접 적는다. 종류는 고정 목록이다: `first_open`(기기 첫 실행, 전달되면
+`fw27_ev_first`로 표시), `session_start`, `session_end`(`dur` = 이 세션의 화면 표시 초), `tutorial_done`(첫 실행 팁이 끝나
+`fw27_tut`가 1이 되는 순간), `run_end`(모드·점수·스테이지·유닛), `daily_done`, `shop_buy`(테스트 상점, 결제 없음), `ad_view`(보상형
+지급·전면 표시 때만, 지금은 `FW_CONFIG.ads`가 `'none'`이라 0), `share`, `level_up`. `purchase`는 실결제용으로 예약만 해 두었다.
+
+- 클라이언트(`index.html`의 events 블록): 메모리 큐(최대 50)에 쌓아 10건이 차거나 30초마다 `public.track()` 한 번으로 보낸다.
+  서버 세션(게스트 익명 세션 포함)이 있을 때만 보내고, 실패한 묶음은 다시 보내지 않는다. 화면이 가려지면 `session_end`를 넣고
+  남은 큐를 `fetch(..., {keepalive: true})`로 보낸다(클라이언트의 rpc는 페이지가 닫히면 끊긴다). 토큰은 auth 콜백에서 보관한다.
+  30분 넘게 가려졌다 돌아오면 새 세션이다. 주기적 핑은 쓰지 않는다(시간당 60행 × 400일이 남는다).
+- 서버: `public.track(p_events jsonb, p_build text)`는 플레이어당 시간당 300건, 전체 시간당 20,000건, 호출당 50건까지만 저장하고
+  목록에 없는 종류, 형식이 틀린 세션 id는 건너뛰며, 1KB를 넘는 props는 버린다. 계정을 지우면 함께 지워지고(FK cascade),
+  400일이 지난 행은 pg_cron `fw_events_gc`가 지운다.
+- 지표: `supabase/checks/kpi.sql`(일별 설치, 설치 코호트별 D1/D7/D30, 세션 길이, 튜토리얼 완료율, DAU당 판 수·공유율·구매 전환·광고
+  시청, 코호트별 구매 전환). SQL Editor에서 한 쿼리씩 실행한다. 날짜는 한국 시간 기준이다.
+- 운영 적용: `supabase/schema.sql`의 PRODUCT EVENTS 블록(파일 맨 끝)을 한 번 실행한다(파일 전체 재실행도 안전하다).
+- 리허설: `bash supabase/rehearsal/run.sh supabase/rehearsal/events.sql` (`authenticated` 역할로 실행해 권한까지 확인하고, 이어서 kpi.sql을 돌린다)

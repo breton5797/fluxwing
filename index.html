@@ -1426,6 +1426,40 @@ function errUrl(href){ try { const u = new URL(href); return (u.pathname + u.has
 // A build fingerprint with no build step: the total length of the page's inline scripts, which changes with every deploy
 const errBuild = scripts => 'L' + [...scripts].reduce((n, s) => n + (s.src ? 0 : (s.text || '').length), 0);
 /* errlog:end */
+/* events:start — first-party product events (install, sessions, tutorial, runs, daily, shop, ads, shares, level-ups) for the launch KPIs in supabase/checks/kpi.sql, with no third-party tracker. Pure, no DOM, no clock of its own (now comes in). tests/events.test.js runs this block (tests/helpers/events.js). */
+// max: the queue and one request (the server takes at most 50 a call); idleMs: hidden this long and the next visible moment is a new session
+const EV_CFG = Object.freeze({ kinds: Object.freeze(['first_open', 'session_start', 'session_end', 'tutorial_done', 'run_end', 'daily_done', 'shop_buy', 'ad_view', 'share', 'level_up']),
+  batch: 10, max: 50, flushMs: 30000, propsMax: 1024, idleMs: 30 * 60000 });
+const evSid = rnd => Array.from({ length: 16 }, () => '0123456789abcdefghijklmnopqrstuvwxyz'[Math.floor(rnd() * 36)]).join('');
+// A known kind with nothing or a small plain object (the server checks both again)
+function evOk(kind, props){
+  if (!EV_CFG.kinds.includes(kind)) return false;
+  if (props == null) return true;
+  if (typeof props !== 'object' || Array.isArray(props)) return false;
+  try { return JSON.stringify(props).length <= EV_CFG.propsMax; } catch (e){ return false; }
+}
+// vis: visible ms of this session before the current stretch; at: visible since (null while hidden); hid: hidden since
+const evNew = (sid, now) => ({ sid, q: [], vis: 0, at: now, hid: null });
+// Pure: a new state, or the same one when the event is unknown, malformed or the queue is full (oldest kept: first_open matters most)
+function evAdd(st, kind, props){
+  if (!st || !evOk(kind, props) || st.q.length >= EV_CFG.max) return st;
+  return { ...st, q: [...st.q, { k: kind, s: st.sid, p: props == null ? null : props }] };
+}
+const evTake = (st, n) => ({ batch: st.q.slice(0, n), st: { ...st, q: st.q.slice(n) } });
+const evDue = (st, last, now) => st.q.length > 0 && (st.q.length >= EV_CFG.batch || now - last >= EV_CFG.flushMs);
+// Hidden: session_end with the visible seconds of the session so far. A session can end more than once (the player comes back within idleMs):
+// each end carries the running total, so the longest one is the session's length (kpi.sql takes the max).
+function evHide(st, now){
+  if (!st || st.at == null) return st;
+  const vis = st.vis + Math.max(0, now - st.at), s = { ...st, vis, at: null, hid: now };
+  return evAdd(s, 'session_end', { dur: Math.round(vis / 1000) });
+}
+function evShow(st, now, sid){
+  if (!st || st.at != null) return st;
+  if (st.hid != null && now - st.hid < EV_CFG.idleMs) return { ...st, at: now, hid: null };
+  return evAdd({ ...st, sid, vis: 0, at: now, hid: null }, 'session_start', null);
+}
+/* events:end */
 /* ads:start — rewarded / interstitial rules and the ad-provider adapters: pure, no DOM, no storage, no clock of its own (now and wait come in). tests/ads.test.js runs this block as it stands (tests/helpers/ads.js). */
 const AD_CFG = Object.freeze({ interEvery: 3, interGapMs: 180000, timeoutMs: 30000, stubMs: 3000 });
 const AD_STUB_MODES = Object.freeze(['ok', 'fail', 'skip', 'none']);
@@ -1510,7 +1544,8 @@ const FS_KEYS = Object.freeze(['fw27_wallet2', 'fw27_owned', 'fw27_pass', 'fw27_
 const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_stg', 'fw27_stage', 'fw27_lang', 'fw27_mute', 'fw27_vib', 'fw27_ads', 'fw27_trial', 'fw27_rp2',
   'fw27_rej', 'fw27_vsmode', 'fw27_dg', 'fw27_daily_', 'fw27_sync',
   'fw27_fxq', 'fw27_fxshake', 'fw27_fxflash',   // fx quality and accessibility: per-device hardware/comfort choices
-  'fw27_push', 'fw27_pushk', 'fw27_feed2']);    // friend alerts: the toggle follows this device's Notification permission; feed2 is this device's read cursor
+  'fw27_push', 'fw27_pushk', 'fw27_feed2',     // friend alerts: the toggle follows this device's Notification permission; feed2 is this device's read cursor
+  'fw27_ev_first']);   // product events: this device's first launch was reported (an install is per device)
 const fsI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
 const fsDay = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
 const fsId = v => typeof v === 'string' && /^[a-z]{1,12}$/.test(v) && v !== 'constructor';
@@ -1629,7 +1664,7 @@ function adAudio(on){ adOn = on; if (master) master.gain.value = adVol(muted, ad
 let adRun = { coinBonus: 0, dailyBonus: null, claimed: {} };
 let adPlaying = false;   // what the portal was last told: gameplay on (state 'play') or off
 function adPlaySync(){ const e = adPlayEv(adPlaying, state); if (e){ adPlaying = e === 'start'; ADS.ev(e); } }
-async function runAd(place){ if (adBusy) return 'failed'; adBusy = true; adAudio(true); try { return await ADS.rewarded(place); } finally { adBusy = false; adAudio(false); } }
+async function runAd(place){ if (adBusy) return 'failed'; adBusy = true; adAudio(true); try { const r = await ADS.rewarded(place); if (r === 'granted') evTrack('ad_view', { place, type: 'rewarded' }); return r; } finally { adBusy = false; adAudio(false); } }
 const rookieRuns = () => clampI(store.get('fw27_rookie_runs', 0), 0, 999);
 const rookieOn = () => rookieRun(mode, curStage, rookieRuns());
 const challenge = readChallenge(location.search, dayKey());
@@ -2217,7 +2252,7 @@ async function adLeave(go){
   if (adBusy) return; const now = Date.now(), st = adNorm(store.get('fw27_ads', null), now);
   if (adInterDue(st, now, { mode, rewarded: FX.adSeen }) && ADS.ready()){
     adBusy = true; adAudio(true); let r; try { r = await ADS.interstitial(); } finally { adBusy = false; adAudio(false); }
-    if (r === 'shown') store.set('fw27_ads', adInterShown(st, Date.now()));
+    if (r === 'shown'){ store.set('fw27_ads', adInterShown(st, Date.now())); evTrack('ad_view', { place: 'leave', type: 'interstitial' }); }
     if (state !== 'over') return;   // the card was left some other way while the ad played; don't restart over a live run
   }
   go();
@@ -2228,9 +2263,9 @@ $('shareBtn').addEventListener('click', async e => {
   e.stopPropagation(); const text = lastShare || shareMsg(I18N[lang], {mode, score:score||0, gates:gatesPassed||0, combo:maxCombo||0, day:runDay||dayKey()});
   // the line already ends with the link, so it goes out as text alone. Closing the share sheet is an answer, not a failure: nothing follows it.
   // A share that fails for any other reason falls back to the clipboard, and only a device with neither gets the copy-by-hand dialog.
-  if (navigator.share){ try { await navigator.share({text}); toast(t('shared')); return; } catch (err){ if (err && err.name === 'AbortError') return; } }
-  try { await navigator.clipboard.writeText(text); toast(t('copied')); }
-  catch { prompt(t('shareManual'), text); }
+  if (navigator.share){ try { await navigator.share({text}); toast(t('shared')); evTrack('share', { mode, via: 'sheet' }); return; } catch (err){ if (err && err.name === 'AbortError') return; } }
+  try { await navigator.clipboard.writeText(text); toast(t('copied')); evTrack('share', { mode, via: 'copy' }); }
+  catch { prompt(t('shareManual'), text); evTrack('share', { mode, via: 'manual' }); }
 });
 $('over').addEventListener('click', e => { if (e.target === $('over')) flap(); });
 $('resumeBtn').addEventListener('click', togglePause);
@@ -2592,6 +2627,7 @@ function showOver(){
     if (!ds.claimed){ const rw = dailyReward(ds.streak); dCoin = rw.coin; W.coins += rw.coin; W.gems += rw.gem; W.dia += rw.dia; store.set('fw27_dbonus', runDay); }
   }
   W.coins += fieldCoin + scoreCoin; const ups = grantXP(xpGain); saveW();
+  evTrack('run_end', { mode, score, gates: gatesPassed, stage: inSt ? curStage + 1 : null, bird: B.id }); if (mode === 'daily') evTrack('daily_done', { score, streak: dStreak }); if (ups) evTrack('level_up', { lvl: W.lvl, n: ups });
   adRun = { coinBonus: adCoinBonus(fieldCoin, scoreCoin), dailyBonus: dCoin ? adDailyBonus(dailyReward(dStreak)) : null, claimed: {} };
   renderAdOffers();
   const rw = $('oRewards'); rw.textContent = '';
@@ -4289,7 +4325,7 @@ function renderShop(){
     const nm = document.createElement('b'); nm.textContent = it.name();
     const bt = document.createElement('button'); bt.className = 'ghost'; const done = it.done && it.done();
     bt.textContent = done ? t('soldOut') : it.price; bt.disabled = !!done;
-    bt.addEventListener('click', e => { e.stopPropagation(); audioInit(); confirmDlg(t('confirmBuy', {item: it.name(), price: it.price}), () => { const unit = it.buy(); saveW(); renderShop(); renderWallet(); renderHangar(); if (unit){ B = unit; store.set('fw27_bird', B.id); celebrate(unit); } else { toast(t('granted')); SFX.power(); haptic('power'); } }); });
+    bt.addEventListener('click', e => { e.stopPropagation(); audioInit(); confirmDlg(t('confirmBuy', {item: it.name(), price: it.price}), () => { const unit = it.buy(); saveW(); evTrack('shop_buy', { item: it.id, price: it.price, paid: false }); renderShop(); renderWallet(); renderHangar(); if (unit){ B = unit; store.set('fw27_bird', B.id); celebrate(unit); } else { toast(t('granted')); SFX.power(); haptic('power'); } }); });
     row.append(nm, bt);
     const ds = it.desc(); if (ds){ const sm = document.createElement('small'); sm.textContent = ds; row.appendChild(sm); }
     L.appendChild(row);
@@ -4504,6 +4540,7 @@ async function initSupabase(cfg){
     if (!sbC){
       sbC = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, flowType:'implicit'}});
       sbC.auth.onAuthStateChange((ev, s) => {   // keep this callback synchronous: no Supabase calls inside it
+        evTok = s && s.access_token || null;   // for the product events' keepalive send on hide (fresh after every refresh)
         if (backend !== 'supa') return;
         if (s && s.user){ sbUser = s.user; if (uid !== s.user.id){ uid = s.user.id; myDoc = null; } }
         else if (ev === 'SIGNED_OUT' && !reauthP && !authLeaving) setTimeout(() => { if (backend === 'supa' && !reauthP) sbReauth().then(ok => { if (ok){ syncLocal(); vsSync(); } }); }, 0);
@@ -4701,6 +4738,31 @@ async function errReport(e){
 }
 window.addEventListener('error', ev => errReport(ev.error || ev.message));
 window.addEventListener('unhandledrejection', ev => errReport(ev.reason));
+// Product events (events block above) go to private.fw_events through public.track(), in batches of EV_CFG.batch or every EV_CFG.flushMs,
+// only once there is a server session (a guest's anonymous one counts, as for error reports); offline they wait in memory, capped, and a failed
+// send is dropped, never retried. Hiding the page ends the session and sends what is queued with fetch keepalive (the client's rpc cannot
+// outlive the page), using the access token kept from the auth callback. Nothing here may throw into the game.
+const EV_BUILD = errBuild(document.scripts);
+let evSt = evAdd(evNew(evSid(Math.random), Date.now()), 'session_start', null), evLast = Date.now(), evBusy = false, evTok = null;
+if (!store.get('fw27_ev_first', 0)) evSt = evAdd(evSt, 'first_open', null);   // marked only once delivered, so an offline first start is counted later
+const evSent = (batch, ok) => { if (ok && batch.some(e => e.k === 'first_open')) store.set('fw27_ev_first', 1); };
+function evTrack(kind, props){ try { evSt = evAdd(evSt, kind, props); if (evDue(evSt, evLast, Date.now())) evFlush(); } catch(e){} }
+async function evFlush(){
+  if (evBusy || backend !== 'supa' || !sbC || !evSt.q.length) return;
+  const r = evTake(evSt, EV_CFG.batch); evSt = r.st; evBusy = true; evLast = Date.now();
+  try { const x = await sbC.rpc('track', { p_events: r.batch, p_build: EV_BUILD }); evSent(r.batch, !x.error); } catch(e){} finally { evBusy = false; }
+}
+function evBeacon(){
+  const cfg = supaCfg();
+  if (backend !== 'supa' || !evTok || !cfg || !evSt.q.length) return;
+  const r = evTake(evSt, EV_CFG.max); evSt = r.st;
+  try {
+    fetch(cfg.supabaseUrl + '/rest/v1/rpc/track', { method: 'POST', keepalive: true, body: JSON.stringify({ p_events: r.batch, p_build: EV_BUILD }),
+      headers: { apikey: cfg.supabaseAnonKey, Authorization: 'Bearer ' + evTok, 'Content-Type': 'application/json' } }).then(x => evSent(r.batch, x.ok), () => {});
+  } catch(e){}
+}
+document.addEventListener('visibilitychange', () => { try { if (document.hidden){ evSt = evHide(evSt, Date.now()); evBeacon(); } else evSt = evShow(evSt, Date.now(), evSid(Math.random)); } catch(e){} });
+setInterval(() => { if (!document.hidden && evDue(evSt, evLast, Date.now())) evFlush(); }, 5000);
 $('acctBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); authOpen(authAnon() ? (authMail ? 'code' : 'pick') : 'out'); });
 $('authClose').addEventListener('click', e => { e.stopPropagation(); authClose(); if (state === 'menu') cloudMenu(); });
 $('authScr').addEventListener('click', e => { if (e.target === $('authScr')){ authClose(); if (state === 'menu') cloudMenu(); } });
@@ -5004,10 +5066,10 @@ function showTip(txt){ const el = $('tip'); el.textContent = txt; el.hidden = fa
 function hideTip(){ $('tip').hidden = true; }
 function tutTick(dt){
   if (!tutStep) return;
-  if (state !== 'play'){ if (state === 'dying' || state === 'over' || state === 'menu'){ hideTip(); if (tutStep >= 2){ tutStep = 0; store.set('fw27_tut', 1); } } return; }
+  if (state !== 'play'){ if (state === 'dying' || state === 'over' || state === 'menu'){ hideTip(); if (tutStep >= 2){ tutStep = 0; store.set('fw27_tut', 1); evTrack('tutorial_done', { how: 'run' }); } } return; }
   if (tutStep === 1 && tutFlaps >= 3){ tutStep = 2; showTip(t('tut2')); }
   else if (tutStep === 2 && gatesPassed >= 3){ tutStep = 3; tutT = 4.5; showTip(t('tut3')); dashMeter = Math.max(dashMeter, 1); skillCharge = 1; }
-  else if (tutStep === 3){ tutT -= dt; if (tutT <= 0){ tutStep = 0; hideTip(); store.set('fw27_tut', 1); } }
+  else if (tutStep === 3){ tutT -= dt; if (tutT <= 0){ tutStep = 0; hideTip(); store.set('fw27_tut', 1); evTrack('tutorial_done', { how: 'tips' }); } }
 }
 function startFromMenu(){
   if (!store.get('fw27_tut', 0)){ curStage = 0; startGame('endless'); tutStep = 1; tutFlaps = 0; showTip(t('tut1')); }
@@ -5718,6 +5780,7 @@ function loop(now){
 if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { cap: capOpts, cloud: {get rec(){ return fsRec; }, snap: () => fsSnap(store.get), pull: cloudPull, push: cloudPush, get dirty(){ return fsDirty; }}, vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear,
   soc: {notifyRoute, notifText, feedMerge, fcNorm, fcOk, fcFmt, socNorm, show: socShow, get on(){ return pushOn; }, get k(){ return pushK; }},
   eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
+  ev: {EV_CFG, get st(){ return evSt; }, flush: evFlush, get tok(){ return !!evTok; }},   // product events: the queue as it stands (QA: what a session produced)
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get hazards(){ return hazs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot, ultCharge: FX.ult, ultLive: ultLive()}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots

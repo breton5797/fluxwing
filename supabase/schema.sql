@@ -1836,7 +1836,7 @@ grant execute on function public.tester_me() to authenticated;
 -- ---------- ACCOUNT DELETION: the player deletes their own account from the game ----------
 -- Privacy law wants a way to withdraw. The client's "계정 삭제" calls public.delete_me(): one delete of the caller's
 -- auth.users row, and every game table (fw_scores, fw_saves, fw_versus, fw_vs_part, fw_vs_standing, fw_social,
--- fw_friends, fw_friend_req, fw_social_feed, fw_testers) references auth.users (id) on delete cascade, as do the auth
+-- fw_friends, fw_friend_req, fw_social_feed, fw_testers, fw_events) references auth.users (id) on delete cascade, as do the auth
 -- schema's own identities/sessions/refresh tokens. Nothing is anonymised or kept. A guest has no account to delete
 -- (the client never offers it); a call without a user does nothing and returns false.
 create or replace function private.fw_delete_me() returns boolean
@@ -1853,3 +1853,74 @@ revoke all on function private.fw_delete_me() from public, anon;
 grant execute on function private.fw_delete_me() to authenticated, service_role;   -- the invoker wrapper runs it as the caller; the private schema is not exposed by the API
 revoke all on function public.delete_me()     from public, anon;
 grant execute on function public.delete_me() to authenticated;
+
+-- ---------- PRODUCT EVENTS: what players do, for the launch KPIs (supabase/checks/kpi.sql) ----------
+-- No third-party analytics: the client (index.html events block) queues first_open (once per device), session_start /
+-- session_end (props.dur = visible seconds of the session so far; a session can end more than once, the max counts),
+-- tutorial_done, run_end, daily_done, shop_buy (the shop is a test build: nothing is paid), ad_view, share and level_up,
+-- and sends them in batches through public.track(). 'purchase' is reserved for real payments. A batch is a json array
+-- of {k: kind, s: session id (16 base-36 chars), p: props object up to 1 KB}; an element that is not valid is skipped,
+-- oversized props are dropped. Caps: 300 events an hour per player (a beginner's runs can end every 10 s) and 20,000 an
+-- hour overall, at most 50 a call; over a cap the rest of the batch is not stored. at is the server's insert time
+-- (the client sends within 30 s). Rows are deleted with the account (delete_me) and after 400 days by the pg_cron job
+-- fw_events_gc (long enough for a D30 cohort a year back).
+-- Read:  select at, player_id, kind, session, props from private.fw_events order by at desc limit 50;
+create table if not exists private.fw_events (
+  id        bigserial   primary key,
+  player_id uuid        not null default auth.uid() references auth.users (id) on delete cascade,
+  kind      text        not null check (kind in ('first_open', 'session_start', 'session_end', 'tutorial_done', 'run_end', 'daily_done',
+                                                 'shop_buy', 'purchase', 'ad_view', 'share', 'level_up')),
+  at        timestamptz not null default now(),
+  session   text        check (session ~ '^[0-9a-z]{16}$'),
+  props     jsonb       check (props is null or (jsonb_typeof(props) = 'object' and length(props::text) <= 1024)),
+  build     text        not null default ''
+);
+create index if not exists fw_events_kind_at_idx   on private.fw_events (kind, at);
+create index if not exists fw_events_player_at_idx on private.fw_events (player_id, at);
+create index if not exists fw_events_at_idx        on private.fw_events (at);   -- the global cap and the retention job
+alter table private.fw_events enable row level security;   -- no policy: the schema is not exposed, the function below writes it
+revoke all on table private.fw_events from public, anon, authenticated;
+grant select, delete on table private.fw_events to service_role;
+
+create or replace function private.fw_track(p_events jsonb, p_build text)
+returns integer language plpgsql security definer set search_path = '' as $$
+declare
+  v_uid uuid := (select auth.uid());
+  v_cap_player constant int := 300;
+  v_cap_all    constant int := 20000;
+  v_room int; v_n int;
+begin
+  if v_uid is null or jsonb_typeof(p_events) is distinct from 'array' then return 0; end if;
+  v_room := least(50, v_cap_player - (select count(*) from private.fw_events e where e.player_id = v_uid and e.at > now() - interval '1 hour'));
+  if v_room <= 0 then return 0; end if;
+  v_room := least(v_room, v_cap_all - (select count(*) from private.fw_events e where e.at > now() - interval '1 hour'));
+  if v_room <= 0 then return 0; end if;
+  insert into private.fw_events (player_id, kind, session, props, build)
+  select v_uid, x.e->>'k', x.e->>'s',
+         case when jsonb_typeof(x.e->'p') = 'object' and length((x.e->'p')::text) <= 1024 then x.e->'p' end,
+         left(coalesce(p_build, ''), 40)
+  from jsonb_array_elements(p_events) with ordinality as x(e, i)
+  where jsonb_typeof(x.e) = 'object'
+    and x.e->>'k' in ('first_open', 'session_start', 'session_end', 'tutorial_done', 'run_end', 'daily_done',
+                      'shop_buy', 'purchase', 'ad_view', 'share', 'level_up')
+    and coalesce(x.e->>'s', '') ~ '^[0-9a-z]{16}$'
+  order by x.i
+  limit v_room;
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+create or replace function public.track(p_events jsonb, p_build text)
+returns integer language sql security invoker set search_path = '' as $$ select private.fw_track(p_events, p_build); $$;
+revoke all on function private.fw_track(jsonb, text) from public, anon;
+grant execute on function private.fw_track(jsonb, text) to authenticated, service_role;   -- the invoker wrapper runs it as the caller; the private schema is not exposed by the API
+revoke all on function public.track(jsonb, text)     from public, anon;
+grant execute on function public.track(jsonb, text) to authenticated;
+
+do $do$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    perform cron.schedule('fw_events_gc', '50 15 * * *',
+      'set statement_timeout = 0; delete from private.fw_events where at < now() - interval ''400 days'';');
+  end if;
+end
+$do$;
