@@ -1836,8 +1836,8 @@ grant execute on function public.tester_me() to authenticated;
 -- ---------- ACCOUNT DELETION: the player deletes their own account from the game ----------
 -- Privacy law wants a way to withdraw. The client's "계정 삭제" calls public.delete_me(): one delete of the caller's
 -- auth.users row, and every game table (fw_scores, fw_saves, fw_versus, fw_vs_part, fw_vs_standing, fw_social,
--- fw_friends, fw_friend_req, fw_social_feed, fw_testers) references auth.users (id) on delete cascade, as do the auth
--- schema's own identities/sessions/refresh tokens. Nothing is anonymised or kept. A guest has no account to delete
+-- fw_friends, fw_friend_req, fw_social_feed, fw_testers, fw_events, fw_referrals, fw_ref_inviter, fw_ref_payouts) references
+-- auth.users (id) on delete cascade, as do the auth schema's own identities/sessions/refresh tokens. Nothing is anonymised or kept. A guest has no account to delete
 -- (the client never offers it); a call without a user does nothing and returns false.
 create or replace function private.fw_delete_me() returns boolean
 language plpgsql security definer set search_path = '' as $$
@@ -1853,3 +1853,342 @@ revoke all on function private.fw_delete_me() from public, anon;
 grant execute on function private.fw_delete_me() to authenticated, service_role;   -- the invoker wrapper runs it as the caller; the private schema is not exposed by the API
 revoke all on function public.delete_me()     from public, anon;
 grant execute on function public.delete_me() to authenticated;
+
+-- ---------- PRODUCT EVENTS: what players do, for the launch KPIs (supabase/checks/kpi.sql) ----------
+-- No third-party analytics: the client (index.html events block) queues first_open (once per device), session_start /
+-- session_end (props.dur = visible seconds of the session so far; a session can end more than once, the max counts),
+-- tutorial_done, run_end, daily_done, shop_buy (the shop is a test build: nothing is paid), ad_view, share and level_up,
+-- and sends them in batches through public.track(). 'purchase' is reserved for real payments. A batch is a json array
+-- of {k: kind, s: session id (16 base-36 chars), p: props object up to 1 KB}; an element that is not valid is skipped,
+-- oversized props are dropped. Caps: 300 events an hour per player (a beginner's runs can end every 10 s) and 20,000 an
+-- hour overall, at most 50 a call; over a cap the rest of the batch is not stored. at is the server's insert time
+-- (the client sends within 30 s). Rows are deleted with the account (delete_me) and after 400 days by the pg_cron job
+-- fw_events_gc (long enough for a D30 cohort a year back).
+-- Read:  select at, player_id, kind, session, props from private.fw_events order by at desc limit 50;
+create table if not exists private.fw_events (
+  id        bigserial   primary key,
+  player_id uuid        not null default auth.uid() references auth.users (id) on delete cascade,
+  kind      text        not null check (kind in ('first_open', 'session_start', 'session_end', 'tutorial_done', 'run_end', 'daily_done',
+                                                 'shop_buy', 'purchase', 'ad_view', 'share', 'level_up')),
+  at        timestamptz not null default now(),
+  session   text        check (session ~ '^[0-9a-z]{16}$'),
+  props     jsonb       check (props is null or (jsonb_typeof(props) = 'object' and length(props::text) <= 1024)),
+  build     text        not null default ''
+);
+create index if not exists fw_events_kind_at_idx   on private.fw_events (kind, at);
+create index if not exists fw_events_player_at_idx on private.fw_events (player_id, at);
+create index if not exists fw_events_at_idx        on private.fw_events (at);   -- the global cap and the retention job
+alter table private.fw_events enable row level security;   -- no policy: the schema is not exposed, the function below writes it
+revoke all on table private.fw_events from public, anon, authenticated;
+grant select, delete on table private.fw_events to service_role;
+
+create or replace function private.fw_track(p_events jsonb, p_build text)
+returns integer language plpgsql security definer set search_path = '' as $$
+declare
+  v_uid uuid := (select auth.uid());
+  v_cap_player constant int := 300;
+  v_cap_all    constant int := 20000;
+  v_room int; v_n int;
+begin
+  if v_uid is null or jsonb_typeof(p_events) is distinct from 'array' then return 0; end if;
+  v_room := least(50, v_cap_player - (select count(*) from private.fw_events e where e.player_id = v_uid and e.at > now() - interval '1 hour'));
+  if v_room <= 0 then return 0; end if;
+  v_room := least(v_room, v_cap_all - (select count(*) from private.fw_events e where e.at > now() - interval '1 hour'));
+  if v_room <= 0 then return 0; end if;
+  insert into private.fw_events (player_id, kind, session, props, build)
+  select v_uid, x.e->>'k', x.e->>'s',
+         case when jsonb_typeof(x.e->'p') = 'object' and length((x.e->'p')::text) <= 1024 then x.e->'p' end,
+         left(coalesce(p_build, ''), 40)
+  from jsonb_array_elements(p_events) with ordinality as x(e, i)
+  where jsonb_typeof(x.e) = 'object'
+    and x.e->>'k' in ('first_open', 'session_start', 'session_end', 'tutorial_done', 'run_end', 'daily_done',
+                      'shop_buy', 'purchase', 'ad_view', 'share', 'level_up')
+    and coalesce(x.e->>'s', '') ~ '^[0-9a-z]{16}$'
+  order by x.i
+  limit v_room;
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+create or replace function public.track(p_events jsonb, p_build text)
+returns integer language sql security invoker set search_path = '' as $$ select private.fw_track(p_events, p_build); $$;
+revoke all on function private.fw_track(jsonb, text) from public, anon;
+grant execute on function private.fw_track(jsonb, text) to authenticated, service_role;   -- the invoker wrapper runs it as the caller; the private schema is not exposed by the API
+revoke all on function public.track(jsonb, text)     from public, anon;
+grant execute on function public.track(jsonb, text) to authenticated;
+
+do $do$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    perform cron.schedule('fw_events_gc', '50 15 * * *',
+      'set statement_timeout = 0; delete from private.fw_events where at < now() - interval ''400 days'';');
+  end if;
+end
+$do$;
+-- =====================================================================================================
+-- REFERRALS — friend invites, "play together and earn" (the marketing plan's 친구 초대 크레딧)
+-- The invite link is the game address with the inviter's friend code: https://swishby.com/?r=<fw_social.code>. The invited
+-- friend's device sends the code once after its first sign-in (referral_link); from then on it reports, once a UTC day after a
+-- finished run (or sooner when the stage reached went up), the stage it has reached (referral_progress). The invite counts when
+-- the friend has reported on fw_ref_cfg().days distinct UTC days (server clock), reached STAGE fw_ref_cfg().stage, and holds a
+-- server-checked best (public.fw_scores, written only by fw_submit_score) of at least min_best: a run that reached STAGE 10 cleared
+-- STAGE 9 and so scored at least its gate goal. The stage number itself is the device's word; the days and the best are not.
+-- The inviter is paid in gems (the shop's premium currency, never an unlock): `gems` per counted friend, plus ms_gems at 3, 10 and
+-- 25 counted friends (each milestone once; the game has no skin system, so the plan's limited skin / shield slot is a bigger gem
+-- bundle), at most month_cap friends per calendar month (Asia/Seoul, as the versus seasons): the rest wait for the next month.
+-- The invited friend gets nothing for joining (store rules refuse install incentives), only the normal welcome. Both become friends.
+-- Payment mirrors versus_claim: the wallet is the device's, so referral_claim() books a payout row and returns every payout not
+-- acknowledged yet; the client grants each payout id once (it keeps the ids it granted), then calls referral_ack(id). An answer
+-- lost on the way is returned again by the next claim, and an acknowledged payout is never returned again.
+-- Anti-abuse: one inviter per invitee (primary key), no self-invite (check) and no invite cycle, the invitee's auth user must be
+-- younger than new_window (a fresh player, not an old account opening a link), and when more than burst_n friends link to one
+-- inviter within burst_window, every unpaid invite of that inviter from the window is held for review. Review by hand:
+--   select r.*, s.nick, s.best from private.fw_referrals r left join public.fw_scores s on s.player_id = r.invitee_id
+--   where r.held order by r.inviter_id, r.linked_at;
+--   update private.fw_referrals set held = false where inviter_id = '<uuid>' and held;   -- release after review
+-- Deleting either auth user deletes their rows (on delete cascade); counters live on the inviter's own row, so a friend who
+-- deletes their account later does not make a milestone payable twice.
+-- =====================================================================================================
+create table if not exists private.fw_referrals (
+  invitee_id uuid        primary key references auth.users (id) on delete cascade,
+  inviter_id uuid        not null references auth.users (id) on delete cascade,
+  linked_at  timestamptz not null default now(),
+  days       integer     not null default 0,   -- distinct UTC days with a progress report (server clock)
+  last_day   date,                             -- UTC day of the last counted report
+  stage      integer     not null default 0,   -- highest stage reached (1-based), as the invitee's device reports it
+  done_at    timestamptz,                      -- the goal was met
+  held       boolean     not null default false,
+  payout_id  bigint,                           -- the inviter's payout that counted it (null = not paid yet)
+  constraint fw_referrals_self_chk  check (invitee_id <> inviter_id),
+  constraint fw_referrals_days_chk  check (days >= 0),
+  constraint fw_referrals_stage_chk check (stage between 0 and 50)
+);
+create index if not exists fw_referrals_inviter_idx on private.fw_referrals (inviter_id, linked_at);
+alter table private.fw_referrals enable row level security;   -- no policy: the schema is not exposed, the functions below write it
+revoke all on table private.fw_referrals from public, anon, authenticated;
+grant select, insert, update, delete on table private.fw_referrals to service_role;
+
+create table if not exists private.fw_ref_inviter (
+  player_id uuid    primary key references auth.users (id) on delete cascade,
+  paid      integer not null default 0,   -- friends paid for, ever
+  ms_paid   integer not null default 0,   -- milestones paid (0..3, in order)
+  constraint fw_ref_inviter_chk check (paid >= 0 and ms_paid between 0 and 3)
+);
+alter table private.fw_ref_inviter enable row level security;
+revoke all on table private.fw_ref_inviter from public, anon, authenticated;
+grant select, insert, update, delete on table private.fw_ref_inviter to service_role;
+
+create table if not exists private.fw_ref_payouts (
+  id         bigint      generated always as identity primary key,
+  inviter_id uuid        not null references auth.users (id) on delete cascade,
+  gems       integer     not null,
+  invites    integer     not null,              -- friends counted (the monthly cap counts these)
+  ms         integer[]   not null default '{}', -- milestones paid with it (3, 10, 25)
+  at         timestamptz not null default now(),
+  acked_at   timestamptz,                       -- the device said it granted the gems
+  constraint fw_ref_payouts_chk check (gems > 0 and invites >= 0)
+);
+create index if not exists fw_ref_payouts_inviter_idx on private.fw_ref_payouts (inviter_id, at);
+alter table private.fw_ref_payouts enable row level security;
+revoke all on table private.fw_ref_payouts from public, anon, authenticated;
+grant select, insert, update, delete on table private.fw_ref_payouts to service_role;
+
+-- the numbers, in one place (REF_CFG in index.html holds the same; tests/referral.test.js keeps them equal)
+create or replace function private.fw_ref_cfg(
+  out days integer, out stage integer, out min_best integer, out gems integer, out ms integer[], out ms_gems integer[],
+  out month_cap integer, out new_window interval, out burst_n integer, out burst_window interval
+) language sql immutable set search_path = '' as $$
+  select 3, 10, 14, 30, array[3,10,25], array[50,150,500], 25, interval '24 hours', 5, interval '1 hour';
+$$;
+
+-- The invited friend's device sends the code from ?r= once. Answers a status instead of raising, so the spent request quota
+-- (shared with friend requests) commits and probing codes costs it: linked | already | unknown | self | old.
+create or replace function private.fw_referral_link(p_code text) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  c     record := private.fw_ref_cfg();
+  s     record := private.fw_social_cfg();
+  v_me  uuid   := (select auth.uid());
+  v_to  uuid;
+  v_at  timestamptz;
+  v_today date := (now() at time zone 'utc')::date;
+  v_row private.fw_social%rowtype;
+  v_burst integer;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_code is null or upper(p_code) !~ '^[0-9A-HJKMNP-TV-Z]{8}$' then raise exception 'fw_bad_input: bad code' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_me::text, 2));   -- the caller's friend writes (fw_friend_request takes the same lock)
+  v_row := private.fw_social_row(v_me, true);
+  if v_row.req_day is distinct from v_today then v_row.req_day := v_today; v_row.req_count := 0; end if;
+  if v_row.req_count >= s.req_per_day then raise exception 'fw_rate_limited: too many requests today' using errcode = 'P0001'; end if;
+  update private.fw_social set req_day = v_row.req_day, req_count = v_row.req_count + 1 where player_id = v_me;
+  if exists (select 1 from private.fw_referrals r where r.invitee_id = v_me) then return jsonb_build_object('status', 'already'); end if;
+  select x.player_id into v_to from private.fw_social x where x.code = upper(p_code);
+  if v_to is null then return jsonb_build_object('status', 'unknown'); end if;
+  if v_to = v_me or exists (select 1 from private.fw_referrals r where r.invitee_id = v_to and r.inviter_id = v_me) then
+    return jsonb_build_object('status', 'self');   -- my own code, or the friend I invited inviting me back
+  end if;
+  select u.created_at into v_at from auth.users u where u.id = v_me;
+  if v_at is null or v_at < now() - c.new_window then return jsonb_build_object('status', 'old'); end if;   -- an existing player opening a link
+  perform pg_advisory_xact_lock(hashtextextended(v_to::text, 3));   -- the inviter's referral writes (the claim takes the same lock)
+  insert into private.fw_referrals (invitee_id, inviter_id) values (v_me, v_to);
+  select count(*) into v_burst from private.fw_referrals r where r.inviter_id = v_to and r.linked_at > now() - c.burst_window;
+  if v_burst > c.burst_n then   -- many friends in a short time: hold the whole burst for review
+    update private.fw_referrals r set held = true
+    where r.inviter_id = v_to and r.linked_at > now() - c.burst_window and r.payout_id is null and not r.held;
+  end if;
+  -- play together: the two become friends (when both lists have room); a pending request either way is settled by it
+  if (select count(*) from public.fw_friends f where v_me in (f.a, f.b)) < s.friend_cap
+     and (select count(*) from public.fw_friends f where v_to in (f.a, f.b)) < s.friend_cap then
+    insert into public.fw_friends (a, b) values (least(v_me, v_to), greatest(v_me, v_to)) on conflict do nothing;
+    delete from private.fw_friend_req r where (r.from_id, r.to_id) in ((v_me, v_to), (v_to, v_me));
+  end if;
+  return jsonb_build_object('status', 'linked');
+end $$;
+
+-- The invited friend's progress report: p_stage = highest stage reached (1-based). A new UTC day counts once (server clock);
+-- the stage only goes up. Answers none (not invited) | open | done.
+create or replace function private.fw_referral_progress(p_stage integer) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  c     record := private.fw_ref_cfg();
+  v_me  uuid   := (select auth.uid());
+  v_today date := (now() at time zone 'utc')::date;
+  v_r   private.fw_referrals%rowtype;
+  v_best integer;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_stage is null or p_stage < 1 or p_stage > 50 then raise exception 'fw_bad_input: bad stage' using errcode = '22023'; end if;
+  select * into v_r from private.fw_referrals r where r.invitee_id = v_me for update;
+  if not found then return jsonb_build_object('status', 'none'); end if;
+  if v_r.done_at is not null then return jsonb_build_object('status', 'done', 'days', v_r.days, 'stage', v_r.stage); end if;
+  if v_r.last_day is distinct from v_today then v_r.days := v_r.days + 1; v_r.last_day := v_today; end if;
+  v_r.stage := greatest(v_r.stage, p_stage);
+  select sc.best into v_best from public.fw_scores sc where sc.player_id = v_me;
+  if v_r.days >= c.days and v_r.stage >= c.stage and coalesce(v_best, 0) >= c.min_best then v_r.done_at := now(); end if;
+  update private.fw_referrals r set days = v_r.days, last_day = v_r.last_day, stage = v_r.stage, done_at = v_r.done_at where r.invitee_id = v_me;
+  return jsonb_build_object('status', case when v_r.done_at is null then 'open' else 'done' end, 'days', v_r.days, 'stage', v_r.stage);
+end $$;
+
+-- payouts not acknowledged yet, oldest first (helpers run inside the definer functions below: no privileges of their own)
+create or replace function private.fw_ref_unacked(p_uid uuid) returns jsonb
+language sql stable set search_path = '' as $$
+  select coalesce(jsonb_agg(jsonb_build_object('id', p.id, 'gems', p.gems, 'invites', p.invites, 'ms', to_jsonb(p.ms)) order by p.id), '[]'::jsonb)
+  from private.fw_ref_payouts p where p.inviter_id = p_uid and p.acked_at is null;
+$$;
+
+-- friends counted this calendar month (Asia/Seoul)
+create or replace function private.fw_ref_month(p_uid uuid) returns integer
+language sql stable set search_path = '' as $$
+  select coalesce(sum(p.invites), 0)::integer from private.fw_ref_payouts p
+  where p.inviter_id = p_uid and p.at >= (date_trunc('month', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul');
+$$;
+
+-- everything the friends screen shows: my invite code, progress (paid toward 3 / 10 / 25), this month against the cap,
+-- the friends I invited with their days and stage, and payouts waiting for this device
+create or replace function private.fw_referral_me() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  c     record := private.fw_ref_cfg();
+  v_me  uuid   := (select auth.uid());
+  v_row private.fw_social%rowtype;
+  v_inv private.fw_ref_inviter%rowtype;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  v_row := private.fw_social_row(v_me);
+  select * into v_inv from private.fw_ref_inviter i where i.player_id = v_me;
+  return jsonb_build_object('code', v_row.code, 'paid', coalesce(v_inv.paid, 0), 'ms_paid', coalesce(v_inv.ms_paid, 0),
+    'month', private.fw_ref_month(v_me), 'cap', c.month_cap,
+    'ready', (select count(*) from private.fw_referrals r where r.inviter_id = v_me and r.done_at is not null and not r.held and r.payout_id is null),
+    'held',  (select count(*) from private.fw_referrals r where r.inviter_id = v_me and r.held and r.payout_id is null),
+    'open',  (select count(*) from private.fw_referrals r where r.inviter_id = v_me and r.done_at is null),
+    'friends', (select coalesce(jsonb_agg(jsonb_build_object('nick', coalesce(sc.nick, 'Pilot'), 'days', x.days, 'stage', x.stage,
+                  'done', x.done_at is not null) order by x.linked_at desc), '[]'::jsonb)
+                from (select * from private.fw_referrals r where r.inviter_id = v_me order by r.linked_at desc limit 30) x
+                left join public.fw_scores sc on sc.player_id = x.invitee_id),
+    'payouts', private.fw_ref_unacked(v_me));
+end $$;
+
+-- Books one payout for every counted friend not paid yet (oldest goal first, within this month's room) plus the milestones that
+-- crosses, then returns every payout not acknowledged yet. A second call books nothing new.
+create or replace function private.fw_referral_claim() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  c      record := private.fw_ref_cfg();
+  v_me   uuid   := (select auth.uid());
+  v_inv  private.fw_ref_inviter%rowtype;
+  v_ids  uuid[];
+  v_n    integer;
+  v_gems integer;
+  v_ms   integer[] := '{}';
+  v_msp  integer;
+  v_id   bigint;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_me::text, 3));   -- a double tap waits here and then finds nothing left to book
+  begin
+    insert into private.fw_ref_inviter (player_id) values (v_me) on conflict (player_id) do nothing;
+  exception when foreign_key_violation then raise exception 'fw_auth: unknown player' using errcode = '28000';
+  end;
+  select * into strict v_inv from private.fw_ref_inviter i where i.player_id = v_me for update;
+  select array_agg(x.invitee_id) into v_ids from (
+    select r.invitee_id from private.fw_referrals r
+    where r.inviter_id = v_me and r.done_at is not null and not r.held and r.payout_id is null
+    order by r.done_at, r.invitee_id limit greatest(0, c.month_cap - private.fw_ref_month(v_me))) x;
+  v_n := coalesce(cardinality(v_ids), 0);
+  if v_n > 0 then
+    v_gems := v_n * c.gems; v_msp := v_inv.ms_paid;
+    for i in 1 .. cardinality(c.ms) loop
+      if i > v_msp and v_inv.paid + v_n >= c.ms[i] then v_gems := v_gems + c.ms_gems[i]; v_ms := v_ms || c.ms[i]; v_msp := i; end if;
+    end loop;
+    insert into private.fw_ref_payouts (inviter_id, gems, invites, ms) values (v_me, v_gems, v_n, v_ms) returning id into v_id;
+    update private.fw_referrals r set payout_id = v_id where r.invitee_id = any (v_ids);
+    update private.fw_ref_inviter i set paid = v_inv.paid + v_n, ms_paid = v_msp where i.player_id = v_me;
+  end if;
+  return jsonb_build_object('booked', v_id, 'payouts', private.fw_ref_unacked(v_me));
+end $$;
+
+-- the device granted payout p_id: it is not returned again. true when this call acknowledged it
+create or replace function private.fw_referral_ack(p_id bigint) returns boolean
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := (select auth.uid());
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  update private.fw_ref_payouts p set acked_at = now() where p.id = p_id and p.inviter_id = v_me and p.acked_at is null;
+  return found;
+end $$;
+
+create or replace function public.referral_link(p_code text) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_referral_link(p_code); $$;
+create or replace function public.referral_progress(p_stage integer) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_referral_progress(p_stage); $$;
+create or replace function public.referral_me() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_referral_me(); $$;
+create or replace function public.referral_claim() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_referral_claim(); $$;
+create or replace function public.referral_ack(p_id bigint) returns boolean
+language sql security invoker set search_path = '' as $$ select private.fw_referral_ack(p_id); $$;
+
+revoke all on function private.fw_ref_cfg()                  from public, anon, authenticated;
+revoke all on function private.fw_ref_unacked(uuid)          from public, anon, authenticated;
+revoke all on function private.fw_ref_month(uuid)            from public, anon, authenticated;
+-- the invoker wrappers run their private function as the caller, so it needs execute (production answered 403 without it on 2026-10-20)
+revoke all on function private.fw_referral_link(text)        from public, anon;
+revoke all on function private.fw_referral_progress(integer) from public, anon;
+revoke all on function private.fw_referral_me()              from public, anon;
+revoke all on function private.fw_referral_claim()           from public, anon;
+revoke all on function private.fw_referral_ack(bigint)       from public, anon;
+grant execute on function private.fw_referral_link(text)        to authenticated, service_role;
+grant execute on function private.fw_referral_progress(integer) to authenticated, service_role;
+grant execute on function private.fw_referral_me()              to authenticated, service_role;
+grant execute on function private.fw_referral_claim()           to authenticated, service_role;
+grant execute on function private.fw_referral_ack(bigint)       to authenticated, service_role;
+revoke all on function public.referral_link(text)            from public, anon;
+revoke all on function public.referral_progress(integer)     from public, anon;
+revoke all on function public.referral_me()                  from public, anon;
+revoke all on function public.referral_claim()               from public, anon;
+revoke all on function public.referral_ack(bigint)           from public, anon;
+grant execute on function public.referral_link(text)            to authenticated;
+grant execute on function public.referral_progress(integer)     to authenticated;
+grant execute on function public.referral_me()                  to authenticated;
+grant execute on function public.referral_claim()               to authenticated;
+grant execute on function public.referral_ack(bigint)           to authenticated;
