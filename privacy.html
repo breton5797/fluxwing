@@ -48,6 +48,7 @@ a{color:var(--acc)}
 <tr><td>게스트 계정</td><td>무작위 사용자 식별자(UUID)</td><td>기록 제출, 랭크 대전, 친구 기능, 부정 이용 방지</td><td>첫 접속 시 자동</td></tr>
 <tr><td>계정 로그인(선택)</td><td>이메일 주소(이메일 인증코드 로그인), Google 계정의 식별자와 이메일(Google 로그인), Apple 로그인을 제공하는 경우 Apple 계정의 식별자와 이메일</td><td>계정 식별, 다른 기기와의 진행 동기화(클라우드 세이브), 계정 복구</td><td>이용자가 로그인을 선택할 때</td></tr>
 <tr><td>게임 활동</td><td>닉네임(직접 입력), 국가·지역 코드, 선택한 유닛, 점수·통과 게이트 수·모드·플레이 시각, 랭크 대전 매치 기록(상대 식별자, 결과, RP 변동), 시즌 순위와 보상 수령 기록, 친구 목록·친구 요청·친구 활동 피드(접속, 신기록)</td><td>리더보드와 대전 순위 표시, 시즌 보상 지급, 친구 기능</td><td>해당 기능을 이용할 때</td></tr>
+<tr><td>이용 기록(게임 이벤트)</td><td>게스트·로그인 계정 식별자에 묶인 게임 이벤트: 첫 실행, 접속 시작·종료와 이용 시간, 튜토리얼 완료, 판 종료(모드·점수·스테이지·유닛), 일일 도전 완료, 상점 이용(상품), 광고 시청, 공유, 레벨 업, 무작위 접속 식별자, 게임 버전 표시</td><td>재방문율·이용 시간 같은 서비스 개선 지표 산출. 운영자의 서버에만 저장하며 제3자 분석 도구로 보내지 않습니다</td><td>게임을 이용할 때 자동</td></tr>
 <tr><td>클라우드 세이브(로그인 시)</td><td>코인·다이아·젬 지갑, 보유 유닛, 패스, 최고 기록, 스테이지 진행, 닉네임, 튜토리얼·일일 연속 플레이 상태, 시즌 보상 수령 상태</td><td>로그인한 계정의 진행을 여러 기기에서 이어서 쓰기</td><td>로그인 후 자동</td></tr>
 <tr><td>자동 수집(서버 로그)</td><td>IP 주소, 요청 시각, 브라우저 정보(User-Agent)</td><td>보안, 장애 대응, 남용 차단</td><td>접속·요청 시 호스팅 사업자가 기록</td></tr>
 </table>
@@ -60,6 +61,7 @@ a{color:var(--acc)}
 <li>계정과 클라우드 세이브: 이용자가 삭제를 요청할 때까지. 요청을 받으면 30일 안에 지웁니다.</li>
 <li>랭크 대전 매치 기록: 매치 종료 후 3일.</li>
 <li>친구 활동 피드: 3일.</li>
+<li>이용 기록(게임 이벤트): 400일. 계정을 삭제하면 즉시 함께 지워집니다.</li>
 <li>리더보드 기록과 시즌 순위 기록: 순위표 표시를 위해 서비스 운영 기간 동안 보관하며, 삭제 요청 시 지우거나 <code>Pilot</code>으로 익명화합니다.</li>
 <li>서버 로그: 호스팅·백엔드 사업자의 정책에 따라 단기간(통상 7일 이내).</li>
 </ul>
@@ -79,7 +81,7 @@ a{color:var(--acc)}
 <p>이 밖에는 법령에 따른 적법한 요청이 있을 때를 제외하고 개인정보를 제3자에게 제공하지 않습니다. 광고 네트워크, 분석 도구(예: Google Analytics), 광고 식별자는 사용하지 않습니다.</p>
 
 <h2>4. 이용자의 권리</h2>
-<p>이용자는 언제든지 자신의 정보에 대해 열람·정정·삭제·처리정지를 요구하고, 동의를 철회하고, 계정 삭제를 요청할 수 있습니다. 로그인한 계정은 게임의 계정 화면에서 <strong>계정 삭제</strong>를 누르면 본인 확인 없이 즉시 영구 삭제됩니다(계정, 클라우드 세이브, 점수·대전·친구 기록 모두). 그 밖의 요청은 <a href="mailto:minimalkorea@naver.com">minimalkorea@naver.com</a>으로 보내면 본인 확인 후 30일 안에 처리하고 결과를 알려 드립니다. 게스트 계정은 브라우저 데이터를 지우면 다시 접근할 수 없으므로, 삭제를 원하면 게임 설정에 표시되는 닉네임과 사용 시점을 함께 알려 주세요. 만 14세 미만 아동의 법정대리인도 같은 권리를 행사할 수 있습니다.</p>
+<p>이용자는 언제든지 자신의 정보에 대해 열람·정정·삭제·처리정지를 요구하고, 동의를 철회하고, 계정 삭제를 요청할 수 있습니다. 로그인한 계정은 게임의 계정 화면에서 <strong>계정 삭제</strong>를 누르면 본인 확인 없이 즉시 영구 삭제됩니다(계정, 클라우드 세이브, 점수·대전·친구 기록, 이용 기록 모두). 그 밖의 요청은 <a href="mailto:minimalkorea@naver.com">minimalkorea@naver.com</a>으로 보내면 본인 확인 후 30일 안에 처리하고 결과를 알려 드립니다. 게스트 계정은 브라우저 데이터를 지우면 다시 접근할 수 없으므로, 삭제를 원하면 게임 설정에 표시되는 닉네임과 사용 시점을 함께 알려 주세요. 만 14세 미만 아동의 법정대리인도 같은 권리를 행사할 수 있습니다.</p>
 
 <h2>5. 아동의 개인정보</h2>
 <p>서비스는 만 14세 미만 아동의 개인정보를 의도적으로 수집하지 않습니다. 만 14세 미만은 법정대리인의 동의를 받은 뒤 로그인 기능을 이용해야 합니다. 동의 없이 수집된 사실을 알게 되면 바로 삭제합니다.</p>
@@ -115,6 +117,7 @@ a{color:var(--acc)}
 <tr><td>Guest account</td><td>A random user identifier (UUID)</td><td>Submitting scores, ranked versus, friends, abuse prevention</td><td>Automatically on first visit</td></tr>
 <tr><td>Signing in (optional)</td><td>Your email address (email code sign-in); your Google account identifier and email (Google sign-in); your Apple account identifier and email where Apple sign-in is offered</td><td>Identifying your account, syncing progress across devices (cloud save), account recovery</td><td>When you choose to sign in</td></tr>
 <tr><td>Game activity</td><td>Nickname (typed by you), country or region code, chosen unit, score, gates passed, mode and time of play; ranked match records (rival identifier, result, RP change); season rankings and reward claims; friends list, friend requests and the friend activity feed (online, new best)</td><td>Leaderboards and versus rankings, season rewards, friend features</td><td>When you use those features</td></tr>
+<tr><td>Gameplay events</td><td>Game events tied to your guest or signed-in account identifier: first launch, session start and end with time played, tutorial completion, end of a run (mode, score, stage, unit), daily run completion, shop use (item), ads watched, shares, level-ups, a random session identifier and a game version tag</td><td>Measuring how the service is used (return rates, time played) to improve it. Stored only on our own server; never sent to a third-party analytics tool</td><td>Automatically while you play</td></tr>
 <tr><td>Cloud save (signed in)</td><td>Coin, diamond and gem wallet, owned units, pass, best scores, stage progress, nickname, tutorial and daily-streak state, season reward claims</td><td>Continuing a signed-in account's progress on any device</td><td>Automatically after signing in</td></tr>
 <tr><td>Automatic (server logs)</td><td>IP address, request time, browser information (User-Agent)</td><td>Security, incident handling, abuse blocking</td><td>Recorded by our hosting providers on each request</td></tr>
 </table>
@@ -127,6 +130,7 @@ a{color:var(--acc)}
 <li>Account and cloud save: until you ask us to delete it; we delete within 30 days of a request.</li>
 <li>Ranked match records: 3 days after the match ends.</li>
 <li>Friend activity feed: 3 days.</li>
+<li>Gameplay events: 400 days; deleted at once together with your account.</li>
 <li>Leaderboard scores and season rankings: for as long as the service runs, to show the boards; on request we delete them or anonymise the name to <code>Pilot</code>.</li>
 <li>Server logs: for a short period set by the hosting provider (normally within 7 days).</li>
 </ul>
@@ -146,7 +150,7 @@ a{color:var(--acc)}
 <p>Beyond this we share personal data with no one, except when the law requires it. We use no ad networks, no analytics tools (such as Google Analytics) and no advertising identifiers.</p>
 
 <h2>4. Your rights</h2>
-<p>You may at any time ask to access, correct or delete your data, restrict its processing, withdraw consent, or delete your account. If you are signed in, you can delete your account yourself: open the account sheet in the game and tap <strong>Delete account</strong>; the account, its cloud save and its score, versus and friend records are deleted immediately and for good. For anything else write to <a href="mailto:minimalkorea@naver.com">minimalkorea@naver.com</a>; after verifying it is you, we act within 30 days and tell you the outcome. A guest account cannot be reached once its browser data is cleared, so if you want it deleted please tell us the nickname shown in the game's settings and roughly when you played. Where the GDPR or a similar law applies to you, you also have the right to data portability and to complain to your supervisory authority.</p>
+<p>You may at any time ask to access, correct or delete your data, restrict its processing, withdraw consent, or delete your account. If you are signed in, you can delete your account yourself: open the account sheet in the game and tap <strong>Delete account</strong>; the account, its cloud save, its score, versus and friend records and its gameplay events are deleted immediately and for good. For anything else write to <a href="mailto:minimalkorea@naver.com">minimalkorea@naver.com</a>; after verifying it is you, we act within 30 days and tell you the outcome. A guest account cannot be reached once its browser data is cleared, so if you want it deleted please tell us the nickname shown in the game's settings and roughly when you played. Where the GDPR or a similar law applies to you, you also have the right to data portability and to complain to your supervisory authority.</p>
 
 <h2>5. Children</h2>
 <p>We do not knowingly collect personal data from children under 14 (or under the age your country sets for consent). Children below that age should use the sign-in feature only with a parent's or guardian's consent. If we learn that data was collected without it, we delete it.</p>
