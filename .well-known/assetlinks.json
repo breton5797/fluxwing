@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.minimalkorea.swishby",
+      "sha256_cert_fingerprints": [
+        "BA:79:B4:CA:15:9C:3B:DD:CD:99:D3:EC:D3:81:AE:F7:84:05:5F:08:4A:BB:E8:B3:88:DA:F0:A4:A0:FE:1B:73"
+      ]
+    }
+  }
+]

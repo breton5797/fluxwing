@@ -5,3 +5,13 @@ dist/
 .claude/
 .vercel/
 marketing/out/
+# Android (Bubblewrap TWA): only the inputs are committed; the Gradle project is regenerated from twa-manifest.json.
+# Keystores, passwords and build outputs (.aab/.apk) never enter the repo.
+android/*
+!android/twa-manifest.json
+!android/README.md
+*.jks
+*.keystore
+*.aab
+*.apk
+*.idsig
