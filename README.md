@@ -94,3 +94,15 @@ Apple 로그인 버튼은 Supabase에서 Apple 제공자가 켜지는 순간 자
    FFA는 무랭크(연습 표기) 정산. 적용 후 자동으로 살아난다.
 4. claude.ai 아티팩트에서는 Supabase 연결이 차단되므로(2026-10 실측) 소셜 기능은 웹/PWA 빌드 전용이다.
    아티팩트의 대전 인간 매칭은 기존 room 경로로 동작하며 항상 무랭크다.
+
+## 오류 추적 (클라이언트 오류 로그)
+
+외부 추적기 없이, 게임이 잡지 못한 오류(`error`, `unhandledrejection`)를 서버 테이블 `private.fw_client_errors`에 직접 적는다.
+클라이언트(`index.html`의 errlog 블록)는 같은 버그를 세션당 한 번, 세션당 최대 5건만 보내고, 주소의 쿼리는 절대 보내지
+않는다(OAuth 복귀 코드가 거기 실린다). 서버 함수 `public.report_error()`는 플레이어당 시간당 10건, 전체 시간당 500건을
+넘으면 저장하지 않고, 저장 전에 길이를 자른다. 30일이 지난 행은 pg_cron `fw_client_errors_gc`가 지운다.
+
+- 운영 적용: `supabase/schema.sql`의 CLIENT ERRORS 블록과 cron 블록을 한 번 실행한다(파일 전체 재실행도 안전하다).
+- 읽기(SQL Editor): `select at, player_id, build, msg, left(stack, 200), url, extra from private.fw_client_errors order by at desc limit 50;`
+  `build`는 페이지 인라인 스크립트 총 길이(`L…`)라 배포마다 달라지며, 어느 배포의 오류인지 구분하는 용도다.
+- 리허설: `bash supabase/rehearsal/run.sh supabase/rehearsal/errlog.sql`
