@@ -56,6 +56,7 @@ canvas{display:block;width:100%;height:100%}
 .ghost:hover{border-color:var(--cool)}
 .ghost.danger{border-color:rgba(255,92,122,.55);color:#ff5c7a}
 .ghost.danger:hover{border-color:#ff5c7a}
+.capbox{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9}   /* the Turnstile widget, shown only while it needs the player */
 select.ghost{appearance:none;-webkit-appearance:none;padding-right:16px}
 select.ghost option{background:#140e26;color:var(--ink)}
 .keys{display:grid;grid-template-columns:auto auto;gap:6px 14px;font-size:13px;color:var(--dim);text-align:left}
@@ -376,6 +377,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     <span class="wpill" id="wGemBtn"><i class="ic gem"></i><span id="wGem">0</span></span>
   </div>
   <div id="toast" hidden></div>
+  <div id="capBox" class="capbox" hidden></div>
   <div id="topBtns">
     <button class="ib" id="vibBtn" aria-label="Vibration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8M1.5 10.5v3M22.5 10.5v3"/></svg></button>
     <button class="ib" id="pushBtn" aria-label="Alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
@@ -629,7 +631,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 <script type="application/json" id="fxcfg">{"hitstop":{"light":0.04,"mid":0.08,"heavy":0.12},"punch":{"light":1.05,"mid":1.09,"heavy":1.15},"shake":{"stiff":260,"damp":18,"ampPx":{"light":4,"mid":9,"heavy":16}},"flash":{"frames":2,"alpha":0.55},"wave":{"life":0.45,"maxR":220,"refract":1.03,"cap":2},"chroma":{"dur":0.2,"px":3,"idleAlpha":0.15},"bloom":{"down":4,"alpha":0.25},"slowmo":{"scale":0.3,"near":0.2},"vignette":{"hurt":0.55,"danger":0.45},"death":{"slow":0.4,"slowScale":0.3,"grayFrom":0.6,"grayTo":1.1,"debrisBounce":0.45},"layers":{"core":{"n":[1,2],"size":[18,34],"speed":[0,0],"life":[0.08,0.14],"drag":0,"grav":0},"spark":{"n":[10,18],"size":[2,4],"speed":[220,520],"life":[0.25,0.55],"drag":3.5,"grav":900},"smoke":{"n":[4,8],"size":[10,22],"speed":[30,90],"life":[0.5,0.9],"drag":2,"grav":-60},"debris":{"n":[5,10],"size":[3,7],"speed":[150,380],"life":[0.6,1.1],"drag":1,"grav":1100}},"pool":{"low":240,"mid":400,"high":640},"quality":{"partMul":{"low":0.4,"mid":0.7,"high":1},"downP90Ms":20},"combo":{"l3":20,"l4":30,"partMulL3":2,"beatHz":2},"pop":{"from":1.6,"dur":0.35},"near":{"closeFrac":0.33,"flashHue":205},"events":{"flap":{"haptic":"flap"},"gate":{"haptic":null},"near":{"haptic":"near"},"shieldHit":{"haptic":"shieldHit"},"shieldMulti":{"haptic":null},"speed":{"haptic":null},"death":{"haptic":"deathHeavy"},"record":{"haptic":"record"},"coin":{"haptic":null},"comboBreak":{"haptic":"shatter"},"overdrive":{"haptic":"overdrive"}}}</script>
 <script>
 // Only the publishable / anon key ever goes here. Never a secret or service_role key.
-window.FW_CONFIG = { ads: 'none', supabaseUrl: 'https://ecjeyelgcqbliavwltbc.supabase.co', supabaseAnonKey: 'sb_publishable_wG1eznhHBLW33Ghrt1gNNg_c32xOXX1', auth: { apple: false } };
+window.FW_CONFIG = { ads: 'none', supabaseUrl: 'https://ecjeyelgcqbliavwltbc.supabase.co', supabaseAnonKey: 'sb_publishable_wG1eznhHBLW33Ghrt1gNNg_c32xOXX1', auth: { apple: false, captcha: { provider: 'turnstile', siteKey: '' } } };
 </script>
 <!-- ============================================================ -->
 
@@ -1377,6 +1379,28 @@ function feedMerge(since, rows){
 const ffaDone = (me, oth) => oth.every(o => !o.al)
   && (!me.al || (oth.length > 0 && (me.sc | 0) > Math.max(...oth.map(o => o.sc | 0))));
 /* social-core:end */
+/* captcha:start — bot check (Cloudflare Turnstile) in front of the auth calls Supabase gates: anonymous sign-in and the email code. Pure: config parsing and one challenge; the script loader and the DOM box live with the Supabase code. tests/captcha.test.js runs this block (tests/helpers/captcha.js). */
+const CAP_CFG = Object.freeze({ src: 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', waitMs: 20000 });
+// FW_CONFIG.auth.captcha = { provider: 'turnstile', siteKey: '0x…' }. Anything else = off: no script is loaded and no token is sent (the project's captcha protection must then be off too)
+function capCfg(cfg){
+  const c = cfg && cfg.auth && cfg.auth.captcha;
+  const key = c && c.provider === 'turnstile' && typeof c.siteKey === 'string' && /^[0-9]x[A-Za-z0-9_-]{6,}$/.test(c.siteKey) ? c.siteKey : '';
+  return { on: !!key, siteKey: key };
+}
+// One challenge: renders a widget into el and resolves {token, id} (token null on error, expiry, timeout or a throwing api; id is for api.remove).
+// show(true/false) brackets the moments the widget needs the player; appearance interaction-only keeps it invisible otherwise
+function capAsk(api, el, siteKey, timer, show){
+  return new Promise(res => {
+    let done = false, id = null;
+    const fin = t => { if (done) return; done = true; show(false); res({ token: typeof t === 'string' && t ? t : null, id }); };
+    try {
+      id = api.render(el, { sitekey: siteKey, appearance: 'interaction-only', callback: fin, 'error-callback': () => fin(null), 'expired-callback': () => fin(null), 'timeout-callback': () => fin(null),
+        'before-interactive-callback': () => show(true), 'after-interactive-callback': () => show(false) });
+    } catch (e){ return fin(null); }
+    timer(() => fin(null), CAP_CFG.waitMs);
+  });
+}
+/* captcha:end */
 /* errlog:start — client error reports: the game tells its own server about uncaught errors, so bugs surface without a third-party tracker. Pure, no DOM. tests/errlog.test.js runs this block (tests/helpers/errlog.js). */
 const ERR_CFG = Object.freeze({ max: 5, msgMax: 300, stackMax: 2000, urlMax: 200, uaMax: 200 });
 // An uncaught error (Error, an ErrorEvent's message, a rejection reason of any type) → {msg, stack}, or null when it carries nothing
@@ -4445,10 +4469,32 @@ function sbReauth(){
   return reauthP = (async () => {
     try {
       try { await sbC.auth.signOut({scope: 'local'}); } catch(e){}
-      const r = await sbC.auth.signInAnonymously(); if (r.error || !r.data || !r.data.session) throw r.error || new Error('session');
+      const r = await sbC.auth.signInAnonymously({ options: await capOpts() }); if (r.error || !r.data || !r.data.session) throw r.error || new Error('session');
       sbUser = r.data.session.user; uid = r.data.session.user.id; myDoc = null; needSync = true; return true;
     } catch(e){ sbOff(); return false; } finally { reauthP = null; }
   })();
+}
+// Captcha (captcha block above): the Turnstile script is fetched only when a gated call is about to run; one widget at a time in #capBox
+const CAP = capCfg(window.FW_CONFIG);
+let capP = null;
+function capLoad(){
+  if (window.turnstile) return Promise.resolve(true);
+  if (capP) return capP;
+  return capP = new Promise(res => {
+    const el = document.createElement('script'); let done = false;
+    const fin = ok => { if (done) return; done = true; clearTimeout(to); if (!ok){ capP = null; el.remove(); } res(ok); };
+    const to = setTimeout(() => fin(false), 10000);
+    el.src = CAP_CFG.src; el.async = true; el.onload = () => fin(!!window.turnstile); el.onerror = () => fin(false);
+    document.head.appendChild(el);
+  });
+}
+// The options for one gated call: {captchaToken} when the check passed, {} when captcha is off or could not run (the server then decides)
+async function capOpts(){
+  if (!CAP.on || !(await capLoad())) return {};
+  const box = $('capBox');
+  const r = await capAsk(window.turnstile, box, CAP.siteKey, setTimeout, on => { box.hidden = !on; });
+  try { if (r.id != null) window.turnstile.remove(r.id); } catch(e){}   // a token is single-use: a fresh widget per call
+  return r.token ? { captchaToken: r.token } : {};
 }
 const sbAuthErr = r => r.status === 401 || /fw_auth|jwt/i.test(String((r.error && r.error.message) || ''));
 const sbRpc = async a => { try { return await sb.rpc('submit_score', a); } catch(e){ return {error: e || {}}; } };
@@ -4465,12 +4511,12 @@ async function initSupabase(cfg){
     }
     const mine = id => sbC.from('fw_scores').select(LB_COLS).eq('player_id', id).maybeSingle();
     let { data:{ session } } = await sbC.auth.getSession();
-    if (!session){ const res = await sbC.auth.signInAnonymously(); if (res.error) throw res.error; session = res.data.session; }
+    if (!session){ const res = await sbC.auth.signInAnonymously({ options: await capOpts() }); if (res.error) throw res.error; session = res.data.session; }
     if (!session || !session.user) throw new Error('session');
     let me = await mine(session.user.id);
     if (me.error && me.status === 401){   // stored token no longer valid for this project: one fresh sign-in
       try { await sbC.auth.signOut({scope: 'local'}); } catch(e){}
-      const res = await sbC.auth.signInAnonymously(); if (res.error || !res.data.session) throw res.error || new Error('session');
+      const res = await sbC.auth.signInAnonymously({ options: await capOpts() }); if (res.error || !res.data.session) throw res.error || new Error('session');
       session = res.data.session; me = await mine(session.user.id);
     }
     if (me.error) throw me.error;
@@ -4618,7 +4664,7 @@ async function authEmailSend(raw){
   if (!sbC || !authAnon()) return authSay('authFail');
   const back = {emailRedirectTo: authBack()}; let type = 'email_change', r;
   try { r = await sbC.auth.updateUser({email}, back); } catch(e){ r = {error: e}; }
-  if (r.error && authErr(r.error) === 'taken'){ type = 'email'; try { r = await sbC.auth.signInWithOtp({email, options: {...back, shouldCreateUser: false}}); } catch(e){ r = {error: e}; } }
+  if (r.error && authErr(r.error) === 'taken'){ type = 'email'; try { r = await sbC.auth.signInWithOtp({email, options: {...back, shouldCreateUser: false, ...(await capOpts())}}); } catch(e){ r = {error: e}; } }
   if (r.error){ const k = authErr(r.error); return authSay(k === 'rate' ? 'authRate' : k === 'email' ? 'authBadEmail' : 'authFail'); }
   authMail = {email, type}; $('authCodeIn').value = ''; authOpen('code');
 }
@@ -5669,7 +5715,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { cloud: {get rec(){ return fsRec; }, snap: () => fsSnap(store.get), pull: cloudPull, push: cloudPush, get dirty(){ return fsDirty; }}, vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear,
+if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { cap: capOpts, cloud: {get rec(){ return fsRec; }, snap: () => fsSnap(store.get), pull: cloudPull, push: cloudPush, get dirty(){ return fsDirty; }}, vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear,
   soc: {notifyRoute, notifText, feedMerge, fcNorm, fcOk, fcFmt, socNorm, show: socShow, get on(){ return pushOn; }, get k(){ return pushK; }},
   eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get hazards(){ return hazs; }, get mode(){ return mode; },
