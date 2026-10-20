@@ -42,7 +42,7 @@
 
 **Apple**: 개발자 프로그램 가입 완료 (개인, Team 6SGPPQF3VQ). App Store Connect는 이 Chrome에서 로그인되어 있지 않음. 주의: 웹페이지를 감싸기만 한 앱은 심사 4.2(최소 기능)로 반려될 수 있어, iOS는 Capacitor 등으로 Game Center·햅틱 같은 네이티브 기능을 붙이는 편이 안전하다.
 
-**Android 패키지**: 게임이 PWA(`manifest.webmanifest`)라 TWA(Bubblewrap)로 감싸 AAB를 만들 수 있다. 이 맥에는 JDK·Android SDK가 없어 계정 유형이 정해진 뒤 빌드한다. 필요한 것: 패키지명 (예: `com.minimalkorea.swishby`, 애플 App ID와 동일하게), 업로드 키스토어 (대표 보관), `https://swishby.com/.well-known/assetlinks.json` (Play 앱 서명 키 지문 등록).
+**Android 패키지 (2026-10-21 빌드 완료)**: PWA를 TWA(Bubblewrap)로 감싼 서명된 AAB `~/swishby-android/swishby-1.0.0-1.aab` (패키지 `com.minimalkorea.swishby`, 1.0.0 / versionCode 1, targetSdk 36). 업로드 키와 비밀번호 파일은 같은 폴더에 있다 (맥 밖에 백업 필요). 재빌드 방법과 키 정보는 `android/README.md`. `https://swishby.com/.well-known/assetlinks.json`에 업로드 키 지문이 들어 있고, 첫 업로드 후 Play 앱 서명 키 지문을 추가해야 설치된 앱에서 주소창이 사라진다.
 
 ## 상표 메모 (2026-10-21 웹 조사, 법률 의견 아님)
 
