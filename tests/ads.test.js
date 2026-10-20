@@ -97,3 +97,13 @@ test('?ads= picks a stub mode only where the stub is the provider or on localhos
   assert.deepEqual(A.adPick('?ads=none', 'localhost', 'poki'), { prov: 'stub', mode: 'none' });
   assert.deepEqual(A.adPick('?ads=hack', 'localhost', 'stub'), { prov: 'stub', mode: 'ok' });
 });
+
+test("ads 'none': no offers anywhere, and ?ads= cannot bring the stub back off localhost", () => {
+  assert.deepEqual(A.adPick('', 'swishby.com', 'none'), { prov: 'none', mode: '' });
+  assert.deepEqual(A.adPick('?ads=ok', 'swishby.com', 'none'), { prov: 'none', mode: '' });
+  assert.deepEqual(A.adPick('?ads=ok', 'localhost', 'none'), { prov: 'stub', mode: 'ok' }, 'local QA can still exercise the stub');
+  const a = A.adMake({ prov: 'none', mode: '' }, { wait: async () => {}, load: async () => null });
+  assert.equal(a.name, 'stub:none');
+  assert.equal(a.ready(), false);
+  assert.deepEqual(A.adOffers(a.ready(), { coinBonus: 10, dailyBonus: { c: 1, g: 1 }, claimed: {} }), { revive: false, coin2x: false, daily2x: false });
+});

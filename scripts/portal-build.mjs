@@ -2,14 +2,15 @@
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
-const PORTALS = ['crazygames', 'poki'], HEAD = 'window.FW_CONFIG = { ';
+// The live page ships with ads: 'none' (no provider on swishby.com); the portal build swaps that value for the portal's name
+const PORTALS = ['crazygames', 'poki'], HEAD = "window.FW_CONFIG = { ads: 'none', ";
 export const ASSETS = ['manifest.webmanifest', 'icon.svg', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'privacy.html', 'terms.html'];
 
 export function portalHtml(html, prov){
   if (!PORTALS.includes(prov)) throw new Error(`portal must be one of ${PORTALS.join(', ')}`);
   const n = html.split(HEAD).length - 1;
   if (n !== 1) throw new Error(`expected one "${HEAD}" in index.html, found ${n}`);
-  return html.replace(HEAD, `${HEAD}ads: '${prov}', `);
+  return html.replace(HEAD, `window.FW_CONFIG = { ads: '${prov}', `);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)){
