@@ -1,0 +1,47 @@
+{
+  "packageId": "com.minimalkorea.swishby",
+  "host": "swishby.com",
+  "name": "SWISHBY",
+  "launcherName": "SWISHBY",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#07050F",
+  "themeColorDark": "#07050F",
+  "navigationColor": "#07050F",
+  "navigationColorDark": "#07050F",
+  "navigationDividerColor": "#00000000",
+  "navigationDividerColorDark": "#00000000",
+  "backgroundColor": "#07050F",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://swishby.com/icon-512.png",
+  "maskableIconUrl": "https://swishby.com/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "/Users/mac/swishby-android/upload-keystore.jks",
+    "alias": "upload"
+  },
+  "appVersionCode": 1,
+  "appVersion": "1.0.0",
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://swishby.com/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://swishby.com/",
+  "minSdkVersion": 24,
+  "fingerprints": [
+    {
+      "name": "upload",
+      "value": "BA:79:B4:CA:15:9C:3B:DD:CD:99:D3:EC:D3:81:AE:F7:84:05:5F:08:4A:BB:E8:B3:88:DA:F0:A4:A0:FE:1B:73"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": []
+}
