@@ -80,6 +80,17 @@ Apple 로그인 버튼은 Supabase에서 Apple 제공자가 켜지는 순간 자
 4. 이 저장소에서 `node scripts/apple-client-secret.mjs --team <Team ID> --key-id <Key ID> --client <Services ID> --p8 <AuthKey.p8>` 실행 → `apple-secret.txt` 한 줄이 생긴다(화면에 출력하지 않는다). 6개월마다 다시 만든다.
 5. Supabase → Authentication → Providers → Apple: Client IDs에 Services ID, Secret Key (for OAuth)에 `apple-secret.txt`의 한 줄, 켜기 → 저장. 게임을 새로 열면 Apple 버튼이 보인다.
 
+### CAPTCHA 켜기 (Cloudflare Turnstile)
+
+익명 로그인은 아무나 DB에 사용자를 쌓을 수 있는 입구라 Supabase가 CAPTCHA를 강하게 권장한다. 클라이언트는 익명 로그인과 이메일 코드 요청(`signInWithOtp`) 직전에만 Turnstile 스크립트를 불러 토큰을 받고(`index.html`의 captcha 블록), 보이지 않는 방식(`interaction-only`)이라 평소에는 아무것도 뜨지 않는다. **순서가 중요하다: 클라이언트를 먼저 배포하고 그다음 Supabase에서 켠다.** 반대로 하면 토큰 없는 로그인이 전부 실패한다.
+
+1. Cloudflare 대시보드 → Turnstile → Add widget: 도메인 `swishby.com`(로컬 QA용 `localhost`도 추가), 모드 Managed. **Site key**(공개)와 **Secret key**(비밀)를 받는다.
+2. `index.html`의 `FW_CONFIG.auth.captcha.siteKey`에 Site key를 넣어 배포한다. 비어 있으면 꺼진 상태다.
+3. Supabase → Authentication → Attack Protection → Enable Captcha protection → Turnstile → Secret key → Save.
+4. 끄려면 3번을 먼저 끄고 그다음 siteKey를 비운다.
+
+로컬 QA: Cloudflare의 테스트 키 Site `1x00000000000000000000AA`(항상 통과) / Secret `1x0000000000000000000000000000000AA`. `#dev`에서 `FW.cap()`이 `{captchaToken}`을 돌려주면 위젯이 동작하는 것이다.
+
 ## 소셜 기능 운영 적용 (친구 · 알림 · 4인 FFA)
 
 클라이언트(index.html)는 머지만으로 배포되지만, 서버 쪽은 Supabase SQL Editor에서 한 번 적용해야 한다.
