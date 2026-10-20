@@ -1800,7 +1800,8 @@ begin
 end $$;
 create or replace function public.report_error(p_msg text, p_stack text, p_build text, p_url text, p_ua text, p_extra jsonb)
 returns boolean language sql security invoker set search_path = '' as $$ select private.fw_report_error(p_msg, p_stack, p_build, p_url, p_ua, p_extra); $$;
-revoke all on function private.fw_report_error(text, text, text, text, text, jsonb) from public, anon, authenticated;
+revoke all on function private.fw_report_error(text, text, text, text, text, jsonb) from public, anon;
+grant execute on function private.fw_report_error(text, text, text, text, text, jsonb) to authenticated, service_role;   -- the invoker wrapper runs it as the caller
 revoke all on function public.report_error(text, text, text, text, text, jsonb)     from public, anon;
 grant execute on function public.report_error(text, text, text, text, text, jsonb) to authenticated;
 
@@ -1827,7 +1828,8 @@ language sql stable security definer set search_path = '' as $$
 $$;
 create or replace function public.tester_me() returns boolean
 language sql stable security invoker set search_path = '' as $$ select private.fw_tester_me(); $$;
-revoke all on function private.fw_tester_me() from public, anon, authenticated;
+revoke all on function private.fw_tester_me() from public, anon;
+grant execute on function private.fw_tester_me() to authenticated, service_role;   -- the invoker wrapper runs it as the caller; the private schema is not exposed by the API
 revoke all on function public.tester_me()     from public, anon;
 grant execute on function public.tester_me() to authenticated;
 
@@ -1847,6 +1849,7 @@ begin
 end $$;
 create or replace function public.delete_me() returns boolean
 language sql security invoker set search_path = '' as $$ select private.fw_delete_me(); $$;
-revoke all on function private.fw_delete_me() from public, anon, authenticated;
+revoke all on function private.fw_delete_me() from public, anon;
+grant execute on function private.fw_delete_me() to authenticated, service_role;   -- the invoker wrapper runs it as the caller; the private schema is not exposed by the API
 revoke all on function public.delete_me()     from public, anon;
 grant execute on function public.delete_me() to authenticated;
