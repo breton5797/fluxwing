@@ -362,6 +362,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 .dailynote{font-size:11.5px;font-weight:700;letter-spacing:.06em;color:var(--cool);font-variant-numeric:tabular-nums;text-wrap:balance}
 .chalnote{font-size:13px;font-weight:700;line-height:1.35;color:var(--gold);text-wrap:balance}
 .sharebtn{width:100%;padding:12px;font-size:14px;background:rgba(79,240,255,.12);border-color:var(--cool)}
+.sharerow{margin-top:-4px}.sharerow .ghost{flex:1 1 0;min-width:0;padding:9px 10px;font-size:12.5px}
 #tip b{display:block;font:400 18px var(--display);letter-spacing:.06em;color:var(--cool);margin-bottom:3px}
 @media (prefers-reduced-motion:reduce){.abtn.ready,#over .card,.rank.stamp,.newbest,.logowrap,.startbig,#tip{animation:none!important}.btn{transition:none}}
 </style>
@@ -464,6 +465,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="lvup" id="oLvup" hidden></div>
       <button class="btn" id="retryBtn"><span data-i18n="retry"></span></button>
       <button class="ghost sharebtn" id="shareBtn" data-i18n="shareBtn"></button>
+      <div class="row sharerow" id="shareRow" hidden><button class="ghost" id="msgBtn" hidden></button><button class="ghost" id="saveImgBtn" data-i18n="saveImg" hidden></button></div>
       <div class="row">
         <button class="ghost" id="oLbBtn" data-i18n="ranking"></button>
         <button class="ghost" id="menuBtn" data-i18n="menu"></button>
@@ -983,6 +985,22 @@ ja:{"start":"今すぐプレイ","stage":"STAGE {n}","dailyFresh":"連続{s}日�
 zh:{"start":"立即开玩","stage":"STAGE {n}","dailyFresh":"连续第{s}天 · 首局奖励 +{c}金币 +{g}宝石","dailyDone":"已连续{s}天 · 距下次奖励 {t}","dailyStreak":"每日连续第{s}天!","stClear":"STAGE {n} 通关!","tierRule0":"宽缝隙","tierRule1":"窄缝隙","tierRule2":"更窄缝隙 · 0.5秒雾气","tierRule3":"最窄缝隙 · 2秒雾气 · 2秒内点击","idleRule":"2秒内点击!","idleStall":"引擎熄火!","heavyP":"变重!","gemP":"宝石+1","gemHint":"关卡中宝石以1%概率掉落 · {n}/{m}","lbRetry":"分数提交失败,稍后自动重试","lbRate":"提交过于频繁,稍后自动发送","lbReject":"服务器未接受此分数","vsStranded":"对手未进入,正在重新寻找…","diaP":"钻石+{n}","rwScore":"得分","rwField":"场上拾取","rwLevel":"升级","rwClear":"首次通关","rwDaily":"每日首局","r_aurora":"极光型","r_tempest":"风暴型","r_pleiad":"星团型","p_pleiad":"开局自带1层护盾(最多2层)。每通过60个关卡恢复1层。护盾破碎时,该关卡也会被击碎。","r_pulsar":"脉动型","fx_ping":"PING","acct":"账号","authCta":"登录以保存进度","authSub":"金币、机体和进度将保存在账号中，并在不同设备间同步","authGoogle":"使用Google继续","authApple":"使用Apple继续","authSend":"通过邮件获取验证码","authEmailPh":"邮箱地址","authSent":"请输入发送至{e}的6位验证码，或打开邮件中的链接","authCodePh":"6位验证码","authVerify":"确认","authBadEmail":"请检查邮箱地址","authBadCode":"验证码错误或已过期","authRate":"请稍后再试","authFail":"登录失败，请重试","authTaken":"该账号已有其他进度。要登录该账号吗？","authTakenGo":"登录该账号","authIn":"已登录：{e}","authOut":"退出登录","authOutQ":"退出登录后，本设备的进度将被清除并从头开始。你的进度会安全保留在账号中。","authInApp":"应用内浏览器无法使用Google登录。请使用邮箱验证码，或在默认浏览器中打开","cloudAsk":"该账号已有保存的进度","cloudLine":"{w}: Lv {l} · 金币 {c} · 机体 {u}","cloudAcctW":"账号","cloudDevW":"本设备","cloudMerge":"合并(推荐)","cloudPull":"仅使用账号进度","cloudLoaded":"已读取账号进度","cloudFail":"无法保存到账号，稍后将重试","adFail":"暂时没有可观看的广告","ad2x":"看广告金币翻倍 (+{n})","adDaily2x":"看广告每日奖励翻倍"}
 };
 for (const l in I18N_L10N) I18N[l] = Object.assign(I18N[l] || Object.assign({}, I18N.en), I18N_L10N[l]);
+// Share card (9:16 image) and the country's messenger button. Merged after th/hi exist, so every language gets its own line.
+const I18N_SC = {
+ko:{scCta:'{n}점, 넘을 수 있어?', sendOn:'{m}로 보내기', saveImg:'이미지 저장', scSaved:'이미지를 저장했어요'},
+en:{scCta:'Can you beat {n}?', sendOn:'Send on {m}', saveImg:'Save image', scSaved:'Image saved'},
+ja:{scCta:'{n}点、超えられる?', sendOn:'{m}で送る', saveImg:'画像を保存', scSaved:'画像を保存しました'},
+zh:{scCta:'你能超过 {n} 分吗?', sendOn:'通过 {m} 发送', saveImg:'保存图片', scSaved:'图片已保存'},
+es:{scCta:'¿Puedes superar {n}?', sendOn:'Enviar por {m}', saveImg:'Guardar imagen', scSaved:'Imagen guardada'},
+pt:{scCta:'Consegue passar de {n}?', sendOn:'Enviar pelo {m}', saveImg:'Salvar imagem', scSaved:'Imagem salva'},
+fr:{scCta:'Tu peux battre {n} ?', sendOn:'Envoyer via {m}', saveImg:"Enregistrer l'image", scSaved:'Image enregistrée'},
+de:{scCta:'Schaffst du mehr als {n}?', sendOn:'Über {m} senden', saveImg:'Bild speichern', scSaved:'Bild gespeichert'},
+id:{scCta:'Bisa kalahkan {n}?', sendOn:'Kirim lewat {m}', saveImg:'Simpan gambar', scSaved:'Gambar tersimpan'},
+vi:{scCta:'Bạn vượt được {n} không?', sendOn:'Gửi qua {m}', saveImg:'Lưu ảnh', scSaved:'Đã lưu ảnh'},
+th:{scCta:'ทำได้เกิน {n} ไหม?', sendOn:'ส่งทาง {m}', saveImg:'บันทึกรูป', scSaved:'บันทึกรูปแล้ว'},
+hi:{scCta:'क्या आप {n} से आगे जा सकते हैं?', sendOn:'{m} पर भेजें', saveImg:'इमेज सेव करें', scSaved:'इमेज सेव हो गई'},
+};
+for (const l in I18N) Object.assign(I18N[l], I18N_SC.en, I18N_SC[l] || {});
 /* i18n:end — tests/i18n.test.js runs everything from `const I18N = {` to here */
 const birdById = id => BIRDS.find(b => b.id === id);
 let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
@@ -1129,6 +1147,33 @@ function challengeResult(ch, mode, score){
   return { beat: score > ch.score, by: Math.abs(score - ch.score) };
 }
 /* hit-loop:end */
+/* share-card:start — the 9:16 result image and the one messenger a country opens: pure rules, no state, no DOM. Builds on the hit-loop block. tests/share-card.test.js runs it (tests/helpers/sharecard.js). Sharing pays nothing: app stores turn down a game that pays for social posts. */
+// Only messengers a plain web link can open with the text filled in. KakaoTalk (KR) needs the Kakao SDK + app key, Messenger (PH/US/CA) a Facebook app id, Zalo (VN) has no web share link: there the native share sheet covers it.
+const MSGR = {
+  wa: { name: 'WhatsApp', cc: 'BR ID IN MY MX AR CO ES IT DE ZA NG TR SA AE', url: (m, l) => 'https://wa.me/?text=' + encodeURIComponent(m) },
+  line: { name: 'LINE', cc: 'TW TH JP', url: (m, l) => 'https://line.me/R/share?text=' + encodeURIComponent(m) },
+  tg: { name: 'Telegram', cc: 'RU UA IR UZ', url: (m, l) => 'https://t.me/share/url?url=' + encodeURIComponent(l) + '&text=' + encodeURIComponent(m.endsWith(' ' + l) ? m.slice(0, -l.length - 1) : m) },   // Telegram adds the link itself
+};
+const messengerFor = cc => { const c = String(cc || '').toUpperCase(); return /^[A-Z]{2}$/.test(c) && Object.keys(MSGR).find(id => MSGR[id].cc.split(' ').includes(c)) || null; };
+const messengerUrl = (id, msg, link) => MSGR[id] ? MSGR[id].url(msg, link) : '';
+// r: {mode, score, gates, combo, day, dayText (the day as the player reads it), stage (0-based), zone, unit {id, name} | null, place (daily board, 0 = unknown)}.
+// The canvas only paints what this returns: lines top to bottom {k, text, y, size, col}, the unit at unitY, the stat pair, the file name.
+function shareCardSpec(T, r){
+  const daily = r.mode === 'daily', n = String(Math.max(0, Math.floor(r.score || 0))), sub = (s, v) => String(s).replace(/\{([a-z])\}/g, (m, k) => v[k] ?? m);
+  const lines = [
+    { k: 'brand', text: 'SWISHBY', y: 250, size: 132, col: 'ink' },
+    { k: 'mode', text: daily ? sub(T.modeDaily, { d: r.dayText || r.day }) : sub(T.stage, { n: (r.stage || 0) + 1 }) + (r.zone ? ' · ' + r.zone : ''), y: 370, size: 54, col: 'cool' },
+    r.unit && { k: 'unit', text: r.unit.name, y: 900, size: 64, col: 'unit' },
+    { k: 'score', text: n, y: 1180, size: 300, col: 'ink' },
+    daily && r.place > 0 && { k: 'place', text: sub(T.place, { n: r.place }), y: 1470, size: 58, col: 'gold' },
+    { k: 'cta', text: sub(T.scCta, { n }), y: 1640, size: 70, col: 'gold' },
+    { k: 'url', text: SHARE_URL.replace(/^https?:\/\/|\/$/g, ''), y: 1780, size: 56, col: 'cool' },
+  ].filter(Boolean);
+  return { w: 1080, h: 1920, lines, unit: r.unit || null, unitY: 640, statsY: 1340,
+    stats: [{ label: T.gates, value: String(r.gates || 0) }, { label: T.maxCombo, value: String(r.combo || 0) }],
+    file: 'swishby-' + (daily ? 'daily-' + r.day + '-' : '') + n + '.png' };
+}
+/* share-card:end */
 /* fx-core:start — pure impact-fx rules: config, quality, shake spring, particle pool, event curves. No DOM, no clock, no game globals. tests/helpers/fx.js extracts and runs this block; numbers ship in fx-config.json via the #fxcfg tag (scripts/fx-inline.mjs). */
 const FX_EVENTS = ['flap', 'gate', 'near', 'shieldHit', 'shieldMulti', 'speed', 'death', 'record', 'coin', 'comboBreak', 'overdrive'];
 const FX_DEFAULTS = Object.freeze({
@@ -2224,10 +2269,50 @@ async function adLeave(go){
 }
 $('retryBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); adLeave(() => { if (mode === 'versus'){ toMenu(); openVs(); } else startGame(mode); }); });
 $('menuBtn').addEventListener('click', e => { e.stopPropagation(); adLeave(toMenu); });
+/* ---------- share card: the result as a 9:16 image (layout in shareCardSpec, paint here) ---------- */
+// Drawn once when the card opens (and again when the board hands the daily run its place), so a tap shares a ready file:
+// awaiting a fresh toBlob inside the tap can cost the user activation the share sheet needs. Versus results share as text only.
+let cardJob = null, cardPlace = 0;
+const cardRun = () => ({mode, score:score||0, gates:gatesPassed||0, combo:maxCombo||0, day:runDay||dayKey(), dayText:fmtDay(runDay||dayKey()), stage:curStage, zone:ZONES[stTier(curStage)].name, unit:{id:B.id, name:B.name}, place:cardPlace});
+const fileShareOk = (() => { try { return !!(navigator.canShare && navigator.canShare({files:[new File([''], 'a.png', {type:'image/png'})]})); } catch { return false; } })();
+async function paintCard(s){
+  try { await Promise.race([Promise.all(['300px Bungee', '700 60px "Chakra Petch"'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 1500))]); } catch {}
+  const cv2 = document.createElement('canvas'); cv2.width = s.w; cv2.height = s.h; const c = cv2.getContext('2d'), d = s.unit && birdById(s.unit.id), uc = d ? hsl(d.uiCol || d.col) : '#4ff0ff';
+  const g = c.createLinearGradient(0, 0, 0, s.h); g.addColorStop(0, hsl(pal.sky0)); g.addColorStop(1, hsl(pal.sky1)); c.fillStyle = g; c.fillRect(0, 0, s.w, s.h);
+  c.strokeStyle = 'rgba(255,255,255,.06)'; c.lineWidth = 2; for (let x = 60; x < s.w; x += 120){ c.beginPath(); c.moveTo(x, 0); c.lineTo(x, s.h); c.stroke(); }   // the course grid, quiet behind the text
+  c.fillStyle = 'rgba(7,5,15,.45)'; c.beginPath(); c.roundRect(60, 120, s.w - 120, s.h - 240, 64); c.fill(); c.strokeStyle = 'rgba(79,240,255,.5)'; c.lineWidth = 4; c.stroke();
+  if (d){
+    const rg = c.createRadialGradient(s.w/2, s.unitY, 10, s.w/2, s.unitY, 330); rg.addColorStop(0, hsl(d.col, .45)); rg.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = rg; c.fillRect(0, s.unitY - 340, s.w, 680);
+    c.save(); c.translate(s.w/2 + 30, s.unitY); c.scale(9, 9); drawAura(c, d, d.r, 0); drawShape(c, d, .5, d.uiCol || d.col, {lite:false, pose:0, vy:0}); c.restore();
+  }
+  const COL = {ink:'#f3eefc', cool:'#4ff0ff', gold:'#ffd25a', unit:uc}, fit = (txt, size, font) => { let z = size; do { c.font = font(z); } while (c.measureText(txt).width > s.w - 200 && (z -= 4) > 20); };
+  c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+  for (const l of s.lines){
+    const disp = l.k === 'brand' || l.k === 'score' || l.k === 'url' || l.k === 'unit';
+    fit(l.text, l.size, z => disp ? `${z}px Bungee, ${SYS}` : `700 ${z}px "Chakra Petch", ${SYS}`);
+    c.fillStyle = COL[l.col] || COL.ink; c.shadowColor = c.fillStyle; c.shadowBlur = l.k === 'score' ? 60 : 24; c.fillText(l.text, s.w/2, l.y); c.shadowBlur = 0;
+  }
+  s.stats.forEach((st, i) => { const x = s.w/2 + (i ? 1 : -1) * 220;
+    fit(st.label.toUpperCase(), 40, z => `700 ${z}px "Chakra Petch", ${SYS}`); c.fillStyle = 'rgba(243,238,252,.7)'; c.fillText(st.label.toUpperCase(), x, s.statsY - 70);
+    c.font = `96px Bungee, ${SYS}`; c.fillStyle = COL.cool; c.fillText(st.value, x, s.statsY + 30); });
+  return new Promise(r => { try { cv2.toBlob(b => r(b), 'image/png'); } catch { r(null); } });
+}
+function prepCard(){ if (mode === 'versus'){ cardJob = null; return; } const s = shareCardSpec(I18N[lang], cardRun()); cardJob = paintCard(s).then(b => b && new File([b], s.file, {type:'image/png'})).catch(() => null); }   // no image (old canvas, no memory): the share goes out as text, as before
+$('msgBtn').addEventListener('click', e => {
+  e.stopPropagation(); const id = messengerFor(CC), r = cardRun(); if (!id) return;
+  window.open(messengerUrl(id, lastShare || shareMsg(I18N[lang], r), shareUrl(r)), '_blank', 'noopener');
+});
+$('saveImgBtn').addEventListener('click', async e => {
+  e.stopPropagation(); const f = cardJob && await cardJob; if (!f) return;
+  const a = document.createElement('a'), u = URL.createObjectURL(f); a.href = u; a.download = f.name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 4000); toast(t('scSaved'));
+});
 $('shareBtn').addEventListener('click', async e => {
   e.stopPropagation(); const text = lastShare || shareMsg(I18N[lang], {mode, score:score||0, gates:gatesPassed||0, combo:maxCombo||0, day:runDay||dayKey()});
-  // the line already ends with the link, so it goes out as text alone. Closing the share sheet is an answer, not a failure: nothing follows it.
-  // A share that fails for any other reason falls back to the clipboard, and only a device with neither gets the copy-by-hand dialog.
+  // the line already ends with the link, so it goes out as text alone (a separate url would print it twice). Closing the share sheet is an answer, not a failure: nothing follows it.
+  // The card image goes along where the device can share files; a share that fails for any other reason falls back to the clipboard, and only a device with neither gets the copy-by-hand dialog.
+  const file = fileShareOk && cardJob ? await cardJob : null;
+  if (file && navigator.canShare({files:[file]})){ try { await navigator.share({files:[file], text}); toast(t('shared')); return; } catch (err){ if (err && err.name === 'AbortError') return; } }
   if (navigator.share){ try { await navigator.share({text}); toast(t('shared')); return; } catch (err){ if (err && err.name === 'AbortError') return; } }
   try { await navigator.clipboard.writeText(text); toast(t('copied')); }
   catch { prompt(t('shareManual'), text); }
@@ -2573,6 +2658,8 @@ function showOver(){
   const dailyLine = $('oDaily'); dailyLine.hidden = mode !== 'daily'; if (mode === 'daily') dailyLine.textContent = t('oDailyLine', {d: fmtDay(runDay), t: fmtLeft(msToNextDay())});
   const cr = challengeResult(challenge, mode, score), cn = $('oChal'); cn.hidden = !cr; if (cr) cn.textContent = t(cr.beat ? 'chBeat' : 'chShort', {n: cr.by, c: challenge.score});
   lastShare = shareMsg(I18N[lang], {mode, score, gates:gatesPassed, combo:maxCombo, day:runDay});
+  { cardPlace = 0; prepCard(); const mid = messengerFor(CC), mb = $('msgBtn'); mb.hidden = !mid; if (mid) mb.textContent = t('sendOn', {m: MSGR[mid].name});
+    $('saveImgBtn').hidden = fileShareOk || mode === 'versus'; $('shareRow').hidden = mb.hidden && $('saveImgBtn').hidden; }   // save-the-image only where the share sheet cannot take the file
   $('oBest').textContent = shownBest;
   $('oGates').textContent = gatesPassed; $('oPerf').textContent = perfects; $('oCombo').textContent = maxCombo;
   overTierStamp();   // the RP tier; a ranked result that moves it stamps again from setRp
@@ -4842,6 +4929,7 @@ function renderLB(){
   if (state === 'over' && mode !== 'versus' && lbState === 'online' && uid && !readOnly){   // a versus card keeps its result line
     const p = myPlace(mode === 'daily' ? lbDaily : lbAll);
     $('oPlace').textContent = p ? t('place', {n:p}) : t('outside');
+    if (mode === 'daily' && p && p !== cardPlace && score >= dailyBestLocal(runDay)){ cardPlace = p; prepCard(); }   // the board ranks today's best: only a run that is it carries the place onto its image
   }
 }
 function openLB(tab){
