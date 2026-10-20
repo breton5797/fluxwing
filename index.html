@@ -112,6 +112,17 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .frx:hover{color:#ff5c7a}
 .frplus{background:none;border:1px solid var(--line);border-radius:8px;color:var(--cool);font-size:13px;line-height:1;cursor:pointer;padding:3px 7px;margin-left:8px}
 .frwarn{font-size:11px;color:var(--dim);margin-top:8px}
+.refbox{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(243,238,252,.05);display:grid;gap:6px}
+.refhd{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.refrule{font-size:12px;color:var(--dim);line-height:1.35}
+.refms{display:flex;gap:8px;flex-wrap:wrap}
+.refchip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-variant-numeric:tabular-nums;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--dim)}
+.refchip.ok{color:var(--gold);border-color:var(--gold)}
+.refrow{display:flex;justify-content:space-between;gap:8px;padding:6px 10px;font-size:13px}
+.refrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.refrow .pg{color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+.refrow .pg.ok{color:var(--gold)}
+.refnudge{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700;color:var(--cool)}
 .lbempty{padding:22px 8px;text-align:center;color:var(--dim);font-size:14px}
 .lbstatus{font-size:12px;color:var(--dim);min-height:1.2em}
 .nickrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -452,6 +463,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="dailynote" id="oDaily" hidden></div>
       <div class="place" id="oPlace"></div>
       <div class="chalnote" id="oChal" hidden></div>
+      <div class="refnudge" id="oRef" hidden><span data-i18n="refNudge"></span><button class="ghost primary" id="oRefGo" data-i18n="refInvite"></button><button class="frx" id="oRefX" aria-label="Close">✕</button></div>
       <div class="vsteams" id="oTeams" hidden></div>
       <div class="stats">
         <div class="stat"><span id="oBestLbl" data-i18n="best"></span><strong id="oBest">0</strong></div>
@@ -590,6 +602,13 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     <div class="card lbcard">
       <div class="lbhead"><h2 data-i18n="fr"></h2><button class="ghost" id="frClose" data-i18n="close"></button></div>
       <div class="frcode"><span class="frlbl" data-i18n="frCode"></span><b id="frMyCode">—</b><button class="ghost" id="frCopy" data-i18n="frCopy"></button></div>
+      <div class="refbox" id="frRef" hidden>
+        <div class="refhd"><b data-i18n="refHead"></b><button class="ghost primary" id="frRefGo" data-i18n="refInvite"></button></div>
+        <div class="refrule" id="frRefRule"></div>
+        <div class="refms" id="frRefMs"></div>
+        <div class="refrule" id="frRefNote"></div>
+        <ol class="lblist" id="frRefList"></ol>
+      </div>
       <form class="nickrow frform" id="frForm">
         <input id="frIn" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false">
         <button class="ghost" type="submit" data-i18n="frAdd"></button>
@@ -1001,6 +1020,57 @@ th:{scCta:'ทำได้เกิน {n} ไหม?', sendOn:'ส่งทา�
 hi:{scCta:'क्या आप {n} से आगे जा सकते हैं?', sendOn:'{m} पर भेजें', saveImg:'इमेज सेव करें', scSaved:'इमेज सेव हो गई'},
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_SC.en, I18N_SC[l] || {});
+// Friend invites (referral block): the copy says "play together and earn", never "download" or "install" (store rules)
+const I18N_R = {
+ko:{refHead:'함께 플레이하고 젬 받기', refRule:'초대한 친구가 서로 다른 {d}일 동안 플레이하고 STAGE {s}에 도달하면 젬 {g}개를 받아요', refInvite:'친구 초대',
+ refShare:'SWISHBY 같이 하자! 여기로 들어와: {u}', refMonth:'이번 달 {n}/{m}명', refHeld:'{n}명 확인 중', refFriend:'{d}/{a}일 · STAGE {s}/{b}', refDone:'달성!',
+ refEmpty:'내 링크로 함께하는 친구가 여기에 표시돼요', refGot:'친구 초대 보상: 젬 +{n}', refNudge:'친구와 함께 플레이하고 젬을 받아요', refLinked:'친구와 연결됐어요. 함께 플레이해요!',
+ refOff:'친구 초대는 온라인에서만 할 수 있어요'},
+en:{refHead:'Play together, earn gems', refRule:'When a friend you invite plays on {d} different days and reaches STAGE {s}, you get {g} gems', refInvite:'Invite a friend',
+ refShare:'Let\'s play SWISHBY together! Join me here: {u}', refMonth:'This month {n}/{m}', refHeld:'{n} under review', refFriend:'{d}/{a} days · STAGE {s}/{b}', refDone:'Made it!',
+ refEmpty:'Friends who join you through your link show up here', refGot:'Friend invite reward: +{n} gems', refNudge:'Play together with a friend and earn gems', refLinked:'You are connected with your friend. Play together!',
+ refOff:'Inviting friends needs a connection'},
+ja:{refHead:'一緒に遊んでジェムをもらおう', refRule:'招待したフレンドが別々の{d}日にプレイしてSTAGE {s}に到達すると、ジェム{g}個がもらえます', refInvite:'フレンドを招待',
+ refShare:'一緒にSWISHBYで遊ぼう！ここから参加してね: {u}', refMonth:'今月 {n}/{m}', refHeld:'{n}件 確認中', refFriend:'{d}/{a}日 · STAGE {s}/{b}', refDone:'達成！',
+ refEmpty:'あなたのリンクから参加したフレンドがここに表示されます', refGot:'フレンド招待報酬: ジェム+{n}', refNudge:'フレンドと一緒に遊んでジェムをもらおう', refLinked:'フレンドとつながりました。一緒に遊ぼう！',
+ refOff:'フレンド招待はオンライン時のみ使えます'},
+zh:{refHead:'一起玩，赚宝石', refRule:'你邀请的好友在{d}个不同的日子游玩并到达STAGE {s}后，你将获得{g}颗宝石', refInvite:'邀请好友',
+ refShare:'一起来玩SWISHBY吧！从这里加入：{u}', refMonth:'本月 {n}/{m}', refHeld:'{n}个审核中', refFriend:'{d}/{a}天 · STAGE {s}/{b}', refDone:'已达成！',
+ refEmpty:'通过你的链接加入的好友会显示在这里', refGot:'好友邀请奖励：宝石+{n}', refNudge:'和好友一起玩，赚取宝石', refLinked:'已和好友连接。一起玩吧！',
+ refOff:'邀请好友需要联网'},
+es:{refHead:'Jueguen juntos y gana gemas', refRule:'Cuando un amigo que invites juegue {d} días distintos y llegue a la STAGE {s}, recibes {g} gemas', refInvite:'Invitar a un amigo',
+ refShare:'¡Juguemos juntos a SWISHBY! Únete aquí: {u}', refMonth:'Este mes {n}/{m}', refHeld:'{n} en revisión', refFriend:'{d}/{a} días · STAGE {s}/{b}', refDone:'¡Logrado!',
+ refEmpty:'Aquí aparecen los amigos que se unan con tu enlace', refGot:'Recompensa por invitar: +{n} gemas', refNudge:'Juega con un amigo y gana gemas', refLinked:'Ya estás conectado con tu amigo. ¡A jugar juntos!',
+ refOff:'Invitar amigos requiere conexión'},
+pt:{refHead:'Joguem juntos e ganhe gemas', refRule:'Quando um amigo que você convidar jogar em {d} dias diferentes e chegar à STAGE {s}, você ganha {g} gemas', refInvite:'Convidar um amigo',
+ refShare:'Vamos jogar SWISHBY juntos! Entre por aqui: {u}', refMonth:'Este mês {n}/{m}', refHeld:'{n} em análise', refFriend:'{d}/{a} dias · STAGE {s}/{b}', refDone:'Conseguiu!',
+ refEmpty:'Os amigos que entrarem pelo seu link aparecem aqui', refGot:'Recompensa por convite: +{n} gemas', refNudge:'Jogue com um amigo e ganhe gemas', refLinked:'Você está conectado com seu amigo. Joguem juntos!',
+ refOff:'Convidar amigos precisa de conexão'},
+fr:{refHead:'Jouez ensemble, gagnez des gemmes', refRule:'Quand un ami invité joue {d} jours différents et atteint la STAGE {s}, vous recevez {g} gemmes', refInvite:'Inviter un ami',
+ refShare:'Jouons ensemble à SWISHBY ! Rejoins-moi ici : {u}', refMonth:'Ce mois-ci {n}/{m}', refHeld:'{n} en vérification', refFriend:'{d}/{a} jours · STAGE {s}/{b}', refDone:'Réussi !',
+ refEmpty:'Les amis qui vous rejoignent avec votre lien apparaissent ici', refGot:'Récompense d\'invitation : +{n} gemmes', refNudge:'Jouez avec un ami et gagnez des gemmes', refLinked:'Vous êtes connecté à votre ami. Jouez ensemble !',
+ refOff:'Inviter des amis demande une connexion'},
+de:{refHead:'Zusammen spielen, Juwelen verdienen', refRule:'Spielt ein eingeladener Freund an {d} verschiedenen Tagen und erreicht STAGE {s}, bekommst du {g} Juwelen', refInvite:'Freund einladen',
+ refShare:'Lass uns zusammen SWISHBY spielen! Hier gehts los: {u}', refMonth:'Diesen Monat {n}/{m}', refHeld:'{n} in Prüfung', refFriend:'{d}/{a} Tage · STAGE {s}/{b}', refDone:'Geschafft!',
+ refEmpty:'Freunde, die über deinen Link mitspielen, erscheinen hier', refGot:'Belohnung für die Einladung: +{n} Juwelen', refNudge:'Spiel mit einem Freund und verdiene Juwelen', refLinked:'Du bist mit deinem Freund verbunden. Spielt zusammen!',
+ refOff:'Freunde einladen geht nur online'},
+id:{refHead:'Main bareng, dapat gem', refRule:'Saat teman yang kamu undang bermain di {d} hari berbeda dan mencapai STAGE {s}, kamu dapat {g} gem', refInvite:'Undang teman',
+ refShare:'Ayo main SWISHBY bareng! Gabung di sini: {u}', refMonth:'Bulan ini {n}/{m}', refHeld:'{n} sedang ditinjau', refFriend:'{d}/{a} hari · STAGE {s}/{b}', refDone:'Berhasil!',
+ refEmpty:'Teman yang bergabung lewat tautanmu muncul di sini', refGot:'Hadiah undangan teman: +{n} gem', refNudge:'Main bareng teman dan dapatkan gem', refLinked:'Kamu sudah terhubung dengan temanmu. Ayo main bareng!',
+ refOff:'Mengundang teman perlu koneksi'},
+vi:{refHead:'Cùng chơi, nhận ngọc', refRule:'Khi bạn được mời chơi vào {d} ngày khác nhau và đạt STAGE {s}, bạn nhận {g} ngọc', refInvite:'Mời bạn bè',
+ refShare:'Cùng chơi SWISHBY nhé! Vào đây: {u}', refMonth:'Tháng này {n}/{m}', refHeld:'{n} đang xét duyệt', refFriend:'{d}/{a} ngày · STAGE {s}/{b}', refDone:'Đã đạt!',
+ refEmpty:'Bạn bè tham gia qua liên kết của bạn sẽ hiện ở đây', refGot:'Thưởng mời bạn: +{n} ngọc', refNudge:'Cùng chơi với bạn bè để nhận ngọc', refLinked:'Bạn đã kết nối với bạn mình. Cùng chơi nhé!',
+ refOff:'Cần kết nối mạng để mời bạn bè'},
+th:{refHead:'เล่นด้วยกัน รับเจม', refRule:'เมื่อเพื่อนที่คุณชวนเล่นครบ {d} วันที่ต่างกันและถึง STAGE {s} คุณจะได้ {g} เจม', refInvite:'ชวนเพื่อน',
+ refShare:'มาเล่น SWISHBY ด้วยกัน! เข้ามาทางนี้: {u}', refMonth:'เดือนนี้ {n}/{m}', refHeld:'{n} คนกำลังตรวจสอบ', refFriend:'{d}/{a} วัน · STAGE {s}/{b}', refDone:'สำเร็จ!',
+ refEmpty:'เพื่อนที่มาเล่นผ่านลิงก์ของคุณจะแสดงที่นี่', refGot:'รางวัลชวนเพื่อน: +{n} เจม', refNudge:'เล่นกับเพื่อนแล้วรับเจม', refLinked:'เชื่อมต่อกับเพื่อนแล้ว มาเล่นด้วยกัน!',
+ refOff:'ต้องออนไลน์จึงจะชวนเพื่อนได้'},
+hi:{refHead:'साथ खेलें, जेम कमाएँ', refRule:'आपका बुलाया दोस्त {d} अलग-अलग दिन खेले और STAGE {s} तक पहुँचे, तो आपको {g} जेम मिलेंगे', refInvite:'दोस्त को बुलाएँ',
+ refShare:'चलो साथ में SWISHBY खेलें! यहाँ से जुड़ो: {u}', refMonth:'इस महीने {n}/{m}', refHeld:'{n} जाँच में', refFriend:'{d}/{a} दिन · STAGE {s}/{b}', refDone:'पूरा हुआ!',
+ refEmpty:'आपके लिंक से जुड़ने वाले दोस्त यहाँ दिखेंगे', refGot:'दोस्त बुलाने का इनाम: +{n} जेम', refNudge:'दोस्त के साथ खेलें और जेम कमाएँ', refLinked:'आप अपने दोस्त से जुड़ गए। साथ खेलें!',
+ refOff:'दोस्तों को बुलाने के लिए इंटरनेट चाहिए'}};
+for (const l in I18N) Object.assign(I18N[l], I18N_R.en, I18N_R[l] || {});
 /* i18n:end — tests/i18n.test.js runs everything from `const I18N = {` to here */
 const birdById = id => BIRDS.find(b => b.id === id);
 let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
@@ -1424,6 +1494,67 @@ function feedMerge(since, rows){
 const ffaDone = (me, oth) => oth.every(o => !o.al)
   && (!me.al || (oth.length > 0 && (me.sc | 0) > Math.max(...oth.map(o => o.sc | 0))));
 /* social-core:end */
+/* referral:start — friend invites, "play together and earn": the invite link (?r=<friend code>), the invitee's record on this device, the progress
+   the friends screen shows, the milestone math, which payouts this device still has to grant, and the once-a-day nudge. Pure: no DOM, no storage,
+   no clock (today comes in); fcNorm / fcOk come from social-core. The server decides every reward (supabase/schema.sql REFERRALS; private.fw_ref_cfg
+   holds the same numbers and tests/referral.test.js keeps the two equal). The invited friend gets nothing for joining (store rules: no reward for
+   an install); the inviter is paid once the friend has played on `days` UTC days and reached STAGE `stage`. tests/helpers/referral.js runs this block. */
+const REF_CFG = Object.freeze({ days: 3, stage: 10, minBest: 14, gems: 30, ms: Object.freeze([3, 10, 25]), msGems: Object.freeze([50, 150, 500]), cap: 25,
+  keepDays: 7, paidMax: 50 });   // minBest: STAGE 9's gate goal: reaching STAGE 10 took a run that scored at least that, which the server holds (fw_scores.best)
+const REF_ST = ['', 'open', 'none', 'done'];   // '' = link not sent yet · open = bound, reporting progress · none = no invite here · done = goal met
+const refDayN = k => { const t = Date.parse(String(k) + 'T00:00:00Z'); return Number.isFinite(t) ? Math.floor(t / 864e5) : -1; };
+const refDayOk = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
+function refParse(search){
+  let r = null; try { r = new URLSearchParams(search || '').get('r'); } catch(e){}
+  return typeof r === 'string' && /^[0-9A-Za-z]{4}-?[0-9A-Za-z]{4}$/.test(r) && fcOk(r) ? fcNorm(r) : '';
+}
+// the query without r, so the code does not travel on in shares and bookmarks; null when there is no r
+function refStrip(search){ const p = new URLSearchParams(search || ''); if (!p.has('r')) return null; p.delete('r'); const s = p.toString(); return s ? '?' + s : ''; }
+const refUrl = (base, code) => fcOk(code) ? base + '?r=' + fcNorm(code) : base;
+function refNorm(v){
+  const o = v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+  return { code: fcOk(o.code) ? fcNorm(o.code) : '', at: refDayOk(o.at), st: REF_ST.includes(o.st) ? o.st : '', day: refDayOk(o.day),
+    stage: Math.max(0, Math.min(50, Math.floor(Number(o.stage) || 0))) };
+}
+// A link opened: kept until it is sent. A newer link replaces one not sent yet; once the server has answered, the record is final
+// (the server binds one inviter per player anyway).
+function refSeen(rec, code, today){ const r = refNorm(rec); return !code || r.st ? r : { ...r, code, at: today }; }
+const refLinkDue = (rec, today) => { const r = refNorm(rec), a = refDayN(r.at); return !!r.code && !r.st && a >= 0 && refDayN(today) - a <= REF_CFG.keepDays; };
+// referral_link's status → the record. No (or an unknown) answer: unchanged, sent again later
+function refLinked(rec, status){
+  const r = refNorm(rec);
+  return status === 'linked' || status === 'already' ? { ...r, st: 'open' } : ['unknown', 'self', 'old'].includes(status) ? { ...r, st: 'none' } : r;
+}
+// One progress report per UTC day, or sooner when the stage reached went up (the goal may be met mid-day)
+const refReportDue = (rec, today, stage) => { const r = refNorm(rec); return r.st === 'open' && (r.day !== today || (stage | 0) > r.stage); };
+function refReported(rec, today, stage, status){
+  const r = refNorm(rec);
+  if (status === 'open') return { ...r, day: today, stage: Math.max(r.stage, Math.min(50, stage | 0)) };
+  return status === 'done' || status === 'none' ? { ...r, st: status } : r;
+}
+const refMs = paid => REF_CFG.ms.map((m, i) => ({ m, n: Math.min(paid | 0, m), ok: (paid | 0) >= m, gems: REF_CFG.msGems[i] }));
+// gems for n friends paid on top of `before` already paid: the per-friend gems plus every milestone crossed (mirrors private.fw_referral_claim)
+const refPayGems = (n, before) => (n | 0) * REF_CFG.gems + REF_CFG.ms.reduce((s, m, i) => s + ((before | 0) < m && (before | 0) + (n | 0) >= m ? REF_CFG.msGems[i] : 0), 0);
+const refInt = v => Math.max(0, Math.floor(Number(v) || 0));
+function refView(d){
+  if (!d || typeof d !== 'object' || !fcOk(d.code)) return null;
+  const friends = (Array.isArray(d.friends) ? d.friends : []).filter(f => f && typeof f === 'object').slice(0, 30)
+    .map(f => ({ nick: String(f.nick || ''), days: Math.min(REF_CFG.days, refInt(f.days)), stage: Math.min(REF_CFG.stage, refInt(f.stage)), done: !!f.done }));
+  const payouts = (Array.isArray(d.payouts) ? d.payouts : []).filter(p => p && Number.isInteger(p.id) && Number.isInteger(p.gems) && p.gems > 0)
+    .map(p => ({ id: p.id, gems: p.gems }));
+  return { code: fcNorm(d.code), paid: refInt(d.paid), month: refInt(d.month), cap: refInt(d.cap) || REF_CFG.cap, ready: refInt(d.ready),
+    held: refInt(d.held), open: refInt(d.open), friends, payouts };
+}
+// The server repeats a payout until it is acknowledged; this device grants each id once (an answer lost before the ack is not paid twice)
+function refToGrant(payouts, paid){
+  const seen = new Set(Array.isArray(paid) ? paid : []), ids = []; let gems = 0;
+  for (const p of Array.isArray(payouts) ? payouts : []) if (p && Number.isInteger(p.id) && !seen.has(p.id) && p.gems > 0){ seen.add(p.id); ids.push(p.id); gems += p.gems | 0; }
+  return { gems, ids };
+}
+const refPaidAdd = (paid, ids) => [...new Set([...(Array.isArray(paid) ? paid.filter(Number.isInteger) : []), ...ids])].slice(-REF_CFG.paidMax);
+// The invite nudge on the result card: after a new best or a finished daily run, never twice on one UTC day
+const refNudgeDue = (last, today, why) => (why === 'best' || why === 'daily') && last !== today;
+/* referral:end */
 /* captcha:start — bot check (Cloudflare Turnstile) in front of the auth calls Supabase gates: anonymous sign-in and the email code. Pure: config parsing and one challenge; the script loader and the DOM box live with the Supabase code. tests/captcha.test.js runs this block (tests/helpers/captcha.js). */
 const CAP_CFG = Object.freeze({ src: 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', waitMs: 20000 });
 // FW_CONFIG.auth.captcha = { provider: 'turnstile', siteKey: '0x…' }. Anything else = off: no script is loaded and no token is sent (the project's captcha protection must then be off too)
@@ -1590,7 +1721,8 @@ const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_stg', 'fw27_stage', 'fw27_l
   'fw27_rej', 'fw27_vsmode', 'fw27_dg', 'fw27_daily_', 'fw27_sync',
   'fw27_fxq', 'fw27_fxshake', 'fw27_fxflash',   // fx quality and accessibility: per-device hardware/comfort choices
   'fw27_push', 'fw27_pushk', 'fw27_feed2',     // friend alerts: the toggle follows this device's Notification permission; feed2 is this device's read cursor
-  'fw27_ev_first']);   // product events: this device's first launch was reported (an install is per device)
+  'fw27_ev_first',     // product events: this device's first launch was reported (an install is per device)
+  'fw27_ref', 'fw27_refpaid', 'fw27_refnudge']);   // friend invites: this device's pending link / reports, the payout ids it granted, the nudge day
 const fsI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
 const fsDay = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
 const fsId = v => typeof v === 'string' && /^[a-z]{1,12}$/.test(v) && v !== 'constructor';
@@ -2701,7 +2833,8 @@ function showOver(){
   overTierStamp();   // the RP tier; a ranked result that moves it stamps again from setRp
   $('oPlace').textContent = ''; $('oTeams').hidden = true; $('oTitle').textContent = ''; $('oTitle').hidden = true; $('oTitle').style.color = '';   // no title on a normal result card (the old "SIGNAL LOST" read like a network error); versus fills and shows it
   $('over').hidden = false; vsFillOver(); if (mode === 'versus') vsResolve();
-  if (mode !== 'versus') submitScore(score, gatesPassed, mode, runDay);
+  if (mode !== 'versus'){ submitScore(score, gatesPassed, mode, runDay); writeQ.then(() => refSync(true)); }   // after the submit: the server reads the best it holds
+  refNudge(mode === 'daily' ? 'daily' : mode === 'endless' && nb && score > 0 ? 'best' : '');
   // rewards
   // coins: field coins (orbs picked up) + score coins (stage mode, per 50 score by tier); the unit's coin multiplier applies to both
   const inSt = mode === 'endless', xpGain = Math.round((gatesPassed + perfects*2 + Math.floor(score/10)) * PK.xpMul);
@@ -4649,7 +4782,7 @@ async function initSupabase(cfg){
     authSettings(cfg); testerCheck();
     lbState = 'online'; await refreshBoards();
     if (!lbPoll) lbPoll = setInterval(() => { if (!sb || document.hidden) return; if (fsDirty) cloudPush(); if (needSync) syncLocal(); if (lbOpen || state === 'over') refreshBoards(); if (lbOpen && lbTab === 'vs' && !$('lbScr').hidden) refreshVsBoard(); }, 20000);
-    syncLocal(); vsSync();   // RP is the server's: the cached value on this device is replaced as soon as we are online
+    syncLocal(); vsSync(); refSync(false);   // RP is the server's: the cached value on this device is replaced as soon as we are online
     authReturn(); renderAcct(); cloudPull();
   } catch(e){ sbOff(); }
 }
@@ -5024,7 +5157,7 @@ async function socRpc(fn, a){ let r = await vsRpc(fn, a); if (r.error && sbAuthE
 async function socSync(){ if (!sb || !uid) return false; const r = await socRpc('social_me'); if (r.error || !r.data) return false; SOC = socNorm(r.data); socReady = true; return true; }
 function frOpen(){
   $('frScr').hidden = false; lbOpen = true; $('frStatus').textContent = t('loading'); renderFr();
-  online().then(async () => { if (sb && await socSync()){ $('frStatus').textContent = ''; } else $('frStatus').textContent = t('offline'); renderFr(); });
+  online().then(async () => { if (sb && await socSync()){ $('frStatus').textContent = ''; } else $('frStatus').textContent = t('offline'); renderFr(); refLoad(); });
 }
 function frClose(){ $('frScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden || !$('vsScr').hidden; }
 async function frAct(fn, args, okKey){
@@ -5076,6 +5209,80 @@ $('frForm').addEventListener('submit', async e => {
   const v = fcNorm($('frIn').value); if (!fcOk(v)){ toast(t('frBad')); return; }
   if (await frAct('friend_request', {p_code: v}, 'frSent')) $('frIn').value = '';
 });
+/* ---------- friend invites (referral block above). Server: referral_link / referral_progress (the invited friend's device),
+   referral_me / referral_claim / referral_ack (the inviter's). The server decides every reward; this device only grants a payout id once.
+   Without a server session the invite box and the nudge stay hidden. ---------- */
+let refRec = refNorm(store.get('fw27_ref', null)), REF = null, refBusy = false;
+{ const c = refParse(location.search), q = refStrip(location.search);   // ?r=<code>: kept on this device until the first sign-in sends it
+  if (c){ refRec = refSeen(refRec, c, dayKey()); store.set('fw27_ref', refRec); }
+  if (q !== null) history.replaceState(null, '', location.pathname + q + location.hash); }   // the code does not travel on in shares or bookmarks
+// the invited friend's side: the pending link once (at sign-in), then after a finished run a progress report once a UTC day or when the stage reached went up
+async function refSync(run){
+  if (!sb || !uid || refBusy) return;
+  refBusy = true;
+  try {
+    const today = dayKey();
+    if (refLinkDue(refRec, today)){
+      const r = await socRpc('referral_link', {p_code: refRec.code});
+      const st = !r.error && r.data ? r.data.status : r.error && /fw_bad_input/.test(String(r.error.message || '')) ? 'unknown' : undefined;
+      refRec = refLinked(refRec, st); store.set('fw27_ref', refRec);
+      if (st === 'linked'){ toast(t('refLinked')); socSync(); }
+    }
+    const stage = stg.open + 1;
+    if (run && refReportDue(refRec, today, stage)){
+      const r = await socRpc('referral_progress', {p_stage: stage});
+      refRec = refReported(refRec, today, stage, !r.error && r.data ? r.data.status : undefined); store.set('fw27_ref', refRec);
+    }
+  } finally { refBusy = false; }
+}
+// the inviter's side: progress for the friends screen; anything payable is claimed, granted once per payout id, then acknowledged
+async function refLoad(){
+  const r = sb && uid ? await socRpc('referral_me') : {error: {}};
+  REF = r.error ? null : refView(r.data);
+  if (REF && (REF.ready || REF.payouts.length)) await refClaim();
+  renderRef();
+}
+async function refClaim(){
+  const r = await socRpc('referral_claim'); if (r.error || !r.data) return;
+  const pays = (refView({code: REF.code, payouts: r.data.payouts}) || {payouts: []}).payouts, paid = store.get('fw27_refpaid', []), g = refToGrant(pays, paid);
+  if (g.gems > 0){ W.gems += g.gems; saveW(); renderWallet(); toast(t('refGot', {n: g.gems})); SFX.fanfare(); }
+  store.set('fw27_refpaid', refPaidAdd(paid, pays.map(p => p.id)));   // granted (now, or before an answer got lost): only then acknowledged
+  for (const p of pays) await socRpc('referral_ack', {p_id: p.id});
+  const m = await socRpc('referral_me'); if (!m.error) REF = refView(m.data) || REF;
+}
+function renderRef(){
+  const v = REF; $('frRef').hidden = !v; if (!v) return;
+  $('frRefRule').textContent = t('refRule', {d: REF_CFG.days, s: REF_CFG.stage, g: REF_CFG.gems});
+  const ms = $('frRefMs'); ms.textContent = '';
+  for (const x of refMs(v.paid)){ const c = document.createElement('span'), i = document.createElement('i'); c.className = 'refchip' + (x.ok ? ' ok' : ''); i.className = 'ic gem'; c.append(`${x.n}/${x.m} · +${x.gems}`, i); ms.appendChild(c); }
+  $('frRefNote').textContent = t('refMonth', {n: v.month, m: v.cap}) + (v.held ? ' · ' + t('refHeld', {n: v.held}) : '');
+  const L = $('frRefList'); L.textContent = '';
+  if (!v.friends.length){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('refEmpty'); L.appendChild(li); return; }
+  for (const f of v.friends){
+    const li = document.createElement('li'), nm = document.createElement('span'), pg = document.createElement('span');
+    li.className = 'refrow'; nm.className = 'nm'; nm.textContent = showNick(f.nick) || '—'; pg.className = 'pg' + (f.done ? ' ok' : '');
+    pg.textContent = f.done ? t('refDone') : t('refFriend', {d: f.days, a: REF_CFG.days, s: f.stage, b: REF_CFG.stage});
+    li.append(nm, pg); L.appendChild(li);
+  }
+}
+async function refInvite(){
+  if (!sb || !uid){ toast(t('refOff')); return; }
+  if (!SOC.code) await socSync();
+  const code = (REF && REF.code) || SOC.code; if (!code){ toast(t('refOff')); return; }
+  const text = t('refShare', {u: refUrl(SHARE_URL, code)});
+  if (navigator.share){ try { await navigator.share({text}); toast(t('shared')); return; } catch (err){ if (err && err.name === 'AbortError') return; } }
+  try { await navigator.clipboard.writeText(text); toast(t('copied')); }
+  catch { prompt(t('shareManual'), text); }
+}
+// the result card: after a new best or a finished daily, once a UTC day, only with a server session; never in the way of retry
+function refNudge(why){
+  const el = $('oRef'); el.hidden = true;
+  if (!sb || !uid || !refNudgeDue(store.get('fw27_refnudge', ''), dayKey(), why)) return;
+  store.set('fw27_refnudge', dayKey()); el.hidden = false;
+}
+$('frRefGo').addEventListener('click', e => { e.stopPropagation(); SFX.click(); refInvite(); });
+$('oRefGo').addEventListener('click', e => { e.stopPropagation(); SFX.click(); $('oRef').hidden = true; refInvite(); });
+$('oRefX').addEventListener('click', e => { e.stopPropagation(); $('oRef').hidden = true; });
 /* friend alerts: the server feed is polled (visible 30 s / hidden 60 s); social_hello also keeps last_seen fresh.
    Display is routed by notifyRoute: master bell (fw27_push, default off) + per-kind checks (fw27_pushk). */
 const IS_ART = !!(window.claude && typeof window.claude.use === 'function');   // the claude.ai artifact shell
@@ -5866,7 +6073,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { cap: capOpts, cloud: {get rec(){ return fsRec; }, snap: () => fsSnap(store.get), pull: cloudPull, push: cloudPush, get dirty(){ return fsDirty; }}, vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear,
+if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { cap: capOpts, ref: {get rec(){ return refRec; }, get view(){ return REF; }, sync: refSync, load: refLoad, nudge: refNudge, show: d => { REF = refView(d); renderRef(); }}, cloud: {get rec(){ return fsRec; }, snap: () => fsSnap(store.get), pull: cloudPull, push: cloudPush, get dirty(){ return fsDirty; }}, vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear,
   soc: {notifyRoute, notifText, feedMerge, fcNorm, fcOk, fcFmt, socNorm, show: socShow, get on(){ return pushOn; }, get k(){ return pushK; }},
   eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   ev: {EV_CFG, get st(){ return evSt; }, flush: evFlush, get tok(){ return !!evTok; }},   // product events: the queue as it stands (QA: what a session produced)
