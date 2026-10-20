@@ -29,10 +29,27 @@ begin
 end $$;
 select has_function_privilege('authenticated', 'public.delete_me()', 'execute') as authenticated_can_call,
        has_function_privilege('anon', 'public.delete_me()', 'execute') as anon_can_call,
-       has_function_privilege('authenticated', 'private.fw_delete_me()', 'execute') as private_reachable_directly;
+       has_function_privilege('authenticated', 'private.fw_delete_me()', 'execute') as authenticated_can_run_private;
 do $$ begin
   if not has_function_privilege('authenticated', 'public.delete_me()', 'execute') then raise exception 'authenticated must be able to call delete_me'; end if;
   if has_function_privilege('anon', 'public.delete_me()', 'execute') then raise exception 'anon must not call delete_me'; end if;
-  if has_function_privilege('authenticated', 'private.fw_delete_me()', 'execute') then raise exception 'the private function must not be reachable directly'; end if;
+  if not has_function_privilege('authenticated', 'private.fw_delete_me()', 'execute') then raise exception 'the invoker wrapper needs execute on the private function (production answered 403 on 2026-10-20)'; end if;
+end $$;
+-- As the API role itself, not the superuser: the wrapper must delete end to end (this is what the 403 broke)
+insert into auth.users (id) values ('00000000-0000-4000-8000-0000000000d3');
+insert into public.fw_scores (player_id, nick, best) values ('00000000-0000-4000-8000-0000000000d3', 'gone too', 30);
+set role authenticated;
+do $$
+declare r boolean;
+begin
+  perform set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-0000000000d3', true);
+  r := public.delete_me(); if r is not true then raise exception 'as authenticated: the caller should read true'; end if;
+end $$;
+reset role;
+do $$
+declare n int;
+begin
+  select count(*) into n from auth.users where id = '00000000-0000-4000-8000-0000000000d3'; if n <> 0 then raise exception 'as authenticated: the auth row must be gone'; end if;
+  select count(*) into n from public.fw_scores where player_id = '00000000-0000-4000-8000-0000000000d3'; if n <> 0 then raise exception 'as authenticated: the score must cascade'; end if;
 end $$;
 select 'PASS delete-me.sql' as result;

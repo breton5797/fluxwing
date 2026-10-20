@@ -43,12 +43,27 @@ begin
 end $$;
 select has_function_privilege('authenticated', 'public.report_error(text, text, text, text, text, jsonb)', 'execute') as authenticated_can_call,
        has_function_privilege('anon', 'public.report_error(text, text, text, text, text, jsonb)', 'execute') as anon_can_call,
-       has_function_privilege('authenticated', 'private.fw_report_error(text, text, text, text, text, jsonb)', 'execute') as private_reachable_directly,
+       has_function_privilege('authenticated', 'private.fw_report_error(text, text, text, text, text, jsonb)', 'execute') as authenticated_can_run_private,
        has_table_privilege('authenticated', 'private.fw_client_errors', 'select') as authenticated_reads_table;
 do $$ begin
   if not has_function_privilege('authenticated', 'public.report_error(text, text, text, text, text, jsonb)', 'execute') then raise exception 'authenticated must be able to call report_error'; end if;
   if has_function_privilege('anon', 'public.report_error(text, text, text, text, text, jsonb)', 'execute') then raise exception 'anon must not call report_error'; end if;
-  if has_function_privilege('authenticated', 'private.fw_report_error(text, text, text, text, text, jsonb)', 'execute') then raise exception 'the private function must not be reachable directly'; end if;
+  if not has_function_privilege('authenticated', 'private.fw_report_error(text, text, text, text, text, jsonb)', 'execute') then raise exception 'the invoker wrapper needs execute on the private function (production answered 403 on 2026-10-20)'; end if;
   if has_table_privilege('authenticated', 'private.fw_client_errors', 'select') then raise exception 'the table must not be readable by the API roles'; end if;
+end $$;
+-- As the API role itself, not the superuser: the wrapper must store end to end (this is what the 403 broke)
+insert into auth.users (id) values ('00000000-0000-4000-8000-0000000000e3');
+set role authenticated;
+do $$
+declare r boolean;
+begin
+  perform set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-0000000000e3', true);
+  r := public.report_error('as authenticated', 'Error: x', 'L1', '/', 'ua', '{"state":"menu"}'::jsonb); if r is not true then raise exception 'as authenticated: a report must be stored'; end if;
+end $$;
+reset role;
+do $$
+declare n int;
+begin
+  select count(*) into n from private.fw_client_errors where player_id = '00000000-0000-4000-8000-0000000000e3' and msg = 'as authenticated'; if n <> 1 then raise exception 'as authenticated: the row must exist, got %', n; end if;
 end $$;
 select 'PASS errlog.sql' as result;

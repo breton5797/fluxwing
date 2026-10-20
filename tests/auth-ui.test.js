@@ -62,7 +62,7 @@ test('account deletion: a danger button on the signed-in card, a confirm, one rp
   assert.match(sql, /create or replace function public\.delete_me\(\) returns boolean/);
   assert.match(sql, /revoke all on function public\.delete_me\(\)\s+from public, anon/);
   assert.match(sql, /grant execute on function public\.delete_me\(\) to authenticated/);
-  assert.match(sql, /revoke all on function private\.fw_delete_me\(\)\s+from public, anon, authenticated/);
+  assert.match(sql, /grant execute on function private\.fw_delete_me\(\) to authenticated, service_role/, 'the invoker wrapper needs this (production 403 on 2026-10-20)');
   const priv = read('privacy.html');
   assert.ok(priv.includes('계정 삭제') && /Delete account/.test(priv), 'the privacy policy tells players about the in-game deletion');
 });
@@ -73,7 +73,7 @@ test('testers: a server-side flag (never the nickname), asked by the client, unl
   assert.match(sql, /create or replace function public\.tester_me\(\) returns boolean/);
   assert.match(sql, /revoke all on function public\.tester_me\(\)\s+from public, anon/);
   assert.match(sql, /grant execute on function public\.tester_me\(\) to authenticated/);
-  assert.match(sql, /revoke all on function private\.fw_tester_me\(\)\s+from public, anon, authenticated/);
+  assert.match(sql, /grant execute on function private\.fw_tester_me\(\) to authenticated, service_role/, 'the invoker wrapper needs this (production 403 on 2026-10-20)');
   assert.ok(html.includes("sbC.rpc('tester_me')"), 'client asks the server');
   assert.ok(html.includes('const isOwned = b => tester || !b.rarity || owned.has(b.id);'), 'tester flag gates ownership');
   assert.ok(html.includes('id="testerTag"'), 'a visible badge');
