@@ -35,3 +35,11 @@ test('the TWA manifest points the same package at https://swishby.com/', () => {
   assert.equal(twa.startUrl, '/');
   assert.ok(!String(twa.signingKey && twa.signingKey.path).includes('fluxwing'), 'keystore must live outside the repo');
 });
+
+// Play re-signs what it ships with the Play App Signing key (Play Console → App integrity), so installs from Play carry that
+// certificate, not the upload key's; without it the installed app falls back to a URL bar
+test('the Play App Signing key is listed next to the upload key', () => {
+  const fps = JSON.parse(read('.well-known/assetlinks.json')).find(l => l.target.package_name === PACKAGE).target.sha256_cert_fingerprints;
+  assert.ok(fps.includes('70:84:8D:B0:C2:CB:6E:9C:24:95:D2:B1:D2:37:34:FA:B8:B3:F7:F3:9C:91:E1:A7:2E:12:45:0C:04:8E:EF:53'), 'Play App Signing key missing');
+  assert.ok(fps.includes('BA:79:B4:CA:15:9C:3B:DD:CD:99:D3:EC:D3:81:AE:F7:84:05:5F:08:4A:BB:E8:B3:88:DA:F0:A4:A0:FE:1B:73'), 'upload key missing');
+});
