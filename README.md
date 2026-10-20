@@ -68,6 +68,7 @@ tests/                   node:test 스위트, tests/helpers/bot.js 자동 비행
 - **Apple 켜기**: Apple Developer 설정(부록 A-3) 완료 후 `index.html`의 `FW_CONFIG.auth.apple = true` 한 줄. 꺼져 있으면 버튼이 보이지 않는다.
 - **포털 빌드**(CrazyGames/Poki)에는 로그인 UI가 없다(판정: 포털은 외부 로그인 리다이렉트를 허용하지 않음). 리더보드용 익명 로그인은 그대로 동작한다.
 - **로그아웃**은 이 기기의 진행을 지우고 새 익명으로 시작한다(진행은 계정에 남음) — 다음에 다른 계정으로 로그인할 때 진행이 섞이지 않게 하기 위해서다.
+- **계정 삭제**는 계정 화면의 빨간 버튼 → 게임 안 확인 창 → `public.delete_me()` 한 번이다. 서버는 `auth.users` 행만 지우고 모든 게임 테이블이 cascade로 따라간다(익명화 없음). 운영 DB에는 `supabase/schema.sql`의 ACCOUNT DELETION 블록을 한 번 적용한다. 리허설: `bash supabase/rehearsal/run.sh supabase/rehearsal/delete-me.sql`.
 
 ### Apple 로그인 켜기
 

@@ -45,6 +45,28 @@ test('every language has the new sign-in strings and the tester notice', () => {
   }
 });
 
+test('account deletion: a danger button on the signed-in card, a confirm, one rpc that drops the auth.users row (everything cascades)', () => {
+  const sheet = html.slice(html.indexOf('id="authScr"'), html.indexOf('id="lbScr"'));
+  assert.match(sheet, /id="authOutBox"[\s\S]*<button class="ghost danger" id="authDelBtn" data-i18n="authDel"><\/button>/, 'the delete button sits on the signed-in card, after sign-out');
+  assert.match(html, /\.ghost\.danger\{/);
+  assert.match(html, /\$\('authDelBtn'\)\.addEventListener\('click'[^\n]*confirmDlg\(t\('authDelQ'\), authDelete\)/, 'the in-game confirm, never window.confirm');
+  assert.ok(html.includes("sbC.rpc('delete_me')"), 'one server call');
+  assert.ok(!/window\.confirm\(/.test(html.slice(html.indexOf('async function authDelete'), html.indexOf('async function authDelete') + 800)));
+  const I = loadI18N();
+  for (const l of LANGS) for (const k of ['authDel', 'authDelQ', 'authDelGo', 'authDelDone', 'authDelFail']) {
+    assert.ok(typeof I[l][k] === 'string' && I[l][k].length > 2, `${l}.${k}`);
+    if (l !== 'en') assert.notEqual(I[l][k], I.en[k], `${l}.${k} still reads as the English`);
+  }
+  assert.match(sql, /create or replace function private\.fw_delete_me\(\) returns boolean/);
+  assert.match(sql, /delete from auth\.users u where u\.id = v_uid/);
+  assert.match(sql, /create or replace function public\.delete_me\(\) returns boolean/);
+  assert.match(sql, /revoke all on function public\.delete_me\(\)\s+from public, anon/);
+  assert.match(sql, /grant execute on function public\.delete_me\(\) to authenticated/);
+  assert.match(sql, /revoke all on function private\.fw_delete_me\(\)\s+from public, anon, authenticated/);
+  const priv = read('privacy.html');
+  assert.ok(priv.includes('계정 삭제') && /Delete account/.test(priv), 'the privacy policy tells players about the in-game deletion');
+});
+
 test('testers: a server-side flag (never the nickname), asked by the client, unlocking every released unit', () => {
   assert.match(sql, /create table if not exists private\.fw_testers \(/);
   assert.match(sql, /create or replace function private\.fw_tester_me\(\) returns boolean/);
