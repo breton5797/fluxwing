@@ -274,6 +274,23 @@ export const CAPTIONS = {
     versus: ['和好友实时对战', '1v1、2v2 和 4 人混战'],
   },
 };
+// Store locales that share the game's language but not its wording: Play lists es-ES and pt-PT next to es-419 and pt-BR.
+// Their screenshots run the es / pt game under European captions (tu-forms in pt-PT, "en directo" in Spain).
+export const STORE_VARIANTS = { 'es-ES': 'es', 'pt-PT': 'pt' };
+export const gameLang = l => STORE_VARIANTS[l] || l;
+CAPTIONS['es-ES'] = {
+  ...CAPTIONS.es,
+  roster: ['20 unidades, 20 habilidades', 'Encuentra la que encaja con tu estilo'],
+  versus: ['Compite con tus amigos en directo', '1 contra 1, 2 contra 2 y todos contra todos'],
+};
+CAPTIONS['pt-PT'] = {
+  title: ['Um toque. Fluxo puro.', 'Grátis e já, no teu navegador'],
+  combo: ['Roça os portões. Encadeia o combo.', 'Quanto mais perto, mais pontos'],
+  dash: ['Enche a barra. Atravessa paredes.', 'Entra em FEBRE: pontos a dobrar'],
+  roster: ['20 unidades, 20 habilidades', 'Encontra a que combina com o teu estilo'],
+  daily: ['Um percurso novo todos os dias', 'O mesmo desafio para o mundo inteiro'],
+  versus: ['Corre contra amigos em direto', '1x1, 2x2 e todos contra todos'],
+};
 
 /** mulberry32: the same small seeded generator the game uses. */
 export function mulberry32(a) {

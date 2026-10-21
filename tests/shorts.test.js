@@ -1,7 +1,7 @@
 // scripts/marketing-copy.mjs: the hook / caption tables and the clip plan behind scripts/shorts.mjs and scripts/store-shots.mjs.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { LANGS, SCENES, SCENE_ORDER, HOOKS, END_LINE, END_BEAT, SHOTS, CAPTIONS, scenePlan, hookFor, fill, parseArgs, sceneOk, clipLen, zoneOf, mulberry32 } from '../scripts/marketing-copy.mjs';
+import { LANGS, STORE_VARIANTS, gameLang, SCENES, SCENE_ORDER, HOOKS, END_LINE, END_BEAT, SHOTS, CAPTIONS, scenePlan, hookFor, fill, parseArgs, sceneOk, clipLen, zoneOf, mulberry32 } from '../scripts/marketing-copy.mjs';
 
 const FLYABLE = ['volt', 'blitz', 'nimbus', 'titan', 'mochi', 'aegis', 'phoenix', 'zero', 'pixel', 'neko', 'buzz', 'kraken', 'specter', 'oracle', 'raijin', 'chrono', 'goliath', 'solaris', 'pulsar'];
 
@@ -28,6 +28,22 @@ test('store captions: six shots, a headline and a sub line in each language', ()
     if (l !== 'en') assert.notEqual(head, CAPTIONS.en[s][0]);
   }
   assert.equal(CAPTIONS.en.combo[0], 'Skim the gates. Chain the combo.');
+});
+
+test('store variants es-ES / pt-PT: European captions over the es / pt game, each one its own wording', () => {
+  assert.deepEqual(Object.keys(STORE_VARIANTS), ['es-ES', 'pt-PT']);
+  assert.equal(gameLang('es-ES'), 'es'); assert.equal(gameLang('pt-PT'), 'pt'); assert.equal(gameLang('ja'), 'ja');
+  for (const v of Object.keys(STORE_VARIANTS)) {
+    const base = gameLang(v);
+    for (const s of SHOTS) {
+      const [head, sub] = CAPTIONS[v][s];
+      assert.ok(head && sub && head.length <= 46, `${v}/${s}`);
+    }
+    const differ = SHOTS.filter(s => CAPTIONS[v][s].join() !== CAPTIONS[base][s].join());
+    assert.ok(differ.length >= (v === 'pt-PT' ? 5 : 2), `${v}: ${differ.length} shots differ from ${base}`);
+  }
+  assert.doesNotMatch(Object.values(CAPTIONS['pt-PT']).flat().join(' '), /\bpro\b|\bvocê|Ache\b|Raspe\b/, 'no Brazilian forms');
+  assert.doesNotMatch(Object.values(CAPTIONS['es-ES']).flat().join(' '), /en vivo/, 'Spain says en directo');
 });
 
 test('hookFor fills the score and zone, cycles the list, and falls back to English', () => {

@@ -1,12 +1,12 @@
 // Localized store screenshots from real autopilot play, with a caption band on top.
-//   node scripts/store-shots.mjs [--langs=en,ja,es,pt,id,ko] [--platforms=play,iphone69] [--out=dir] [--port=5173] [--seed=2027] [--only=title,combo]
+//   node scripts/store-shots.mjs [--langs=en,ja,es,pt,id,ko,es-ES,pt-PT] [--platforms=play,iphone69] [--out=dir] [--port=5173] [--seed=2027] [--only=title,combo]
 // Output: <out>/<lang>/<platform>/NN-name.png. play: 1080x1920 (Google Play phone) · iphone69: 1320x2868 (iPhone 6.9").
 // Default out: marketing/out/store/. Starts scripts/serve.mjs on --port unless a server is already there. *.supabase.co is never reached.
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, ensureServer, openGame, startRun, play } from './marketing-kit.mjs';
-import { SHOTS, CAPTIONS, LANGS, parseArgs } from './marketing-copy.mjs';
+import { SHOTS, CAPTIONS, LANGS, STORE_VARIANTS, gameLang, parseArgs } from './marketing-copy.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const opt = parseArgs(process.argv.slice(2), { langs: 'en,ja,es,pt,id,ko', platforms: 'play,iphone69', out: '', port: Number(process.env.PORT) || 5173, seed: 2027, only: '' });
@@ -47,7 +47,7 @@ async function playTo(page, sc) {
 async function rosterShot(browser, lang, plat, units, path) {
   const { w, h } = PLATFORMS[plat].game, cards = [];
   for (const unit of units) {
-    const g = await openGame(browser, { port: opt.port, w, h, dsf: 2, zoom: 1.5, lang, hideHud: true, storage: { ...PROFILE, fw27_bird: unit } });
+    const g = await openGame(browser, { port: opt.port, w, h, dsf: 2, zoom: 1.5, lang: gameLang(lang), hideHud: true, storage: { ...PROFILE, fw27_bird: unit } });
     // the card at its full height: on the title screen its text box scrolls to leave room for the buttons
     await g.page.addStyleTag({ content: '#hangar,#hangar .hg-info{flex:none!important;max-height:none!important;height:auto!important;overflow:visible!important}#hangar .hg-passive{display:block!important}' });
     await g.page.waitForTimeout(900);
@@ -68,7 +68,7 @@ async function gameShot(browser, lang, plat, name, path) {
   if (sc.cards) return rosterShot(browser, lang, plat, sc.cards, path);
   for (let attempt = 0; attempt < 12; attempt++) {
     const seed = opt.seed + attempt * 101 + SHOTS.indexOf(name);
-    const g = await openGame(browser, { port: opt.port, w, h, dsf: 2, zoom: 1.5, lang, seed, hideHud: true, storage: { ...PROFILE, fw27_bird: sc.unit } });
+    const g = await openGame(browser, { port: opt.port, w, h, dsf: 2, zoom: 1.5, lang: gameLang(lang), seed, hideHud: true, storage: { ...PROFILE, fw27_bird: sc.unit } });
     let ok = true;
     if (sc.go) await sc.go(g.page);
     else if (sc.versus) {
@@ -117,7 +117,7 @@ async function compose(browser, lang, plat, name, raw, path) {
 }
 
 const langs = opt.langs.split(','), plats = opt.platforms.split(','), only = opt.only ? opt.only.split(',') : SHOTS;
-for (const l of langs) if (!LANGS.includes(l)) { console.error(`unknown lang ${l}`); process.exit(1); }
+for (const l of langs) if (!LANGS.includes(l) && !STORE_VARIANTS[l]) { console.error(`unknown lang ${l}`); process.exit(1); }
 for (const p of plats) if (!PLATFORMS[p]) { console.error(`unknown platform ${p}`); process.exit(1); }
 const stop = await ensureServer(opt.port);
 const browser = await chromium.launch();
