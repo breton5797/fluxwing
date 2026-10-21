@@ -6,7 +6,7 @@ import { LANGS, SCENES, SCENE_ORDER, HOOKS, END_LINE, END_BEAT, SHOTS, CAPTIONS,
 const FLYABLE = ['volt', 'blitz', 'nimbus', 'titan', 'mochi', 'aegis', 'phoenix', 'zero', 'pixel', 'neko', 'buzz', 'kraken', 'specter', 'oracle', 'raijin', 'chrono', 'goliath', 'solaris', 'pulsar'];
 
 test('every language has a hook for every scene, an end line and a challenge line', () => {
-  assert.deepEqual(LANGS, ['en', 'ko', 'ja', 'es', 'pt', 'id']);
+  assert.deepEqual(LANGS, ['en', 'ko', 'ja', 'es', 'pt', 'id', 'fr', 'de', 'vi', 'th', 'hi', 'zh']);
   assert.deepEqual([...SCENE_ORDER].sort(), Object.keys(SCENES).sort());
   for (const l of LANGS) {
     assert.deepEqual(Object.keys(HOOKS[l]).sort(), [...SCENE_ORDER].sort(), l);
@@ -35,7 +35,7 @@ test('hookFor fills the score and zone, cycles the list, and falls back to Engli
   assert.equal(hookFor('ko', 'beat', 0, { n: 87 }), '87점, 이길 수 있어?');
   assert.equal(hookFor('en', 'zone', 0, { z: 3 }), 'Zone 3. It only gets faster.');
   assert.equal(hookFor('en', 'combo', 3), hookFor('en', 'combo', 0));
-  assert.equal(hookFor('fr', 'dash', 0), HOOKS.en.dash[0]);
+  assert.equal(hookFor('xx', 'dash', 0), HOOKS.en.dash[0]);
   assert.throws(() => hookFor('en', 'nope', 0));
   assert.equal(fill('{a}-{b}', { a: 1 }), '1-{b}');
 });

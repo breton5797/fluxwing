@@ -97,7 +97,7 @@ function frameHtml(lang, [W, H], [head, sub], shot) {
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&display=block" rel="stylesheet">
 <style>html,body{margin:0;width:${cw}px;height:${ch}px;overflow:hidden}
-body{background:radial-gradient(90% 60% at 50% 0%,#5a1772 0%,#250b3f 45%,#0d0618 100%);font-family:"Chakra Petch","Hiragino Sans","Apple SD Gothic Neo",system-ui,sans-serif;color:#fff}
+body{background:radial-gradient(90% 60% at 50% 0%,#5a1772 0%,#250b3f 45%,#0d0618 100%);font-family:"Chakra Petch","Hiragino Sans","Apple SD Gothic Neo","PingFang SC","Thonburi","Kohinoor Devanagari","Noto Sans SC","Noto Sans Thai","Noto Sans Devanagari",system-ui,sans-serif;color:#fff}
 .band{height:${band}px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 ${Math.round(cw * .06)}px;box-sizing:border-box;gap:${Math.round(band * .05)}px}
 h1{margin:0;font-weight:700;font-size:${Math.round(cw * .083)}px;line-height:1.08;letter-spacing:-.01em;text-shadow:0 3px 0 rgba(0,0,0,.35),0 0 26px rgba(255,61,139,.55)}
 p{margin:0;font-weight:600;font-size:${Math.round(cw * .045)}px;color:#7ff3ff;opacity:.95}

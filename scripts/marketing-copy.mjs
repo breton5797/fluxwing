@@ -1,7 +1,7 @@
 // Copy and plans for the marketing scripts: short-video hooks, end-card lines, store captions, the clip plan.
 // Pure (no browser, no files) so tests/shorts.test.js can cover it.
 
-export const LANGS = ['en', 'ko', 'ja', 'es', 'pt', 'id'];
+export const LANGS = ['en', 'ko', 'ja', 'es', 'pt', 'id', 'fr', 'de', 'vi', 'th', 'hi', 'zh'];
 
 // Scenes a short can show. units / stages are pools the plan rotates through (stage is 0-based; 12 / 27 / 42 sit in zones 2 / 3 / 4).
 // len: seconds of footage before the end card. edge: how tight the autopilot rides a gate's lower edge (px, default 12). want: what a dry run must show before the clip is recorded (see sceneOk).
@@ -94,11 +94,85 @@ export const HOOKS = {
     ult: ['Ultimate siap. Lihat ini.', 'Begini rasanya ULT'],
     beat: ['Bisa kalahkan {n}?', 'Kalahkan {n}. Berani?'],
   },
+  fr: {
+    combo: ['Frôlez le bord. Gardez le combo.', 'Jusqu\'où oserez-vous frôler ?', 'Chaque frôlement rapporte'],
+    fever: ['Enchaînez et tout PREND FEU', 'FIÈVRE = points doublés'],
+    dash: ['Jauge pleine ? Traversez tout.', 'Les murs sont facultatifs'],
+    save: ['C\'était BEAUCOUP trop juste', 'Un bouclier. Une seconde.'],
+    record: ['Regardez le record tomber', 'Nouveau record en approche...'],
+    daily: ['Le même parcours pour le monde entier', 'Le défi du jour. À vous.'],
+    zone: ['Zone {z}. Ça ne fait qu\'accélérer.', 'Bienvenue en zone {z}'],
+    skill: ['Chaque unité a sa botte secrète', 'Attendez la compétence...'],
+    ult: ['Ultime prête. Regardez ça.', 'Voilà à quoi ressemble un ULTIME'],
+    beat: ['Vous battez {n} ?', 'Battez {n}. Chiche ?'],
+  },
+  de: {
+    combo: ['Kante streifen. Combo halten.', 'Wie knapp traust du dich?', 'Jeder Beinahe-Treffer zählt'],
+    fever: ['Ketten, bis es BRENNT', 'FIEBER = doppelte Punkte'],
+    dash: ['Leiste voll? Einfach durch.', 'Wände sind optional'],
+    save: ['Das war VIEL zu knapp', 'Ein Schild. Eine Sekunde.'],
+    record: ['Gleich fällt der Rekord', 'Neuer Bestwert im Anflug...'],
+    daily: ['Heute fliegt die ganze Welt dieselbe Strecke', 'Die Tages-Challenge. Du bist dran.'],
+    zone: ['Zone {z}. Ab hier wird es schneller.', 'Willkommen in Zone {z}'],
+    skill: ['Jede Einheit hat ihren eigenen Trick', 'Warte auf den Skill...'],
+    ult: ['Ultimate bereit. Schau her.', 'So sieht ein ULT aus'],
+    beat: ['Schaffst du mehr als {n}?', 'Schlag {n}. Trau dich.'],
+  },
+  vi: {
+    combo: ['Bay sát mép. Giữ combo.', 'Bạn dám bay sát đến mức nào?', 'Mỗi lần suýt chạm là có điểm'],
+    fever: ['Nối chuỗi là BÙNG CHÁY', 'CƠN SỐT = nhân đôi điểm'],
+    dash: ['Đầy thanh? Lướt thẳng qua.', 'Tường chỉ để trang trí'],
+    save: ['Vừa rồi SUÝT nữa thì toang', 'Một khiên. Một giây.'],
+    record: ['Xem kỷ lục bị phá', 'Sắp có kỷ lục mới...'],
+    daily: ['Hôm nay cả thế giới chung một đường bay', 'Thử thách hôm nay. Đến lượt bạn.'],
+    zone: ['Khu {z}. Càng lúc càng nhanh.', 'Chào mừng đến khu {z}'],
+    skill: ['Mỗi chiến cơ một chiêu riêng', 'Chờ kỹ năng nhé...'],
+    ult: ['Tuyệt chiêu sẵn sàng. Xem này.', 'ULT trông như thế này đây'],
+    beat: ['Vượt được {n} không?', 'Vượt {n} đi. Dám không?'],
+  },
+  th: {
+    combo: ['เฉียดขอบ รักษาคอมโบ', 'กล้าเฉียดได้แค่ไหน?', 'เฉียดทุกครั้งได้แต้ม'],
+    fever: ['ต่อคอมโบจนไฟลุก', 'FEVER = แต้มคูณสอง'],
+    dash: ['เกจเต็มแล้ว? ทะลุไปเลย', 'กำแพงไม่ใช่ปัญหา'],
+    save: ['เมื่อกี้เฉียดฉิวสุดๆ', 'โล่เดียว รอดในวินาทีเดียว'],
+    record: ['ดูสถิติถูกทำลาย', 'สถิติใหม่กำลังมา...'],
+    daily: ['วันนี้ทั้งโลกบินด่านเดียวกัน', 'ชาเลนจ์วันนี้ ตาคุณแล้ว'],
+    zone: ['โซน {z} ยิ่งไปยิ่งเร็ว', 'ยินดีต้อนรับสู่โซน {z}'],
+    skill: ['ทุกยูนิตมีไม้ตายของตัวเอง', 'รอดูสกิล...'],
+    ult: ['อัลติพร้อมแล้ว ดูนี่', 'นี่แหละอัลติเมต'],
+    beat: ['ทำได้เกิน {n} ไหม?', 'เกิน {n} ให้ได้ กล้าไหม?'],
+  },
+  hi: {
+    combo: ['किनारे से सटकर निकलें, कॉम्बो बनाए रखें', 'कितने करीब से निकल सकते हैं?', 'हर नियर-मिस पर पॉइंट'],
+    fever: ['कॉम्बो जोड़ते जाएँ और आग लगा दें', 'FEVER = डबल पॉइंट'],
+    dash: ['मीटर फुल? सीधे पार निकलें', 'दीवारें बस नाम की हैं'],
+    save: ['ये तो बाल-बाल बचे', 'एक शील्ड। एक सेकंड।'],
+    record: ['देखिए रिकॉर्ड टूटते हुए', 'नया बेस्ट आने वाला है...'],
+    daily: ['आज पूरी दुनिया का एक ही कोर्स', 'आज का डेली चैलेंज। आपकी बारी।'],
+    zone: ['ज़ोन {z}। यहाँ से रफ़्तार और तेज़।', 'ज़ोन {z} में स्वागत है'],
+    skill: ['हर यूनिट की अपनी खास चाल', 'स्किल का इंतज़ार करें...'],
+    ult: ['अल्टीमेट तैयार। ये देखिए।', 'ऐसा दिखता है ULT'],
+    beat: ['क्या आप {n} से आगे जा सकते हैं?', '{n} को हराकर दिखाइए'],
+  },
+  zh: {
+    combo: ['擦边飞过，连击不断', '你敢贴多近？', '每次擦边都有分'],
+    fever: ['连击不断，直接燃起来', '狂热时刻 = 双倍得分'],
+    dash: ['能量满了？直接冲过去', '墙壁只是摆设'],
+    save: ['刚才真的太险了', '一面护盾，一秒生还'],
+    record: ['看纪录被刷新', '新纪录马上就来...'],
+    daily: ['今天全世界同一条赛道', '今日挑战，轮到你了'],
+    zone: ['区域{z}，越飞越快', '欢迎来到区域{z}'],
+    skill: ['每台机体都有独门绝技', '等技能放出来...'],
+    ult: ['大招就绪，看好了', '这就是大招'],
+    beat: ['你能超过{n}分吗？', '超过{n}分，敢来吗？'],
+  },
 };
 
 // End card (last 1.5 s): the line under the logo, and the challenge line on a "beat" clip.
-export const END_LINE = { en: 'Play free at swishby.com', ko: '무료로 플레이 · swishby.com', ja: '無料でプレイ · swishby.com', es: 'Juega gratis en swishby.com', pt: 'Jogue grátis em swishby.com', id: 'Main gratis di swishby.com' };
-export const END_BEAT = { en: 'Your turn: beat {n}', ko: '이제 네 차례: {n}점', ja: '次は君の番: {n}点', es: 'Te toca: supera {n}', pt: 'Sua vez: passe de {n}', id: 'Giliranmu: kalahkan {n}' };
+export const END_LINE = { en: 'Play free at swishby.com', ko: '무료로 플레이 · swishby.com', ja: '無料でプレイ · swishby.com', es: 'Juega gratis en swishby.com', pt: 'Jogue grátis em swishby.com', id: 'Main gratis di swishby.com',
+  fr: 'Jouez gratuitement sur swishby.com', de: 'Kostenlos spielen auf swishby.com', vi: 'Chơi miễn phí tại swishby.com', th: 'เล่นฟรีที่ swishby.com', hi: 'swishby.com पर मुफ़्त खेलें', zh: '免费畅玩 · swishby.com' };
+export const END_BEAT = { en: 'Your turn: beat {n}', ko: '이제 네 차례: {n}점', ja: '次は君の番: {n}点', es: 'Te toca: supera {n}', pt: 'Sua vez: passe de {n}', id: 'Giliranmu: kalahkan {n}',
+  fr: 'À vous : battez {n}', de: 'Du bist dran: schlag {n}', vi: 'Đến lượt bạn: vượt {n}', th: 'ตาคุณแล้ว: ทำให้เกิน {n}', hi: 'अब आपकी बारी: {n} को हराएँ', zh: '轮到你了：超过{n}分' };
 
 // Store screenshots: six shots in this order, each with a big caption line and a short sub line.
 export const SHOTS = ['title', 'combo', 'dash', 'roster', 'daily', 'versus'];
@@ -150,6 +224,54 @@ export const CAPTIONS = {
     roster: ['20 unit, 20 skill', 'Temukan yang cocok dengan gayamu'],
     daily: ['Rute baru setiap hari', 'Satu tantangan untuk seluruh dunia'],
     versus: ['Balapan langsung dengan teman', '1v1, 2v2, dan 4 pemain bebas'],
+  },
+  fr: {
+    title: ['Un tap. Fluidité totale.', 'Gratuit, directement dans le navigateur'],
+    combo: ['Frôlez les portes. Enchaînez les combos.', 'Plus c\'est juste, plus ça rapporte'],
+    dash: ['Remplissez la jauge. Traversez les murs.', 'Passez en FIÈVRE : points doublés'],
+    roster: ['20 unités, 20 compétences', 'Trouvez celle qui colle à votre style'],
+    daily: ['Un nouveau parcours chaque jour', 'Le même défi pour le monde entier'],
+    versus: ['Affrontez vos amis en direct', '1v1, 2v2 et chacun pour soi à 4'],
+  },
+  de: {
+    title: ['Ein Tipp. Purer Flow.', 'Kostenlos, direkt im Browser'],
+    combo: ['Tore streifen. Combos ketten.', 'Je knapper, desto mehr Punkte'],
+    dash: ['Leiste füllen. Durch Wände dashen.', 'Im FIEBER gibt es doppelte Punkte'],
+    roster: ['20 Einheiten, 20 Skills', 'Finde die, die zu deinem Stil passt'],
+    daily: ['Jeden Tag eine neue Strecke', 'Dieselbe Strecke für die ganze Welt'],
+    versus: ['Tritt live gegen Freunde an', '1v1, 2v2 und Jeder gegen jeden zu viert'],
+  },
+  vi: {
+    title: ['Một chạm. Bay thật mượt.', 'Miễn phí, chơi ngay trên trình duyệt'],
+    combo: ['Bay sát cổng. Nối dài combo.', 'Càng sát, điểm càng cao'],
+    dash: ['Nạp đầy thanh. Lướt xuyên tường.', 'Vào CƠN SỐT để nhân đôi điểm'],
+    roster: ['20 chiến cơ, 20 chiêu', 'Tìm chiếc hợp với lối chơi của bạn'],
+    daily: ['Mỗi ngày một đường bay mới', 'Cả thế giới cùng một thử thách'],
+    versus: ['Đua trực tiếp cùng bạn bè', '1v1, 2v2 và đấu tự do 4 người'],
+  },
+  th: {
+    title: ['แตะเดียว ลื่นไหลสุดๆ', 'เล่นฟรี ได้ทันทีบนเบราว์เซอร์'],
+    combo: ['เฉียดเกต ต่อคอมโบ', 'ยิ่งเฉียด ยิ่งได้แต้มเยอะ'],
+    dash: ['เติมเกจ แดชทะลุกำแพง', 'เข้า FEVER รับแต้มคูณสอง'],
+    roster: ['20 ยูนิต 20 สกิล', 'หาตัวที่ใช่กับสไตล์ของคุณ'],
+    daily: ['ด่านใหม่ทุกวัน', 'ทั้งโลกบินด่านเดียวกัน'],
+    versus: ['แข่งสดกับเพื่อน', '1v1, 2v2 และตัวใครตัวมัน 4 คน'],
+  },
+  hi: {
+    title: ['एक टैप। पूरा फ़्लो।', 'मुफ़्त, सीधे ब्राउज़र में'],
+    combo: ['सटकर निकलें, कॉम्बो जोड़ें', 'जितना करीब, उतने ज़्यादा पॉइंट'],
+    dash: ['मीटर भरें, दीवार पार करें', 'FEVER में पॉइंट डबल'],
+    roster: ['20 यूनिट, 20 स्किल', 'अपने स्टाइल वाली यूनिट चुनें'],
+    daily: ['हर दिन नया कोर्स', 'पूरी दुनिया के लिए एक ही रन'],
+    versus: ['दोस्तों से लाइव रेस', '1v1, 2v2 और 4 खिलाड़ियों का फ़्री-फ़ॉर-ऑल'],
+  },
+  zh: {
+    title: ['一键操作，畅快飞行', '免费游玩，浏览器即开即玩'],
+    combo: ['擦边过关，连击不断', '贴得越近，分数越高'],
+    dash: ['攒满能量，冲刺破墙', '进入狂热时刻，得分翻倍'],
+    roster: ['20台机体，20种技能', '找到最适合你风格的那台'],
+    daily: ['每天一条新赛道', '全世界挑战同一条赛道'],
+    versus: ['和好友实时对战', '1v1、2v2 和 4 人混战'],
   },
 };
 
