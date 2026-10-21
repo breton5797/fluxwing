@@ -1836,7 +1836,7 @@ grant execute on function public.tester_me() to authenticated;
 -- ---------- ACCOUNT DELETION: the player deletes their own account from the game ----------
 -- Privacy law wants a way to withdraw. The client's "계정 삭제" calls public.delete_me(): one delete of the caller's
 -- auth.users row, and every game table (fw_scores, fw_saves, fw_versus, fw_vs_part, fw_vs_standing, fw_social,
--- fw_friends, fw_friend_req, fw_social_feed, fw_testers, fw_events, fw_referrals, fw_ref_inviter, fw_ref_payouts, fw_reports) references
+-- fw_friends, fw_friend_req, fw_social_feed, fw_testers, fw_events, fw_referrals, fw_ref_inviter, fw_ref_payouts, fw_reports, fw_push) references
 -- auth.users (id) on delete cascade, as do the auth schema's own identities/sessions/refresh tokens. Nothing is anonymised or kept. A guest has no account to delete
 -- (the client never offers it); a call without a user does nothing and returns false.
 create or replace function private.fw_delete_me() returns boolean
@@ -2284,3 +2284,113 @@ revoke all on function private.fw_report(uuid, text, text, text)  from public, a
 grant execute on function private.fw_report(uuid, text, text, text) to authenticated, service_role;   -- the invoker wrapper runs it as the caller; the private schema is not exposed by the API
 revoke all on function public.report_player(uuid, text, text, text) from public, anon;
 grant execute on function public.report_player(uuid, text, text, text) to authenticated;
+-- =====================================================================================================
+-- PUSH — friend alerts as iOS push notifications (the app: ios/App, Capacitor PushNotifications). While its alerts are on, the app
+-- registers the APNs device token with the kinds it keeps on and its language (push_register); turning alerts off removes it
+-- (push_unregister). A token is one device: registering it again moves it to the caller (a reinstall, another account), and a player
+-- keeps at most 5 (the oldest go). A new feed row (fw_social_feed, above) wakes the push-send edge function through pg_net with
+-- everything it needs, only for the recipient's devices that keep that kind on; the function sends to APNs and hands dead tokens to
+-- push_drop (service role only). The hook needs pg_net and two vault secrets (push_hook_url = the function URL, push_hook_secret =
+-- the function's PUSH_HOOK_SECRET); without them it does nothing, and it never blocks the feed. Set them as the database owner:
+--   select vault.create_secret('https://<ref>.supabase.co/functions/v1/push-send', 'push_hook_url');
+--   select vault.create_secret('<random 32+ chars>', 'push_hook_secret');
+-- Deleting the account deletes its tokens (on delete cascade).
+-- =====================================================================================================
+create table if not exists private.fw_push (
+  token      text        primary key,
+  player_id  uuid        not null references auth.users (id) on delete cascade,
+  kinds      jsonb       not null default '{"on": true, "best": true}'::jsonb,
+  lang       text        not null default 'en',
+  updated_at timestamptz not null default now(),
+  constraint fw_push_token_chk check (token ~ '^[0-9a-f]{64,200}$'),
+  constraint fw_push_lang_chk  check (lang ~ '^[a-z]{2}$')
+);
+create index if not exists fw_push_player_idx on private.fw_push (player_id, updated_at);
+alter table private.fw_push enable row level security;   -- no policy: the schema is not exposed, the functions below write it
+revoke all on table private.fw_push from public, anon, authenticated;
+grant select, insert, update, delete on table private.fw_push to service_role;
+
+create or replace function private.fw_push_register(p_token text, p_kinds jsonb, p_lang text) returns boolean
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_me uuid := (select auth.uid());
+  v_kinds jsonb := jsonb_build_object('on', coalesce(p_kinds -> 'on', 'true'::jsonb) <> 'false'::jsonb,
+                                      'best', coalesce(p_kinds -> 'best', 'true'::jsonb) <> 'false'::jsonb);
+  v_lang text := case when coalesce(p_lang, '') ~ '^[a-z]{2}$' then p_lang else 'en' end;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if coalesce(p_token, '') !~ '^[0-9a-f]{64,200}$' then raise exception 'fw_bad_input: device token' using errcode = 'P0001'; end if;
+  insert into private.fw_push (token, player_id, kinds, lang, updated_at) values (p_token, v_me, v_kinds, v_lang, clock_timestamp())
+  on conflict (token) do update set player_id = excluded.player_id, kinds = excluded.kinds, lang = excluded.lang, updated_at = excluded.updated_at;
+  delete from private.fw_push p where p.player_id = v_me and p.token in
+    (select q.token from private.fw_push q where q.player_id = v_me order by q.updated_at desc offset 5);
+  return true;
+end $$;
+
+create or replace function private.fw_push_unregister(p_token text) returns boolean
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := (select auth.uid());
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  delete from private.fw_push p where p.token = p_token and p.player_id = v_me;
+  return found;
+end $$;
+
+create or replace function private.fw_push_drop(p_tokens text[]) returns integer
+language plpgsql security definer set search_path = '' as $$
+declare v_n int;
+begin
+  delete from private.fw_push p where p.token = any (p_tokens);
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+
+create or replace function private.fw_push_hook() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare v_url text; v_secret text; v_body jsonb;
+begin
+  if not exists (select 1 from private.fw_push p where p.player_id = new.to_id) then return null; end if;
+  if to_regproc('net.http_post') is null or to_regclass('vault.decrypted_secrets') is null then return null; end if;
+  begin
+    execute 'select decrypted_secret from vault.decrypted_secrets where name = $1' into v_url using 'push_hook_url';
+    execute 'select decrypted_secret from vault.decrypted_secrets where name = $1' into v_secret using 'push_hook_secret';
+    if v_url is null or v_secret is null then return null; end if;
+    select jsonb_build_object('kind', new.kind, 'val', new.val,
+             'nick', coalesce((select s.nick from public.fw_scores s where s.player_id = new.from_id),
+                              (select v.nick from public.fw_versus v where v.player_id = new.from_id), 'Pilot'),
+             'devices', coalesce(jsonb_agg(jsonb_build_object('token', p.token, 'lang', p.lang)), '[]'::jsonb))
+      into v_body
+    from private.fw_push p
+    where p.player_id = new.to_id and coalesce(p.kinds -> new.kind, 'true'::jsonb) <> 'false'::jsonb;
+    if jsonb_array_length(v_body -> 'devices') = 0 then return null; end if;
+    execute 'select net.http_post(url := $1, body := $2, headers := $3)'
+      using v_url, v_body, jsonb_build_object('content-type', 'application/json', 'x-push-secret', v_secret);
+  exception when others then
+    null;   -- a push must never block the feed
+  end;
+  return null;
+end $$;
+drop trigger if exists fw_push_hook on private.fw_social_feed;
+create trigger fw_push_hook after insert on private.fw_social_feed
+for each row execute function private.fw_push_hook();
+
+create or replace function public.push_register(p_token text, p_kinds jsonb, p_lang text) returns boolean
+language sql security invoker set search_path = '' as $$ select private.fw_push_register(p_token, p_kinds, p_lang); $$;
+create or replace function public.push_unregister(p_token text) returns boolean
+language sql security invoker set search_path = '' as $$ select private.fw_push_unregister(p_token); $$;
+create or replace function public.push_drop(p_tokens text[]) returns integer
+language sql security invoker set search_path = '' as $$ select private.fw_push_drop(p_tokens); $$;
+
+revoke all on function private.fw_push_hook()                       from public, anon, authenticated;
+revoke all on function private.fw_push_register(text, jsonb, text)  from public, anon;
+revoke all on function private.fw_push_unregister(text)             from public, anon;
+revoke all on function private.fw_push_drop(text[])                 from public, anon, authenticated;
+grant execute on function private.fw_push_register(text, jsonb, text) to authenticated, service_role;   -- the invoker wrappers run them as the caller
+grant execute on function private.fw_push_unregister(text)            to authenticated, service_role;
+grant execute on function private.fw_push_drop(text[])                to service_role;
+revoke all on function public.push_register(text, jsonb, text) from public, anon;
+grant execute on function public.push_register(text, jsonb, text) to authenticated;
+revoke all on function public.push_unregister(text) from public, anon;
+grant execute on function public.push_unregister(text) to authenticated;
+revoke all on function public.push_drop(text[]) from public, anon, authenticated;
+grant execute on function public.push_drop(text[]) to service_role;

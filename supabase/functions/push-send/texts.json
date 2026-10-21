@@ -1,0 +1,50 @@
+{
+  "ko": {
+    "on": "{n}님이 접속했어요",
+    "best": "{n}님이 최고기록 {s}점!"
+  },
+  "en": {
+    "on": "{n} is online",
+    "best": "{n} set a new best: {s}!"
+  },
+  "ja": {
+    "on": "{n}さんが接続しました",
+    "best": "{n}さんが最高記録 {s}点！"
+  },
+  "zh": {
+    "on": "{n}上线了",
+    "best": "{n}刷新最高分 {s}！"
+  },
+  "es": {
+    "on": "{n} está en línea",
+    "best": "¡{n} logró un nuevo récord: {s}!"
+  },
+  "pt": {
+    "on": "{n} está online",
+    "best": "{n} bateu um novo recorde: {s}!"
+  },
+  "fr": {
+    "on": "{n} est en ligne",
+    "best": "{n} a battu son record : {s} !"
+  },
+  "de": {
+    "on": "{n} ist online",
+    "best": "{n} hat einen neuen Rekord: {s}!"
+  },
+  "id": {
+    "on": "{n} sedang online",
+    "best": "{n} cetak rekor baru: {s}!"
+  },
+  "vi": {
+    "on": "{n} đang online",
+    "best": "{n} lập kỷ lục mới: {s}!"
+  },
+  "th": {
+    "on": "{n} ออนไลน์แล้ว",
+    "best": "{n} ทำสถิติใหม่: {s}!"
+  },
+  "hi": {
+    "on": "{n} ऑनलाइन है",
+    "best": "{n} ने नया बेस्ट बनाया: {s}!"
+  }
+}

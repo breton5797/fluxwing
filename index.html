@@ -1140,6 +1140,20 @@ fr:{playPre:'Préinscrivez-vous sur Google Play'}, de:{playPre:'Auf Google Play 
 vi:{playPre:'Đăng ký trước trên Google Play'}, th:{playPre:'ลงทะเบียนล่วงหน้าบน Google Play'}, hi:{playPre:'Google Play पर प्री-रजिस्टर करें'},
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_PL.en, I18N_PL[l] || {});
+// The iOS app: notifications switched off in Settings (friend alerts then show only inside the app)
+const I18N_PN = {
+ko:{ntOffApp:'설정에서 알림이 꺼져 있어 앱 안에서만 알려 드려요'}, en:{ntOffApp:'Notifications are off in Settings: alerts show only inside the app'},
+ja:{ntOffApp:'設定で通知がオフのため、アプリ内でのみお知らせします'}, zh:{ntOffApp:'系统设置中已关闭通知，只会在应用内提醒'},
+es:{ntOffApp:'Las notificaciones están desactivadas en Ajustes: solo verás avisos dentro de la app'},
+pt:{ntOffApp:'As notificações estão desativadas nos Ajustes: os avisos aparecem só dentro do app'},
+fr:{ntOffApp:'Notifications désactivées dans Réglages : les alertes s\'affichent seulement dans l\'app'},
+de:{ntOffApp:'Mitteilungen sind in den Einstellungen aus: Hinweise erscheinen nur in der App'},
+id:{ntOffApp:'Notifikasi dimatikan di Pengaturan: peringatan hanya muncul di dalam aplikasi'},
+vi:{ntOffApp:'Thông báo đang tắt trong Cài đặt: chỉ hiện nhắc nhở trong ứng dụng'},
+th:{ntOffApp:'ปิดการแจ้งเตือนไว้ในการตั้งค่า จะแจ้งเตือนเฉพาะในแอปเท่านั้น'},
+hi:{ntOffApp:'सेटिंग्स में नोटिफ़िकेशन बंद हैं: अलर्ट सिर्फ़ ऐप के अंदर दिखेंगे'},
+};
+for (const l in I18N) Object.assign(I18N[l], I18N_PN.en, I18N_PN[l] || {});
 /* i18n:end — tests/i18n.test.js runs everything from `const I18N = {` to here */
 const birdById = id => BIRDS.find(b => b.id === id);
 let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
@@ -1856,6 +1870,7 @@ const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_stg', 'fw27_stage', 'fw27_l
   'fw27_rej', 'fw27_vsmode', 'fw27_dg', 'fw27_daily_', 'fw27_sync',
   'fw27_fxq', 'fw27_fxshake', 'fw27_fxflash',   // fx quality and accessibility: per-device hardware/comfort choices
   'fw27_push', 'fw27_pushk', 'fw27_feed2',     // friend alerts: the toggle follows this device's Notification permission; feed2 is this device's read cursor
+  'fw27_ptok',         // the iOS app's APNs device token (one per install)
   'fw27_ev_first',     // product events: this device's first launch was reported (an install is per device)
   'fw27_ref', 'fw27_refpaid', 'fw27_refnudge',   // friend invites: this device's pending link / reports, the payout ids it granted, the nudge day
   'fw27_block']);   // report block: the players this device has blocked (the store copy says "on this device")
@@ -5485,6 +5500,7 @@ async function socPoll(){
   const m = feedMerge(feedSince, r.data.rows);
   feedSince = Math.max(m.since, Number(r.data.max) || 0); store.set('fw27_feed2', feedSince);
   if (m.rows.length) socShow(m.rows);
+  if (NAT && !natPushInit){ natPushInit = true; natPushSync(); }   // the first answer from the server: a session exists, the token can go up
   if (!$('frScr').hidden && await socSync()) renderFr();   // keep the open friends list fresh
   } finally { socBusy = false; }
 }
@@ -5494,14 +5510,33 @@ function renderPushBtn(){ $('pushBtn').classList.toggle('off', !pushOn); $('ntKO
 $('pushBtn').addEventListener('click', e => {
   e.stopPropagation(); audioInit(); SFX.click();
   pushOn = !pushOn; store.set('fw27_push', pushOn ? 1 : 0); renderPushBtn();
-  if (pushOn && typeof Notification !== 'undefined' && !IS_ART){
+  if (NAT) natPushSync();
+  else if (pushOn && typeof Notification !== 'undefined' && !IS_ART){
     if (Notification.permission === 'default') Notification.requestPermission().then(p => { if (p === 'denied') toast(t('ntInApp')); });
     else if (Notification.permission === 'denied') toast(t('ntInApp'));
   }
 });
 for (const [id, key] of [['ntKOn', 'on'], ['ntKBest', 'best']])
-  $(id).addEventListener('change', e => { pushK = Object.assign({}, pushK, { [key]: e.target.checked }); store.set('fw27_pushk', { on: pushK.on ? 1 : 0, best: pushK.best ? 1 : 0 }); });
+  $(id).addEventListener('change', e => { pushK = Object.assign({}, pushK, { [key]: e.target.checked }); store.set('fw27_pushk', { on: pushK.on ? 1 : 0, best: pushK.best ? 1 : 0 }); if (NAT && pushOn) natPushSync(); });
 renderPushBtn();
+// The iOS app: while alerts are on, its APNs token is registered with the kinds kept on and the language (supabase/schema.sql PUSH),
+// so friends' alerts arrive with the app closed. With the app open the poll above shows them as toasts (foreground pushes are silent).
+let natPushTok = String(store.get('fw27_ptok', '') || ''), natPushInit = false;
+async function natPushSync(){
+  const pn = natPlug('PushNotifications'); if (!pn || !sb || !uid) return;
+  if (!pushOn){
+    if (natPushTok){ const r = await socRpc('push_unregister', { p_token: natPushTok }); if (!r.error){ natPushTok = ''; store.set('fw27_ptok', ''); } }
+    return;
+  }
+  const p = await pn.requestPermissions().catch(() => ({ receive: 'denied' }));
+  if (p.receive !== 'granted') return toast(t('ntOffApp'));
+  pn.register().catch(() => {});   // the token arrives in the 'registration' listener
+}
+if (NAT){ const pn = natPlug('PushNotifications'); if (pn) pn.addListener('registration', async tk => {
+  const v = tk && tk.value; if (!v || !sb || !uid || !pushOn) return;
+  const r = await socRpc('push_register', { p_token: v, p_kinds: { on: pushK.on, best: pushK.best }, p_lang: lang });
+  if (!r.error){ natPushTok = v; store.set('fw27_ptok', v); }
+}); }
 
 // one-tap friend request from a leaderboard row (uuid rows only)
 function frPlusBtn(id){

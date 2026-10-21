@@ -11,6 +11,6 @@
   },
   "plugins": {
     "SplashScreen": { "launchAutoHide": true, "launchShowDuration": 600, "backgroundColor": "#0d0618", "showSpinner": false },
-    "PushNotifications": { "presentationOptions": ["badge", "sound", "alert"] }
+    "PushNotifications": { "presentationOptions": [] }
   }
 }

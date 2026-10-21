@@ -1,0 +1,6 @@
+# Supabase CLI settings for the functions in supabase/functions (the database schema is supabase/schema.sql, applied by hand)
+project_id = "ecjeyelgcqbliavwltbc"
+
+# push-send is called only by the database trigger private.fw_push_hook, which authenticates with the x-push-secret header
+[functions.push-send]
+verify_jwt = false
