@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const L = JSON.parse(readFileSync(new URL('../docs/launch/store-listing.json', import.meta.url), 'utf8'));
-const LANGS = ['en', 'ko', 'ja', 'es', 'pt', 'id'];
+const LANGS = ['en', 'ko', 'ja', 'es', 'pt', 'id', 'fr', 'de', 'vi', 'th', 'hi', 'zh', 'es_ES', 'pt_PT'];
 // Limits in characters as both consoles count them (code points)
 const LIMITS = { play: { title: 30, short: 80, full: 4000 }, apple: { name: 30, subtitle: 30, keywords: 100, promo: 170, description: 4000 } };
 const len = s => [...s].length;
