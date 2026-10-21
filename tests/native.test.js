@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const block = html.match(/\/\* native:start[\s\S]*?\/\* native:end \*\//);
-const N = block ? new Function(`${block[0]}\nreturn {NAT_AUTH, NAT_SITE, NAT_GC, natIs, natIsAuth, natTokens, natExternal, natHapticStyle, natGcScores};`)() : {};
+const N = block ? new Function(`${block[0]}\nreturn {NAT_AUTH, NAT_SITE, NAT_GC, NAT_PEND_MS, natIs, natIsAuth, natCode, natFresh, natExternal, natHapticStyle, natGcScores};`)() : {};
 
 test('natIs: only a Capacitor shell that says it is native', () => {
   assert.ok(block, 'native block exists');
@@ -27,12 +27,20 @@ test('the sign-in return address is the app URL scheme registered in Info.plist'
   assert.equal(N.natIsAuth(null), false);
 });
 
-test('natTokens: both tokens from the hash, or nothing', () => {
-  assert.deepEqual(N.natTokens('com.minimalkorea.swishby://auth#access_token=AA&expires_in=3600&refresh_token=RR&token_type=bearer'),
-    { access_token: 'AA', refresh_token: 'RR' });
-  assert.equal(N.natTokens('com.minimalkorea.swishby://auth#access_token=AA'), null, 'no refresh token');
-  assert.equal(N.natTokens('com.minimalkorea.swishby://auth?error=access_denied'), null);
-  assert.equal(N.natTokens(''), null);
+test('natCode: the PKCE code from the query; tokens in a hash are never accepted (the app uses PKCE)', () => {
+  assert.equal(N.natCode('com.minimalkorea.swishby://auth?code=abc-123'), 'abc-123');
+  assert.equal(N.natCode('com.minimalkorea.swishby://auth#access_token=AA&refresh_token=RR'), null);
+  assert.equal(N.natCode('com.minimalkorea.swishby://auth?error=access_denied'), null);
+  assert.equal(N.natCode('com.minimalkorea.swishby://auth?code=' + 'x'.repeat(600)), null, 'absurd length');
+  assert.equal(N.natCode(''), null);
+});
+
+test('natFresh: a callback counts only while a sign-in started on this device in the last 10 minutes', () => {
+  assert.equal(N.NAT_PEND_MS, 600000);
+  assert.equal(N.natFresh(1000, 1000 + 5000), true);
+  assert.equal(N.natFresh(1000, 1000 + 600001), false);
+  assert.equal(N.natFresh(0, 5000), false, 'nothing pending');
+  assert.equal(N.natFresh(9000, 1000), false, 'a clock that went backwards');
 });
 
 test('natExternal: page links open on swishby.com in the system browser; nothing else leaves', () => {
@@ -56,11 +64,18 @@ test('wiring: haptics, sign-in, outside links and the Play link know about the a
   const hap = html.match(/function haptic\(k\)\{[^\n]*/)[0];
   assert.match(hap, /NAT/, 'haptic() routes to the native plugin in the app');
   assert.match(html, /const authBack = \(\) => NAT \? NAT_AUTH :/);
-  const oauth = html.match(/async function authOAuth\(p\)\{[\s\S]*?\n\}/)[0];
+  const oauth = html.match(/async function authGo\(p, link\)\{[\s\S]*?\n\}/)[0];
   assert.match(oauth, /skipBrowserRedirect: NAT/);
   assert.match(oauth, /natPlug\('Browser'\)[\s\S]*\.open\(\{url: r\.data\.url/, 'the provider page opens in the system browser');
   assert.match(html, /addListener\('appUrlOpen'/);
-  assert.match(html, /setSession\(/);
+  assert.match(html, /flowType: NAT \? 'pkce' : 'implicit'/, 'the app exchanges a code; the web keeps its flow');
+  assert.match(html, /exchangeCodeForSession\(/);
+  assert.doesNotMatch(html, /setSession\(/, 'no tokens from a URL are ever trusted');
+  assert.match(html, /natFresh\(/);
+  assert.match(html, /const authHome = \(\) => location\.origin \+ location\.pathname;/);
+  assert.match(html.match(/async function authLogout\(\)\{[\s\S]*?\n\}/)[0], /location\.replace\(authHome\(\)\)/, 'sign-out reloads the page, not the URL scheme');
+  assert.match(html, /emailRedirectTo: authHome\(\)/, 'email links stay on https');
+  assert.doesNotMatch(html, /\$\('authTakenGo'\)[^\n]*signInWithOAuth/, 'the taken button goes through authGo');
   assert.match(html, /natExternal\(/);
   assert.match(html, /native: NAT/, 'the Play link knows it is inside the app');
 });

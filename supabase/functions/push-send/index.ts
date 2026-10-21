@@ -29,10 +29,18 @@ async function send(token: string, alert: { title: string; body: string }, sandb
   return { status: res.status, reason };
 }
 
+// The hook secret, compared without an early exit (no timing hint about how much of a guess was right)
+function sameSecret(a: string, b: string): boolean {
+  const x = new TextEncoder().encode(a), y = new TextEncoder().encode(b);
+  let d = x.length ^ y.length;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) d |= (x[i] ?? 0) ^ (y[i] ?? 0);
+  return d === 0;
+}
+
 type Hook = { kind?: string; val?: number; nick?: string; devices?: { token: string; lang: string }[] };
 
 Deno.serve(async (req) => {
-  if (req.method !== 'POST' || !env('PUSH_HOOK_SECRET') || req.headers.get('x-push-secret') !== env('PUSH_HOOK_SECRET'))
+  if (req.method !== 'POST' || !env('PUSH_HOOK_SECRET') || !sameSecret(req.headers.get('x-push-secret') ?? '', env('PUSH_HOOK_SECRET')))
     return new Response('forbidden', { status: 403 });
   if (!env('APNS_KEY') || !env('APNS_KEY_ID') || !env('APNS_TEAM_ID')) return new Response('apns not configured', { status: 202 });
   const hook = (await req.json().catch(() => ({}))) as Hook;
@@ -44,13 +52,15 @@ Deno.serve(async (req) => {
     const alert = alertFor(TEXTS, d.lang, hook.kind, hook.nick ?? '', hook.val ?? 0);
     if (!alert || !/^[0-9a-f]{64,200}$/.test(d.token)) continue;
     let r = await send(d.token, alert, false);
+    if (r.status === 403 && /ProviderToken/.test(r.reason)) { jwtCache = { at: 0, jwt: '' }; r = await send(d.token, alert, false); }   // a stale signing token
     if (r.status === 400 && r.reason === 'BadDeviceToken') r = await send(d.token, alert, true);   // a development build's token
     if (r.status === 410 || (r.status === 400 && r.reason === 'BadDeviceToken')) dead.push(d.token);
     else if (r.status === 200) sent++;
   }
   if (dead.length) {
     const db = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), { auth: { persistSession: false } });
-    await db.rpc('push_drop', { p_tokens: dead });
+    const { error } = await db.rpc('push_drop', { p_tokens: dead });
+    if (error) console.error('push_drop', error.message);
   }
   return new Response(JSON.stringify({ sent, dropped: dead.length }), { headers: { 'content-type': 'application/json' } });
 });

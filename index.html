@@ -1676,16 +1676,20 @@ function playLinkShow(env){
 }
 /* playlink:end */
 /* native:start — the iOS app (Capacitor shell, ios/App). The same page runs inside it; these pure helpers decide what changes there:
-   sign-in returns to the app's URL scheme (Info.plist) with the implicit-flow tokens in the hash, outside links open in the system
-   browser, and the web vibration patterns pick a native haptic strength. Pure: the caller passes window. tests/native.test.js */
+   sign-in uses PKCE and returns to the app's URL scheme (Info.plist) with a one-time code, which is worth nothing without the verifier
+   this page stored, and is read only while a sign-in started here is pending (another app or a link cannot plant a session); outside
+   links open in the system browser; the web vibration patterns pick a native haptic strength. Pure: the caller passes window.
+   tests/native.test.js */
 const NAT_AUTH = 'com.minimalkorea.swishby://auth', NAT_SITE = 'https://swishby.com/';
 function natIs(w){ try { return !!(w && w.Capacitor && typeof w.Capacitor.isNativePlatform === 'function' && w.Capacitor.isNativePlatform()); } catch(e){ return false; } }
 const natIsAuth = url => typeof url === 'string' && (url === NAT_AUTH || url.startsWith(NAT_AUTH + '#') || url.startsWith(NAT_AUTH + '?'));
-function natTokens(url){
-  const i = String(url || '').indexOf('#'); if (i < 0) return null;
-  const q = new URLSearchParams(String(url).slice(i + 1)), a = q.get('access_token'), r = q.get('refresh_token');
-  return a && r ? { access_token: a, refresh_token: r } : null;
+function natCode(url){
+  const s = String(url || ''), q = s.indexOf('?'); if (q < 0) return null;
+  const c = new URLSearchParams(s.slice(q + 1).split('#')[0]).get('code');
+  return c && c.length <= 512 ? c : null;
 }
+const NAT_PEND_MS = 10 * 60 * 1000;
+const natFresh = (started, now) => started > 0 && now >= started && now - started <= NAT_PEND_MS;
 function natExternal(href){
   if (!href) return null;
   try { const u = new URL(href, NAT_SITE); return /^https?:$/.test(u.protocol) ? u.href : null; } catch(e){ return null; }
@@ -2986,8 +2990,8 @@ function showOver(){
   overTierStamp();   // the RP tier; a ranked result that moves it stamps again from setRp
   $('oPlace').textContent = ''; $('oTeams').hidden = true; $('oTitle').textContent = ''; $('oTitle').hidden = true; $('oTitle').style.color = '';   // no title on a normal result card (the old "SIGNAL LOST" read like a network error); versus fills and shows it
   $('over').hidden = false; vsFillOver(); if (mode === 'versus') vsResolve();
-  if (mode !== 'versus'){ submitScore(score, gatesPassed, mode, runDay); writeQ.then(() => refSync(true)); }
-  { const gc = natPlug('GameCenter'); if (gc) for (const b of natGcScores(mode, score)) gc.submitScore(b).catch(() => {}); }   // the app: Game Center keeps each player's best   // after the submit: the server reads the best it holds
+  if (mode !== 'versus'){ submitScore(score, gatesPassed, mode, runDay); writeQ.then(() => refSync(true)); }   // after the submit: the server reads the best it holds
+  { const gc = natPlug('GameCenter'); if (gc) for (const b of natGcScores(mode, score)) gc.submitScore(b).catch(() => {}); }   // the app: Game Center keeps each player's best
   refNudge(mode === 'daily' ? 'daily' : mode === 'endless' && nb && score > 0 ? 'best' : '');
   // rewards
   // coins: field coins (orbs picked up) + score coins (stage mode, per 50 score by tier); the unit's coin multiplier applies to both
@@ -4913,7 +4917,7 @@ async function initSupabase(cfg){
   try {
     if (!(await loadSdk())) throw new Error('sdk');
     if (!sbC){
-      sbC = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, flowType:'implicit'}});
+      sbC = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, flowType: NAT ? 'pkce' : 'implicit'}});   // the app: PKCE, the code comes back through the URL scheme (native block)
       sbC.auth.onAuthStateChange((ev, s) => {   // keep this callback synchronous: no Supabase calls inside it
         evTok = s && s.access_token || null;   // for the product events' keepalive send on hide (fresh after every refresh)
         if (backend !== 'supa') return;
@@ -5020,8 +5024,9 @@ const AUTH_WIPE = [...FS_KEYS, 'fw27_sync', 'fw27_rp2', 'fw27_rej', 'fw27_dg'];
 async function authLogout(){
   authLeaving = true; onStoreSet = null; clearTimeout(fsT);
   AUTH_WIPE.forEach(k => { try { localStorage.removeItem(k); } catch(e){} });
+  if (NAT && natPushTok){ try { await socRpc('push_unregister', { p_token: natPushTok }); } catch(e){} }   // this device stops getting the old account's alerts
   try { await sbC.auth.signOut({scope: 'local'}); } catch(e){}
-  location.replace(authBack());
+  location.replace(authHome());
 }
 $('authOutBtn').addEventListener('click', e => { e.stopPropagation(); authClose(); $('confYes').textContent = t('authOut'); confirmDlg(t('authOutQ'), authLogout); });
 // Account deletion (privacy law: a way to withdraw). One server call drops the auth.users row and every game table cascades
@@ -5039,7 +5044,8 @@ try { if (sessionStorage.getItem('fw_cloud_note')){ sessionStorage.removeItem('f
 let AUTH_UI = authUi(window.FW_CONFIG, navigator.userAgent), AUTH_EXT = null;
 const AUTH_CB = authUrl(location.href);
 if (AUTH_CB.err) history.replaceState(null, '', AUTH_CB.clean);   // the SDK never sees an auth error: the anonymous session stays as it is
-const authBack = () => NAT ? NAT_AUTH : location.origin + location.pathname;   // the app: back through its URL scheme (appUrlOpen below)
+const authHome = () => location.origin + location.pathname;
+const authBack = () => NAT ? NAT_AUTH : authHome();   // where a provider sends the browser back: the app's URL scheme (appUrlOpen below)
 const authAnon = () => !sbUser || sbUser.is_anonymous !== false;
 let authMail = null, authTry = '', authLeaving = false;   // authMail: {email, type} while a code is awaited; authTry: the provider of the last OAuth attempt
 const AUTH_BOX = {pick: 'authPick', code: 'authCodeForm', taken: 'authTaken', ask: 'authAsk', out: 'authOutBox'};
@@ -5061,18 +5067,29 @@ function renderAcct(){
 async function authOAuth(p){
   if (!sbC || backend !== 'supa') return authSay('authFail');
   authTry = p; try { sessionStorage.setItem('fw_auth_try', p); } catch(e){}
-  const o = {provider: p, options: {redirectTo: authBack(), skipBrowserRedirect: NAT}};   // the app opens the provider in the system browser (Google refuses web views)
-  let r; try { r = authAnon() ? await sbC.auth.linkIdentity(o) : await sbC.auth.signInWithOAuth(o); } catch(e){ r = {error: e}; }
-  if (r && r.error) return authSay(authErr(r.error) === 'rate' ? 'authRate' : 'authFail');   // on the web, success navigates away
-  if (NAT){ const b = natPlug('Browser'); if (b && r && r.data && r.data.url) b.open({url: r.data.url, presentationStyle: 'popover'}); else authSay('authFail'); }
+  const r = await authGo(p, authAnon());
+  if (r && r.error) authSay(authErr(r.error) === 'rate' ? 'authRate' : 'authFail');   // on the web, success navigates away
+}
+// One provider sign-in (link: on top of the guest). The app opens the provider in the system browser (Google refuses web views)
+// and marks the attempt pending: natAuthBack reads a callback only inside that window.
+let natPend = 0;
+async function authGo(p, link){
+  const o = {provider: p, options: {redirectTo: authBack(), skipBrowserRedirect: NAT}};
+  let r; try { r = link ? await sbC.auth.linkIdentity(o) : await sbC.auth.signInWithOAuth(o); } catch(e){ r = {error: e}; }
+  if (!NAT || (r && r.error)) return r;
+  const b = natPlug('Browser'); if (!b || !r || !r.data || !r.data.url) return {error: {}};
+  natPend = Date.now(); b.open({url: r.data.url, presentationStyle: 'popover'}).catch(() => {});
+  return r;
 }
 // The app: the provider sends the system browser back to NAT_AUTH. Errors read as on the web (authUrl); tokens start the session in the page.
 async function natAuthBack(url){
+  if (!natFresh(natPend, Date.now())) return;   // no sign-in of ours is waiting: someone else's link
+  natPend = 0;
   const b = natPlug('Browser'); if (b) b.close().catch(() => {});
   const cb = authUrl(url.replace(NAT_AUTH, NAT_SITE.slice(0, -1)));
   if (cb.err){ authOpen(cb.err === 'taken' && authTry ? 'taken' : 'pick', cb.err === 'taken' ? 'authTaken' : 'authFail'); return; }
-  const tk = natTokens(url); if (!tk || !sbC) return;
-  const r = await sbC.auth.setSession(tk).catch(e => ({error: e}));
+  const code = natCode(url); if (!code || !sbC) return;
+  const r = await sbC.auth.exchangeCodeForSession(code).catch(e => ({error: e}));   // fails without this page's PKCE verifier
   if (r && r.error) return authOpen('pick', 'authFail');
   if (r && r.data && r.data.user) sbUser = r.data.user;
   if (!authAnon()) authDone();
@@ -5095,7 +5112,7 @@ function authReturn(){
 async function authEmailSend(raw){
   const email = authEmail(raw); if (!email) return authSay('authBadEmail');
   if (!sbC || !authAnon()) return authSay('authFail');
-  const back = {emailRedirectTo: authBack()}; let type = 'email_change', r;
+  const back = {emailRedirectTo: authHome()}; let type = 'email_change', r;   // email links stay on https: the code typed in is the app's way
   try { r = await sbC.auth.updateUser({email}, back); } catch(e){ r = {error: e}; }
   if (r.error && authErr(r.error) === 'taken'){ type = 'email'; try { r = await sbC.auth.signInWithOtp({email, options: {...back, shouldCreateUser: false, ...(await capOpts())}}); } catch(e){ r = {error: e}; } }
   if (r.error){ const k = authErr(r.error); return authSay(k === 'rate' ? 'authRate' : k === 'email' ? 'authBadEmail' : 'authFail'); }
@@ -5164,7 +5181,7 @@ $('authClose').addEventListener('click', e => { e.stopPropagation(); authClose()
 $('authScr').addEventListener('click', e => { if (e.target === $('authScr')){ authClose(); if (state === 'menu') cloudMenu(); } });
 $('authGoogle').addEventListener('click', e => { e.stopPropagation(); authOAuth('google'); });
 $('authApple').addEventListener('click', e => { e.stopPropagation(); if (AUTH_UI.apple) authOAuth('apple'); });
-$('authTakenGo').addEventListener('click', async e => { e.stopPropagation(); if (!authTry || !sbC) return; try { await sbC.auth.signInWithOAuth({provider: authTry, options: {redirectTo: authBack()}}); } catch(x){ authSay('authFail'); } });
+$('authTakenGo').addEventListener('click', async e => { e.stopPropagation(); if (!authTry || !sbC) return; const r = await authGo(authTry, false); if (r && r.error) authSay('authFail'); });
 $('authEmailForm').addEventListener('submit', e => { e.preventDefault(); authEmailSend($('authEmailIn').value); });
 $('authCodeForm').addEventListener('submit', e => { e.preventDefault(); authCodeSend($('authCodeIn').value); });
 $('authBackBtn').addEventListener('click', e => { e.stopPropagation(); authMail = null; authOpen('pick'); });
