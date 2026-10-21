@@ -1,0 +1,16 @@
+{
+  "appId": "com.minimalkorea.swishby",
+  "appName": "SWISHBY",
+  "webDir": "ios-www",
+  "backgroundColor": "#0d0618",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "allowsLinkPreview": false,
+    "preferredContentMode": "mobile"
+  },
+  "plugins": {
+    "SplashScreen": { "launchAutoHide": true, "launchShowDuration": 600, "backgroundColor": "#0d0618", "showSpinner": false },
+    "PushNotifications": { "presentationOptions": [] }
+  }
+}

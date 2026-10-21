@@ -636,6 +636,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     <div class="card lbcard">
       <div class="lbhead">
         <h2 data-i18n="lb"></h2>
+        <button class="ghost" id="lbGc" hidden>Game Center</button>
         <button class="ghost" id="lbClose" data-i18n="close"></button>
       </div>
       <div class="tabs" role="tablist">
@@ -1139,6 +1140,20 @@ fr:{playPre:'Préinscrivez-vous sur Google Play'}, de:{playPre:'Auf Google Play 
 vi:{playPre:'Đăng ký trước trên Google Play'}, th:{playPre:'ลงทะเบียนล่วงหน้าบน Google Play'}, hi:{playPre:'Google Play पर प्री-रजिस्टर करें'},
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_PL.en, I18N_PL[l] || {});
+// The iOS app: notifications switched off in Settings (friend alerts then show only inside the app)
+const I18N_PN = {
+ko:{ntOffApp:'설정에서 알림이 꺼져 있어 앱 안에서만 알려 드려요'}, en:{ntOffApp:'Notifications are off in Settings: alerts show only inside the app'},
+ja:{ntOffApp:'設定で通知がオフのため、アプリ内でのみお知らせします'}, zh:{ntOffApp:'系统设置中已关闭通知，只会在应用内提醒'},
+es:{ntOffApp:'Las notificaciones están desactivadas en Ajustes: solo verás avisos dentro de la app'},
+pt:{ntOffApp:'As notificações estão desativadas nos Ajustes: os avisos aparecem só dentro do app'},
+fr:{ntOffApp:'Notifications désactivées dans Réglages : les alertes s\'affichent seulement dans l\'app'},
+de:{ntOffApp:'Mitteilungen sind in den Einstellungen aus: Hinweise erscheinen nur in der App'},
+id:{ntOffApp:'Notifikasi dimatikan di Pengaturan: peringatan hanya muncul di dalam aplikasi'},
+vi:{ntOffApp:'Thông báo đang tắt trong Cài đặt: chỉ hiện nhắc nhở trong ứng dụng'},
+th:{ntOffApp:'ปิดการแจ้งเตือนไว้ในการตั้งค่า จะแจ้งเตือนเฉพาะในแอปเท่านั้น'},
+hi:{ntOffApp:'सेटिंग्स में नोटिफ़िकेशन बंद हैं: अलर्ट सिर्फ़ ऐप के अंदर दिखेंगे'},
+};
+for (const l in I18N) Object.assign(I18N[l], I18N_PN.en, I18N_PN[l] || {});
 /* i18n:end — tests/i18n.test.js runs everything from `const I18N = {` to here */
 const birdById = id => BIRDS.find(b => b.id === id);
 let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
@@ -1655,11 +1670,44 @@ function rptCands(pl, me){   // the other people of a match who can be reported:
    artifact. Pure: the caller passes the environment. tests/play-link.test.js */
 const PLAY_URL = 'https://play.google.com/store/apps/details?id=com.minimalkorea.swishby&referrer=' + encodeURIComponent('utm_source=swishby_web&utm_medium=menu');
 function playLinkShow(env){
-  if (!env || env.art || env.standalone || /^android-app:\/\//.test(env.referrer || '')) return false;
+  if (!env || env.art || env.native || env.standalone || /^android-app:\/\//.test(env.referrer || '')) return false;
   const ua = String(env.ua || '');
   return !(/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && env.touch > 1));
 }
 /* playlink:end */
+/* native:start — the iOS app (Capacitor shell, ios/App). The same page runs inside it; these pure helpers decide what changes there:
+   sign-in uses PKCE and returns to the app's URL scheme (Info.plist) with a one-time code, which is worth nothing without the verifier
+   this page stored, and is read only while a sign-in started here is pending (another app or a link cannot plant a session); outside
+   links open in the system browser; the web vibration patterns pick a native haptic strength. Pure: the caller passes window.
+   tests/native.test.js */
+const NAT_AUTH = 'com.minimalkorea.swishby://auth', NAT_SITE = 'https://swishby.com/';
+function natIs(w){ try { return !!(w && w.Capacitor && typeof w.Capacitor.isNativePlatform === 'function' && w.Capacitor.isNativePlatform()); } catch(e){ return false; } }
+const natIsAuth = url => typeof url === 'string' && (url === NAT_AUTH || url.startsWith(NAT_AUTH + '#') || url.startsWith(NAT_AUTH + '?'));
+function natCode(url){
+  const s = String(url || ''), q = s.indexOf('?'); if (q < 0) return null;
+  const c = new URLSearchParams(s.slice(q + 1).split('#')[0]).get('code');
+  return c && c.length <= 512 ? c : null;
+}
+const NAT_PEND_MS = 10 * 60 * 1000;
+const natFresh = (started, now) => started > 0 && now >= started && now - started <= NAT_PEND_MS;
+function natExternal(href){
+  if (!href) return null;
+  try { const u = new URL(href, NAT_SITE); return /^https?:$/.test(u.protocol) ? u.href : null; } catch(e){ return null; }
+}
+function natHapticStyle(p){
+  if (Array.isArray(p)) return p.length ? 'HEAVY' : null;
+  if (typeof p !== 'number' || !(p > 0)) return null;
+  return p <= 8 ? 'LIGHT' : p <= 20 ? 'MEDIUM' : 'HEAVY';
+}
+// Game Center boards (created in App Store Connect with these ids): the all-time best of endless and stage runs, and the daily course
+const NAT_GC = { best: 'swishby.best', daily: 'swishby.daily' };
+function natGcScores(mode, score){
+  const s = Math.floor(Number(score) || 0); if (s <= 0 || mode === 'versus') return [];
+  return [{ leaderboardId: mode === 'daily' ? NAT_GC.daily : NAT_GC.best, score: s }];
+}
+/* native:end */
+const NAT = natIs(window);
+const natPlug = n => NAT && window.Capacitor.Plugins ? window.Capacitor.Plugins[n] : null;
 /* captcha:start — bot check (Cloudflare Turnstile) in front of the auth calls Supabase gates: anonymous sign-in and the email code. Pure: config parsing and one challenge; the script loader and the DOM box live with the Supabase code. tests/captcha.test.js runs this block (tests/helpers/captcha.js). */
 const CAP_CFG = Object.freeze({ src: 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', waitMs: 20000 });
 // FW_CONFIG.auth.captcha = { provider: 'turnstile', siteKey: '0x…' }. Anything else = off: no script is loaded and no token is sent (the project's captcha protection must then be off too)
@@ -1826,6 +1874,7 @@ const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_stg', 'fw27_stage', 'fw27_l
   'fw27_rej', 'fw27_vsmode', 'fw27_dg', 'fw27_daily_', 'fw27_sync',
   'fw27_fxq', 'fw27_fxshake', 'fw27_fxflash',   // fx quality and accessibility: per-device hardware/comfort choices
   'fw27_push', 'fw27_pushk', 'fw27_feed2',     // friend alerts: the toggle follows this device's Notification permission; feed2 is this device's read cursor
+  'fw27_ptok',         // the iOS app's APNs device token (one per install)
   'fw27_ev_first',     // product events: this device's first launch was reported (an install is per device)
   'fw27_ref', 'fw27_refpaid', 'fw27_refnudge',   // friend invites: this device's pending link / reports, the payout ids it granted, the nudge day
   'fw27_block']);   // report block: the players this device has blocked (the store copy says "on this device")
@@ -2017,7 +2066,7 @@ let vibOn = store.get('fw27_vib', true);
 const HAPTIC = { flap:6, perfect:14, combo5:[20,30,40], fever:[30,40,30,40,90], power:[25,30,45], shieldBreak:[90,30,40],
   dash:[35,15,60], shatter:18, ready:[12,40,12], zone:[40,60,40,60,120], newBest:[80,40,80,40,200], death:[60,30,150], stamp:35,
   shieldHit:[40,20,70], deathHeavy:[80,30,120,40,200], record:[60,40,60,40,60,40,250], near:10, overdrive:[20,20,20,20,120] };
-function haptic(k){ if (!vibOn) return; const p = typeof k === 'string' ? HAPTIC[k] : k; try { navigator.vibrate && navigator.vibrate(p); } catch(e){} }
+function haptic(k){ if (!vibOn) return; const p = typeof k === 'string' ? HAPTIC[k] : k; try { if (NAT){ const st = natHapticStyle(p), h = natPlug('Haptics'); if (st && h) h.impact({style: st}); } else if (navigator.vibrate) navigator.vibrate(p); } catch(e){} }
 /* fx sound hook: per-event route — a loaded sample in SFX_FILES wins, else the synth; single-file build ships none */
 const SFX_FILES = {};
 const SFX_EV = { flap: 'flap', gate: 'pass', near: 'perfect', shieldHit: 'shield', death: 'die', record: 'fanfare', coin: 'orb', comboBreak: 'shatter', overdrive: 'fever' };
@@ -2942,6 +2991,7 @@ function showOver(){
   $('oPlace').textContent = ''; $('oTeams').hidden = true; $('oTitle').textContent = ''; $('oTitle').hidden = true; $('oTitle').style.color = '';   // no title on a normal result card (the old "SIGNAL LOST" read like a network error); versus fills and shows it
   $('over').hidden = false; vsFillOver(); if (mode === 'versus') vsResolve();
   if (mode !== 'versus'){ submitScore(score, gatesPassed, mode, runDay); writeQ.then(() => refSync(true)); }   // after the submit: the server reads the best it holds
+  { const gc = natPlug('GameCenter'); if (gc) for (const b of natGcScores(mode, score)) gc.submitScore(b).catch(() => {}); }   // the app: Game Center keeps each player's best
   refNudge(mode === 'daily' ? 'daily' : mode === 'endless' && nb && score > 0 ? 'best' : '');
   // rewards
   // coins: field coins (orbs picked up) + score coins (stage mode, per 50 score by tier); the unit's coin multiplier applies to both
@@ -4867,7 +4917,7 @@ async function initSupabase(cfg){
   try {
     if (!(await loadSdk())) throw new Error('sdk');
     if (!sbC){
-      sbC = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, flowType:'implicit'}});
+      sbC = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, flowType: NAT ? 'pkce' : 'implicit'}});   // the app: PKCE, the code comes back through the URL scheme (native block)
       sbC.auth.onAuthStateChange((ev, s) => {   // keep this callback synchronous: no Supabase calls inside it
         evTok = s && s.access_token || null;   // for the product events' keepalive send on hide (fresh after every refresh)
         if (backend !== 'supa') return;
@@ -4974,8 +5024,9 @@ const AUTH_WIPE = [...FS_KEYS, 'fw27_sync', 'fw27_rp2', 'fw27_rej', 'fw27_dg'];
 async function authLogout(){
   authLeaving = true; onStoreSet = null; clearTimeout(fsT);
   AUTH_WIPE.forEach(k => { try { localStorage.removeItem(k); } catch(e){} });
+  if (NAT && natPushTok){ try { await socRpc('push_unregister', { p_token: natPushTok }); } catch(e){} }   // this device stops getting the old account's alerts
   try { await sbC.auth.signOut({scope: 'local'}); } catch(e){}
-  location.replace(authBack());
+  location.replace(authHome());
 }
 $('authOutBtn').addEventListener('click', e => { e.stopPropagation(); authClose(); $('confYes').textContent = t('authOut'); confirmDlg(t('authOutQ'), authLogout); });
 // Account deletion (privacy law: a way to withdraw). One server call drops the auth.users row and every game table cascades
@@ -4993,7 +5044,8 @@ try { if (sessionStorage.getItem('fw_cloud_note')){ sessionStorage.removeItem('f
 let AUTH_UI = authUi(window.FW_CONFIG, navigator.userAgent), AUTH_EXT = null;
 const AUTH_CB = authUrl(location.href);
 if (AUTH_CB.err) history.replaceState(null, '', AUTH_CB.clean);   // the SDK never sees an auth error: the anonymous session stays as it is
-const authBack = () => location.origin + location.pathname;
+const authHome = () => location.origin + location.pathname;
+const authBack = () => NAT ? NAT_AUTH : authHome();   // where a provider sends the browser back: the app's URL scheme (appUrlOpen below)
 const authAnon = () => !sbUser || sbUser.is_anonymous !== false;
 let authMail = null, authTry = '', authLeaving = false;   // authMail: {email, type} while a code is awaited; authTry: the provider of the last OAuth attempt
 const AUTH_BOX = {pick: 'authPick', code: 'authCodeForm', taken: 'authTaken', ask: 'authAsk', out: 'authOutBox'};
@@ -5015,9 +5067,41 @@ function renderAcct(){
 async function authOAuth(p){
   if (!sbC || backend !== 'supa') return authSay('authFail');
   authTry = p; try { sessionStorage.setItem('fw_auth_try', p); } catch(e){}
-  const o = {provider: p, options: {redirectTo: authBack()}};
-  let r; try { r = authAnon() ? await sbC.auth.linkIdentity(o) : await sbC.auth.signInWithOAuth(o); } catch(e){ r = {error: e}; }
-  if (r && r.error) authSay(authErr(r.error) === 'rate' ? 'authRate' : 'authFail');   // on success the page navigates away
+  const r = await authGo(p, authAnon());
+  if (r && r.error) authSay(authErr(r.error) === 'rate' ? 'authRate' : 'authFail');   // on the web, success navigates away
+}
+// One provider sign-in (link: on top of the guest). The app opens the provider in the system browser (Google refuses web views)
+// and marks the attempt pending: natAuthBack reads a callback only inside that window.
+let natPend = 0;
+async function authGo(p, link){
+  const o = {provider: p, options: {redirectTo: authBack(), skipBrowserRedirect: NAT}};
+  let r; try { r = link ? await sbC.auth.linkIdentity(o) : await sbC.auth.signInWithOAuth(o); } catch(e){ r = {error: e}; }
+  if (!NAT || (r && r.error)) return r;
+  const b = natPlug('Browser'); if (!b || !r || !r.data || !r.data.url) return {error: {}};
+  natPend = Date.now(); b.open({url: r.data.url, presentationStyle: 'popover'}).catch(() => {});
+  return r;
+}
+// The app: the provider sends the system browser back to NAT_AUTH. Errors read as on the web (authUrl); tokens start the session in the page.
+async function natAuthBack(url){
+  if (!natFresh(natPend, Date.now())) return;   // no sign-in of ours is waiting: someone else's link
+  natPend = 0;
+  const b = natPlug('Browser'); if (b) b.close().catch(() => {});
+  const cb = authUrl(url.replace(NAT_AUTH, NAT_SITE.slice(0, -1)));
+  if (cb.err){ authOpen(cb.err === 'taken' && authTry ? 'taken' : 'pick', cb.err === 'taken' ? 'authTaken' : 'authFail'); return; }
+  const code = natCode(url); if (!code || !sbC) return;
+  const r = await sbC.auth.exchangeCodeForSession(code).catch(e => ({error: e}));   // fails without this page's PKCE verifier
+  if (r && r.error) return authOpen('pick', 'authFail');
+  if (r && r.data && r.data.user) sbUser = r.data.user;
+  if (!authAnon()) authDone();
+}
+if (NAT){
+  const gc = natPlug('GameCenter');
+  if (gc){ gc.signIn().catch(() => {}); $('lbGc').hidden = false; $('lbGc').addEventListener('click', e => { e.stopPropagation(); gc.showLeaderboard({}).catch(() => {}); }); }
+  const app = natPlug('App'); if (app) app.addListener('appUrlOpen', e => { if (e && natIsAuth(e.url)) natAuthBack(e.url); });
+  document.addEventListener('click', e => {   // links that would open a new tab (terms, privacy, about, the store) go to the system browser
+    const a = e.target && e.target.closest && e.target.closest('a[target="_blank"]'); if (!a) return;
+    const u = natExternal(a.getAttribute('href')), b = natPlug('Browser'); e.preventDefault(); if (u && b) b.open({url: u});
+  }, true);
 }
 function authReturn(){
   if (!AUTH_CB.cb) return;
@@ -5028,7 +5112,7 @@ function authReturn(){
 async function authEmailSend(raw){
   const email = authEmail(raw); if (!email) return authSay('authBadEmail');
   if (!sbC || !authAnon()) return authSay('authFail');
-  const back = {emailRedirectTo: authBack()}; let type = 'email_change', r;
+  const back = {emailRedirectTo: authHome()}; let type = 'email_change', r;   // email links stay on https: the code typed in is the app's way
   try { r = await sbC.auth.updateUser({email}, back); } catch(e){ r = {error: e}; }
   if (r.error && authErr(r.error) === 'taken'){ type = 'email'; try { r = await sbC.auth.signInWithOtp({email, options: {...back, shouldCreateUser: false, ...(await capOpts())}}); } catch(e){ r = {error: e}; } }
   if (r.error){ const k = authErr(r.error); return authSay(k === 'rate' ? 'authRate' : k === 'email' ? 'authBadEmail' : 'authFail'); }
@@ -5097,7 +5181,7 @@ $('authClose').addEventListener('click', e => { e.stopPropagation(); authClose()
 $('authScr').addEventListener('click', e => { if (e.target === $('authScr')){ authClose(); if (state === 'menu') cloudMenu(); } });
 $('authGoogle').addEventListener('click', e => { e.stopPropagation(); authOAuth('google'); });
 $('authApple').addEventListener('click', e => { e.stopPropagation(); if (AUTH_UI.apple) authOAuth('apple'); });
-$('authTakenGo').addEventListener('click', async e => { e.stopPropagation(); if (!authTry || !sbC) return; try { await sbC.auth.signInWithOAuth({provider: authTry, options: {redirectTo: authBack()}}); } catch(x){ authSay('authFail'); } });
+$('authTakenGo').addEventListener('click', async e => { e.stopPropagation(); if (!authTry || !sbC) return; const r = await authGo(authTry, false); if (r && r.error) authSay('authFail'); });
 $('authEmailForm').addEventListener('submit', e => { e.preventDefault(); authEmailSend($('authEmailIn').value); });
 $('authCodeForm').addEventListener('submit', e => { e.preventDefault(); authCodeSend($('authCodeIn').value); });
 $('authBackBtn').addEventListener('click', e => { e.stopPropagation(); authMail = null; authOpen('pick'); });
@@ -5409,7 +5493,7 @@ $('oRefX').addEventListener('click', e => { e.stopPropagation(); $('oRef').hidde
    Display is routed by notifyRoute: master bell (fw27_push, default off) + per-kind checks (fw27_pushk). */
 const IS_ART = !!(window.claude && typeof window.claude.use === 'function');   // the claude.ai artifact shell
 $('playPre').href = PLAY_URL;
-$('playPre').hidden = !playLinkShow({ ua: navigator.userAgent, touch: navigator.maxTouchPoints || 0, referrer: document.referrer, art: IS_ART,
+$('playPre').hidden = !playLinkShow({ native: NAT, ua: navigator.userAgent, touch: navigator.maxTouchPoints || 0, referrer: document.referrer, art: IS_ART,
   standalone: !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches) });
 let pushOn = !!store.get('fw27_push', 0);
 let pushK = (k => ({ on: k.on !== 0, best: k.best !== 0 }))(Object(store.get('fw27_pushk', {})));
@@ -5433,6 +5517,7 @@ async function socPoll(){
   const m = feedMerge(feedSince, r.data.rows);
   feedSince = Math.max(m.since, Number(r.data.max) || 0); store.set('fw27_feed2', feedSince);
   if (m.rows.length) socShow(m.rows);
+  if (NAT && !natPushInit){ natPushInit = true; natPushSync(); }   // the first answer from the server: a session exists, the token can go up
   if (!$('frScr').hidden && await socSync()) renderFr();   // keep the open friends list fresh
   } finally { socBusy = false; }
 }
@@ -5442,14 +5527,33 @@ function renderPushBtn(){ $('pushBtn').classList.toggle('off', !pushOn); $('ntKO
 $('pushBtn').addEventListener('click', e => {
   e.stopPropagation(); audioInit(); SFX.click();
   pushOn = !pushOn; store.set('fw27_push', pushOn ? 1 : 0); renderPushBtn();
-  if (pushOn && typeof Notification !== 'undefined' && !IS_ART){
+  if (NAT) natPushSync();
+  else if (pushOn && typeof Notification !== 'undefined' && !IS_ART){
     if (Notification.permission === 'default') Notification.requestPermission().then(p => { if (p === 'denied') toast(t('ntInApp')); });
     else if (Notification.permission === 'denied') toast(t('ntInApp'));
   }
 });
 for (const [id, key] of [['ntKOn', 'on'], ['ntKBest', 'best']])
-  $(id).addEventListener('change', e => { pushK = Object.assign({}, pushK, { [key]: e.target.checked }); store.set('fw27_pushk', { on: pushK.on ? 1 : 0, best: pushK.best ? 1 : 0 }); });
+  $(id).addEventListener('change', e => { pushK = Object.assign({}, pushK, { [key]: e.target.checked }); store.set('fw27_pushk', { on: pushK.on ? 1 : 0, best: pushK.best ? 1 : 0 }); if (NAT && pushOn) natPushSync(); });
 renderPushBtn();
+// The iOS app: while alerts are on, its APNs token is registered with the kinds kept on and the language (supabase/schema.sql PUSH),
+// so friends' alerts arrive with the app closed. With the app open the poll above shows them as toasts (foreground pushes are silent).
+let natPushTok = String(store.get('fw27_ptok', '') || ''), natPushInit = false;
+async function natPushSync(){
+  const pn = natPlug('PushNotifications'); if (!pn || !sb || !uid) return;
+  if (!pushOn){
+    if (natPushTok){ const r = await socRpc('push_unregister', { p_token: natPushTok }); if (!r.error){ natPushTok = ''; store.set('fw27_ptok', ''); } }
+    return;
+  }
+  const p = await pn.requestPermissions().catch(() => ({ receive: 'denied' }));
+  if (p.receive !== 'granted') return toast(t('ntOffApp'));
+  pn.register().catch(() => {});   // the token arrives in the 'registration' listener
+}
+if (NAT){ const pn = natPlug('PushNotifications'); if (pn) pn.addListener('registration', async tk => {
+  const v = tk && tk.value; if (!v || !sb || !uid || !pushOn) return;
+  const r = await socRpc('push_register', { p_token: v, p_kinds: { on: pushK.on, best: pushK.best }, p_lang: lang });
+  if (!r.error){ natPushTok = v; store.set('fw27_ptok', v); }
+}); }
 
 // one-tap friend request from a leaderboard row (uuid rows only)
 function frPlusBtn(id){

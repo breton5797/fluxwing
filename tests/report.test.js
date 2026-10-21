@@ -87,7 +87,7 @@ test('fw_reports references auth.users on delete cascade (delete_me takes it alo
   assert.match(tbl, /check \(reporter_id <> target_id\)/);
   assert.match(tbl, /unique \(reporter_id, target_id, reason, day\)/, 'one report per player, target and reason a day');
   assert.match(tbl, /seen\s+text/, 'the name the reporter saw is kept next to the server\'s');
-  assert.match(sql, /fw_testers, fw_events, fw_referrals, fw_ref_inviter, fw_ref_payouts, fw_reports\)/, 'the delete_me comment lists it');
+  assert.match(sql, /fw_testers, fw_events, fw_referrals, fw_ref_inviter, fw_ref_payouts, fw_reports(, \w+)*\)/, 'the delete_me comment lists it');
 });
 
 test('report_player: definer function pins search_path; the invoker wrapper and its private target are granted to authenticated', () => {
