@@ -1655,11 +1655,34 @@ function rptCands(pl, me){   // the other people of a match who can be reported:
    artifact. Pure: the caller passes the environment. tests/play-link.test.js */
 const PLAY_URL = 'https://play.google.com/store/apps/details?id=com.minimalkorea.swishby&referrer=' + encodeURIComponent('utm_source=swishby_web&utm_medium=menu');
 function playLinkShow(env){
-  if (!env || env.art || env.standalone || /^android-app:\/\//.test(env.referrer || '')) return false;
+  if (!env || env.art || env.native || env.standalone || /^android-app:\/\//.test(env.referrer || '')) return false;
   const ua = String(env.ua || '');
   return !(/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && env.touch > 1));
 }
 /* playlink:end */
+/* native:start — the iOS app (Capacitor shell, ios/App). The same page runs inside it; these pure helpers decide what changes there:
+   sign-in returns to the app's URL scheme (Info.plist) with the implicit-flow tokens in the hash, outside links open in the system
+   browser, and the web vibration patterns pick a native haptic strength. Pure: the caller passes window. tests/native.test.js */
+const NAT_AUTH = 'com.minimalkorea.swishby://auth', NAT_SITE = 'https://swishby.com/';
+function natIs(w){ try { return !!(w && w.Capacitor && typeof w.Capacitor.isNativePlatform === 'function' && w.Capacitor.isNativePlatform()); } catch(e){ return false; } }
+const natIsAuth = url => typeof url === 'string' && (url === NAT_AUTH || url.startsWith(NAT_AUTH + '#') || url.startsWith(NAT_AUTH + '?'));
+function natTokens(url){
+  const i = String(url || '').indexOf('#'); if (i < 0) return null;
+  const q = new URLSearchParams(String(url).slice(i + 1)), a = q.get('access_token'), r = q.get('refresh_token');
+  return a && r ? { access_token: a, refresh_token: r } : null;
+}
+function natExternal(href){
+  if (!href) return null;
+  try { const u = new URL(href, NAT_SITE); return /^https?:$/.test(u.protocol) ? u.href : null; } catch(e){ return null; }
+}
+function natHapticStyle(p){
+  if (Array.isArray(p)) return p.length ? 'HEAVY' : null;
+  if (typeof p !== 'number' || !(p > 0)) return null;
+  return p <= 8 ? 'LIGHT' : p <= 20 ? 'MEDIUM' : 'HEAVY';
+}
+/* native:end */
+const NAT = natIs(window);
+const natPlug = n => NAT && window.Capacitor.Plugins ? window.Capacitor.Plugins[n] : null;
 /* captcha:start — bot check (Cloudflare Turnstile) in front of the auth calls Supabase gates: anonymous sign-in and the email code. Pure: config parsing and one challenge; the script loader and the DOM box live with the Supabase code. tests/captcha.test.js runs this block (tests/helpers/captcha.js). */
 const CAP_CFG = Object.freeze({ src: 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', waitMs: 20000 });
 // FW_CONFIG.auth.captcha = { provider: 'turnstile', siteKey: '0x…' }. Anything else = off: no script is loaded and no token is sent (the project's captcha protection must then be off too)
@@ -2017,7 +2040,7 @@ let vibOn = store.get('fw27_vib', true);
 const HAPTIC = { flap:6, perfect:14, combo5:[20,30,40], fever:[30,40,30,40,90], power:[25,30,45], shieldBreak:[90,30,40],
   dash:[35,15,60], shatter:18, ready:[12,40,12], zone:[40,60,40,60,120], newBest:[80,40,80,40,200], death:[60,30,150], stamp:35,
   shieldHit:[40,20,70], deathHeavy:[80,30,120,40,200], record:[60,40,60,40,60,40,250], near:10, overdrive:[20,20,20,20,120] };
-function haptic(k){ if (!vibOn) return; const p = typeof k === 'string' ? HAPTIC[k] : k; try { navigator.vibrate && navigator.vibrate(p); } catch(e){} }
+function haptic(k){ if (!vibOn) return; const p = typeof k === 'string' ? HAPTIC[k] : k; try { if (NAT){ const st = natHapticStyle(p), h = natPlug('Haptics'); if (st && h) h.impact({style: st}); } else if (navigator.vibrate) navigator.vibrate(p); } catch(e){} }
 /* fx sound hook: per-event route — a loaded sample in SFX_FILES wins, else the synth; single-file build ships none */
 const SFX_FILES = {};
 const SFX_EV = { flap: 'flap', gate: 'pass', near: 'perfect', shieldHit: 'shield', death: 'die', record: 'fanfare', coin: 'orb', comboBreak: 'shatter', overdrive: 'fever' };
@@ -4993,7 +5016,7 @@ try { if (sessionStorage.getItem('fw_cloud_note')){ sessionStorage.removeItem('f
 let AUTH_UI = authUi(window.FW_CONFIG, navigator.userAgent), AUTH_EXT = null;
 const AUTH_CB = authUrl(location.href);
 if (AUTH_CB.err) history.replaceState(null, '', AUTH_CB.clean);   // the SDK never sees an auth error: the anonymous session stays as it is
-const authBack = () => location.origin + location.pathname;
+const authBack = () => NAT ? NAT_AUTH : location.origin + location.pathname;   // the app: back through its URL scheme (appUrlOpen below)
 const authAnon = () => !sbUser || sbUser.is_anonymous !== false;
 let authMail = null, authTry = '', authLeaving = false;   // authMail: {email, type} while a code is awaited; authTry: the provider of the last OAuth attempt
 const AUTH_BOX = {pick: 'authPick', code: 'authCodeForm', taken: 'authTaken', ask: 'authAsk', out: 'authOutBox'};
@@ -5015,9 +5038,28 @@ function renderAcct(){
 async function authOAuth(p){
   if (!sbC || backend !== 'supa') return authSay('authFail');
   authTry = p; try { sessionStorage.setItem('fw_auth_try', p); } catch(e){}
-  const o = {provider: p, options: {redirectTo: authBack()}};
+  const o = {provider: p, options: {redirectTo: authBack(), skipBrowserRedirect: NAT}};   // the app opens the provider in the system browser (Google refuses web views)
   let r; try { r = authAnon() ? await sbC.auth.linkIdentity(o) : await sbC.auth.signInWithOAuth(o); } catch(e){ r = {error: e}; }
-  if (r && r.error) authSay(authErr(r.error) === 'rate' ? 'authRate' : 'authFail');   // on success the page navigates away
+  if (r && r.error) return authSay(authErr(r.error) === 'rate' ? 'authRate' : 'authFail');   // on the web, success navigates away
+  if (NAT){ const b = natPlug('Browser'); if (b && r && r.data && r.data.url) b.open({url: r.data.url, presentationStyle: 'popover'}); else authSay('authFail'); }
+}
+// The app: the provider sends the system browser back to NAT_AUTH. Errors read as on the web (authUrl); tokens start the session in the page.
+async function natAuthBack(url){
+  const b = natPlug('Browser'); if (b) b.close().catch(() => {});
+  const cb = authUrl(url.replace(NAT_AUTH, NAT_SITE.slice(0, -1)));
+  if (cb.err){ authOpen(cb.err === 'taken' && authTry ? 'taken' : 'pick', cb.err === 'taken' ? 'authTaken' : 'authFail'); return; }
+  const tk = natTokens(url); if (!tk || !sbC) return;
+  const r = await sbC.auth.setSession(tk).catch(e => ({error: e}));
+  if (r && r.error) return authOpen('pick', 'authFail');
+  if (r && r.data && r.data.user) sbUser = r.data.user;
+  if (!authAnon()) authDone();
+}
+if (NAT){
+  const app = natPlug('App'); if (app) app.addListener('appUrlOpen', e => { if (e && natIsAuth(e.url)) natAuthBack(e.url); });
+  document.addEventListener('click', e => {   // links that would open a new tab (terms, privacy, about, the store) go to the system browser
+    const a = e.target && e.target.closest && e.target.closest('a[target="_blank"]'); if (!a) return;
+    const u = natExternal(a.getAttribute('href')), b = natPlug('Browser'); e.preventDefault(); if (u && b) b.open({url: u});
+  }, true);
 }
 function authReturn(){
   if (!AUTH_CB.cb) return;
@@ -5409,7 +5451,7 @@ $('oRefX').addEventListener('click', e => { e.stopPropagation(); $('oRef').hidde
    Display is routed by notifyRoute: master bell (fw27_push, default off) + per-kind checks (fw27_pushk). */
 const IS_ART = !!(window.claude && typeof window.claude.use === 'function');   // the claude.ai artifact shell
 $('playPre').href = PLAY_URL;
-$('playPre').hidden = !playLinkShow({ ua: navigator.userAgent, touch: navigator.maxTouchPoints || 0, referrer: document.referrer, art: IS_ART,
+$('playPre').hidden = !playLinkShow({ native: NAT, ua: navigator.userAgent, touch: navigator.maxTouchPoints || 0, referrer: document.referrer, art: IS_ART,
   standalone: !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches) });
 let pushOn = !!store.get('fw27_push', 0);
 let pushK = (k => ({ on: k.on !== 0, best: k.best !== 0 }))(Object(store.get('fw27_pushk', {})));
