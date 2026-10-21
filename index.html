@@ -59,6 +59,8 @@ canvas{display:block;width:100%;height:100%}
 .capbox{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9}   /* the Turnstile widget, shown only while it needs the player */
 select.ghost{appearance:none;-webkit-appearance:none;padding-right:16px}
 select.ghost option{background:#140e26;color:var(--ink)}
+.playpre{font:700 13px var(--body);color:var(--cool);text-decoration:none;padding:6px 14px;border:1px solid var(--line);border-radius:999px}
+.playpre::before{content:'▶ '}
 .keys{display:grid;grid-template-columns:auto auto;gap:6px 14px;font-size:13px;color:var(--dim);text-align:left}
 .keys b{color:var(--ink);font-weight:700;letter-spacing:.06em}
 .card{box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px 22px;width:min(386px,100%);display:flex;flex-direction:column;gap:12px;backdrop-filter:blur(6px)}
@@ -443,6 +445,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <button class="ghost" id="helpBtn" aria-label="Help">?</button>
       <select class="ghost" id="langSel" aria-label="Language"></select>
     </div>
+    <a class="playpre" id="playPre" target="_blank" rel="noopener" data-i18n="playPre" hidden></a>
     <div class="keys">
       <b>TAP · SPACE</b><span data-i18n="flap"></span>
       <b>SHIFT · DASH</b><span data-i18n="dashK"></span>
@@ -1128,6 +1131,14 @@ hi:{rpTitle:'रिपोर्ट करें', rpName:'आपत्तिज�
  blkDo:'ब्लॉक करें', blkUndo:'अनब्लॉक करें', blkDone:'ब्लॉक कर दिया। यह खिलाड़ी इस डिवाइस पर नहीं दिखेगा', blkHead:'ब्लॉक किए गए खिलाड़ी'},
 };
 for (const l in I18N) Object.assign(I18N[l], I18N_RP.en, I18N_RP[l] || {});
+// Google Play pre-registration link (playlink block): pre-register, never download or install
+const I18N_PL = {
+ko:{playPre:'Google Play에서 사전 등록'}, en:{playPre:'Pre-register on Google Play'}, ja:{playPre:'Google Playで事前登録'},
+zh:{playPre:'在 Google Play 预注册'}, es:{playPre:'Preinscríbete en Google Play'}, pt:{playPre:'Pré-registre-se no Google Play'},
+fr:{playPre:'Préinscrivez-vous sur Google Play'}, de:{playPre:'Auf Google Play vorregistrieren'}, id:{playPre:'Pra-daftar di Google Play'},
+vi:{playPre:'Đăng ký trước trên Google Play'}, th:{playPre:'ลงทะเบียนล่วงหน้าบน Google Play'}, hi:{playPre:'Google Play पर प्री-रजिस्टर करें'},
+};
+for (const l in I18N) Object.assign(I18N[l], I18N_PL.en, I18N_PL[l] || {});
 /* i18n:end — tests/i18n.test.js runs everything from `const I18N = {` to here */
 const birdById = id => BIRDS.find(b => b.id === id);
 let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
@@ -1639,6 +1650,16 @@ function rptCands(pl, me){   // the other people of a match who can be reported:
   return out;
 }
 /* report:end */
+/* playlink:start — the Google Play pre-registration link on the web menu. Hidden inside the Android app (TWA, display-mode standalone, or its
+   first load with an android-app:// referrer), on iOS (no app there; an iPad asking for the desktop site reads as a Mac with touch) and in the
+   artifact. Pure: the caller passes the environment. tests/play-link.test.js */
+const PLAY_URL = 'https://play.google.com/store/apps/details?id=com.minimalkorea.swishby&referrer=' + encodeURIComponent('utm_source=swishby_web&utm_medium=menu');
+function playLinkShow(env){
+  if (!env || env.art || env.standalone || /^android-app:\/\//.test(env.referrer || '')) return false;
+  const ua = String(env.ua || '');
+  return !(/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && env.touch > 1));
+}
+/* playlink:end */
 /* captcha:start — bot check (Cloudflare Turnstile) in front of the auth calls Supabase gates: anonymous sign-in and the email code. Pure: config parsing and one challenge; the script loader and the DOM box live with the Supabase code. tests/captcha.test.js runs this block (tests/helpers/captcha.js). */
 const CAP_CFG = Object.freeze({ src: 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', waitMs: 20000 });
 // FW_CONFIG.auth.captcha = { provider: 'turnstile', siteKey: '0x…' }. Anything else = off: no script is loaded and no token is sent (the project's captcha protection must then be off too)
@@ -5387,6 +5408,9 @@ $('oRefX').addEventListener('click', e => { e.stopPropagation(); $('oRef').hidde
 /* friend alerts: the server feed is polled (visible 30 s / hidden 60 s); social_hello also keeps last_seen fresh.
    Display is routed by notifyRoute: master bell (fw27_push, default off) + per-kind checks (fw27_pushk). */
 const IS_ART = !!(window.claude && typeof window.claude.use === 'function');   // the claude.ai artifact shell
+$('playPre').href = PLAY_URL;
+$('playPre').hidden = !playLinkShow({ ua: navigator.userAgent, touch: navigator.maxTouchPoints || 0, referrer: document.referrer, art: IS_ART,
+  standalone: !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches) });
 let pushOn = !!store.get('fw27_push', 0);
 let pushK = (k => ({ on: k.on !== 0, best: k.best !== 0 }))(Object(store.get('fw27_pushk', {})));
 let feedSince = clampI(store.get('fw27_feed2', 0), 0, Number.MAX_SAFE_INTEGER), feedNext = 0;
