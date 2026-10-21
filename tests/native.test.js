@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const block = html.match(/\/\* native:start[\s\S]*?\/\* native:end \*\//);
-const N = block ? new Function(`${block[0]}\nreturn {NAT_AUTH, NAT_SITE, natIs, natIsAuth, natTokens, natExternal, natHapticStyle};`)() : {};
+const N = block ? new Function(`${block[0]}\nreturn {NAT_AUTH, NAT_SITE, NAT_GC, natIs, natIsAuth, natTokens, natExternal, natHapticStyle, natGcScores};`)() : {};
 
 test('natIs: only a Capacitor shell that says it is native', () => {
   assert.ok(block, 'native block exists');
@@ -63,4 +63,24 @@ test('wiring: haptics, sign-in, outside links and the Play link know about the a
   assert.match(html, /setSession\(/);
   assert.match(html, /natExternal\(/);
   assert.match(html, /native: NAT/, 'the Play link knows it is inside the app');
+});
+
+test('Game Center: a finished run goes to the board of its mode; versus and empty runs do not', () => {
+  assert.deepEqual(N.NAT_GC, { best: 'swishby.best', daily: 'swishby.daily' });
+  assert.deepEqual(N.natGcScores('endless', 42), [{ leaderboardId: 'swishby.best', score: 42 }]);
+  assert.deepEqual(N.natGcScores('stage', 17), [{ leaderboardId: 'swishby.best', score: 17 }]);
+  assert.deepEqual(N.natGcScores('daily', 30), [{ leaderboardId: 'swishby.daily', score: 30 }]);
+  assert.deepEqual(N.natGcScores('versus', 50), []);
+  assert.deepEqual(N.natGcScores('endless', 0), []);
+  assert.deepEqual(N.natGcScores('endless', 12.7), [{ leaderboardId: 'swishby.best', score: 12 }]);
+});
+
+test('Game Center wiring: sign-in at start in the app, submit after a run, a board button only in the app', () => {
+  assert.match(html, /natPlug\('GameCenter'\)/);
+  assert.match(html, /natGcScores\(mode, score\)/);
+  assert.match(html, /id="lbGc"[^>]*hidden/);
+  const swift = readFileSync(new URL('../ios/App/App/GameCenterPlugin.swift', import.meta.url), 'utf8');
+  for (const m of ['signIn', 'submitScore', 'showLeaderboard']) assert.match(swift, new RegExp(`name: "${m}"`), m);
+  assert.match(swift, /jsName = "GameCenter"/);
+  assert.match(readFileSync(new URL('../ios/App/App/App.entitlements', import.meta.url), 'utf8'), /com\.apple\.developer\.game-center/);
 });

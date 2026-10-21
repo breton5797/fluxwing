@@ -636,6 +636,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     <div class="card lbcard">
       <div class="lbhead">
         <h2 data-i18n="lb"></h2>
+        <button class="ghost" id="lbGc" hidden>Game Center</button>
         <button class="ghost" id="lbClose" data-i18n="close"></button>
       </div>
       <div class="tabs" role="tablist">
@@ -1679,6 +1680,12 @@ function natHapticStyle(p){
   if (Array.isArray(p)) return p.length ? 'HEAVY' : null;
   if (typeof p !== 'number' || !(p > 0)) return null;
   return p <= 8 ? 'LIGHT' : p <= 20 ? 'MEDIUM' : 'HEAVY';
+}
+// Game Center boards (created in App Store Connect with these ids): the all-time best of endless and stage runs, and the daily course
+const NAT_GC = { best: 'swishby.best', daily: 'swishby.daily' };
+function natGcScores(mode, score){
+  const s = Math.floor(Number(score) || 0); if (s <= 0 || mode === 'versus') return [];
+  return [{ leaderboardId: mode === 'daily' ? NAT_GC.daily : NAT_GC.best, score: s }];
 }
 /* native:end */
 const NAT = natIs(window);
@@ -2964,7 +2971,8 @@ function showOver(){
   overTierStamp();   // the RP tier; a ranked result that moves it stamps again from setRp
   $('oPlace').textContent = ''; $('oTeams').hidden = true; $('oTitle').textContent = ''; $('oTitle').hidden = true; $('oTitle').style.color = '';   // no title on a normal result card (the old "SIGNAL LOST" read like a network error); versus fills and shows it
   $('over').hidden = false; vsFillOver(); if (mode === 'versus') vsResolve();
-  if (mode !== 'versus'){ submitScore(score, gatesPassed, mode, runDay); writeQ.then(() => refSync(true)); }   // after the submit: the server reads the best it holds
+  if (mode !== 'versus'){ submitScore(score, gatesPassed, mode, runDay); writeQ.then(() => refSync(true)); }
+  { const gc = natPlug('GameCenter'); if (gc) for (const b of natGcScores(mode, score)) gc.submitScore(b).catch(() => {}); }   // the app: Game Center keeps each player's best   // after the submit: the server reads the best it holds
   refNudge(mode === 'daily' ? 'daily' : mode === 'endless' && nb && score > 0 ? 'best' : '');
   // rewards
   // coins: field coins (orbs picked up) + score coins (stage mode, per 50 score by tier); the unit's coin multiplier applies to both
@@ -5055,6 +5063,8 @@ async function natAuthBack(url){
   if (!authAnon()) authDone();
 }
 if (NAT){
+  const gc = natPlug('GameCenter');
+  if (gc){ gc.signIn().catch(() => {}); $('lbGc').hidden = false; $('lbGc').addEventListener('click', e => { e.stopPropagation(); gc.showLeaderboard({}).catch(() => {}); }); }
   const app = natPlug('App'); if (app) app.addListener('appUrlOpen', e => { if (e && natIsAuth(e.url)) natAuthBack(e.url); });
   document.addEventListener('click', e => {   // links that would open a new tab (terms, privacy, about, the store) go to the system browser
     const a = e.target && e.target.closest && e.target.closest('a[target="_blank"]'); if (!a) return;
