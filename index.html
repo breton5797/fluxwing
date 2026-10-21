@@ -112,6 +112,12 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .frx:hover{color:#ff5c7a}
 .frplus{background:none;border:1px solid var(--line);border-radius:8px;color:var(--cool);font-size:13px;line-height:1;cursor:pointer;padding:3px 7px;margin-left:8px}
 .frwarn{font-size:11px;color:var(--dim);margin-top:8px}
+.plcard{max-width:360px;width:100%}
+.plpick,.plbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.plpick .ghost[aria-pressed="true"]{border-color:var(--cool);color:var(--cool)}
+.plblk{margin-top:6px;color:#ff5c7a}
+.lbrow .nm.tap,.frrow .nm.tap{cursor:pointer}
+.orpt{font-size:12px}
 .refbox{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(243,238,252,.05);display:grid;gap:6px}
 .refhd{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .refrule{font-size:12px;color:var(--dim);line-height:1.35}
@@ -465,6 +471,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <div class="chalnote" id="oChal" hidden></div>
       <div class="refnudge" id="oRef" hidden><span data-i18n="refNudge"></span><button class="ghost primary" id="oRefGo" data-i18n="refInvite"></button><button class="frx" id="oRefX" aria-label="Close">✕</button></div>
       <div class="vsteams" id="oTeams" hidden></div>
+      <button class="frx orpt" id="oRpt" data-i18n="rpTitle" hidden></button>
       <div class="stats">
         <div class="stat"><span id="oBestLbl" data-i18n="best"></span><strong id="oBest">0</strong></div>
         <div class="stat"><span data-i18n="gates"></span><strong id="oGates">0</strong></div>
@@ -617,6 +624,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
       <ol class="lblist" id="frList"></ol>
       <div class="lbstatus" id="frStatus"></div>
       <div class="frkinds"><label><input type="checkbox" id="ntKOn" checked><span data-i18n="ntKOn"></span></label><label><input type="checkbox" id="ntKBest" checked><span data-i18n="ntKBest"></span></label></div>
+      <div id="frBlk" hidden><div class="dayline" data-i18n="blkHead"></div><ol class="lblist" id="frBlkList"></ol></div>
       <div class="frwarn" data-i18n="frWarn"></div>
     </div>
   </div>
@@ -642,6 +650,15 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
         <button class="ghost" type="submit" data-i18n="save"></button>
       </form>
       <div class="nickrow acctrow" id="acctRow" hidden><span id="acctLbl"></span><button class="ghost" type="button" id="acctBtn"></button></div>
+    </div>
+  </div>
+  <div class="overlay" id="plScr" hidden>
+    <div class="card plcard">
+      <div class="lbhead"><h2 id="plNick"></h2><button class="ghost" id="plClose" data-i18n="close"></button></div>
+      <div class="plpick" id="plPick" hidden></div>
+      <div class="dayline" data-i18n="rpTitle"></div>
+      <div class="plbtns"><button class="ghost" data-rp="name" data-i18n="rpName"></button><button class="ghost" data-rp="cheat" data-i18n="rpCheat"></button><button class="ghost" data-rp="other" data-i18n="rpOther"></button></div>
+      <button class="ghost plblk" id="plBlk"></button>
     </div>
   </div>
 </div>
@@ -1071,6 +1088,46 @@ hi:{refHead:'साथ खेलें, जेम कमाएँ', refRule:'आ
  refEmpty:'आपके लिंक से जुड़ने वाले दोस्त यहाँ दिखेंगे', refGot:'दोस्त बुलाने का इनाम: +{n} जेम', refNudge:'दोस्त के साथ खेलें और जेम कमाएँ', refLinked:'आप अपने दोस्त से जुड़ गए। साथ खेलें!',
  refOff:'दोस्तों को बुलाने के लिए इंटरनेट चाहिए'}};
 for (const l in I18N) Object.assign(I18N[l], I18N_R.en, I18N_R[l] || {});
+// Report and block (report block): calm wording, no threats; a report is reviewed, blocking stays on this device
+const I18N_RP = {
+ko:{rpTitle:'신고하기', rpName:'부적절한 닉네임', rpCheat:'부정행위', rpOther:'기타', rpSent:'신고가 접수됐어요. 감사합니다', rpDup:'오늘 이미 신고한 플레이어예요',
+ rpSelf:'자기 자신은 신고할 수 없어요', rpRate:'오늘은 더 신고할 수 없어요. 내일 다시 시도해 주세요', rpFail:'신고를 보내지 못했어요. 잠시 후 다시 시도해 주세요', rpOff:'신고는 온라인에서만 할 수 있어요',
+ blkDo:'차단하기', blkUndo:'차단 해제', blkDone:'차단했어요. 이 기기에서 더 이상 보이지 않아요', blkHead:'차단한 플레이어'},
+en:{rpTitle:'Report', rpName:'Offensive name', rpCheat:'Cheating', rpOther:'Other', rpSent:'Report sent. Thank you', rpDup:'You already reported this player today',
+ rpSelf:'You cannot report yourself', rpRate:'No more reports today. Please try again tomorrow', rpFail:'Could not send the report. Please try again later', rpOff:'Reporting works only online',
+ blkDo:'Block', blkUndo:'Unblock', blkDone:'Blocked. You will not see this player on this device', blkHead:'Blocked players'},
+ja:{rpTitle:'通報する', rpName:'不適切なニックネーム', rpCheat:'不正行為', rpOther:'その他', rpSent:'通報を受け付けました。ありがとうございます', rpDup:'このプレイヤーは今日すでに通報済みです',
+ rpSelf:'自分自身は通報できません', rpRate:'今日はこれ以上通報できません。明日また試してください', rpFail:'通報を送信できませんでした。しばらくしてから試してください', rpOff:'通報はオンラインでのみ利用できます',
+ blkDo:'ブロック', blkUndo:'ブロック解除', blkDone:'ブロックしました。この端末では表示されません', blkHead:'ブロックしたプレイヤー'},
+zh:{rpTitle:'举报', rpName:'不当昵称', rpCheat:'作弊', rpOther:'其他', rpSent:'举报已提交，谢谢', rpDup:'你今天已经举报过这位玩家',
+ rpSelf:'不能举报自己', rpRate:'今天不能再举报了，请明天再试', rpFail:'举报发送失败，请稍后再试', rpOff:'举报仅限在线使用',
+ blkDo:'屏蔽', blkUndo:'取消屏蔽', blkDone:'已屏蔽，此设备上将不再显示该玩家', blkHead:'已屏蔽的玩家'},
+es:{rpTitle:'Denunciar', rpName:'Nombre ofensivo', rpCheat:'Trampas', rpOther:'Otro', rpSent:'Denuncia enviada. Gracias', rpDup:'Ya denunciaste a este jugador hoy',
+ rpSelf:'No puedes denunciarte a ti mismo', rpRate:'No puedes enviar más denuncias hoy. Inténtalo mañana', rpFail:'No se pudo enviar la denuncia. Inténtalo más tarde', rpOff:'Las denuncias solo funcionan en línea',
+ blkDo:'Bloquear', blkUndo:'Desbloquear', blkDone:'Bloqueado. No verás a este jugador en este dispositivo', blkHead:'Jugadores bloqueados'},
+pt:{rpTitle:'Denunciar', rpName:'Nome ofensivo', rpCheat:'Trapaça', rpOther:'Outro', rpSent:'Denúncia enviada. Obrigado', rpDup:'Você já denunciou este jogador hoje',
+ rpSelf:'Você não pode denunciar a si mesmo', rpRate:'Sem mais denúncias hoje. Tente novamente amanhã', rpFail:'Não foi possível enviar a denúncia. Tente mais tarde', rpOff:'Denúncias só funcionam online',
+ blkDo:'Bloquear', blkUndo:'Desbloquear', blkDone:'Bloqueado. Você não verá este jogador neste dispositivo', blkHead:'Jogadores bloqueados'},
+fr:{rpTitle:'Signaler', rpName:'Pseudo offensant', rpCheat:'Triche', rpOther:'Autre', rpSent:'Signalement envoyé. Merci', rpDup:'Vous avez déjà signalé ce joueur aujourd\'hui',
+ rpSelf:'Vous ne pouvez pas vous signaler vous-même', rpRate:'Plus de signalements possibles aujourd\'hui. Réessayez demain', rpFail:'Échec de l\'envoi du signalement. Réessayez plus tard', rpOff:'Le signalement fonctionne uniquement en ligne',
+ blkDo:'Bloquer', blkUndo:'Débloquer', blkDone:'Joueur bloqué. Il n\'apparaîtra plus sur cet appareil', blkHead:'Joueurs bloqués'},
+de:{rpTitle:'Melden', rpName:'Anstößiger Name', rpCheat:'Schummeln', rpOther:'Sonstiges', rpSent:'Meldung gesendet. Danke', rpDup:'Du hast diesen Spieler heute schon gemeldet',
+ rpSelf:'Du kannst dich nicht selbst melden', rpRate:'Heute keine weiteren Meldungen. Bitte versuche es morgen', rpFail:'Meldung konnte nicht gesendet werden. Bitte später erneut versuchen', rpOff:'Melden geht nur online',
+ blkDo:'Blockieren', blkUndo:'Freigeben', blkDone:'Blockiert. Du siehst diesen Spieler auf diesem Gerät nicht mehr', blkHead:'Blockierte Spieler'},
+id:{rpTitle:'Laporkan', rpName:'Nama tidak pantas', rpCheat:'Curang', rpOther:'Lainnya', rpSent:'Laporan terkirim. Terima kasih', rpDup:'Kamu sudah melaporkan pemain ini hari ini',
+ rpSelf:'Kamu tidak bisa melaporkan diri sendiri', rpRate:'Tidak bisa melapor lagi hari ini. Coba lagi besok', rpFail:'Laporan gagal dikirim. Coba lagi nanti', rpOff:'Laporan hanya bisa dikirim saat online',
+ blkDo:'Blokir', blkUndo:'Buka blokir', blkDone:'Diblokir. Pemain ini tidak akan terlihat di perangkat ini', blkHead:'Pemain yang diblokir'},
+vi:{rpTitle:'Báo cáo', rpName:'Tên phản cảm', rpCheat:'Gian lận', rpOther:'Khác', rpSent:'Đã gửi báo cáo. Cảm ơn bạn', rpDup:'Hôm nay bạn đã báo cáo người chơi này rồi',
+ rpSelf:'Bạn không thể tự báo cáo mình', rpRate:'Hôm nay không thể báo cáo thêm. Hãy thử lại vào ngày mai', rpFail:'Không gửi được báo cáo. Hãy thử lại sau', rpOff:'Chỉ có thể báo cáo khi trực tuyến',
+ blkDo:'Chặn', blkUndo:'Bỏ chặn', blkDone:'Đã chặn. Bạn sẽ không thấy người chơi này trên thiết bị này', blkHead:'Người chơi đã chặn'},
+th:{rpTitle:'รายงาน', rpName:'ชื่อไม่เหมาะสม', rpCheat:'โกง', rpOther:'อื่นๆ', rpSent:'ส่งรายงานแล้ว ขอบคุณ', rpDup:'วันนี้คุณรายงานผู้เล่นคนนี้ไปแล้ว',
+ rpSelf:'คุณรายงานตัวเองไม่ได้', rpRate:'วันนี้รายงานเพิ่มไม่ได้แล้ว ลองใหม่พรุ่งนี้', rpFail:'ส่งรายงานไม่สำเร็จ ลองใหม่ภายหลัง', rpOff:'รายงานได้เฉพาะตอนออนไลน์',
+ blkDo:'บล็อก', blkUndo:'เลิกบล็อก', blkDone:'บล็อกแล้ว คุณจะไม่เห็นผู้เล่นคนนี้บนอุปกรณ์นี้', blkHead:'ผู้เล่นที่บล็อก'},
+hi:{rpTitle:'रिपोर्ट करें', rpName:'आपत्तिजनक नाम', rpCheat:'धोखाधड़ी', rpOther:'अन्य', rpSent:'रिपोर्ट भेज दी गई। धन्यवाद', rpDup:'आप आज इस खिलाड़ी की रिपोर्ट कर चुके हैं',
+ rpSelf:'आप खुद की रिपोर्ट नहीं कर सकते', rpRate:'आज और रिपोर्ट नहीं कर सकते। कल फिर कोशिश करें', rpFail:'रिपोर्ट नहीं भेजी जा सकी। बाद में फिर कोशिश करें', rpOff:'रिपोर्ट सिर्फ़ ऑनलाइन की जा सकती है',
+ blkDo:'ब्लॉक करें', blkUndo:'अनब्लॉक करें', blkDone:'ब्लॉक कर दिया। यह खिलाड़ी इस डिवाइस पर नहीं दिखेगा', blkHead:'ब्लॉक किए गए खिलाड़ी'},
+};
+for (const l in I18N) Object.assign(I18N[l], I18N_RP.en, I18N_RP[l] || {});
 /* i18n:end — tests/i18n.test.js runs everything from `const I18N = {` to here */
 const birdById = id => BIRDS.find(b => b.id === id);
 let B = birdById(store.get('fw27_bird', 'volt')) || BIRDS[0];
@@ -1555,6 +1612,33 @@ const refPaidAdd = (paid, ids) => [...new Set([...(Array.isArray(paid) ? paid.fi
 // The invite nudge on the result card: after a new best or a finished daily run, never twice on one UTC day
 const refNudgeDue = (last, today, why) => (why === 'best' || why === 'daily') && last !== today;
 /* referral:end */
+/* report:start — report and block another player (store UGC rules). The block list lives on this device only (fw27_block: [{id, n}],
+   newest last, the oldest leave over the cap); a blocked player leaves the boards and the friend requests, and is drawn as Pilot in a match.
+   A report goes to the server (public.report_player); private.fw_rpt_cfg holds the same lists and tests/report.test.js keeps the two equal.
+   Pure: no DOM, no storage; SOC_UID comes from social-core. */
+const RPT_CFG = { max: 200, reasons: ['name', 'cheat', 'other'], places: ['board', 'friend', 'versus'] };
+const blkName = s => String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 14);
+function blkNorm(v){
+  const out = [], seen = new Set();
+  for (const e of Array.isArray(v) ? v : []){
+    if (!e || typeof e !== 'object' || !SOC_UID.test(e.id) || seen.has(e.id)) continue;
+    seen.add(e.id); out.push({ id: e.id, n: typeof e.n === 'string' ? blkName(e.n) : '' });
+  }
+  return out.slice(-RPT_CFG.max);
+}
+const blkHas = (list, id) => !!id && Array.isArray(list) && list.some(e => e.id === id);
+const blkAdd = (list, id, nick) => !SOC_UID.test(id) || blkHas(list, id) ? list : [...list, { id, n: blkName(nick) }].slice(-RPT_CFG.max);
+const blkDel = (list, id) => list.filter(e => e.id !== id);
+const blkNick = (list, id, nick) => blkHas(list, id) ? 'Pilot' : nick;
+const rptOkKey = d => !d ? 'rpFail' : d.status === 'ok' ? 'rpSent' : d.status === 'dup' ? 'rpDup' : 'rpFail';
+const rptErrKey = m => { const s = String(m || ''); return /fw_report_self/.test(s) ? 'rpSelf' : /fw_rate_limited/.test(s) ? 'rpRate' : 'rpFail'; };
+function rptCands(pl, me){   // the other people of a match who can be reported: a real player id, not an AI, not me, once each
+  const out = [];
+  for (const p of Array.isArray(pl) ? pl : [])
+    if (p && !p.ai && SOC_UID.test(p.uid) && p.uid !== me && !out.some(o => o.id === p.uid)) out.push({ id: p.uid, nick: String(p.nick || '') });
+  return out;
+}
+/* report:end */
 /* captcha:start — bot check (Cloudflare Turnstile) in front of the auth calls Supabase gates: anonymous sign-in and the email code. Pure: config parsing and one challenge; the script loader and the DOM box live with the Supabase code. tests/captcha.test.js runs this block (tests/helpers/captcha.js). */
 const CAP_CFG = Object.freeze({ src: 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', waitMs: 20000 });
 // FW_CONFIG.auth.captcha = { provider: 'turnstile', siteKey: '0x…' }. Anything else = off: no script is loaded and no token is sent (the project's captcha protection must then be off too)
@@ -1722,7 +1806,8 @@ const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_stg', 'fw27_stage', 'fw27_l
   'fw27_fxq', 'fw27_fxshake', 'fw27_fxflash',   // fx quality and accessibility: per-device hardware/comfort choices
   'fw27_push', 'fw27_pushk', 'fw27_feed2',     // friend alerts: the toggle follows this device's Notification permission; feed2 is this device's read cursor
   'fw27_ev_first',     // product events: this device's first launch was reported (an install is per device)
-  'fw27_ref', 'fw27_refpaid', 'fw27_refnudge']);   // friend invites: this device's pending link / reports, the payout ids it granted, the nudge day
+  'fw27_ref', 'fw27_refpaid', 'fw27_refnudge',   // friend invites: this device's pending link / reports, the payout ids it granted, the nudge day
+  'fw27_block']);   // report block: the players this device has blocked (the store copy says "on this device")
 const fsI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
 const fsDay = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
 const fsId = v => typeof v === 'string' && /^[a-z]{1,12}$/.test(v) && v !== 'constructor';
@@ -1849,6 +1934,7 @@ let nick = store.get('fw27_nick', null);
 if (!nick || nickBad(nick)){ nick = 'Pilot-' + String(Math.floor(1000 + Math.random()*9000)); store.set('fw27_nick', nick); }
 const cleanNick = s => String(s).replace(/[\u0000-\u001f\u007f<>]/g,'').replace(/\s+/g,' ').trim().slice(0,14);
 const showNick = s => { const v = cleanNick(s); return nickBad(v) ? 'Pilot' : v; };   // somebody else's name, about to be drawn: lobby and room names never pass the server
+let blocked = blkNorm(store.get('fw27_block', []));   // players this device has blocked (report block): off the boards, Pilot in a match
 
 function resize(){
   const r = cv.getBoundingClientRect();
@@ -2414,6 +2500,7 @@ addEventListener('keydown', e => {
   if (e.repeat) return;
   const tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' && (e.code === 'Space' || e.code === 'Enter')) return;
+  if (!$('plScr').hidden){ if (e.code === 'Escape') plClose(); return; }   // the report menu sits over everything: no game key goes through it
   if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else if (!$('frScr').hidden) frClose(); else closeLB(); } return; }
   if (state === 'menu' && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')){ e.preventDefault(); pickBird(ROSTER.indexOf(B) + (e.code === 'ArrowRight' ? 1 : -1)); return; }
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){ e.preventDefault(); if (state==='paused') togglePause(); else flap(); }
@@ -5095,21 +5182,23 @@ function renderLB(){
     const sc = lbTab === 'daily' ? dailyBestLocal(dayKey()) : best;
     if (sc > 0) rows = [{id:'local', nick, cc:CC, sc, bird:B.id}];
   }
+  const all = rows; rows = rows.filter(r => !blkHas(blocked, r.id));   // a blocked player leaves the list; everyone keeps their place
   if (note){ if (note.trim()){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = note; list.appendChild(li); } }
   else if (lbState === 'loading' || (vsT && sb && !vsBoardOk)){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('loading'); list.appendChild(li); }
   else if (!rows.length){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('empty'); list.appendChild(li); }
-  rows.forEach((r, i) => {
+  rows.forEach(r => {
     const li = document.createElement('li');
-    const me = r.id === uid || r.id === 'local';
+    const me = r.id === uid || r.id === 'local', i = all.indexOf(r);
     li.className = 'lbrow' + (i < 3 && !(r.rk > 3 || r.rk === '–') ? ' top' : '') + (me ? ' me' : '');
-    const n = document.createElement('span'); n.className = 'n'; n.textContent = r.rk || (vsT ? rows.findIndex(x => x.sc === r.sc) + 1 : i + 1);   // versus: equal RP, equal rank; last season: the archived rank
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = r.rk || (vsT ? all.findIndex(x => x.sc === r.sc) + 1 : i + 1);   // versus: equal RP, equal rank; last season: the archived rank
     const f = document.createElement('span'); f.textContent = flag(r.cc);
     const nm = document.createElement('span'); nm.className = 'nm';
     if (vsT){ const ti = r.ti != null ? r.ti : tierOf(Number(r.sc) || 0), tb = vtBadgeImg(ti, true); tb.classList.add('tb'); nm.appendChild(tb); }
     const bd = birdById(r.bird); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
     nm.appendChild(document.createTextNode(showNick(r.nick || '') || '—'));
     if (me){ const tg = document.createElement('span'); tg.className = 'me-tag'; tg.textContent = t('you'); nm.appendChild(tg); }
-    else { const fb = frPlusBtn(r.id); if (fb) nm.appendChild(fb); }
+    else { const fb = frPlusBtn(r.id); if (fb) nm.appendChild(fb);
+      if (sb && SOC_UID.test(r.id)){ nm.classList.add('tap'); nm.addEventListener('click', e => { e.stopPropagation(); plOpen([{id: r.id, nick: r.nick}], 'board'); }); } }
     const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = Math.max(0, Math.floor(Number(r.sc) || 0));
     if (bd){ const ub = document.createElement('span'); ub.className = 'ub'; ub.textContent = bd.name; ub.style.color = hsl(bd.uiCol || bd.col); sc.prepend(ub); }
     if (r.wl){ const w = document.createElement('span'); w.className = 'wl'; w.textContent = r.wl; sc.appendChild(w); }   // wins–losses
@@ -5169,8 +5258,9 @@ async function frAct(fn, args, okKey){
 }
 function renderFr(){
   $('frMyCode').textContent = SOC.code ? fcFmt(SOC.code) : '—';
-  const rq = $('frReqList'); rq.textContent = ''; $('frReqs').hidden = !SOC.reqs.length;
-  for (const q of SOC.reqs){
+  const rqs = SOC.reqs.filter(q => !blkHas(blocked, q.id));   // a blocked player's request is not shown (blocking declines it)
+  const rq = $('frReqList'); rq.textContent = ''; $('frReqs').hidden = !rqs.length;
+  for (const q of rqs){
     const li = document.createElement('li'); li.className = 'frrow';
     const d = document.createElement('span'); d.className = 'frdot';
     const f = document.createElement('span'); f.textContent = '';
@@ -5181,15 +5271,26 @@ function renderFr(){
     no.addEventListener('click', e => { e.stopPropagation(); frAct('friend_respond', {p_from: q.id, p_accept: false}, ''); });
     li.append(d, f, nm, ok, no); rq.appendChild(li);
   }
+  const bl = $('frBlkList'); bl.textContent = ''; $('frBlk').hidden = !blocked.length;
+  for (const e of blocked){
+    const li = document.createElement('li'); li.className = 'frrow';
+    const d = document.createElement('span'), f = document.createElement('span'), sp = document.createElement('span');
+    const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = showNick(e.n) || '—';
+    const x = document.createElement('button'); x.className = 'frx'; x.textContent = t('blkUndo');
+    x.addEventListener('click', ev => { ev.stopPropagation(); blkSet(e.id, '', false); });
+    li.append(d, f, nm, sp, x); bl.appendChild(li);
+  }
   const L = $('frList'); L.textContent = '';
-  if (!SOC.friends.length){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('frEmpty'); L.appendChild(li); return; }
-  for (const fr of SOC.friends){
+  const frs = SOC.friends.filter(f => !blkHas(blocked, f.id));   // blocking removes the friendship; until the server has it, the row stays hidden
+  if (!frs.length){ const li = document.createElement('li'); li.className = 'lbempty'; li.textContent = t('frEmpty'); L.appendChild(li); return; }
+  for (const fr of frs){
     const li = document.createElement('li'); li.className = 'frrow';
     const d = document.createElement('span'); d.className = 'frdot' + (fr.online ? ' on' : ''); if (fr.online) d.title = t('frOnline');
     const fl = document.createElement('span'); fl.textContent = flag(fr.cc);
     const nm = document.createElement('span'); nm.className = 'nm';
     const bd = birdById(fr.bird); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
     nm.appendChild(document.createTextNode(showNick(fr.nick) || '—'));
+    nm.classList.add('tap'); nm.addEventListener('click', e => { e.stopPropagation(); plOpen([{id: fr.id, nick: fr.nick}], 'friend'); });
     const b = document.createElement('span'); b.className = 'bst'; b.textContent = fr.best;
     const x = document.createElement('button'); x.className = 'frx'; x.textContent = '✕'; x.title = t('frDel');
     x.addEventListener('click', e => { e.stopPropagation(); frAct('friend_remove', {p_uid: fr.id}, ''); });
@@ -5292,6 +5393,7 @@ let feedSince = clampI(store.get('fw27_feed2', 0), 0, Number.MAX_SAFE_INTEGER), 
 function socShow(rows){
   const st = { on: pushOn, kinds: pushK, perm: typeof Notification !== 'undefined' ? Notification.permission : 'denied', hidden: document.hidden, art: IS_ART };
   for (const r of rows){
+    if (blocked.some(b => b.n && b.n === cleanNick(r.nick))) continue;   // the feed carries no player id: a blocked friend whose removal has not reached the server
     const route = notifyRoute(r.kind, st), tx = notifText(r.kind, showNick(r.nick) || 'Pilot', r.val);
     if (route === 'none' || !tx) continue;
     if (route === 'toast') toast(t(tx.k, tx.v));
@@ -5332,6 +5434,45 @@ function frPlusBtn(id){
   b.addEventListener('click', e => { e.stopPropagation(); b.disabled = true; frAct('friend_request', {p_uid: id}, 'frSent'); });
   return b;
 }
+
+/* ---------- report / block (report block above): the menu opens from a name on the boards, the friends screen or a versus result.
+   Blocking stays on this device; it also ends a friendship or declines a request with that player, so their alerts stop too. ---------- */
+let plCands = [], plSel = null, plPlace = 'board';
+function plOpen(cands, place){
+  plCands = cands.filter(c => SOC_UID.test(c.id) && c.id !== uid); if (!plCands.length) return;
+  plPlace = place; plSel = plCands[0]; renderPl(); $('plScr').hidden = false;
+}
+const plClose = () => { $('plScr').hidden = true; };
+function renderPl(){
+  $('plNick').textContent = showNick(plSel.nick) || '—';
+  const pk = $('plPick'); pk.textContent = ''; pk.hidden = plCands.length < 2;
+  for (const c of plCands){
+    const b = document.createElement('button'); b.className = 'ghost'; b.textContent = showNick(c.nick) || '—'; b.setAttribute('aria-pressed', c === plSel);
+    b.addEventListener('click', e => { e.stopPropagation(); plSel = c; renderPl(); }); pk.appendChild(b);
+  }
+  $('plBlk').textContent = t(blkHas(blocked, plSel.id) ? 'blkUndo' : 'blkDo');
+}
+function blkSet(id, nickNow, on){
+  blocked = on ? blkAdd(blocked, id, nickNow) : blkDel(blocked, id); store.set('fw27_block', blocked);
+  if (on){
+    for (const p of vs.pl || []) if (p.uid === id) p.nick = 'Pilot';
+    if (SOC.friends.some(f => f.id === id)) frAct('friend_remove', {p_uid: id}, '');
+    else if (SOC.reqs.some(q => q.id === id)) frAct('friend_respond', {p_from: id, p_accept: false}, '');
+    toast(t('blkDone'));
+  }
+  renderLB(); renderFr(); if (state === 'over') vsFillOver();
+}
+async function plReport(reason){
+  if (!sb || !uid){ toast(t('rpOff')); return; }
+  const r = await socRpc('report_player', {p_target: plSel.id, p_reason: reason, p_place: plPlace, p_seen: cleanNick(plSel.nick)});   // the name this screen showed
+  toast(t(r.error ? rptErrKey(r.error.message) : rptOkKey(r.data)));
+  if (!r.error) plClose();
+}
+$('plClose').addEventListener('click', e => { e.stopPropagation(); plClose(); });
+$('plScr').addEventListener('click', e => { e.stopPropagation(); if (e.target === $('plScr')) plClose(); });
+document.querySelectorAll('#plScr [data-rp]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); plReport(b.dataset.rp); }));
+$('plBlk').addEventListener('click', e => { e.stopPropagation(); blkSet(plSel.id, plSel.nick, !blkHas(blocked, plSel.id)); plClose(); });
+$('oRpt').addEventListener('click', e => { e.stopPropagation(); plOpen(rptCands(vs.pl, uid), 'versus'); });
 
 /* ---------- daily countdown ---------- */
 function updateDaily(){
@@ -5728,7 +5869,7 @@ function vsRoom2(ps, me, others){
   } else {
     const C = vsCands(ps, p => p.st.ready).sort((a, b) => a.id < b.id ? -1 : 1), k = Math.min(4, C.length);
     $('vsStatus').textContent = t('shareCode') + ' · ' + t(vs.sz === 4 ? 'vsIn4' : 'vsIn', {n: k});
-    $('vsRoster').textContent = C.slice(0, 4).map(p => showNick((p.st || {}).nick || '') || t('opp')).join(' · ');
+    $('vsRoster').textContent = C.slice(0, 4).map(p => blkNick(blocked, (p.st || {}).u, showNick((p.st || {}).nick || '')) || t('opp')).join(' · ');
     $('vsFill').hidden = k < 2 || k > 3; $('vsFill').disabled = !!me.st.fl;
     m = vsAssemble(vs.room, ps, me, C, k === 4 ? 4 : k > 1 && C.some(p => p.st.fl) ? k : 0, false);
   }
@@ -5766,7 +5907,7 @@ function vsOnRoom(){
       const st = o.st || {};
       // Each new state message is one sample: the ghost glides from where it is drawn now to the new height over one send interval
       if (st !== p.ref && typeof st.y === 'number' && st.y !== p.y){ const now = performance.now(); p.ref = st; p.dur = Math.max(80, Math.min(400, p.rx ? now - p.rx : VS_SEND)); p.rx = p.t0 = now; p.from = p.vis; p.y = st.y; }
-      p.bird = st.b || st.bird || 'volt'; p.nick = showNick(st.n || st.nick || '');
+      p.bird = st.b || st.bird || 'volt'; p.nick = blkNick(blocked, p.uid, showNick(st.n || st.nick || ''));
       if (p.al){ p.sc = st.sc | 0; p.g = st.g | 0; if (st.al === 0){ p.al = false; p.fin = p.sc; vsBurst(p); } }   // a dead player's score is final: later messages cannot move it
     }
     if (vs.phase === 'done'){ if (vs.sz === 2) vsFillOver(); } else vsResolve();
@@ -5794,7 +5935,7 @@ function vsSeat(ro, lv){
     const team = vs.sz === 4 ? 1 : tm[i] ^ tm[mi], dx = team ? 36 + 32*foe++ : -32;   // FFA: all three are rivals, staggered ahead
     if (i >= ro.length){ const ai = vsAiNew(i - ro.length, lv); return vsRival({tm: team, dx, ai, nick: 'AI ' + (i - ro.length + 1), bird: ai.bird}); }
     const o = ps.find(p => p.id === ro[i].id), st = (o && o.st) || {};
-    return vsRival({id: ro[i].id, uid: VS_UID.test(ro[i].u) ? ro[i].u : '', tm: team, dx, nick: showNick(st.nick || ''), bird: st.bird || 'volt'});
+    return vsRival({id: ro[i].id, uid: VS_UID.test(ro[i].u) ? ro[i].u : '', tm: team, dx, nick: blkNick(blocked, ro[i].u, showNick(st.nick || '')), bird: st.bird || 'volt'});
   }).filter(Boolean);
 }
 function vsCountdown(){
@@ -5802,7 +5943,7 @@ function vsCountdown(){
   if (vs.sz >= 2){ vsSeat(vs.qr.ro, vs.qr.lv); if (vs.ai) toast(t('vsAiFill')); }
   else {
     const o = vs.room && vs.room.peers().find(p => p.id === vs.oppId), st = (o && o.st) || {};
-    vs.pl = [vsRival({id: vs.oppId, bird: st.bird || 'volt', nick: showNick(st.nick || ''), uid: VS_UID.test(st.u) ? st.u : ''})];   // taken once, when the pairing is made
+    vs.pl = [vsRival({id: vs.oppId, bird: st.bird || 'volt', nick: blkNick(blocked, st.u, showNick(st.nick || '')), uid: VS_UID.test(st.u) ? st.u : ''})];   // taken once, when the pairing is made
   }
   let n = 3; banner('3', [0,100,62], .9); tone(520,.12,'square',.08);
   const it = setInterval(() => { n--; if (n > 0){ banner(String(n), [0,100,62], .9); tone(520,.12,'square',.08); } else { clearInterval(it); vsBegin(); } }, 900);
@@ -5966,6 +6107,7 @@ function vsFinishFfa(){
   setTimeout(() => vsLeave(), 1500);
 }
 function vsFillOver(){
+  $('oRpt').hidden = mode !== 'versus' || !sb || !rptCands(vs.pl, uid).length;   // only people with a player id: never an AI
   if (mode !== 'versus') return;
   const ttl = $('oTitle'); if (!ttl) return; ttl.hidden = false;
   if (vs.sz === 4) return vsFillOverFfa();
@@ -6073,7 +6215,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // Dev handle (only with #dev in the URL on localhost): views for console checks, FW.selfTest(), and QA helpers — hold (rAF skips update), step(dt, n)
-if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { cap: capOpts, ref: {get rec(){ return refRec; }, get view(){ return REF; }, sync: refSync, load: refLoad, nudge: refNudge, show: d => { REF = refView(d); renderRef(); }}, cloud: {get rec(){ return fsRec; }, snap: () => fsSnap(store.get), pull: cloudPull, push: cloudPush, get dirty(){ return fsDirty; }}, vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear,
+if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.FW = { cap: capOpts, rpt: {open: plOpen, get blocked(){ return blocked; }}, ref: {get rec(){ return refRec; }, get view(){ return REF; }, sync: refSync, load: refLoad, nudge: refNudge, show: d => { REF = refView(d); renderRef(); }}, cloud: {get rec(){ return fsRec; }, snap: () => fsSnap(store.get), pull: cloudPull, push: cloudPush, get dirty(){ return fsDirty; }}, vsRank: {TIERS, tierOf, rpAfter, vsMatchId, vsRpNote, vsTeams, vsOutcome, vsCodeSz, get rp(){ return rp; }, get vs(){ return vs; }, get uid(){ return uid; }}, sea: {seaOf, seaEnd, seaLeft, seaNow, seaNorm, seaGive, seaQ, seaMark, seaPend, seaRec, seaCheck, vsSync, get me(){ return vsMe; }, get owned(){ return [...owned]; }}, stTier, stD0, stAcc, spdD, stGoal, stGap0, stFogN, runD, powKind, HAZ, hazP, SK, ULT, ULT_FX, ultOn, skv, skillCd, priceOf, BIRDS, I18N, scoreCoins, diaClear,
   soc: {notifyRoute, notifText, feedMerge, fcNorm, fcOk, fcFmt, socNorm, show: socShow, get on(){ return pushOn; }, get k(){ return pushK; }},
   eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   ev: {EV_CFG, get st(){ return evSt; }, flush: evFlush, get tok(){ return !!evTok; }},   // product events: the queue as it stands (QA: what a session produced)

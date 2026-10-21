@@ -1836,7 +1836,7 @@ grant execute on function public.tester_me() to authenticated;
 -- ---------- ACCOUNT DELETION: the player deletes their own account from the game ----------
 -- Privacy law wants a way to withdraw. The client's "계정 삭제" calls public.delete_me(): one delete of the caller's
 -- auth.users row, and every game table (fw_scores, fw_saves, fw_versus, fw_vs_part, fw_vs_standing, fw_social,
--- fw_friends, fw_friend_req, fw_social_feed, fw_testers, fw_events, fw_referrals, fw_ref_inviter, fw_ref_payouts) references
+-- fw_friends, fw_friend_req, fw_social_feed, fw_testers, fw_events, fw_referrals, fw_ref_inviter, fw_ref_payouts, fw_reports) references
 -- auth.users (id) on delete cascade, as do the auth schema's own identities/sessions/refresh tokens. Nothing is anonymised or kept. A guest has no account to delete
 -- (the client never offers it); a call without a user does nothing and returns false.
 create or replace function private.fw_delete_me() returns boolean
@@ -2192,3 +2192,95 @@ grant execute on function public.referral_progress(integer)     to authenticated
 grant execute on function public.referral_me()                  to authenticated;
 grant execute on function public.referral_claim()               to authenticated;
 grant execute on function public.referral_ack(bigint)           to authenticated;
+-- =====================================================================================================
+-- REPORTS — report another player (store UGC rules: a way to report and to block). Blocking lives on the device only
+-- (index.html, report block: fw27_block); a report is one row here, sent from a name on the boards, the friends screen or a
+-- versus result through public.report_player(target, reason, place, seen). Reasons and places are private.fw_rpt_cfg()'s lists
+-- (tests/report.test.js keeps them equal to the client's RPT_CFG). One report per reporter, target and reason a UTC day (a
+-- second one answers 'dup'), day_cap reports a reporter a day, never yourself. nick is the target's name as the server has it
+-- (fw_scores, else fw_versus); seen is the name the reporter's screen showed (the client's word, kept for review).
+-- Auto-hide: when hide_at different players have reported the same name for 'name', the target leaves every board
+-- (hidden = true on fw_scores and fw_versus, as the by-hand moderation above). Only some reports count, so nobody can hide a
+-- player with throwaway accounts or by impersonation: the reporter is signed in with a real identity (not a guest, which costs
+-- nothing to make), the account is older than min_age_h hours and holds a best; and seen equals nick (in a match the peer
+-- sends its own player id, so a cheat could show a rude name under somebody else's id: that report is kept but never counts).
+-- A new name starts from zero (the count is per name). Review and undo, by hand as the database owner:
+--   select r.target_id, r.nick, r.reason, count(*) n, max(r.at) last from private.fw_reports r
+--   group by 1, 2, 3 order by n desc, last desc limit 50;
+--   update public.fw_scores set hidden = false where player_id = '<uuid>';   -- and fw_versus; a name that keeps its old
+--   delete from private.fw_reports where target_id = '<uuid>' and reason = 'name';   -- reports would be hidden again
+-- Deleting either auth user deletes their rows (on delete cascade).
+-- =====================================================================================================
+create or replace function private.fw_rpt_cfg() returns jsonb
+language sql immutable set search_path = '' as $$
+  select jsonb_build_object('reasons', array['name', 'cheat', 'other'], 'places', array['board', 'friend', 'versus'],
+                            'hide_at', 3, 'day_cap', 20, 'min_age_h', 24);
+$$;
+
+create table if not exists private.fw_reports (
+  id          bigserial   primary key,
+  reporter_id uuid        not null references auth.users (id) on delete cascade,
+  target_id   uuid        not null references auth.users (id) on delete cascade,
+  nick        text        not null default '',
+  seen        text        not null default '',
+  reason      text        not null check (reason in ('name', 'cheat', 'other')),
+  place       text        not null check (place in ('board', 'friend', 'versus')),
+  day         date        not null default (now() at time zone 'utc')::date,
+  at          timestamptz not null default now(),
+  constraint fw_reports_self_chk check (reporter_id <> target_id),
+  constraint fw_reports_day_key  unique (reporter_id, target_id, reason, day)
+);
+create index if not exists fw_reports_target_idx on private.fw_reports (target_id, reason, nick);
+alter table private.fw_reports enable row level security;   -- no policy: the schema is not exposed, the function below writes it
+revoke all on table private.fw_reports from public, anon, authenticated;
+grant select, insert, update, delete on table private.fw_reports to service_role;
+
+create or replace function private.fw_report(p_target uuid, p_reason text, p_place text, p_seen text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare
+  v_me  uuid := (select auth.uid());
+  v_cfg jsonb := private.fw_rpt_cfg();
+  v_day date := (now() at time zone 'utc')::date;
+  v_nick text; v_n int;
+begin
+  if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_target is null or not (v_cfg->'reasons') ? coalesce(p_reason, '') or not (v_cfg->'places') ? coalesce(p_place, '')
+     or not exists (select 1 from auth.users u where u.id = p_target) then
+    raise exception 'fw_bad_input: unknown player, reason or place' using errcode = 'P0001';
+  end if;
+  if p_target = v_me then raise exception 'fw_report_self: you cannot report yourself' using errcode = 'P0001'; end if;
+  perform pg_advisory_xact_lock(hashtext('fw_report:' || v_me::text));         -- the day cap holds under parallel calls
+  perform pg_advisory_xact_lock(hashtext('fw_report_t:' || p_target::text));   -- and the count: parallel reports cannot all miss hide_at
+  if exists (select 1 from private.fw_reports r where r.reporter_id = v_me and r.target_id = p_target and r.reason = p_reason and r.day = v_day) then
+    return jsonb_build_object('status', 'dup');
+  end if;
+  if (select count(*) from private.fw_reports r where r.reporter_id = v_me and r.day = v_day) >= (v_cfg->>'day_cap')::int then
+    raise exception 'fw_rate_limited: % reports a day', v_cfg->>'day_cap' using errcode = 'P0001';
+  end if;
+  v_nick := coalesce((select s.nick from public.fw_scores s where s.player_id = p_target),
+                     (select v.nick from public.fw_versus v where v.player_id = p_target), '');
+  insert into private.fw_reports (reporter_id, target_id, nick, seen, reason, place, day)
+  values (v_me, p_target, v_nick, left(coalesce(p_seen, ''), 14), p_reason, p_place, v_day);
+  if p_reason = 'name' and v_nick <> '' then
+    select count(distinct r.reporter_id) into v_n
+    from private.fw_reports r
+    join auth.users u on u.id = r.reporter_id
+    where r.target_id = p_target and r.reason = 'name' and r.nick = v_nick and r.seen = r.nick
+      and not u.is_anonymous
+      and u.created_at < now() - make_interval(hours => (v_cfg->>'min_age_h')::int)
+      and exists (select 1 from public.fw_scores s where s.player_id = r.reporter_id and s.best > 0);
+    if v_n >= (v_cfg->>'hide_at')::int then
+      update public.fw_scores s set hidden = true where s.player_id = p_target and not s.hidden;
+      update public.fw_versus v set hidden = true where v.player_id = p_target and not v.hidden;
+    end if;
+  end if;
+  return jsonb_build_object('status', 'ok');
+end $$;
+create or replace function public.report_player(p_target uuid, p_reason text, p_place text, p_seen text) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_report(p_target, p_reason, p_place, p_seen); $$;
+
+revoke all on function private.fw_rpt_cfg()                 from public, anon, authenticated;
+revoke all on function private.fw_report(uuid, text, text, text)  from public, anon;
+grant execute on function private.fw_report(uuid, text, text, text) to authenticated, service_role;   -- the invoker wrapper runs it as the caller; the private schema is not exposed by the API
+revoke all on function public.report_player(uuid, text, text, text) from public, anon;
+grant execute on function public.report_player(uuid, text, text, text) to authenticated;
