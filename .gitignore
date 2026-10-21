@@ -15,3 +15,5 @@ android/*
 *.aab
 *.apk
 *.idsig
+# iOS (Capacitor): ios/App is committed; the web bundle is rebuilt by `npm run build:ios`
+ios-www/
