@@ -127,7 +127,7 @@ export const HOOKS = {
     daily: ['Hôm nay cả thế giới chung một đường bay', 'Thử thách hôm nay. Đến lượt bạn.'],
     zone: ['Khu {z}. Càng lúc càng nhanh.', 'Chào mừng đến khu {z}'],
     skill: ['Mỗi chiến cơ một chiêu riêng', 'Chờ kỹ năng nhé...'],
-    ult: ['Tuyệt chiêu sẵn sàng. Xem này.', 'ULT trông như thế này đây'],
+    ult: ['Tuyệt chiêu sẵn sàng. Xem này.', 'Tuyệt chiêu trông thế này đây'],
     beat: ['Vượt được {n} không?', 'Vượt {n} đi. Dám không?'],
   },
   th: {
@@ -135,7 +135,7 @@ export const HOOKS = {
     fever: ['ต่อคอมโบจนไฟลุก', 'FEVER = แต้มคูณสอง'],
     dash: ['เกจเต็มแล้ว? ทะลุไปเลย', 'กำแพงไม่ใช่ปัญหา'],
     save: ['เมื่อกี้เฉียดฉิวสุดๆ', 'โล่เดียว รอดในวินาทีเดียว'],
-    record: ['ดูสถิติถูกทำลาย', 'สถิติใหม่กำลังมา...'],
+    record: ['มาดูการทำลายสถิติ', 'สถิติใหม่กำลังมา...'],
     daily: ['วันนี้ทั้งโลกบินด่านเดียวกัน', 'ชาเลนจ์วันนี้ ตาคุณแล้ว'],
     zone: ['โซน {z} ยิ่งไปยิ่งเร็ว', 'ยินดีต้อนรับสู่โซน {z}'],
     skill: ['ทุกยูนิตมีไม้ตายของตัวเอง', 'รอดูสกิล...'],
@@ -172,13 +172,13 @@ export const HOOKS = {
 export const END_LINE = { en: 'Play free at swishby.com', ko: '무료로 플레이 · swishby.com', ja: '無料でプレイ · swishby.com', es: 'Juega gratis en swishby.com', pt: 'Jogue grátis em swishby.com', id: 'Main gratis di swishby.com',
   fr: 'Jouez gratuitement sur swishby.com', de: 'Kostenlos spielen auf swishby.com', vi: 'Chơi miễn phí tại swishby.com', th: 'เล่นฟรีที่ swishby.com', hi: 'swishby.com पर मुफ़्त खेलें', zh: '免费畅玩 · swishby.com' };
 export const END_BEAT = { en: 'Your turn: beat {n}', ko: '이제 네 차례: {n}점', ja: '次は君の番: {n}点', es: 'Te toca: supera {n}', pt: 'Sua vez: passe de {n}', id: 'Giliranmu: kalahkan {n}',
-  fr: 'À vous : battez {n}', de: 'Du bist dran: schlag {n}', vi: 'Đến lượt bạn: vượt {n}', th: 'ตาคุณแล้ว: ทำให้เกิน {n}', hi: 'अब आपकी बारी: {n} को हराएँ', zh: '轮到你了：超过{n}分' };
+  fr: 'À vous : battez {n}', de: 'Du bist dran: schlag {n}', vi: 'Đến lượt bạn: vượt {n}', th: 'ตาคุณแล้ว: ทำให้ได้เกิน {n}', hi: 'अब आपकी बारी: {n} को हराएँ', zh: '轮到你了：超过{n}分' };
 
 // Store screenshots: six shots in this order, each with a big caption line and a short sub line.
 export const SHOTS = ['title', 'combo', 'dash', 'roster', 'daily', 'versus'];
 export const CAPTIONS = {
   en: {
-    title: ['One tap. Pure flow.', 'Free to play, right in your browser'],
+    title: ['One tap. Pure flow.', 'Free to play. Tap and go.'],
     combo: ['Skim the gates. Chain the combo.', 'Near misses score the most'],
     dash: ['Fill the meter. Dash through walls.', 'Hit FEVER for double points'],
     roster: ['20 units, 20 skills', 'Find the one that fits your style'],
@@ -186,7 +186,7 @@ export const CAPTIONS = {
     versus: ['Race your friends live', '1v1, 2v2 and 4-player free-for-all'],
   },
   ko: {
-    title: ['탭 한 번, 끝없는 몰입', '설치 없이 바로 무료 플레이'],
+    title: ['탭 한 번, 끝없는 몰입', '무료, 탭 한 번이면 바로 시작'],
     combo: ['아슬아슬 스치고, 콤보를 이어라', '가깝게 스칠수록 점수가 커진다'],
     dash: ['게이지를 채우고 벽을 뚫어라', '피버 타임엔 점수 2배'],
     roster: ['20개 유닛, 20가지 스킬', '내 플레이에 맞는 기체를 찾아라'],
@@ -194,7 +194,7 @@ export const CAPTIONS = {
     versus: ['친구와 실시간 레이스', '1:1, 2:2, 4인 난투'],
   },
   ja: {
-    title: ['ワンタップで、極上の爽快感', 'ブラウザですぐ無料プレイ'],
+    title: ['ワンタップで、極上の爽快感', '無料、タップですぐプレイ'],
     combo: ['ギリギリをかすめて、コンボをつなげ', 'ニアミスほど高得点'],
     dash: ['ゲージをためて、壁をぶち抜け', 'フィーバー中はスコア2倍'],
     roster: ['20機のユニット、20のスキル', '自分に合う機体を見つけよう'],
@@ -202,7 +202,7 @@ export const CAPTIONS = {
     versus: ['フレンドとリアルタイム対戦', '1対1、2対2、4人バトル'],
   },
   es: {
-    title: ['Un toque. Flujo total.', 'Gratis y al instante en tu navegador'],
+    title: ['Un toque. Flujo total.', 'Gratis. Toca y a jugar.'],
     combo: ['Roza las puertas. Encadena el combo.', 'Cuanto más cerca, más puntos'],
     dash: ['Llena la barra. Atraviesa muros.', 'Entra en FIEBRE: puntos dobles'],
     roster: ['20 unidades, 20 habilidades', 'Encuentra la que va con tu estilo'],
@@ -210,7 +210,7 @@ export const CAPTIONS = {
     versus: ['Compite con amigos en vivo', '1 contra 1, 2 contra 2 y todos contra todos'],
   },
   pt: {
-    title: ['Um toque. Puro fluxo.', 'Grátis e na hora, no navegador'],
+    title: ['Um toque. Puro fluxo.', 'Grátis. Toque e jogue.'],
     combo: ['Raspe os portões. Encadeie o combo.', 'Quanto mais perto, mais pontos'],
     dash: ['Encha a barra. Atravesse paredes.', 'Entre na FEBRE: pontos em dobro'],
     roster: ['20 unidades, 20 habilidades', 'Ache a que combina com seu estilo'],
@@ -218,7 +218,7 @@ export const CAPTIONS = {
     versus: ['Corra contra amigos ao vivo', '1x1, 2x2 e todos contra todos'],
   },
   id: {
-    title: ['Satu ketuk. Langsung asyik.', 'Gratis, langsung main di browser'],
+    title: ['Satu ketuk. Langsung asyik.', 'Gratis, sekali ketuk langsung main'],
     combo: ['Lewati gerbang setipis mungkin. Sambung combo.', 'Makin tipis, makin besar poinnya'],
     dash: ['Isi meteran. Tembus tembok.', 'Masuk FEVER untuk poin dobel'],
     roster: ['20 unit, 20 skill', 'Temukan yang cocok dengan gayamu'],
@@ -226,7 +226,7 @@ export const CAPTIONS = {
     versus: ['Balapan langsung dengan teman', '1v1, 2v2, dan 4 pemain bebas'],
   },
   fr: {
-    title: ['Un tap. Fluidité totale.', 'Gratuit, directement dans le navigateur'],
+    title: ['Un tap. Fluidité totale.', 'Gratuit. Touchez et jouez.'],
     combo: ['Frôlez les portes. Enchaînez les combos.', 'Plus c\'est juste, plus ça rapporte'],
     dash: ['Remplissez la jauge. Traversez les murs.', 'Passez en FIÈVRE : points doublés'],
     roster: ['20 unités, 20 compétences', 'Trouvez celle qui colle à votre style'],
@@ -234,7 +234,7 @@ export const CAPTIONS = {
     versus: ['Affrontez vos amis en direct', '1v1, 2v2 et chacun pour soi à 4'],
   },
   de: {
-    title: ['Ein Tipp. Purer Flow.', 'Kostenlos, direkt im Browser'],
+    title: ['Ein Tipp. Purer Flow.', 'Kostenlos. Antippen und los.'],
     combo: ['Tore streifen. Combos ketten.', 'Je knapper, desto mehr Punkte'],
     dash: ['Leiste füllen. Durch Wände dashen.', 'Im FIEBER gibt es doppelte Punkte'],
     roster: ['20 Einheiten, 20 Skills', 'Finde die, die zu deinem Stil passt'],
@@ -242,7 +242,7 @@ export const CAPTIONS = {
     versus: ['Tritt live gegen Freunde an', '1v1, 2v2 und Jeder gegen jeden zu viert'],
   },
   vi: {
-    title: ['Một chạm. Bay thật mượt.', 'Miễn phí, chơi ngay trên trình duyệt'],
+    title: ['Một chạm. Bay thật mượt.', 'Miễn phí, chạm là chơi ngay'],
     combo: ['Bay sát cổng. Nối dài combo.', 'Càng sát, điểm càng cao'],
     dash: ['Nạp đầy thanh. Lướt xuyên tường.', 'Vào CƠN SỐT để nhân đôi điểm'],
     roster: ['20 chiến cơ, 20 chiêu', 'Tìm chiếc hợp với lối chơi của bạn'],
@@ -250,23 +250,23 @@ export const CAPTIONS = {
     versus: ['Đua trực tiếp cùng bạn bè', '1v1, 2v2 và đấu tự do 4 người'],
   },
   th: {
-    title: ['แตะเดียว ลื่นไหลสุดๆ', 'เล่นฟรี ได้ทันทีบนเบราว์เซอร์'],
+    title: ['แตะเดียว ลื่นไหลสุดๆ', 'เล่นฟรี แตะแล้วเล่นได้ทันที'],
     combo: ['เฉียดเกต ต่อคอมโบ', 'ยิ่งเฉียด ยิ่งได้แต้มเยอะ'],
     dash: ['เติมเกจ แดชทะลุกำแพง', 'เข้า FEVER รับแต้มคูณสอง'],
-    roster: ['20 ยูนิต 20 สกิล', 'หาตัวที่ใช่กับสไตล์ของคุณ'],
+    roster: ['20 ยูนิต 20 สกิล', 'เลือกตัวที่เข้ากับสไตล์คุณ'],
     daily: ['ด่านใหม่ทุกวัน', 'ทั้งโลกบินด่านเดียวกัน'],
     versus: ['แข่งสดกับเพื่อน', '1v1, 2v2 และตัวใครตัวมัน 4 คน'],
   },
   hi: {
-    title: ['एक टैप। पूरा फ़्लो।', 'मुफ़्त, सीधे ब्राउज़र में'],
-    combo: ['सटकर निकलें, कॉम्बो जोड़ें', 'जितना करीब, उतने ज़्यादा पॉइंट'],
+    title: ['एक टैप, पूरा मज़ा।', 'मुफ़्त, बस टैप करें और खेलें'],
+    combo: ['गेट से सटकर निकलें, कॉम्बो जोड़ें', 'जितना करीब, उतने ज़्यादा पॉइंट'],
     dash: ['मीटर भरें, दीवार पार करें', 'FEVER में पॉइंट डबल'],
     roster: ['20 यूनिट, 20 स्किल', 'अपने स्टाइल वाली यूनिट चुनें'],
-    daily: ['हर दिन नया कोर्स', 'पूरी दुनिया के लिए एक ही रन'],
+    daily: ['हर दिन नया कोर्स', 'पूरी दुनिया का एक ही कोर्स'],
     versus: ['दोस्तों से लाइव रेस', '1v1, 2v2 और 4 खिलाड़ियों का फ़्री-फ़ॉर-ऑल'],
   },
   zh: {
-    title: ['一键操作，畅快飞行', '免费游玩，浏览器即开即玩'],
+    title: ['一键操作，畅快飞行', '免费游玩，一点即玩'],
     combo: ['擦边过关，连击不断', '贴得越近，分数越高'],
     dash: ['攒满能量，冲刺破墙', '进入狂热时刻，得分翻倍'],
     roster: ['20台机体，20种技能', '找到最适合你风格的那台'],
@@ -284,7 +284,7 @@ CAPTIONS['es-ES'] = {
   versus: ['Compite con tus amigos en directo', '1 contra 1, 2 contra 2 y todos contra todos'],
 };
 CAPTIONS['pt-PT'] = {
-  title: ['Um toque. Fluxo puro.', 'Grátis e já, no teu navegador'],
+  title: ['Um toque. Fluxo puro.', 'Grátis. Toca e joga.'],
   combo: ['Roça os portões. Encadeia o combo.', 'Quanto mais perto, mais pontos'],
   dash: ['Enche a barra. Atravessa paredes.', 'Entra em FEBRE: pontos a dobrar'],
   roster: ['20 unidades, 20 habilidades', 'Encontra a que combina com o teu estilo'],
