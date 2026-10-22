@@ -71,5 +71,7 @@ begin
   if exists (select 1 from private.fw_push) then raise exception 'no tokens may remain'; end if;
   if has_function_privilege('authenticated', 'public.push_drop(text[])', 'execute') then raise exception 'push_drop is the function''s'; end if;
   if has_function_privilege('anon', 'public.push_register(text, jsonb, text)', 'execute') then raise exception 'anon must not register'; end if;
+  if has_function_privilege('authenticated', 'public.push_hook_ok(text)', 'execute') then raise exception 'push_hook_ok is the function''s'; end if;
+  if public.push_hook_ok('anything') then raise exception 'without the vault no secret matches'; end if;
 end $$;
 \echo === push rehearsal: all checks passed ===
