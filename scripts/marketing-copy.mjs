@@ -351,7 +351,7 @@ export const CAPTIONS = {
     dash: ['Täytä mittari. Syöksy seinien läpi.', 'FEVER tuplaa pisteet'],
     roster: ['20 yksikköä, 20 taitoa', 'Löydä tyyliisi sopiva'],
     daily: ['Joka päivä uusi rata', 'Sama rata koko maailmalle'],
-    versus: ['Kisaa kavereita vastaan livenä', '1v1, 2v2 ja neljän pelaajan kaikki vastaan kaikki'],
+    versus: ['Kisaa kavereita vastaan livenä', '1v1, 2v2 ja 4 pelaajan matsit'],
   },
   he: {
     title: ['נגיעה אחת. זרימה טהורה.', 'חינם. נוגעים וטסים.'],
@@ -364,6 +364,17 @@ export const CAPTIONS = {
 };
 // Game languages that have store screenshots but no short-video hooks yet (each one runs the game in its own language).
 export const SHOT_LANGS = [...LANGS, 'zh_TW', 'nl', 'ru', 'ms', 'nb', 'ar', 'it', 'tr', 'pl', 'fi', 'he'];
+
+// Caption type per language. The display face (Chakra Petch) covers Latin, Vietnamese and Thai only; other scripts name their
+// own system face, never a Japanese one (Hiragino sets Cyrillic full-width), and get no tracking (it breaks Arabic joining).
+const SCRIPT_FACES = { ru: '"Helvetica Neue",Arial', ar: '"Chakra Petch","Geeza Pro","Noto Sans Arabic"', he: '"Chakra Petch","Arial Hebrew","Noto Sans Hebrew"',
+  ja: '"Chakra Petch","Hiragino Sans"', ko: '"Chakra Petch","Apple SD Gothic Neo"', zh: '"Chakra Petch","PingFang SC","Noto Sans SC"',
+  zh_TW: '"Chakra Petch","PingFang TC","Noto Sans TC"', hi: '"Chakra Petch","Kohinoor Devanagari","Noto Sans Devanagari"' };
+export function captionFont(lang) {
+  const own = SCRIPT_FACES[gameLang(lang)];
+  return own ? { family: `${own},system-ui,sans-serif`, tracking: '0' }
+    : { family: '"Chakra Petch","Thonburi","Noto Sans Thai",system-ui,sans-serif', tracking: '-.01em' };
+}
 // Store locales that share the game's language but not its wording: Play lists es-ES and pt-PT next to es-419 and pt-BR.
 // Their screenshots run the es / pt game under European captions (tu-forms in pt-PT, "en directo" in Spain).
 export const STORE_VARIANTS = { 'es-ES': 'es', 'pt-PT': 'pt' };

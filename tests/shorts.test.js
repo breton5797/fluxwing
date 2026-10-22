@@ -1,7 +1,7 @@
 // scripts/marketing-copy.mjs: the hook / caption tables and the clip plan behind scripts/shorts.mjs and scripts/store-shots.mjs.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { LANGS, SHOT_LANGS, STORE_VARIANTS, gameLang, SCENES, SCENE_ORDER, HOOKS, END_LINE, END_BEAT, SHOTS, CAPTIONS, scenePlan, hookFor, fill, parseArgs, sceneOk, clipLen, zoneOf, mulberry32 } from '../scripts/marketing-copy.mjs';
+import { LANGS, SHOT_LANGS, STORE_VARIANTS, gameLang, captionFont, SCENES, SCENE_ORDER, HOOKS, END_LINE, END_BEAT, SHOTS, CAPTIONS, scenePlan, hookFor, fill, parseArgs, sceneOk, clipLen, zoneOf, mulberry32 } from '../scripts/marketing-copy.mjs';
 
 const FLYABLE = ['volt', 'blitz', 'nimbus', 'titan', 'mochi', 'aegis', 'phoenix', 'zero', 'pixel', 'neko', 'buzz', 'kraken', 'specter', 'oracle', 'raijin', 'chrono', 'goliath', 'solaris', 'pulsar'];
 
@@ -49,6 +49,14 @@ test('store variants es-ES / pt-PT: European captions over the es / pt game, eac
   }
   assert.doesNotMatch(Object.values(CAPTIONS['pt-PT']).flat().join(' '), /\bpro\b|\bvocê|Ache\b|Raspe\b/, 'no Brazilian forms');
   assert.doesNotMatch(Object.values(CAPTIONS['es-ES']).flat().join(' '), /en vivo/, 'Spain says en directo');
+});
+
+test('captionFont: the display face with its tracking for Latin scripts; own face, no tracking, never Hiragino for the others', () => {
+  for (const l of ['en', 'nl', 'tr', 'pl', 'vi', 'th', 'es-ES']) assert.deepEqual([captionFont(l).family.split(',')[0], captionFont(l).tracking], ['"Chakra Petch"', '-.01em'], l);
+  for (const l of ['ru', 'ar', 'he', 'ja', 'ko', 'zh', 'zh_TW', 'hi']) assert.equal(captionFont(l).tracking, '0', l);
+  assert.doesNotMatch(captionFont('ru').family, /Chakra|Hiragino/, 'one Cyrillic-capable face for the whole line');
+  for (const l of ['ar', 'he', 'zh_TW']) assert.doesNotMatch(captionFont(l).family, /Hiragino/, l);
+  assert.match(captionFont('zh_TW').family, /PingFang TC/);
 });
 
 test('hookFor fills the score and zone, cycles the list, and falls back to English', () => {
