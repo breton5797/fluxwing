@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const block = html.match(/\/\* native:start[\s\S]*?\/\* native:end \*\//);
-const N = block ? new Function(`${block[0]}\nreturn {NAT_AUTH, NAT_SITE, NAT_GC, NAT_PEND_MS, natIs, natIsAuth, natCode, natFresh, natExternal, natHapticStyle, natGcScores};`)() : {};
+const N = block ? new Function(`${block[0]}\nreturn {NAT_AUTH, NAT_SITE, NAT_GC, NAT_PEND_MS, natIs, natIsAuth, natCode, natFresh, natExternal, natHapticStyle, natGcScores, natPushToken};`)() : {};
 
 test('natIs: only a Capacitor shell that says it is native', () => {
   assert.ok(block, 'native block exists');
@@ -98,4 +98,21 @@ test('Game Center wiring: sign-in at start in the app, submit after a run, a boa
   for (const m of ['signIn', 'submitScore', 'showLeaderboard']) assert.match(swift, new RegExp(`name: "${m}"`), m);
   assert.match(swift, /jsName = "GameCenter"/);
   assert.match(readFileSync(new URL('../ios/App/App/App.entitlements', import.meta.url), 'utf8'), /com\.apple\.developer\.game-center/);
+});
+
+test('natPushToken: the plugin hands an upper-case hex token; the server takes lower-case hex only', () => {
+  const up = 'AB12'.repeat(16);
+  assert.equal(N.natPushToken(up), up.toLowerCase());
+  assert.equal(N.natPushToken('  ' + 'f'.repeat(64) + ' '), 'f'.repeat(64));
+  assert.equal(N.natPushToken('xyz'), '', 'not hex');
+  assert.equal(N.natPushToken('a'.repeat(63)), '', 'too short');
+  assert.equal(N.natPushToken(null), '');
+  const sql = readFileSync(new URL('../supabase/schema.sql', import.meta.url), 'utf8');
+  assert.match(sql, /token ~ '\^\[0-9a-f\]\{64,200\}\$'/, 'the server rule this mirrors');
+});
+
+test('push wiring: the token goes up normalised, and a failed registration or refusal is shown, not swallowed', () => {
+  assert.match(html, /natPushToken\(tk && tk\.value\)/);
+  assert.match(html, /addListener\('registrationError'/);
+  assert.match(html, /t\('ntPushErr'\)/);
 });
