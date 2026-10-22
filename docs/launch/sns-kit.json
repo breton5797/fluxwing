@@ -1,0 +1,48 @@
+{
+  "name": "SWISHBY",
+  "handle": "swishbygame",
+  "link": "https://swishby.com",
+  "platforms": {
+    "tiktok": { "handle": "swishbygame", "url": "https://www.tiktok.com/@swishbygame" },
+    "instagram": { "handle": "swishbygame", "url": "https://www.instagram.com/swishbygame/" },
+    "x": { "handle": "swishbygame", "url": "https://x.com/swishbygame" },
+    "youtube": { "handle": "swishbygame", "url": "https://www.youtube.com/@swishbygame" }
+  },
+  "images": {
+    "profile": [1080, 1080],
+    "youtubeBanner": [2560, 1440],
+    "xHeader": [1500, 500]
+  },
+  "bio": {
+    "en": {
+      "tiktok": "One tap. Skim, combo, dash. Same daily course worldwide 🌍",
+      "instagram": "One-tap sky dash 🕹️\nSkim the gates, chain combos, dash through walls.\nSame daily course for the whole world. Play free 👇",
+      "x": "Official account of SWISHBY, the one-tap sky dash. Skim the gates, chain combos, dash through walls. Same daily course worldwide. Play free 👇",
+      "youtube": "SWISHBY is a one-tap arcade flyer with a real skill ceiling.\n\nSkim the very edge of a gate for a PERFECT, keep the streak alive to build a combo, and when the meter fills, DASH straight through the wall.\n\n• 50 stages across 4 zones\n• A daily course that is the same for every player in the world\n• Head-to-head versus and seasonal rankings\n\nShorts, record runs and update news here.\n\nPlay free: https://swishby.com"
+    },
+    "ko": {
+      "tiktok": "탭 한 번. 스치고, 콤보, 대시. 전 세계가 오늘 같은 코스 🌍",
+      "instagram": "원탭 스카이 대시 🕹️\n게이트를 스쳐 콤보, 게이지가 차면 벽을 뚫고 대시.\n전 세계가 오늘 같은 코스를 납니다. 무료 플레이 👇",
+      "x": "원탭 스카이 대시 SWISHBY 공식 계정. 게이트를 스쳐 콤보, 게이지가 차면 벽을 뚫고 대시. 전 세계가 오늘 같은 코스를 납니다. 무료 플레이 👇",
+      "youtube": "SWISHBY는 탭 한 번으로 조작하지만 실력 차이가 확실히 나는 아케이드 비행 게임입니다.\n\n게이트 가장자리를 아슬아슬하게 스치면 PERFECT, 연속으로 이어 가면 콤보, 게이지가 차면 벽을 그대로 뚫고 대시합니다.\n\n• 4개 구역, 50개 스테이지\n• 전 세계 플레이어가 같은 코스로 겨루는 일일 챌린지\n• 1:1 대결과 시즌 랭킹\n\n쇼츠, 기록 플레이, 업데이트 소식을 올립니다.\n\n무료 플레이: https://swishby.com"
+    },
+    "ja": {
+      "tiktok": "ワンタップ。かすめて、コンボ、ダッシュ。今日のコースは世界共通 🌍",
+      "instagram": "ワンタップ・スカイダッシュ 🕹️\nゲートをかすめてコンボ、ゲージ満タンで壁を突き抜けろ。\n今日のコースは世界共通。無料でプレイ 👇",
+      "x": "ワンタップ・スカイダッシュ「SWISHBY」公式アカウント。ゲートをかすめてコンボ、ゲージ満タンで壁を突き抜けろ。今日のコースは世界共通。無料でプレイ 👇",
+      "youtube": "SWISHBYは、操作はタップだけ、でも腕の差がはっきり出るアーケード飛行ゲームです。\n\nゲートのぎりぎりをかすめればPERFECT、つなげればコンボ、ゲージが満タンになれば壁を突き抜けてダッシュ。\n\n• 4つのゾーン、50ステージ\n• 世界中のプレイヤーが同じコースで競うデイリーチャレンジ\n• 1対1の対戦とシーズンランキング\n\nショート動画、記録プレイ、アップデート情報をお届けします。\n\n無料でプレイ: https://swishby.com"
+    },
+    "es": {
+      "tiktok": "Un toque. Roza, combo, dash. El mismo reto diario en todo el mundo 🌍",
+      "instagram": "Vuelo arcade de un toque 🕹️\nRoza las puertas, encadena combos y atraviesa muros.\nEl mismo reto diario para todo el mundo. Juega gratis 👇",
+      "x": "Cuenta oficial de SWISHBY, el vuelo arcade de un toque. Roza las puertas, encadena combos y atraviesa muros. Un mismo reto diario en todo el mundo. Gratis 👇",
+      "youtube": "SWISHBY es un arcade de vuelo que se juega con un solo toque, pero donde la habilidad marca la diferencia.\n\nRoza el borde de una puerta para un PERFECT, mantén la racha para sumar combo y, cuando se llene el medidor, atraviesa el muro con un DASH.\n\n• 50 fases en 4 zonas\n• Un reto diario con el mismo recorrido para todos los jugadores del mundo\n• Duelos 1 contra 1 y rankings por temporada\n\nAquí subimos shorts, récords y novedades.\n\nJuega gratis: https://swishby.com"
+    },
+    "pt": {
+      "tiktok": "Um toque. Raspe, combo, dash. O mesmo desafio diário no mundo todo 🌍",
+      "instagram": "Voo arcade de um toque 🕹️\nRaspe nos portões, faça combos e atravesse paredes.\nO mesmo desafio diário para o mundo todo. Jogue grátis 👇",
+      "x": "Conta oficial do SWISHBY, o voo arcade de um toque. Raspe nos portões, faça combos e atravesse paredes. O mesmo desafio diário no mundo todo. Jogue grátis 👇",
+      "youtube": "SWISHBY é um arcade de voo jogado com um só toque, mas onde a habilidade faz toda a diferença.\n\nRaspe na beirada de um portão para um PERFECT, mantenha a sequência para montar o combo e, quando o medidor encher, atravesse a parede com um DASH.\n\n• 50 fases em 4 zonas\n• Um desafio diário com o mesmo percurso para todos os jogadores do mundo\n• Duelos 1 contra 1 e rankings por temporada\n\nAqui você encontra shorts, recordes e novidades.\n\nJogue grátis: https://swishby.com"
+    }
+  }
+}
