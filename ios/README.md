@@ -37,8 +37,8 @@ cd ios/App && xcodebuild -project App.xcodeproj -scheme App -sdk iphonesimulator
 | App Store Connect에 앱 만들기 (번들 ID 위, SKU `swishby-ios`) | appstoreconnect.apple.com | 대표 로그인 후 Claude |
 | Game Center 리더보드 2개: `swishby.best`(최고 점수, 높을수록 좋음), `swishby.daily`(반복 리더보드, 매일 00:00 UTC) | App Store Connect → 앱 → Game Center | 대표 로그인 후 Claude |
 | APNs 인증 키(.p8) 만들기, Key ID 기록 | developer.apple.com → Keys | 대표 (키 파일은 한 번만 내려받을 수 있음) |
-| Supabase 함수 비밀값: `APNS_KEY`(p8 내용), `APNS_KEY_ID`, `APNS_TEAM_ID=6SGPPQF3VQ`, `PUSH_HOOK_SECRET` | Supabase → Edge Functions → Secrets | Claude |
-| Vault 비밀값 `push_hook_url`, `push_hook_secret` (위와 같은 값) | `supabase/schema.sql` PUSH 주석의 SQL | Claude |
+| Supabase 함수 비밀값: `APNS_KEY`(p8 내용), `APNS_KEY_ID`, `APNS_TEAM_ID=6SGPPQF3VQ` | Supabase → Edge Functions → Secrets (값은 대표가 직접 입력) | 대표 |
+| Vault 비밀값 `push_hook_url`, `push_hook_secret` (DB 안에서 무작위 생성, 밖으로 나가지 않음) | `supabase/schema.sql` PUSH 주석의 SQL | Claude |
 | Supabase Auth → URL Configuration → Redirect URLs에 `com.minimalkorea.swishby://auth` 추가 | Supabase 대시보드 | Claude (또는 대표) |
 
 APNs 비밀값이 없으면 푸시 함수는 아무것도 보내지 않고(202) 나머지는 그대로 동작한다.

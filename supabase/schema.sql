@@ -2290,10 +2290,11 @@ grant execute on function public.report_player(uuid, text, text, text) to authen
 -- (push_unregister). A token is one device: registering it again moves it to the caller (a reinstall, another account), and a player
 -- keeps at most 5 (the oldest go). A new feed row (fw_social_feed, above) wakes the push-send edge function through pg_net with
 -- everything it needs, only for the recipient's devices that keep that kind on; the function sends to APNs and hands dead tokens to
--- push_drop (service role only). The hook needs pg_net and two vault secrets (push_hook_url = the function URL, push_hook_secret =
--- the function's PUSH_HOOK_SECRET); without them it does nothing, and it never blocks the feed. Set them as the database owner:
+-- push_drop (service role only). The hook needs pg_net and two vault secrets: push_hook_url (the function URL) and push_hook_secret,
+-- which never leaves the database: the function asks push_hook_ok (service role only) whether the header it got is the one. Without
+-- them the hook does nothing, and it never blocks the feed. Set them once as the database owner:
 --   select vault.create_secret('https://<ref>.supabase.co/functions/v1/push-send', 'push_hook_url');
---   select vault.create_secret('<random 32+ chars>', 'push_hook_secret');
+--   select vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'), 'push_hook_secret');
 -- Deleting the account deletes its tokens (on delete cascade).
 -- =====================================================================================================
 create table if not exists private.fw_push (
@@ -2345,6 +2346,15 @@ begin
   return v_n;
 end $$;
 
+create or replace function private.fw_push_hook_ok(p_secret text) returns boolean
+language plpgsql security definer set search_path = '' as $$
+declare v text;
+begin
+  if to_regclass('vault.decrypted_secrets') is null or coalesce(p_secret, '') = '' then return false; end if;
+  execute 'select decrypted_secret from vault.decrypted_secrets where name = $1' into v using 'push_hook_secret';
+  return v is not null and v = p_secret;
+end $$;
+
 create or replace function private.fw_push_hook() returns trigger
 language plpgsql security definer set search_path = '' as $$
 declare v_url text; v_secret text; v_body jsonb;
@@ -2380,6 +2390,8 @@ create or replace function public.push_unregister(p_token text) returns boolean
 language sql security invoker set search_path = '' as $$ select private.fw_push_unregister(p_token); $$;
 create or replace function public.push_drop(p_tokens text[]) returns integer
 language sql security invoker set search_path = '' as $$ select private.fw_push_drop(p_tokens); $$;
+create or replace function public.push_hook_ok(p_secret text) returns boolean
+language sql security invoker set search_path = '' as $$ select private.fw_push_hook_ok(p_secret); $$;
 
 revoke all on function private.fw_push_hook()                       from public, anon, authenticated;
 revoke all on function private.fw_push_register(text, jsonb, text)  from public, anon;
@@ -2394,3 +2406,7 @@ revoke all on function public.push_unregister(text) from public, anon;
 grant execute on function public.push_unregister(text) to authenticated;
 revoke all on function public.push_drop(text[]) from public, anon, authenticated;
 grant execute on function public.push_drop(text[]) to service_role;
+revoke all on function private.fw_push_hook_ok(text) from public, anon, authenticated;
+grant execute on function private.fw_push_hook_ok(text) to service_role;
+revoke all on function public.push_hook_ok(text) from public, anon, authenticated;
+grant execute on function public.push_hook_ok(text) to service_role;

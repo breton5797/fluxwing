@@ -81,8 +81,15 @@ test('schema: the feed trigger calls push-send only where pg_net and the vault s
 
 test('the function: verify_jwt off, the hook secret checked, dead tokens removed', () => {
   const fn = read('supabase/functions/push-send/index.ts');
-  assert.match(fn, /PUSH_HOOK_SECRET/);
+  assert.doesNotMatch(fn, /PUSH_HOOK_SECRET/, 'no copy of the secret outside the vault');
   assert.match(fn, /x-push-secret/);
+  assert.match(fn, /rpc\('push_hook_ok'/, 'the database checks the secret it holds');
+  const ok = sql.match(/function private\.fw_push_hook_ok\(p_secret text\)[\s\S]*?\$\$;/)[0];
+  assert.match(ok, /vault\.decrypted_secrets/);
+  assert.match(ok, /execute /, 'compiles without the vault');
+  assert.match(sql, /grant execute on function public\.push_hook_ok\(text\)\s+to service_role;/);
+  assert.match(sql, /revoke all on function public\.push_hook_ok\(text\)\s+from public, anon, authenticated;/);
+  assert.match(sql, /gen_random_bytes\(32\)/, 'the documented setup makes the secret inside the database');
   assert.match(fn, /410/);
   assert.match(fn, /BadDeviceToken/);
   assert.match(fn, /rpc\('push_drop'/);
