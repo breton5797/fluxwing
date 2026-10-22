@@ -15,7 +15,7 @@ const page = read('admin.html'), index = read('index.html'), spec = read('docs/a
 function loadAdmin(html = page){
   const m = html.match(/\/\* admin:start[\s\S]*?\/\* admin:end \*\//);
   if (!m) throw new Error('admin block not found in admin.html');
-  return new Function(`${m[0]}\nreturn {ADM_TABS, ADM_REASONS, ADM_AUTH_ERR, admRole, admOwnerTab, admAal, admOwnerReady, admNeedMfa, admMfaCode, admQrSrc, admAuthErr, admTabs, admCan, admUuid, admInt, admEmail, admCode, admDeleteOk, admCanDelete, admArgs, admErr, admErrText, admCallback, admDate, admNum, admPct, admBar, admMax, admYes, admJson, admReason, admProvider, admPage};`)();
+  return new Function(`${m[0]}\nreturn {ADM_TABS, ADM_REASONS, ADM_AUTH_ERR, admRole, admOwnerTab, admAal, admOwnerReady, admNeedMfa, admMfaCode, admQrSrc, admAuthErr, admTabs, admCan, admUuid, admInt, admEmail, admCode, admDeleteOk, admCanDelete, admArgs, admErr, admErrText, admCallback, admDate, admNum, admSeason, admPct, admBar, admMax, admYes, admJson, admReason, admProvider, admPage};`)();
 }
 const A = loadAdmin();
 const ID = '0f8fad5b-d9cb-469f-a165-70867728950e';
@@ -170,6 +170,11 @@ test('admin block: dates in Korea time, numbers, percents, bars', () => {
   assert.equal(A.admNum('42'), '42');
   assert.equal(A.admNum(0), '0');
   for (const bad of [null, undefined, '', 'x', true, NaN]) assert.equal(A.admNum(bad), '—', String(bad));
+  // season ids are YYYYMM (private.fw_vs_season_of), not amounts: never a thousands separator
+  assert.equal(A.admSeason(202610), '2026-10');
+  assert.equal(A.admSeason('202701'), '2027-01');
+  for (const bad of [null, '', 2026, 202613, 'x', 12345678]) assert.equal(A.admSeason(bad), '—', String(bad));
+  assert.ok(!/admNum\((s|d|r)\.(season|prev)\)/.test(page), 'season ids are shown with admSeason');
   assert.equal(A.admPct(12.5), '12.5%');
   assert.equal(A.admPct(0), '0%');
   assert.equal(A.admPct(null), '—', 'a day not yet ended');

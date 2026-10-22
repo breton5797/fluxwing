@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-1NxcWBUNlsfZmZ1M0/+VRACwdpLo6Q0i6wEnFd+5Spo=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js; style-src 'unsafe-inline'; connect-src https://ecjeyelgcqbliavwltbc.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-R1Si/9eFqnpDQutnbIm9F5sN86AsRCQijBp6PeDFYXA=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js; style-src 'unsafe-inline'; connect-src https://ecjeyelgcqbliavwltbc.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <title>SWISHBY 관리자</title>
 <style>
 :root{color-scheme:dark;--bg:#150a33;--bg2:#250b3f;--card:#1d0f44;--line:#3a2a66;--fg:#ece9f7;--dim:#a49cc4;--acc:#4ff0ff;--acc2:#ff4fd8;--warn:#ffd54a;--bad:#ff5a6e;--ok:#5dff9b}
@@ -216,6 +216,8 @@ function admNum(v){
   return (n < 0 ? '-' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (f ? '.' + f : '');
 }
 // KPI rates already come as percents (kpi.sql rounds 100.0 * …); null = the day has not ended yet
+// A season id is YYYYMM (private.fw_vs_season_of): shown as 2026-10, never as a number with separators
+const admSeason = v => { const m = /^(\d{4})(0[1-9]|1[0-2])$/.exec(String(v == null ? '' : v)); return m ? m[1] + '-' + m[2] : '—'; };
 const admPct = v => admNum(v) === '—' ? '—' : admNum(v) + '%';
 const admBar = (v, max) => { const n = Number(v), m = Number(max); return Number.isFinite(n) && Number.isFinite(m) && m > 0 && n > 0 ? Math.min(100, Math.round(100 * n / m)) : 0; };
 const admMax = (rows, k) => Array.isArray(rows) ? rows.reduce((m, r) => Math.max(m, Number(r && r[k]) || 0), 0) : 0;
@@ -337,7 +339,7 @@ async function vOverview(){
     el('div', {class: 'grid'},
       card('사용자', kv([['전체', admNum(u.total)], ['게스트', admNum(u.guests)], ['로그인 계정', admNum(u.signed_in)], ['신규 1일', admNum(u.new_1d)], ['신규 7일', admNum(u.new_7d)]])),
       card('플레이어', kv([['점수 기록', admNum(p.scores)], ['대전 기록', admNum(p.versus)], ['숨김', admNum(p.hidden)]])),
-      card('시즌', kv([['현재', admNum(s.season)], ['지난', admNum(s.prev)], ['교체 시각', admDate(s.rolled_at)]])),
+      card('시즌', kv([['현재', admSeason(s.season)], ['지난', admSeason(s.prev)], ['교체 시각', admDate(s.rolled_at)]])),
       card('신고 · 오류', kv([['미처리 대상', admNum(r.open_targets)], ['신고 1일', admNum(r.last_1d)], ['오류 1일', admNum((d.errors || {}).last_1d)]])),
       card('기타', kv([['푸시 기기', admNum((d.push || {}).devices)], ['테스터', admNum((d.testers || {}).count)], ['관리자', admNum((d.admins || {}).count)]]))),
     el('h2', {text: '예약 작업 (pg_cron)'}),
@@ -405,7 +407,7 @@ async function vPlayer(id){
       card('점수', sc ? kv([['닉네임', sc.nick], ['국가', sc.cc], ['최고', admNum(sc.best)], ['게이트', admNum(sc.gates)], ['기체', sc.bird], ['오늘 코스', sc.daily_key], ['오늘 점수', admNum(sc.daily_score)], ['숨김', admYes(sc.hidden)], ['마지막 제출', admDate(sc.last_submit_at)]]) : el('p', {class: 'dim', text: '없음'})),
       card('대전', vs ? kv([['닉네임', vs.nick], ['RP', admNum(vs.rp)], ['승 / 패 / 무', `${admNum(vs.wins)} / ${admNum(vs.losses)} / ${admNum(vs.draws)}`], ['숨김', admYes(vs.hidden)]]) : el('p', {class: 'dim', text: '없음'}))),
     el('h2', {text: '시즌 기록'}),
-    table([['시즌', r => admNum(r.season), 'n'], ['순위', r => admNum(r.rank), 'n'], ['RP', r => admNum(r.rp), 'n'], ['티어', r => r.tier], ['보상 수령', r => admDate(r.claimed_at)]], p.standings),
+    table([['시즌', r => admSeason(r.season)], ['순위', r => admNum(r.rank), 'n'], ['RP', r => admNum(r.rp), 'n'], ['티어', r => r.tier], ['보상 수령', r => admDate(r.claimed_at)]], p.standings),
     el('h2', {text: '받은 신고'}),
     table([['사유', r => admReason(r.reason)], ['장소', r => r.place], ['그때 닉네임', r => r.nick], ['처리', r => admYes(r.seen)], ['시각', r => admDate(r.at)]], p.reports_received),
     el('h2', {text: '최근 이벤트'}),
@@ -455,7 +457,7 @@ async function vReports(){
 async function vSeason(){
   const d = await need('admin_season') || {};
   return el('div', {},
-    el('div', {class: 'grid'}, card('시즌', kv([['현재', admNum(d.season)], ['지난', admNum(d.prev)], ['교체 시각', admDate(d.rolled_at)]]))),
+    el('div', {class: 'grid'}, card('시즌', kv([['현재', admSeason(d.season)], ['지난', admSeason(d.prev)], ['교체 시각', admDate(d.rolled_at)]]))),
     full() ? el('div', {class: 'acts'}, el('button', {type: 'button', text: '정산 확인 실행', onclick: e => write(
       {title: '시즌 정산 확인', body: '정산이 필요하면 지금 실행하고, 아니면 아무 일도 하지 않습니다.', done: '정산 확인을 실행했습니다'}, 'admin_season_tick', {}, reload, e.currentTarget)}))
       : role === 'owner' ? el('div', {class: 'acts'}, mfaNeed()) : null,
