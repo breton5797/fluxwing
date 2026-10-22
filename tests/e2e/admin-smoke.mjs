@@ -7,6 +7,8 @@
 // tabs and no delete; admin_me false shows the no-permission screen; no session shows the sign-in screen with no guest option.
 // Second factor: an owner at aal1 keeps the mod tabs, the owner tabs show the TOTP step (enrol: QR + secret, or a code for a
 // verified factor); after the fake verify the session is aal2, admin_me says so and the owner tabs work. In a frame: nothing runs.
+// Charts: every chart is an inline SVG that answers hover and keyboard focus with a tooltip, its 표로 보기 twin opens and closes,
+// and a markup nickname stays text inside SVG labels and tooltips. Google Fonts are stubbed (SHOT_DIR=… lets them through for screenshots).
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -28,16 +30,26 @@ const exp = Math.floor(Date.now() / 1000) + 3600;
 const user = { id: ME, aud: 'authenticated', role: 'authenticated', email: 'boss@example.com', is_anonymous: false, app_metadata: { provider: 'google' }, user_metadata: {}, created_at: '2026-10-01T00:00:00Z' };
 const JWT = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: ME, role: 'authenticated', aud: 'authenticated', exp, is_anonymous: false, email: user.email })}.sig`;
 const sess = { access_token: JWT, token_type: 'bearer', expires_in: 3600, expires_at: exp, refresh_token: 'r1', user };
-const now = new Date().toISOString(), day = now.slice(0, 10);
+const now = new Date().toISOString(), seoul = n => new Date(Date.now() + 9 * 3600e3 - n * 864e5).toISOString().slice(0, 10), day = seoul(0);
+// 30 realistic days, newest first as the server sends them: a weekly wave on a slow climb; retention empty where the day has not ended
+const wave = (i, base, amp, k = 1) => +(base + amp * Math.sin(i / 1.1 * k) - i * base / 90).toFixed(2);
+const DAYS = Array.from({ length: 30 }, (_, i) => seoul(i));
+const P = n => `${String(n).repeat(8)}-${String(n).repeat(4)}-4${String(n).repeat(3)}-8${String(n).repeat(3)}-${String(n).repeat(12)}`;
+const NICKS = ['Ace', '<img src=x onerror=window.__xss=1>', '하늘다람쥐', 'Nimbus', 'zz_top', '구름위로', 'Pilot', 'FlapKing', 'gate.runner', '밤하늘'];
+const KPI = {
+  installs: DAYS.map((d, i) => ({ day: d, installs: Math.round(wave(i, 34, 9)) })),
+  retention: DAYS.map((d, i) => ({ day: d, installs: Math.round(wave(i, 34, 9)), d1: i < 2 ? null : i === 9 ? 40.5 : wave(i, 38, 5, 2), d7: i < 8 ? null : wave(i, 16, 3, 2), d30: null })),
+  daily: DAYS.map((d, i) => ({ day: d, dau: Math.round(wave(i, 140, 22)), runs_per_dau: wave(i, 6.1, 0.6, 3), share_rate: wave(i, 4.2, 1.1, 2), purchase_conversion: wave(i, 1.3, 0.4, 3), ad_views: 0, daily_runs: Math.round(wave(i, 60, 12)) })),
+  sessions: DAYS.map((d, i) => ({ day: d, sessions: Math.round(wave(i, 260, 40)), avg_min: wave(i, 4.6, 0.5, 2), median_min: wave(i, 3.4, 0.4, 2) }))
+};
 
 const sessOf = aal => ({ ...sess, access_token: `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: ME, role: 'authenticated', aud: 'authenticated', exp, is_anonymous: false, email: user.email, aal })}.sig` });
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="21" height="21"><path d="M0 0h7v7H0z" fill="#000"/></svg>';
 const canned = role => ({
   admin_overview: { users: { total: 1234, guests: 900, signed_in: 334, new_1d: 12, new_7d: 80 }, players: { scores: 800, versus: 300, hidden: 3 },
-    season: { season: 5, prev: 4, rolled_at: now }, reports: { open_targets: 2, last_1d: 4 }, errors: { last_1d: 7 }, push: { devices: 40 }, testers: { count: 3 }, admins: { count: 2 },
+    season: { season: 202610, prev: 202609, rolled_at: now }, reports: { open_targets: 2, last_1d: 4 }, errors: { last_1d: 7 }, push: { devices: 40 }, testers: { count: 3 }, admins: { count: 2 },
     cron: [{ job: 'fw_vs_tick', schedule: '*/10 * * * *', active: true, last_status: 'succeeded', last_at: now }] },
-  admin_kpi: { installs: [{ day, installs: 30 }, { day: '2026-10-21', installs: 12 }], retention: [{ day, installs: 30, d1: null, d7: null, d30: null }, { day: '2026-10-01', installs: 20, d1: 40.5, d7: 15, d30: 5 }],
-    daily: [{ day, dau: 50, runs_per_dau: 6.2, share_rate: 4.1, purchase_conversion: 1.25, ad_views: 0, daily_runs: 33 }], sessions: [{ day, sessions: 80, avg_min: 4.5, median_min: 3.2 }] },
+  admin_kpi: KPI,
   admin_players: { total: 2, rows: [
     { id: P1, nick: XSS, cc: 'KR', best: 120, rp: 1500, hidden: false, guest: true, provider: 'anonymous', created_at: now, last_sign_in_at: now, reports: 3 },
     { id: P2, nick: 'Ace', cc: 'US', best: 99, rp: null, hidden: true, guest: false, provider: 'google', created_at: now, last_sign_in_at: null, reports: 0 }] },
@@ -48,14 +60,17 @@ const canned = role => ({
     events: [{ at: now, kind: 'run_end', props: { score: 12, note: XSS } }], errors: [{ at: now, build: 'L1', msg: XSS }] },
   admin_set_hidden: { id: P1, hidden: true },
   admin_reset_nick: { id: P1, nick: 'Pilot' },
-  admin_reports: [{ target: P1, nick: XSS, reason: 'name', n: 3, counted: 2, last: now, places: ['lb', 'vs'], hidden: false }],
+  admin_reports: [{ target: P1, nick: XSS, reason: 'name', n: 4, counted: 3, last: now, places: ['lb', 'vs'], hidden: false },
+    { target: P1, nick: XSS, reason: 'cheat', n: 1, counted: 0, last: now, places: ['vs'], hidden: false },
+    ...[3, 4, 5, 6, 7].map((k, i) => ({ target: P(k), nick: NICKS[k], reason: i % 2 ? 'other' : 'name', n: 5 - i, counted: i % 2 ? 0 : Math.max(0, 2 - i), last: now, places: ['lb'], hidden: k === 6 }))],
   admin_reports_clear: { deleted: 3 },
   admin_testers: [{ id: P2, nick: 'Ace', note: XSS, added_at: now }],
   admin_tester_set: { id: P1, tester: true },
   admin_errors: [{ id: 1, at: now, player_id: P1, build: 'L1', msg: XSS, stack: XSS + '\n at x', url: 'https://swishby.com/', ua: 'UA' }],
   admin_referrals_held: [{ invitee: P1, inviter: P2, inviter_nick: 'Ace', invitee_nick: XSS, invitee_best: 120, linked_at: now, days: 2, stage: 1 }],
   admin_referral_release: { released: 1 },
-  admin_season: { season: 5, prev: 4, rolled_at: now, top: [{ rank: 1, nick: XSS, rp: 2000, tier: 'gold', claimed_at: now }], live: [{ nick: 'Ace', rp: 300, wins: 2, losses: 1 }] },
+  admin_season: { season: 202610, prev: 202609, rolled_at: now, top: NICKS.map((nick, i) => ({ rank: i + 1, nick, rp: 2400 - i * 170, tier: i < 3 ? 'gold' : 'silver', claimed_at: i % 3 ? now : null })),
+    live: NICKS.map((nick, i) => ({ nick, rp: 1480 - i * 115, wins: 30 - i * 2, losses: 8 + i })) },
   admin_season_tick: { season: 5 },
   admin_delete_player: { deleted: true },
   admin_log: [{ at: now, admin_id: ME, admin_nick: 'Boss', action: 'hide', target: P1, detail: { nick: XSS } }]
@@ -70,6 +85,7 @@ async function open({ role, signedIn = true, width = 1280, aal = 'aal2', factors
   page.on('dialog', d => { errors.push('native dialog: ' + d.type()); d.dismiss(); });
   if (signedIn) await page.addInitScript(s => localStorage.setItem('sb-ecjeyelgcqbliavwltbc-auth-token', s), JSON.stringify(sess));
   await page.route(/cdn\.jsdelivr\.net/, r => r.fulfill({ status: 200, contentType: 'text/javascript', body: SDK, headers: { 'access-control-allow-origin': '*' } }));
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, r => process.env.SHOT_DIR ? r.continue() : r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
   await page.route(/supabase\.co/, async r => {
     sbReqs.push(r.request().url());
     const req = r.request(), u = new URL(req.url()), H = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
@@ -113,6 +129,34 @@ const noMarkup = async page => {
   assert.equal(await page.locator('#view img').count(), 0, 'no <img> from data');
   assert.equal(await page.evaluate(() => window.__xss), undefined, 'onerror never ran');
 };
+// every chart in the view: an SVG with marks; hover and keyboard focus each bring the tooltip; the table twin opens and closes
+async function chartsWork(page, want){
+  const figs = page.locator('#view figure.fig');
+  assert.equal(await figs.count(), want, 'chart count');
+  for (let i = 0; i < want; i++){
+    const f = figs.nth(i), svg = f.locator('svg.chart').first();
+    await svg.waitFor();
+    assert.ok(await f.locator('svg.chart path[d^="M"]').count() > 0, `chart ${i} has marks`);
+    const bb = await svg.boundingBox();
+    await page.mouse.move(bb.x + bb.width * 0.7, bb.y + bb.height * 0.45);
+    await f.locator('.tip:not([hidden])').waitFor({ timeout: 3000 });
+    await page.mouse.move(0, 0);
+    await f.locator('.tip').waitFor({ state: 'hidden' });
+    await svg.focus();
+    await f.locator('.tip:not([hidden])').waitFor({ timeout: 3000 });
+    await page.keyboard.press('ArrowLeft');
+    assert.ok((await f.locator('.tip').textContent()).length > 0);
+    await page.evaluate(() => document.activeElement.blur());
+    const btn = f.locator('.tbl-btn');
+    if (await btn.count()){
+      const was = await btn.getAttribute('aria-expanded');
+      await btn.click();
+      assert.equal(await btn.getAttribute('aria-expanded'), was === 'true' ? 'false' : 'true');
+      assert.equal(await f.locator('.twin').isVisible(), was !== 'true', 'the table twin toggles');
+      await btn.click();
+    }
+  }
+}
 const settled = page => page.waitForFunction(() => !/^불러오는 중/.test(document.getElementById('view').textContent));
 const clickTab = async (page, label) => { await page.click(`#tabs button:text-is("${label}")`); await settled(page); };
 const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${process.env.SHOT_DIR}/${name}`, fullPage: true }) : null;
@@ -122,7 +166,7 @@ const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${p
   const { ctx, page, calls, errors } = await open({ role: 'owner' });
   await page.waitForSelector('#app:not([hidden]) #tabs button');
   assert.deepEqual(await tabLabels(page), ['개요', '지표', '플레이어', '신고', '시즌', '오류', '테스터', '추천', '기록']);
-  await page.waitForSelector('#view .card');
+  await page.waitForSelector('#view .vw');
   assert.match(await page.textContent('#view'), /1,234/);
   assert.equal(calls[0].auth, 'Bearer ' + JWT, 'the stored session is used');
   assert.equal(await page.textContent('#roleTag'), 'owner');
@@ -136,6 +180,46 @@ const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${p
     await noMarkup(page);
   }
   for (const label of ['플레이어', '신고', '시즌', '오류', '추천']) assert.ok(seen[label].includes(XSS), `${label} shows the nickname as text`);
+  // overview: the hero flight path, two sparklines, the users split; then each chart tab
+  assert.equal(await page.locator('#view .hero svg.chart path.ln').count(), 1);
+  assert.match(await page.textContent('#view .hero-n'), /^[\d,]+$/);
+  assert.equal(await page.locator('#view .vital svg.chart').count(), 2, 'sparklines');
+  assert.equal(await page.locator('#view .split i').count(), 2);
+  assert.match(await page.textContent('#view ul.cron'), /✓\s*성공/);
+  await chartsWork(page, 1);
+  assert.deepEqual(calls.filter(c => c.name === 'admin_kpi')[0].body, { p_days: 30 }, 'the overview asks for 30 days');
+  await clickTab(page, '지표');
+  await chartsWork(page, 6);
+  assert.equal(await page.locator('#view figure:has-text("리텐션") .keys span').count(), 3, 'retention legend');
+  const tickTexts = async t => page.locator(`#view figure:has(.fig-t:text-is("${t}")) svg.chart > text`).allTextContents();
+  for (const t of ['일일 활성 사용자', '설치']) assert.ok((await tickTexts(t)).filter(x => /^[\d.]+K?$/.test(x)).every(x => !x.includes('.')), `${t}: integer ticks`);
+  for (const t of ['리텐션', '공유율', '구매 전환']) assert.ok((await tickTexts(t)).some(x => /^\d+(\.\d+)?%$/.test(x)), `${t}: % ticks`);
+  assert.ok((await tickTexts('리텐션')).some(x => /^D1 \d+(\.\d)?%$/.test(x)), 'end label with one decimal');
+  await page.click('#view .range button:text-is("90일")'); await settled(page);
+  assert.deepEqual(calls.filter(c => c.name === 'admin_kpi').at(-1).body, { p_days: 90 });
+  await page.click('#view .range button:text-is("30일")'); await settled(page);
+  await clickTab(page, '신고');
+  await chartsWork(page, 1);
+  assert.ok((await page.locator('#view svg.chart text').allTextContents()).some(t => t.includes('<img src=x')), 'the nickname is SVG text');
+  assert.equal(await page.locator('#view svg.chart line.mk').count(), 1, 'the auto-hide line');
+  assert.ok((await page.locator('#view svg.chart text').allTextContents()).includes('자동 숨김 기준: 집계 3'));
+  assert.equal(await page.locator('#view svg.chart g').first().locator('path').count(), 2, 'counted solid + the rest as a tint');
+  assert.equal(await page.locator('#view svg.chart g').first().locator('path[fill-opacity="0.4"]').count(), 1);
+  assert.equal(await page.locator('#view figure .keys span').count(), 2, 'the two parts have a legend');
+  assert.equal(await page.locator('#view button.danger').count(), 0, 'row actions are quiet');
+  const rTicks = await page.locator('#view svg.chart > text:not(.lbl):not(.val)').allTextContents();
+  assert.ok(rTicks.filter(t => /^\d/.test(t)).every(t => /^\d+K?$/.test(t)), 'integer ticks: ' + rTicks);
+  assert.ok(await page.locator('#view svg.chart tspan.crit').count() >= 1, 'hot rows carry a glyph');
+  const bars = await page.locator('#view svg.chart').boundingBox();
+  await page.mouse.move(bars.x + bars.width * 0.5, bars.y + 30);
+  assert.ok((await page.textContent('#view .tip')).includes(XSS), 'the full nickname as tooltip text');
+  assert.match(await page.textContent('#view .tip'), /신고 5건, 집계 3건/);
+  await page.mouse.move(0, 0);
+  await noMarkup(page);
+  await clickTab(page, '시즌');
+  await chartsWork(page, 1);
+  await noMarkup(page);
+  assert.match(await page.textContent('#view .facts'), /2026-10/);
   assert.match(seen['지표'], /40\.5%/);
   assert.deepEqual(calls.find(c => c.name === 'admin_kpi').body, { p_days: 30 });
   assert.deepEqual(calls.find(c => c.name === 'admin_players').body, { p_q: '', p_limit: 50, p_offset: 0 });
@@ -148,6 +232,7 @@ const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${p
   await page.click('#mNo');
   assert.equal(calls.length, n0, 'cancel sends nothing');
   await page.click('#view button:text-is("신고 정리")');
+  assert.equal(await page.getAttribute('#mOk', 'class'), 'danger', 'the destructive confirm carries the critical fill');
   await page.click('#mOk');
   await page.waitForSelector('#toast:not([hidden])');
   await settled(page);
@@ -173,7 +258,7 @@ const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${p
   // the season tick (owner only) and the hide toggle from the list's detail
   await clickTab(page, '시즌');
   await page.click('#view button:text-is("정산 확인 실행")'); await page.click('#mOk');
-  await page.waitForFunction(() => document.querySelector('#view .card'));
+  await page.waitForFunction(() => document.querySelector('#view .vw'));
   assert.ok(calls.some(c => c.name === 'admin_season_tick'));
   assert.deepEqual(errors, [], 'no page errors (owner)');
   console.log('PASS admin-smoke owner', calls.length, 'rpc calls,', [...new Set(calls.map(c => c.name))].length, 'distinct');
@@ -183,7 +268,7 @@ const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${p
 // --- a server refusal is shown readably
 {
   const { ctx, page, errors } = await open({ role: 'owner' });
-  await page.waitForSelector('#view .card');
+  await page.waitForSelector('#view .vw');
   await page.route(/\/rest\/v1\/rpc\/admin_log/, r => r.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ code: '42501', message: 'fw_admin: not allowed' }), headers: { 'access-control-allow-origin': '*' } }));
   await page.click('#tabs button:text-is("기록")');
   await page.waitForFunction(() => /권한 없음/.test(document.getElementById('view').textContent));
@@ -200,7 +285,7 @@ const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${p
   const { ctx, page, errors } = await open({ role: 'mod', width: 360 });
   await page.waitForSelector('#app:not([hidden]) #tabs button');
   assert.deepEqual(await tabLabels(page), ['개요', '지표', '플레이어', '신고', '시즌', '오류']);
-  await page.waitForSelector('#view .card');
+  await page.waitForSelector('#view .vw');
   await shot(page, 'admin-overview-360.png');
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= 360), 'no horizontal page scroll at 360px');
   await clickTab(page, '플레이어');
@@ -214,6 +299,11 @@ const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${p
   await noMarkup(page);
   await clickTab(page, '시즌');
   assert.equal(await page.locator('#view button:text-is("정산 확인 실행")').count(), 0);
+  await clickTab(page, '신고');
+  const rb = await page.locator('#view svg.chart').boundingBox();
+  await page.mouse.click(rb.x + rb.width * 0.5, rb.y + 30);
+  await page.waitForFunction(() => /시즌 기록/.test(document.getElementById('view').textContent));
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= 360), 'charts fit 360px');
   assert.deepEqual(errors, [], 'no page errors (mod)');
   console.log('PASS admin-smoke mod');
   await ctx.close();
@@ -223,7 +313,7 @@ const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${p
 {
   const { ctx, page, calls, errors, st } = await open({ role: 'owner', aal: 'aal1' });
   await page.waitForSelector('#app:not([hidden]) #tabs button');
-  await page.waitForSelector('#view .card');
+  await page.waitForSelector('#view .vw');
   assert.deepEqual(await tabLabels(page), ['개요', '지표', '플레이어', '신고', '시즌', '오류', '테스터', '추천', '기록'], 'the owner tabs stay listed');
   assert.match(await page.textContent('#roleTag'), /2단계 미인증/);
   assert.equal(await page.isVisible('#mfaNote'), true);
@@ -264,7 +354,7 @@ const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${p
 // --- owner at aal1 with a verified factor: just the code
 {
   const { ctx, page, errors, st } = await open({ role: 'owner', aal: 'aal1', factors: [{ id: 'f9', factor_type: 'totp', friendly_name: 'SWISHBY admin', status: 'verified' }] });
-  await page.waitForSelector('#view .card');
+  await page.waitForSelector('#view .vw');
   await page.click('#mfaNoteBtn');
   await page.waitForSelector('#mfaCode');
   assert.equal(await page.locator('#mfaEnroll').count(), 0, 'no second enrolment');
@@ -294,6 +384,28 @@ const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${p
   assert.deepEqual(sbReqs, [], 'no Supabase request from a framed page');
   assert.deepEqual(errors, []);
   console.log('PASS admin-smoke framed');
+  await ctx.close();
+}
+
+// --- design screenshots (SHOT_DIR only): overview, 지표, 신고, 시즌 at 1280 and 360
+if (process.env.SHOT_DIR) for (const width of [1280, 360]){
+  const { ctx, page, errors } = await open({ role: 'owner', width });
+  await page.waitForSelector('#view .vw');
+  await page.waitForTimeout(800);
+  for (const [label, name] of [['개요', 'overview'], ['지표', 'kpi'], ['신고', 'reports'], ['시즌', 'season']]){
+    await clickTab(page, label); await page.waitForTimeout(700);
+    assert.ok(await page.evaluate(w => document.documentElement.scrollWidth <= w, width), `${name} fits ${width}px`);
+    await shot(page, `design-${name}-${width}.png`);
+  }
+  await clickTab(page, '지표');
+  const f = page.locator('#view figure.fig').nth(2);
+  await f.scrollIntoViewIfNeeded();
+  const bb = await f.locator('svg.chart').boundingBox();
+  await page.mouse.move(bb.x + bb.width * 0.6, bb.y + bb.height * 0.4);
+  await f.locator('.tip:not([hidden])').waitFor();
+  await f.screenshot({ path: `${process.env.SHOT_DIR}/design-tooltip-${width}.png` });
+  assert.deepEqual(errors, []);
+  console.log('PASS admin-smoke screenshots', width);
   await ctx.close();
 }
 

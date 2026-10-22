@@ -15,7 +15,8 @@ const page = read('admin.html'), index = read('index.html'), spec = read('docs/a
 function loadAdmin(html = page){
   const m = html.match(/\/\* admin:start[\s\S]*?\/\* admin:end \*\//);
   if (!m) throw new Error('admin block not found in admin.html');
-  return new Function(`${m[0]}\nreturn {ADM_TABS, ADM_REASONS, ADM_AUTH_ERR, admRole, admOwnerTab, admAal, admOwnerReady, admNeedMfa, admMfaCode, admQrSrc, admAuthErr, admTabs, admCan, admUuid, admInt, admEmail, admCode, admDeleteOk, admCanDelete, admArgs, admErr, admErrText, admCallback, admDate, admNum, admSeason, admPct, admBar, admMax, admYes, admJson, admReason, admProvider, admPage};`)();
+  return new Function(`${m[0]}\nreturn {ADM_TABS, ADM_REASONS, ADM_AUTH_ERR, admRole, admOwnerTab, admAal, admOwnerReady, admNeedMfa, admMfaCode, admQrSrc, admAuthErr, admTabs, admCan, admUuid, admInt, admEmail, admCode, admDeleteOk, admCanDelete, admArgs, admErr, admErrText, admCallback, admDate, admNum, admSeason, admPct, admBar, admMax, admYes, admJson, admReason, admProvider, admPage,
+    admFin, admSeries, admNiceCeil, admTicks, admTick, admScale, admPath, admArea, admSpark, admCol, admHBar, admNearest, admLabelsFit, admDelta, admDeltaText, admHero, admShare, admCronState, ADM_HIDE_AT, admByTarget, admClip, admPct1, admSegs};`)();
 }
 const A = loadAdmin();
 const ID = '0f8fad5b-d9cb-469f-a165-70867728950e';
@@ -198,6 +199,127 @@ test('admin block: dates in Korea time, numbers, percents, bars', () => {
   assert.equal(A.admPage(30, 0, 50).next, false);
 });
 
+test('charts: series oldest first with nulls kept, three ticks from 0, compact tick text', () => {
+  const rows = [{day: '2026-10-03', dau: 5}, {day: '2026-10-01', dau: '7'}, {day: '2026-10-02', dau: null}, {day: 7, dau: 1}, null];
+  assert.deepEqual(A.admSeries(rows, 'dau'), [{day: '2026-10-01', v: 7}, {day: '2026-10-02', v: null}, {day: '2026-10-03', v: 5}]);
+  assert.deepEqual(A.admSeries(null, 'dau'), []);
+  for (const bad of [null, undefined, '', true, 'x', NaN, Infinity]) assert.equal(A.admFin(bad), null, String(bad));
+  assert.equal(A.admFin('0'), 0);
+  assert.deepEqual(A.admTicks([12, null, 140, 90]), [0, 80, 160], 'domain covers the max with 3 gridlines');
+  assert.deepEqual(A.admTicks([5]), [0, 2.5, 5]);
+  assert.deepEqual(A.admTicks([0.7, 1.3]), [0, 0.8, 1.6]);
+  assert.deepEqual(A.admTicks([1480]), [0, 800, 1600]);
+  assert.deepEqual(A.admTicks([null, null]), [0, 0.5, 1], 'all-null still gets an axis');
+  assert.deepEqual(A.admTicks([]), [0, 0.5, 1]);
+  assert.deepEqual(A.admTicks([-3]), [0, 0.5, 1]);
+  for (const v of [0.01, 3, 47, 999, 12345]){ const t = A.admTicks([v]); assert.ok(t[2] >= v && t[2] <= v * 2.5 + 1, `${v} → ${t}`); }
+  assert.deepEqual(A.admTicks([5], true), [0, 3, 6], 'a count never gets 2.5');
+  assert.deepEqual(A.admTicks([1], true), [0, 1, 2]);
+  assert.deepEqual(A.admTicks([3], true), [0, 2, 4]);
+  assert.deepEqual(A.admTicks([null], true), [0, 1, 2]);
+  assert.deepEqual(A.admTicks([1480], true), [0, 800, 1600]);
+  for (let v = 1; v <= 60; v++) for (const t of A.admTicks([v], true)) assert.ok(Number.isInteger(t), `${v} → ${t}`);
+  assert.equal(A.admPct1(34.78), '34.8%');
+  assert.equal(A.admPct1(5), '5%');
+  assert.equal(A.admPct1('1.25'), '1.3%');
+  assert.equal(A.admPct1(null), '—');
+  assert.deepEqual(A.admSegs(2, 5), {solid: 2, rest: 3});
+  assert.deepEqual(A.admSegs(9, 5), {solid: 5, rest: 0}, 'counted never exceeds the bar');
+  assert.deepEqual(A.admSegs(null, 4), {solid: 0, rest: 4});
+  assert.deepEqual(A.admSegs(-1, null), {solid: 0, rest: 0});
+  assert.equal(A.admNiceCeil(0), 1);
+  assert.equal(A.admNiceCeil(7.2), 8);
+  assert.equal(A.admTick(0), '0');
+  assert.equal(A.admTick(2.5), '2.5');
+  assert.equal(A.admTick(1600), '1.6K');
+  assert.equal(A.admTick(2000), '2K');
+  assert.equal(A.admTick(3200000), '3.2M');
+  assert.equal(A.admTick(1 / 3), '0.33');
+  assert.equal(A.admTick(null), '—');
+});
+
+test('charts: scales, line and area paths break at missing days, sparkline, columns and bars', () => {
+  const s = A.admScale(0, 10, 100, 0);
+  assert.equal(s(0), 100); assert.equal(s(10), 0); assert.equal(s(5), 50);
+  assert.equal(A.admScale(3, 3, 0, 10)(3), 5, 'a flat domain sits in the middle');
+  assert.equal(A.admPath([[0, 10], [10, 20], [20, null], [30, 5], [40, 6]]), 'M0 10L10 20M30 5L40 6', 'a null lifts the pen');
+  assert.equal(A.admPath([[0, null]]), '');
+  assert.equal(A.admPath([[1.234, 5.678]]), 'M1.2 5.7');
+  assert.equal(A.admArea([[0, 10], [10, 20], [20, null], [30, 5]], 50), 'M0 50L0 10L10 20L10 50ZM30 50L30 5L30 50Z');
+  assert.equal(A.admArea([], 50), '');
+  assert.equal(A.admSpark([1, 2, 3], 102, 32), 'M2 30L51 16L100 2');
+  assert.equal(A.admSpark([4, 4], 102, 32), 'M2 16L100 16', 'flat mid-height');
+  assert.equal(A.admSpark([1, null, 3], 102, 32), 'M2 30M100 2');
+  assert.equal(A.admSpark([null], 102, 32), '');
+  assert.equal(A.admSpark('x', 102, 32), '');
+  assert.equal(A.admCol(10, 20, 30, 100), 'M10 100V34Q10 30 14 30H26Q30 30 30 34V100Z', '4px rounded top, square base');
+  assert.equal(A.admCol(10, 20, 100, 100), '', 'zero height draws nothing');
+  assert.equal(A.admCol(0, 4, 99, 100), 'M0 100V100Q0 99 1 99H3Q4 99 4 100V100Z', 'the radius shrinks to fit');
+  assert.equal(A.admHBar(100, 10, 50, 18), 'M100 10H146Q150 10 150 14V24Q150 28 146 28H100Z', 'rounded at the data end only');
+  assert.equal(A.admHBar(100, 10, 0, 18), '');
+  assert.equal(A.admNearest(55, 0, 100, 11), 6);
+  assert.equal(A.admNearest(-20, 0, 100, 11), 0);
+  assert.equal(A.admNearest(500, 0, 100, 11), 10);
+  assert.equal(A.admNearest(50, 0, 100, 1), 0);
+  assert.equal(A.admLabelsFit([10, 40, null, 80]), true);
+  assert.equal(A.admLabelsFit([10, 20]), false);
+  assert.equal(A.admLabelsFit([]), true);
+});
+
+test('charts: percent change against the 7 days before, the hero day, shares, cron states', () => {
+  assert.equal(A.admDelta(110, [100, 100]), 10);
+  assert.equal(A.admDelta(90, [100, null, 100]), -10, 'nulls are not zeros');
+  assert.equal(A.admDelta(5, []), null);
+  assert.equal(A.admDelta(5, [0, 0]), null, 'no change against a zero base');
+  assert.equal(A.admDelta(null, [3]), null);
+  assert.equal(A.admDeltaText(12), '지난 7일 평균보다 12% 많음');
+  assert.equal(A.admDeltaText(-4), '지난 7일 평균보다 4% 적음');
+  assert.equal(A.admDeltaText(0), '지난 7일 평균과 같음');
+  assert.equal(A.admDeltaText(null), '');
+  const daily = Array.from({length: 9}, (_, i) => ({day: `2026-10-${String(22 - i).padStart(2, '0')}`, dau: i === 0 ? 120 : 100}));
+  assert.deepEqual(A.admHero(daily, Date.parse('2026-10-22T03:00:00Z')), {day: '2026-10-22', dau: 120, delta: 20, live: true});
+  assert.equal(A.admHero(daily, Date.parse('2026-10-23T03:00:00Z')).live, false, 'a finished day');
+  assert.equal(A.admHero([{day: '2026-10-22', dau: null}, {day: '2026-10-21', dau: 80}], 0).day, '2026-10-21', 'the latest day with a value');
+  assert.equal(A.admHero([], 0), null);
+  assert.equal(A.admHero([{day: '2026-10-22', dau: 9}], 0).delta, null, 'no base yet');
+  assert.deepEqual(A.admShare(900, 334), [72.9, 27.1]);
+  assert.deepEqual(A.admShare(0, 0), [0, 0]);
+  assert.deepEqual(A.admShare(null, 5), [0, 100]);
+  assert.deepEqual(A.admCronState({active: true, last_status: 'succeeded'}), {k: 'good', glyph: '✓', label: '성공'});
+  assert.deepEqual(A.admCronState({active: true, last_status: 'failed'}), {k: 'crit', glyph: '!', label: '실패'});
+  assert.equal(A.admCronState({active: true, last_status: 'running'}).k, 'warn');
+  assert.equal(A.admCronState({active: false, last_status: 'failed'}).label, '꺼짐');
+  assert.equal(A.admCronState({active: true, last_status: null}).label, '기록 없음');
+  assert.equal(A.admCronState({active: true, last_status: '<b>x'}).label, '알 수 없음', 'unknown server text is never shown');
+  for (const c of [{}, null, {last_status: 'succeeded'}]) assert.ok(A.admCronState(c).glyph && A.admCronState(c).label, 'always a glyph and a word');
+});
+
+test('charts: reports per target, hot at the auto-hide line, labels clipped by code point', () => {
+  const T1 = ID, T2 = '1f8fad5b-d9cb-469f-a165-70867728950e';
+  const rows = [{target: T1, nick: 'A', reason: 'name', n: 2, counted: 3, hidden: false}, {target: T1, nick: 'A', reason: 'cheat', n: 4, counted: 0, hidden: false},
+    {target: T2, nick: 'B', reason: 'other', n: 5, counted: 9, hidden: true}, {target: 'nope', n: 99}, null];
+  const t = A.admByTarget(rows);
+  assert.deepEqual(t.map(x => [x.target, x.n, x.counted, x.hot]), [[T1, 6, 3, true], [T2, 5, 0, true]], 'summed, counted only from name reports, hidden is hot');
+  assert.deepEqual(t[0].reasons, ['닉네임', '부정행위']);
+  assert.equal(A.ADM_HIDE_AT, 3);
+  assert.equal(A.admByTarget([{target: T1, reason: 'name', n: 1, counted: 2}])[0].hot, false);
+  assert.equal(A.admByTarget(Array.from({length: 15}, (_, i) => ({target: ID.replace(/^0/, i.toString(16)), n: i}))).length, 10, 'top 10');
+  assert.equal(A.admClip('<img src=x onerror=1>', 8), '<img sr…');
+  assert.equal(A.admClip('하늘다람쥐', 5), '하늘다람쥐');
+  assert.equal(A.admClip('하늘다람쥐야', 5), '하늘다람…');
+  assert.equal(A.admClip('😀😀😀', 2), '😀…', 'never splits a surrogate pair');
+  assert.equal(A.admClip(null, 3), '');
+});
+
+test('admin.html charts are built node by node: SVG through createElementNS, server text as text nodes', () => {
+  assert.match(page, /document\.createElementNS\(SVGNS, tag\)/);
+  assert.match(page, /document\.createTextNode\(String\(c\)\)/);
+  assert.match(page, /new ResizeObserver/);
+  assert.ok(!/setAttribute\(\s*['"]on/i.test(page), 'no event-handler attributes');
+  assert.match(page, /prefers-reduced-motion:reduce/);
+  for (const hex of ['#1ea2b6', '#8b6cf2', '#b9842a', '#4fd69c', '#ffd25a', '#ff4f8b', '#140c2b']) assert.ok(page.includes(hex), `validated palette ${hex}`);
+});
+
 test('admin.html is noindex, Korean, mobile-ready', () => {
   assert.match(page, /^<!doctype html>/i);
   assert.match(page, /<html lang="ko">/);
@@ -251,6 +373,12 @@ test('admin.html CSP: no inline-script allowance, the inline script is pinned by
   assert.deepEqual(dir('img-src').sort(), ["'self'", 'data:'].sort(), 'data: for the TOTP QR');
   assert.deepEqual(dir('base-uri'), ["'none'"]);
   assert.deepEqual(dir('form-action'), ["'none'"]);
+  assert.deepEqual(dir('style-src').sort(), ["'unsafe-inline'", 'https://fonts.googleapis.com'].sort(), 'inline styles + the Google Fonts stylesheet, nothing else');
+  assert.deepEqual(dir('font-src'), ['https://fonts.gstatic.com'], 'font files only from Google Fonts');
+  const fonts = [...page.matchAll(/https:\/\/fonts\.googleapis\.com\/css2\?[^'"]+/g)].map(m => m[0]);
+  assert.equal(fonts.length, 1, 'one font stylesheet');
+  assert.match(fonts[0], /family=Bungee&family=Chakra\+Petch:wght@400;600&display=swap$/);
+  assert.ok(!/<link[^>]+fonts\.googleapis/.test(page), 'never a render-blocking <link>: added at boot, after the frame check');
   assert.ok(!/\son[a-z]+\s*=/i.test(page.replace(/<script>[\s\S]*?<\/script>/, '')), 'no inline event handler attributes');
 });
 

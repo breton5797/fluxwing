@@ -5,69 +5,143 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-R1Si/9eFqnpDQutnbIm9F5sN86AsRCQijBp6PeDFYXA=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js; style-src 'unsafe-inline'; connect-src https://ecjeyelgcqbliavwltbc.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-1wj7n/ep+v5s4H2+2023qIV8iGHZUMZdLf3mlLyJJJs=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://ecjeyelgcqbliavwltbc.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <title>SWISHBY 관리자</title>
 <style>
-:root{color-scheme:dark;--bg:#150a33;--bg2:#250b3f;--card:#1d0f44;--line:#3a2a66;--fg:#ece9f7;--dim:#a49cc4;--acc:#4ff0ff;--acc2:#ff4fd8;--warn:#ffd54a;--bad:#ff5a6e;--ok:#5dff9b}
+:root{color-scheme:dark;--sky-0:#0d0820;--sky-1:#140c2b;--sky-2:#1d1440;--line:#2c2152;--ink:#f3eefc;--ink-2:#b8afd6;--ink-3:#7f77a3;--cool:#4ff0ff;
+  --s1:#1ea2b6;--s2:#8b6cf2;--s3:#b9842a;--good:#4fd69c;--warn:#ffd25a;--crit:#ff4f8b;
+  --kr:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;--num:"Chakra Petch",var(--kr);--disp:"Bungee",var(--num)}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0}
-body{background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-text-size-adjust:100%}
-.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
-.brand{font-weight:800;letter-spacing:.05em;color:var(--acc);white-space:nowrap}
-.brand span{color:var(--fg);font-weight:600;margin-left:6px;letter-spacing:0}
-.who{display:flex;align-items:center;gap:8px;min-width:0;font-size:12px;color:var(--dim)}
+body{background:var(--sky-0);color:var(--ink);font:14px/1.5 var(--kr);-webkit-text-size-adjust:100%}
+:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px;background:var(--sky-0);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.brand{font:20px/1 var(--disp);color:var(--cool);white-space:nowrap}
+.brand span{font:600 14px var(--kr);color:var(--ink-2);margin-left:8px}
+.who{display:flex;align-items:center;gap:8px;min-width:0;font-size:12px;color:var(--ink-2)}
 #who{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46vw}
 @media (max-width:480px){#who{max-width:28vw}}
 main{max-width:1200px;margin:0 auto;padding:12px 16px 48px}
 h1{font-size:20px;margin:0 0 8px}
-h2{font-size:15px;margin:18px 0 6px}
-button{font:inherit;color:#120726;background:var(--acc);border:0;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer;min-height:34px;white-space:nowrap}
-button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
-button.danger{background:var(--bad);color:#fff}
+h2{font-size:16px;margin:28px 0 8px}
+button{font:inherit;color:var(--sky-0);background:var(--cool);border:0;border-radius:6px;padding:6px 12px;font-weight:600;cursor:pointer;min-height:34px;white-space:nowrap}
+button.ghost{background:var(--sky-2);color:var(--ink);border:1px solid var(--line)}
+button.ghost:hover{border-color:var(--ink-3)}
+button.danger{background:var(--crit);color:var(--sky-0)}
 button.sm{min-height:28px;padding:2px 8px;font-size:12px}
-button.link{background:none;border:0;color:var(--acc);padding:0;min-height:0;font-weight:600;text-align:left;text-decoration:underline;white-space:normal;word-break:break-all}
+button.link{background:none;border:0;color:var(--cool);padding:0;min-height:0;font-weight:600;text-align:left;text-decoration:underline;text-underline-offset:3px;white-space:normal;word-break:break-all}
 button:disabled{opacity:.45;cursor:not-allowed}
-input,select{font:inherit;color:var(--fg);background:#0e0626;border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-height:34px;min-width:0}
-.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);margin:0 0 12px;scrollbar-width:none}
-.tabs button{background:none;color:var(--dim);border-radius:0;border-bottom:2px solid transparent;white-space:nowrap;padding:8px 10px;font-weight:600}
-.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--acc2)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
-.card h3{margin:0 0 6px;font-size:13px;color:var(--dim);font-weight:600}
+input,select{font:inherit;color:var(--ink);background:var(--sky-2);border:1px solid var(--line);border-radius:6px;padding:6px 10px;min-height:34px;min-width:0}
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);margin:0 0 20px;scrollbar-width:none}
+.tabs button{background:none;color:var(--ink-2);border-radius:0;border-bottom:2px solid transparent;padding:8px 10px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--cool)}
+.tabs button.own1{margin-left:10px;position:relative}
+.tabs button.own1::before{content:"";position:absolute;left:-6px;top:10px;bottom:10px;border-left:1px solid var(--line)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.card{background:var(--sky-1);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.card h3{margin:0 0 6px;font-size:14px;color:var(--ink-2);font-weight:600}
 dl.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0}
-dl.kv dt{color:var(--dim)}
-dl.kv dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;word-break:break-all}
-.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:6px 0 14px}
+dl.kv dt{color:var(--ink-2)}
+dl.kv dd{margin:0;text-align:right;font-family:var(--num);font-variant-numeric:tabular-nums;word-break:break-all}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:8px 0 16px}
 table{border-collapse:collapse;width:100%;font-size:13px}
-th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
-th{color:var(--dim);font-weight:600;background:#1a0c3d}
-td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+th{color:var(--ink-2);font-weight:600;background:var(--sky-1)}
+td.n,th.n{text-align:right;font-family:var(--num);font-variant-numeric:tabular-nums}
 td.w{white-space:normal;word-break:break-word;min-width:200px;max-width:460px}
 tr:last-child td{border-bottom:0}
-.bar{display:inline-block;height:6px;border-radius:3px;background:var(--acc2);vertical-align:middle;margin-left:6px}
-.tag{display:inline-block;font-size:11px;line-height:16px;padding:0 6px;border-radius:6px;border:1px solid var(--line);color:var(--dim);margin-right:4px}
-.tag.bad{color:var(--bad);border-color:var(--bad)}
-.tag.ok{color:var(--ok);border-color:var(--ok)}
-.tool{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
+.tag{display:inline-block;font-size:12px;line-height:18px;padding:0 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2);margin-right:4px}
+.tag.bad{color:var(--crit);border-color:var(--crit)}
+.tag.ok{color:var(--good);border-color:var(--good)}
+.tool{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
 .tool input{flex:1 1 180px}
 .acts{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
-.dim{color:var(--dim)}
-.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;word-break:break-all}
-pre{white-space:pre-wrap;word-break:break-word;font-size:11px;margin:4px 0;max-height:240px;overflow:auto}
-details summary{cursor:pointer;color:var(--acc);font-size:12px}
-.banner{border:1px solid var(--bad);color:var(--fg);background:#3a0d2a;border-radius:10px;padding:8px 12px;margin:0 0 12px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.dim{color:var(--ink-2)}
+.mono{font-family:var(--num);font-size:12px;word-break:break-all}
+pre{white-space:pre-wrap;word-break:break-word;font-size:12px;margin:4px 0;max-height:240px;overflow:auto}
+details summary{cursor:pointer;color:var(--cool);font-size:12px}
+.banner{border:1px solid var(--crit);background:var(--sky-1);border-radius:10px;padding:8px 12px;margin:0 0 12px;display:flex;gap:8px;align-items:center;justify-content:space-between}
 .center{max-width:420px;margin:32px auto}
 .col{display:flex;flex-direction:column;gap:8px;margin:12px 0}
 .row{display:flex;gap:8px;margin:8px 0}
 .row input{flex:1}
 .msg{min-height:1.5em;color:var(--warn)}
-.danger-zone{border-color:var(--bad)}
-.modal{position:fixed;inset:0;background:rgba(5,2,15,.72);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
-.mbox{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:16px;max-width:420px;width:100%}
+.danger-zone{border-color:var(--crit)}
+.modal{position:fixed;inset:0;background:rgba(13,8,32,.78);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.mbox{background:var(--sky-1);border:1px solid var(--line);border-radius:10px;padding:16px;max-width:420px;width:100%}
 .mbox p{white-space:pre-wrap;word-break:break-word}
 .mbtns{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
-.toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:var(--card);border:1px solid var(--acc);border-radius:10px;padding:8px 14px;z-index:30;max-width:calc(100% - 32px)}
+.toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:var(--sky-1);border:1px solid var(--cool);border-radius:10px;padding:8px 14px;z-index:30;max-width:calc(100% - 32px)}
+/* the one loud thing: today's sky */
+.hero{display:grid;grid-template-columns:minmax(220px,auto) 1fr;gap:8px 32px;align-items:end;margin:4px 0 20px}
+.hero h1{font-size:16px;font-weight:600;color:var(--ink-2);margin:0}
+.hero-n{font:56px/1.05 var(--disp);color:var(--ink);margin:6px 0 4px}
+.hero-s{color:var(--ink-2);margin:0}
+.hero .fig{margin:0}
+@media (max-width:720px){.hero{grid-template-columns:1fr}.hero-n{font-size:36px}}
+.up::before{content:"▲ ";color:var(--good)} .down::before{content:"▼ ";color:var(--crit)}
+.vitals{display:grid;grid-template-columns:1.6fr repeat(4,1fr);gap:1px;background:var(--line);border-block:1px solid var(--line);margin:0 0 12px}
+.vital{background:var(--sky-0);padding:14px 16px;min-width:0}
+.vital h3{margin:0;font-size:12px;font-weight:600;color:var(--ink-2)}
+.vital-n{font:600 28px/1.2 var(--num);margin:2px 0}
+.vital p{margin:0;font-size:12px;color:var(--ink-2)}
+@media (max-width:760px){.vitals{grid-template-columns:1fr 1fr}.vital:first-child{grid-column:1/-1}.vital{padding:12px 4px}}
+.split{display:flex;gap:2px;height:8px;margin:8px 0 6px}
+.split i{display:block;height:100%;border-radius:2px}
+.keys{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink-2)}
+.keys span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:var(--k)}
+.keys.lines span::before{height:2px;width:12px;vertical-align:middle}
+dl.facts{display:flex;flex-wrap:wrap;gap:6px 24px;margin:0 0 8px;font-size:13px}
+dl.facts div{display:flex;gap:8px}
+dl.facts dt{color:var(--ink-2)}
+dl.facts dd{margin:0;font-family:var(--num)}
+.st{display:inline-flex;gap:6px;align-items:baseline;white-space:nowrap}
+.st b{font-family:var(--num)}
+.st.good b{color:var(--good)} .st.warn b{color:var(--warn)} .st.crit b{color:var(--crit)} .st.off b{color:var(--ink-3)}
+/* charts: inline SVG at the panel's own width */
+.fig{position:relative;margin:0 0 16px;background:var(--sky-1);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.hero .fig{background:none;border:0;padding:0}
+.fig figcaption{display:flex;flex-wrap:wrap;gap:2px 12px;align-items:baseline;margin:0 0 6px}
+.fig-t{font-weight:600}
+.fig-s{font-size:12px;color:var(--ink-2)}
+.plot{min-height:40px}
+.chart{display:block;overflow:visible;cursor:crosshair;touch-action:pan-y}
+.chart:focus-visible{outline-offset:4px}
+.chart text{font:12px var(--num);fill:var(--ink-3);font-variant-numeric:tabular-nums}
+.chart text.lbl{fill:var(--ink-2);font-family:var(--kr)}
+.chart text.val{fill:var(--ink-2)}
+.chart .crit{fill:var(--crit);font-weight:600}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .ln{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .cross{stroke:var(--ink-3);stroke-width:1}
+.chart .dot{stroke:var(--sky-1);stroke-width:2}
+.chart .mk{stroke:var(--ink-2);stroke-width:1}
+.chart .on{filter:brightness(1.25)}
+.hero .chart .dot{stroke:var(--sky-0)}
+.glow{filter:drop-shadow(0 0 6px var(--cool))}
+.draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .6s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.draw{animation:none;stroke-dashoffset:0}}
+.tip{position:absolute;z-index:4;pointer-events:none;background:var(--sky-2);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:12px;min-width:120px;max-width:260px}
+.tip-t{color:var(--ink-2);margin-bottom:2px;word-break:break-all}
+.tip-r{display:flex;gap:8px;align-items:center;white-space:nowrap}
+.tip-r b{font:600 14px var(--num);color:var(--ink)}
+.tip-r span{color:var(--ink-2)}
+.tip-r i{display:inline-block;width:12px;height:2px;background:var(--k)}
+.twin{margin-top:8px}
+.twin .tw{margin-bottom:0}
+.tbl-btn{margin-top:4px}
+.range{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.range button{background:none;color:var(--ink-2);border-radius:0;min-height:30px}
+.range button[aria-pressed="true"]{background:var(--sky-2);color:var(--ink)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+@media (max-width:760px){.pair{grid-template-columns:1fr}}
+.empty{color:var(--ink-2);margin:8px 0}
+ul.cron{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+ul.cron li{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:4px 16px;padding:8px 0;border-bottom:1px solid var(--line);align-items:baseline}
+ul.cron .sub{font-size:12px;color:var(--ink-2);font-family:var(--num)}
+@media (max-width:520px){ul.cron li{grid-template-columns:88px minmax(0,1fr)}ul.cron li>:last-child{grid-column:2}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
 </head>
@@ -219,6 +293,8 @@ function admNum(v){
 // A season id is YYYYMM (private.fw_vs_season_of): shown as 2026-10, never as a number with separators
 const admSeason = v => { const m = /^(\d{4})(0[1-9]|1[0-2])$/.exec(String(v == null ? '' : v)); return m ? m[1] + '-' + m[2] : '—'; };
 const admPct = v => admNum(v) === '—' ? '—' : admNum(v) + '%';
+// chart labels and tooltips: one decimal (34.8%)
+const admPct1 = v => { const n = admFin(v); return n == null ? '—' : admNum(Math.round(n * 10) / 10) + '%'; };
 const admBar = (v, max) => { const n = Number(v), m = Number(max); return Number.isFinite(n) && Number.isFinite(m) && m > 0 && n > 0 ? Math.min(100, Math.round(100 * n / m)) : 0; };
 const admMax = (rows, k) => Array.isArray(rows) ? rows.reduce((m, r) => Math.max(m, Number(r && r[k]) || 0), 0) : 0;
 const admYes = v => v === true ? '예' : v === false ? '아니오' : '—';
@@ -229,6 +305,98 @@ const admPage = (total, offset, limit) => {
   const t = Math.max(0, Number(total) || 0), o = Math.max(0, Number(offset) || 0), l = Math.max(1, Number(limit) || 1);
   return {from: t ? o + 1 : 0, to: Math.min(t, o + l), prev: o > 0, next: o + l < t, prevOffset: Math.max(0, o - l), nextOffset: o + l};
 };
+// ---- charts: the math only (series, scales, ticks, SVG path strings); the page draws them with createElementNS
+const admFin = v => v != null && v !== '' && typeof v !== 'boolean' && Number.isFinite(Number(v)) ? Number(v) : null;
+// server rows come newest first: a chart wants oldest → newest, one value per day (null = no value: a gap, never a zero)
+const admSeries = (rows, key) => (Array.isArray(rows) ? rows : []).filter(r => r && typeof r.day === 'string')
+  .map(r => ({day: r.day, v: admFin(r[key])})).sort((a, b) => a.day < b.day ? -1 : a.day > b.day ? 1 : 0);
+function admNiceCeil(x){ if (!(x > 0)) return 1; const k = Math.pow(10, Math.floor(Math.log10(x))); return [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].find(s => x / k <= s + 1e-9) * k; }
+// the y axis starts at 0 and has three gridlines (0, step, 2·step) with 2·step ≥ the largest value; nulls are ignored.
+// int: a count (people, installs, reports, RP) never gets a fractional tick
+function admTicks(values, int = false){
+  const hi = Math.max(0, ...(Array.isArray(values) ? values : []).map(admFin).filter(v => v != null));
+  const nice = hi > 0 ? admNiceCeil(hi / 2) : 0.5, step = int ? Math.max(1, Math.ceil(nice)) : nice;
+  return [0, step, 2 * step].map(v => +v.toFixed(6));
+}
+// axis numbers: compact from 1,000 up (1.2K, 3M), at most two decimals below
+const admTick = v => { const n = admFin(v); if (n == null) return '—'; const a = Math.abs(n); return a >= 1e6 ? +(n / 1e6).toFixed(1) + 'M' : a >= 1e3 ? +(n / 1e3).toFixed(1) + 'K' : String(+n.toFixed(2)); };
+const admScale = (d0, d1, r0, r1) => v => d1 === d0 ? (r0 + r1) / 2 : r0 + (v - d0) * (r1 - r0) / (d1 - d0);
+const admR = v => Math.round(v * 10) / 10;
+// a line through [x, y|null] points: a null lifts the pen, so a missing day is a gap, never a slope
+function admPath(pts){ let s = '', pen = false; for (const [x, y] of pts){ if (y == null){ pen = false; continue; } s += (pen ? 'L' : 'M') + admR(x) + ' ' + admR(y); pen = true; } return s; }
+// the area under each unbroken run of the line, closed on the baseline y0
+function admArea(pts, y0){
+  const runs = []; let run = [];
+  for (const p of pts){ if (p[1] == null){ if (run.length) runs.push(run); run = []; } else run.push(p); }
+  if (run.length) runs.push(run);
+  return runs.map(r => `M${admR(r[0][0])} ${admR(y0)}` + r.map(([x, y]) => `L${admR(x)} ${admR(y)}`).join('') + `L${admR(r[r.length - 1][0])} ${admR(y0)}Z`).join('');
+}
+// sparkline: values (oldest → newest) in a w×h box between their own min and max, 2px inset; a flat series sits mid-height
+function admSpark(values, w, h){
+  const v = (Array.isArray(values) ? values : []).map(admFin), ok = v.filter(x => x != null);
+  if (!ok.length) return '';
+  const x = admScale(0, Math.max(1, v.length - 1), 2, w - 2), y = admScale(Math.min(...ok), Math.max(...ok), h - 2, 2);
+  return admPath(v.map((n, i) => [x(i), n == null ? null : y(n)]));
+}
+// a column with a 4px rounded data end, square on the baseline; nothing for a zero or missing value
+function admCol(x, w, y, base, r = 4){
+  if (!(base - y > 0) || !(w > 0)) return '';
+  const k = Math.min(r, w / 2, base - y);
+  return `M${admR(x)} ${admR(base)}V${admR(y + k)}Q${admR(x)} ${admR(y)} ${admR(x + k)} ${admR(y)}H${admR(x + w - k)}Q${admR(x + w)} ${admR(y)} ${admR(x + w)} ${admR(y + k)}V${admR(base)}Z`;
+}
+// a horizontal bar from x0, rounded at its data end only
+function admHBar(x0, y, len, h, r = 4){
+  if (!(len > 0) || !(h > 0)) return '';
+  const k = Math.min(r, h / 2, len);
+  return `M${admR(x0)} ${admR(y)}H${admR(x0 + len - k)}Q${admR(x0 + len)} ${admR(y)} ${admR(x0 + len)} ${admR(y + k)}V${admR(y + h - k)}Q${admR(x0 + len)} ${admR(y + h)} ${admR(x0 + len - k)} ${admR(y + h)}H${admR(x0)}Z`;
+}
+// the nearest of n evenly spaced points between x0 and x1
+const admNearest = (x, x0, x1, n) => n <= 1 ? 0 : Math.max(0, Math.min(n - 1, Math.round((x - x0) / ((x1 - x0) / (n - 1)))));
+// direct end labels only when every pair is gap px apart; otherwise the legend and the tooltip carry identity
+const admLabelsFit = (ys, gap = 14) => { const s = ys.filter(y => y != null).sort((a, b) => a - b); return s.every((y, i) => !i || y - s[i - 1] >= gap); };
+// change of the latest value against the mean of the ones before it, in whole percent; null with no base or a zero base
+function admDelta(cur, base){
+  const c = admFin(cur), b = (Array.isArray(base) ? base : []).map(admFin).filter(v => v != null);
+  if (c == null || !b.length) return null;
+  const m = b.reduce((s, v) => s + v, 0) / b.length;
+  return m > 0 ? Math.round(100 * (c - m) / m) : null;
+}
+const admDeltaText = p => p == null ? '' : p === 0 ? '지난 7일 평균과 같음' : `지난 7일 평균보다 ${Math.abs(p)}% ${p > 0 ? '많음' : '적음'}`;
+const admToday = now => admDate(new Date(now).toISOString(), false);
+// the overview hero: the latest day with a DAU, its change against the 7 days before it, and whether that day is still running
+function admHero(daily, now){
+  const s = admSeries(daily, 'dau'), i = s.map(p => p.v != null).lastIndexOf(true);
+  if (i < 0) return null;
+  return {day: s[i].day, dau: s[i].v, delta: admDelta(s[i].v, s.slice(Math.max(0, i - 7), i).map(p => p.v)), live: s[i].day === admToday(now)};
+}
+// two parts of a whole as percents of the track (guests vs signed in)
+const admShare = (a, b) => { const x = Math.max(0, admFin(a) || 0), y = Math.max(0, admFin(b) || 0), t = x + y; return t ? [admR(100 * x / t), admR(100 - admR(100 * x / t))] : [0, 0]; };
+// a cron job's state: always a glyph and a word, never colour alone
+function admCronState(c){
+  const o = c && typeof c === 'object' ? c : {}, s = admStr(o.last_status).toLowerCase();
+  if (o.active === false) return {k: 'off', glyph: '–', label: '꺼짐'};
+  if (s === 'succeeded') return {k: 'good', glyph: '✓', label: '성공'};
+  if (s === 'failed') return {k: 'crit', glyph: '!', label: '실패'};
+  if (['starting', 'running', 'sending', 'connecting'].includes(s)) return {k: 'warn', glyph: '…', label: '실행 중'};
+  return {k: 'off', glyph: '–', label: s ? '알 수 없음' : '기록 없음'};
+}
+// private.fw_report hides a name once hide_at (3) different players reported it for 'name' (supabase/schema.sql)
+const ADM_HIDE_AT = 3;
+// report rows (target × reason) summed per target, most reported first; hot = hidden or at the auto-hide line
+function admByTarget(rows, max = 10){
+  const m = new Map();
+  for (const r of Array.isArray(rows) ? rows : []){
+    if (!r || !admUuid(r.target)) continue;
+    const o = m.get(r.target) || {target: r.target, nick: admStr(r.nick), n: 0, counted: 0, hidden: false, reasons: []};
+    m.set(r.target, {...o, n: o.n + (admFin(r.n) || 0), counted: r.reason === 'name' ? Math.max(o.counted, admFin(r.counted) || 0) : o.counted,
+      hidden: o.hidden || r.hidden === true, reasons: [...o.reasons, admReason(r.reason)]});
+  }
+  return [...m.values()].map(t => ({...t, hot: t.hidden || t.counted >= ADM_HIDE_AT})).sort((a, b) => b.n - a.n).slice(0, max);
+}
+// a report bar: counted (what auto-hide counts) is part of n; solid = counted, rest = the other reports, both clamped to the bar
+const admSegs = (counted, n) => { const t = Math.max(0, admFin(n) || 0), c = Math.min(t, Math.max(0, admFin(counted) || 0)); return {solid: c, rest: t - c}; };
+// a label cut to n characters (by code point) with an ellipsis; the full text stays in the tooltip and the table
+const admClip = (s, n) => { const v = [...admStr(s)]; return v.length > n ? v.slice(0, n - 1).join('') + '…' : v.join(''); };
 /* admin:end */
 
 const $ = id => document.getElementById(id);
@@ -266,6 +434,133 @@ function table(cols, rows, empty = '없음'){
     el('tbody', {}, rows.map(r => el('tr', {}, cols.map(([, f, c]) => cell('td', c, f(r))))))));
 }
 const limitSel = (cur, opts, fn) => el('select', {'aria-label': '개수', onchange: e => fn(Number(e.target.value))}, opts.map(o => el('option', {value: o, selected: o === cur ? 'selected' : null, text: `${o}개`})));
+
+/* ---------- charts: inline SVG built node by node (server text only as text nodes, numbers only as attributes) ---------- */
+const SVGNS = 'http://www.w3.org/2000/svg';
+function sv(tag, attrs, ...kids){
+  const n = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) if (v != null) n.setAttribute(k, String(v));
+  for (const c of kids.flat()) if (c != null) n.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  return n;
+}
+const C = {s1: '#1ea2b6', s2: '#8b6cf2', s3: '#b9842a', cool: '#4ff0ff', crit: '#ff4f8b', ink3: '#7f77a3'};
+const md = d => admStr(d).slice(5);   // 2026-10-22 → 10-22 on the x axis
+const keys = (items, lines) => el('div', {class: 'keys' + (lines ? ' lines' : '')}, items.map(([label, color]) => el('span', {style: `--k:${color}`, text: label})));
+// One tooltip per chart: the value leads, the series name follows, a short line key carries the colour
+function tipAt(fig, plot, tip, x, y, title, rows){
+  tip.replaceChildren(el('div', {class: 'tip-t', text: title}), ...rows.map(r => el('div', {class: 'tip-r'}, r.color ? el('i', {style: `--k:${r.color}`}) : null, el('b', {text: r.value}), r.label ? el('span', {text: r.label}) : null)));
+  tip.hidden = false;
+  const W = fig.clientWidth, tw = tip.offsetWidth, px = plot.offsetLeft + x;
+  tip.style.left = Math.max(4, Math.min(W - tw - 4, px + 14 + tw > W ? px - tw - 14 : px + 14)) + 'px';
+  tip.style.top = Math.max(0, plot.offsetTop + y - 12) + 'px';
+}
+// Pointer and keyboard on one chart: pick(x, y) → index; show(i) paints the hover state and returns {x, y, title, rows}
+function interact(svg, fig, plot, tip, n, pick, show, onPick){
+  let cur = -1;
+  const go = i => { cur = i; const s = show(i); if (s) tipAt(fig, plot, tip, s.x, s.y, s.title, s.rows); };
+  const off = () => { cur = -1; show(-1); tip.hidden = true; };
+  svg.setAttribute('tabindex', '0');
+  svg.addEventListener('pointermove', e => { const r = svg.getBoundingClientRect(), i = pick(e.clientX - r.left, e.clientY - r.top); if (i !== cur && i >= 0) go(i); });
+  svg.addEventListener('pointerleave', off);
+  svg.addEventListener('blur', off);
+  svg.addEventListener('focus', () => go(cur >= 0 ? cur : n - 1));
+  svg.addEventListener('keydown', e => {
+    const d = {ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1}[e.key];
+    if (d){ e.preventDefault(); go(Math.max(0, Math.min(n - 1, (cur < 0 ? n - 1 : cur) + d))); }
+    else if (e.key === 'Enter' && onPick && cur >= 0) onPick(cur);
+  });
+  if (onPick) svg.addEventListener('click', e => { const r = svg.getBoundingClientRect(), i = pick(e.clientX - r.left, e.clientY - r.top); if (i >= 0) onPick(i); });
+}
+// A chart panel: draws itself at its own width (and again on resize), one tooltip, and a 표로 보기 twin holding the table
+function figure({title, sub, legend, draw, tbl, open = false, cls = ''}){
+  const plot = el('div', {class: 'plot'}), tip = el('div', {class: 'tip', hidden: true});
+  const twin = tbl ? el('div', {class: 'twin', hidden: !open}, tbl) : null;
+  const btn = tbl ? el('button', {type: 'button', class: 'ghost sm tbl-btn', text: open ? '표 숨기기' : '표로 보기', 'aria-expanded': String(open)}) : null;
+  if (btn) btn.addEventListener('click', () => { const on = twin.hidden; twin.hidden = !on; btn.textContent = on ? '표 숨기기' : '표로 보기'; btn.setAttribute('aria-expanded', String(on)); });
+  const fig = el('figure', {class: 'fig ' + cls}, title ? el('figcaption', {}, el('span', {class: 'fig-t', text: title}), sub ? el('span', {class: 'fig-s', text: sub}) : null) : null, legend, plot, tip, btn, twin);
+  let w0 = 0;
+  new ResizeObserver(() => { const w = Math.floor(plot.clientWidth); if (w > 0 && w !== w0){ w0 = w; tip.hidden = true; plot.replaceChildren(draw(w, fig, plot, tip)); } }).observe(plot);
+  return fig;
+}
+const empty = (text = '아직 데이터가 없습니다 — 첫 설치 후 하루가 지나면 보입니다') => el('p', {class: 'empty', text});
+// Days on x (oldest → newest), one y axis from 0. kind 'line' (crosshair) or 'col' (each column is its own target).
+// series: [{label, color, v:[…]}]; fmt formats a value for the tooltip and labels; hero = the overview's flight path
+function timeChart(o){
+  const n = o.days.length;
+  if (!n || !o.series.some(s => s.v.some(v => v != null))) return figure({...o, draw: () => empty(o.none)});
+  let drawn = false;   // the hero path draws itself once, not on every resize
+  return figure({...o, draw: (w, fig, plot, tip) => {
+    const H = o.h || 180, hero = !!o.hero, anim = hero && !drawn; drawn = true;
+    const L = hero ? 4 : 40, R = o.ends ? 52 : 12, T = 10, B = 22,
+    ticks = admTicks(o.series.flatMap(s => s.v), !!o.int), y = admScale(0, ticks[2], H - B, T), band = (w - L - R) / n;
+    const x = o.kind === 'col' ? i => L + band * (i + 0.5) : admScale(0, Math.max(1, n - 1), L, w - R);
+    const svg = sv('svg', {class: 'chart', width: w, height: H, viewBox: `0 0 ${w} ${H}`, role: 'img', 'aria-label': o.aria});
+    if (!hero) for (const t of ticks) svg.append(sv('line', {class: 'grid', x1: L, x2: w - R, y1: admR(y(t)), y2: admR(y(t))}), sv('text', {x: L - 6, y: admR(y(t)) + 4, 'text-anchor': 'end'}, admTick(t) + (o.pct ? '%' : '')));
+    const xl = n > 1 ? [0, n - 1] : [0];
+    if (n > 4 && w > 520) xl.splice(1, 0, Math.floor((n - 1) / 2));
+    for (const i of xl) svg.append(sv('text', {x: admR(x(i)), y: H - 4, 'text-anchor': i === 0 && o.kind !== 'col' ? 'start' : i === n - 1 && o.kind !== 'col' ? 'end' : 'middle'}, md(o.days[i])));
+    const cols = [], dots = [];
+    if (o.kind === 'col'){
+      const bw = Math.max(2, Math.min(24, band - 2));
+      o.series[0].v.forEach((v, i) => { const p = sv('path', {d: admCol(x(i) - bw / 2, bw, y(v || 0), y(0)), fill: o.series[0].color}); cols.push(p); svg.append(p); });
+    } else {
+      for (const s of o.series){
+        const pts = s.v.map((v, i) => [x(i), v == null ? null : y(v)]);
+        if (o.area) svg.append(sv('path', {d: admArea(pts, y(0)), fill: s.color, 'fill-opacity': hero ? 0.07 : 0.1}));
+        svg.append(sv('path', {class: 'ln' + (anim ? ' draw' : ''), d: admPath(pts), stroke: s.color, pathLength: anim ? 1 : null}));
+      }
+      if (hero){ const s = o.series[0], i = s.v.map(v => v != null).lastIndexOf(true); svg.append(sv('circle', {class: 'dot glow', cx: admR(x(i)), cy: admR(y(s.v[i])), r: 4, fill: s.color})); }
+      const last = o.series.map(s => { const i = s.v.map(v => v != null).lastIndexOf(true); return i < 0 ? null : {i, y: y(s.v[i]), s}; });
+      if (o.ends && admLabelsFit(last.map(e => e && e.y))) for (const e of last) if (e) svg.append(sv('text', {class: 'lbl', x: admR(x(e.i) + 8), y: admR(e.y + 4)}, `${e.s.label} ${o.fmt(e.s.v[e.i])}`));
+    }
+    const cross = sv('line', {class: 'cross', y1: T, y2: H - B, visibility: 'hidden'});
+    if (o.kind !== 'col'){ svg.append(cross); for (const s of o.series){ const d = sv('circle', {class: 'dot', r: 4, fill: s.color, visibility: 'hidden'}); dots.push(d); svg.append(d); } }
+    const pick = px => o.kind === 'col' ? Math.max(0, Math.min(n - 1, Math.floor((px - L) / band))) : admNearest(px, L, w - R, n);
+    interact(svg, fig, plot, tip, n, pick, i => {
+      cols.forEach((c, k) => c.classList.toggle('on', k === i));
+      cross.setAttribute('visibility', i < 0 ? 'hidden' : 'visible');
+      if (i < 0){ dots.forEach(d => d.setAttribute('visibility', 'hidden')); return null; }
+      const cx = admR(x(i)); cross.setAttribute('x1', cx); cross.setAttribute('x2', cx);
+      o.series.forEach((s, k) => { const d = dots[k]; if (!d) return; const v = s.v[i]; d.setAttribute('visibility', v == null ? 'hidden' : 'visible'); if (v != null){ d.setAttribute('cx', cx); d.setAttribute('cy', admR(y(v))); } });
+      const top = Math.min(...o.series.map(s => s.v[i] == null ? H - B : y(s.v[i])));
+      return {x: cx, y: top, title: o.days[i], rows: o.series.map(s => ({color: s.color, value: s.v[i] == null ? '—' : o.fmt(s.v[i]), label: o.series.length > 1 ? s.label : o.name || ''}))};
+    });
+    return svg;
+  }});
+}
+// Horizontal bars, one per row (most first): rows [{label, value, solid?, hot, tip:[…rows], pick}]; marker = a reference line with its label.
+// With solid, a bar is two parts of one hue: solid (what the marker is about) and the rest as a 40% tint, a 2px surface gap between
+function barChart(o){
+  if (!o.rows.length) return figure({...o, draw: () => empty(o.none)});
+  return figure({...o, draw: (w, fig, plot, tip) => {
+    const n = o.rows.length, LW = w < 480 ? 96 : 150, R = 44, rowH = 30, bh = 18, T = o.marker ? 20 : 4, H = T + n * rowH + 20;
+    const ticks = admTicks([...o.rows.map(r => r.value), o.marker || 0], !!o.int), x = admScale(0, ticks[2], LW, w - R);
+    const svg = sv('svg', {class: 'chart', width: w, height: H, viewBox: `0 0 ${w} ${H}`, role: 'img', 'aria-label': o.aria});
+    for (const t of ticks) svg.append(sv('line', {class: 'grid', x1: admR(x(t)), x2: admR(x(t)), y1: T, y2: H - 20}), sv('text', {x: admR(x(t)), y: H - 4, 'text-anchor': 'middle'}, admTick(t)));
+    const bars = o.rows.map((r, i) => {
+      const yy = T + i * rowH + (rowH - bh) / 2, len = x(r.value || 0) - LW;
+      svg.append(sv('text', {class: 'lbl', x: LW - 8, y: admR(yy + bh - 4), 'text-anchor': 'end'}, r.hot ? sv('tspan', {class: 'crit'}, '! ') : null, admClip(r.label || '(이름 없음)', LW < 120 ? 7 : 12)));
+      const hue = r.hot ? C.crit : C.s1, sg = r.solid == null ? null : admSegs(r.solid, r.value), b = sv('g', {});
+      if (!sg) b.append(sv('path', {d: admHBar(LW, yy, len, bh), fill: hue}));
+      else {
+        const sl = x(sg.solid) - LW, gap = sg.solid && sg.rest ? 2 : 0;
+        if (sg.solid) b.append(sv('path', {d: admHBar(LW, yy, sl, bh, sg.rest ? 0 : 4), fill: hue}));
+        if (sg.rest) b.append(sv('path', {d: admHBar(LW + sl + gap, yy, len - sl - gap, bh), fill: hue, 'fill-opacity': 0.4}));
+      }
+      svg.append(b, sv('text', {class: 'val', x: admR(LW + Math.max(0, len) + 6), y: admR(yy + bh - 4)}, o.fmt(r.value)));
+      return b;
+    });
+    if (o.marker){ const mx = admR(x(o.marker)); svg.append(sv('line', {class: 'mk', x1: mx, x2: mx, y1: T - 4, y2: H - 20}), sv('text', {x: mx, y: T - 8, 'text-anchor': 'middle'}, o.markerLabel)); }
+    const pick = (px, py) => Math.max(0, Math.min(n - 1, Math.floor((py - T) / rowH)));
+    interact(svg, fig, plot, tip, n, pick, i => {
+      bars.forEach((b, k) => b.classList.toggle('on', k === i));
+      if (i < 0) return null;
+      const r = o.rows[i];
+      return {x: x(r.value || 0), y: T + i * rowH, title: r.label || '(이름 없음)', rows: r.tip};
+    }, o.pick ? i => o.pick(o.rows[i]) : null);
+    return svg;
+  }});
+}
 
 function screen(id){ for (const s of ['boot', 'login', 'denied', 'app']) $(s).hidden = s !== id; $('outBtn').hidden = id !== 'app'; }
 function banner(text){ $('bannerTxt').textContent = text; $('banner').hidden = !text; }
@@ -311,7 +606,8 @@ async function write(q, name, args, after, btn){
 
 /* ---------- tabs and views ---------- */
 function renderTabs(){
-  $('tabs').replaceChildren(...admTabs(role).map(t => el('button', {type: 'button', role: 'tab', 'aria-selected': t.id === tab ? 'true' : 'false', 'data-tab': t.id, text: t.label, onclick: () => show(t.id)})));
+  const ts = admTabs(role), own = ts.findIndex(t => t.owner);   // a hairline sets the owner tabs apart
+  $('tabs').replaceChildren(...ts.map((t, i) => el('button', {type: 'button', role: 'tab', class: i === own ? 'own1' : null, 'aria-selected': t.id === tab ? 'true' : 'false', 'data-tab': t.id, text: t.label, onclick: () => show(t.id)})));
 }
 const full = () => admOwnerReady(role, aal);
 const mfaNeed = () => el('button', {type: 'button', class: 'ghost', text: '2단계 인증 필요', onclick: () => show('mfa')});
@@ -332,35 +628,70 @@ async function show(t, arg){
 }
 const reload = () => show(tab);
 
+const fmtN = v => admNum(v), fmtP = v => admPct1(v), fmtM = v => admNum(v) + '분';
+const st = s => el('span', {class: 'st ' + s.k}, el('b', {text: s.glyph}), el('span', {text: s.label}));
+const facts = pairs => el('dl', {class: 'facts'}, pairs.map(([k, v]) => el('div', {}, el('dt', {text: k}), el('dd', {text: v}))));
+function spark(values, label){
+  const p = admSpark(values, 112, 32), v = values.map(admFin), i = v.map(x => x != null).lastIndexOf(true);
+  if (!p) return null;
+  const ok = v.filter(x => x != null), y = admScale(Math.min(...ok), Math.max(...ok), 30, 2), x = admScale(0, Math.max(1, v.length - 1), 2, 110);
+  return sv('svg', {class: 'chart', width: 112, height: 32, viewBox: '0 0 112 32', role: 'img', 'aria-label': label},
+    sv('path', {class: 'ln', d: p, stroke: C.ink3, 'stroke-width': 1.5}), sv('circle', {cx: admR(x(i)), cy: admR(y(v[i])), r: 3, fill: C.cool}));
+}
 async function vOverview(){
-  const d = await need('admin_overview') || {};
-  const u = d.users || {}, p = d.players || {}, s = d.season || {}, r = d.reports || {};
-  return el('div', {},
-    el('div', {class: 'grid'},
-      card('사용자', kv([['전체', admNum(u.total)], ['게스트', admNum(u.guests)], ['로그인 계정', admNum(u.signed_in)], ['신규 1일', admNum(u.new_1d)], ['신규 7일', admNum(u.new_7d)]])),
-      card('플레이어', kv([['점수 기록', admNum(p.scores)], ['대전 기록', admNum(p.versus)], ['숨김', admNum(p.hidden)]])),
-      card('시즌', kv([['현재', admSeason(s.season)], ['지난', admSeason(s.prev)], ['교체 시각', admDate(s.rolled_at)]])),
-      card('신고 · 오류', kv([['미처리 대상', admNum(r.open_targets)], ['신고 1일', admNum(r.last_1d)], ['오류 1일', admNum((d.errors || {}).last_1d)]])),
-      card('기타', kv([['푸시 기기', admNum((d.push || {}).devices)], ['테스터', admNum((d.testers || {}).count)], ['관리자', admNum((d.admins || {}).count)]]))),
-    el('h2', {text: '예약 작업 (pg_cron)'}),
-    table([['작업', c => c.job], ['일정', c => c.schedule], ['사용', c => admYes(c.active)], ['마지막 결과', c => c.last_status], ['마지막 실행', c => admDate(c.last_at)]], d.cron, '예약 작업 없음 (pg_cron 미설치)'));
+  const [d0, k] = await Promise.all([need('admin_overview'), rpc('admin_kpi', admArgs.kpi(30))]);
+  const d = d0 || {}, kd = (!k.error && k.data) || {}, u = d.users || {}, p = d.players || {}, s = d.season || {}, r = d.reports || {};
+  const dau = admSeries(kd.daily, 'dau'), inst = admSeries(kd.installs, 'installs'), runs = admSeries(kd.daily, 'runs_per_dau'), h = admHero(kd.daily, Date.now());
+  const [pg, ps] = admShare(u.guests, u.signed_in), open = admFin(r.open_targets) || 0, hidden = admFin(p.hidden) || 0;
+  const instSum = inst.reduce((a, q) => a + (q.v || 0), 0), runLast = [...runs].reverse().find(q => q.v != null);
+  const heroTxt = el('div', {}, el('h1', {text: '오늘의 하늘'}),
+    el('div', {class: 'hero-n', text: h ? admNum(h.dau) : '—'}),
+    el('p', {class: 'hero-s', text: h ? `${h.live ? '오늘 지금까지' : h.day + ' 하루'} 활성 사용자` : '활성 사용자 기록이 아직 없습니다'}),
+    h && h.delta != null ? el('p', {class: 'hero-s ' + (h.delta > 0 ? 'up' : h.delta < 0 ? 'down' : ''), text: admDeltaText(h.delta)}) : null,
+    k.error ? el('p', {class: 'hero-s', text: '지표를 불러오지 못했습니다: ' + admErr(k.error)}) : null);
+  const vital = (title, n, ...rest) => el('div', {class: 'vital'}, el('h3', {text: title}), el('div', {class: 'vital-n', text: n}), ...rest);
+  return el('div', {class: 'vw'},
+    el('section', {class: 'hero'}, heroTxt, timeChart({hero: true, h: 132, cls: 'hero-fig', days: dau.map(q => q.day), series: [{label: 'DAU', color: C.cool, v: dau.map(q => q.v)}],
+      area: true, fmt: fmtN, name: '활성 사용자', aria: `최근 30일 일일 활성 사용자${h ? ', 마지막 ' + admNum(h.dau) : ''}`})),
+    el('div', {class: 'vitals'},
+      vital('사용자', admNum(u.total),
+        el('div', {class: 'split', role: 'img', 'aria-label': `게스트 ${admNum(u.guests)}, 로그인 ${admNum(u.signed_in)}`}, el('i', {style: `width:${pg}%;background:${C.s1}`}), el('i', {style: `width:${ps}%;background:${C.s2}`})),
+        keys([[`게스트 ${admNum(u.guests)}`, C.s1], [`로그인 ${admNum(u.signed_in)}`, C.s2]])),
+      vital('설치 30일', admNum(instSum), spark(inst.map(q => q.v), '최근 30일 설치 추이')),
+      vital('판 / 활성 사용자', runLast ? admNum(runLast.v) : '—', spark(runs.map(q => q.v), '최근 30일 사용자당 판 수 추이')),
+      vital('미처리 신고', admNum(open), el('p', {}, st(open > 0 ? {k: 'crit', glyph: '!', label: '확인 필요'} : {k: 'good', glyph: '✓', label: '없음'})),
+        el('p', {text: `최근 1일 ${admNum(r.last_1d)}건, 숨김 플레이어 ${admNum(hidden)}명`})),
+      vital('오류 1일', admNum((d.errors || {}).last_1d), el('p', {text: '최근 24시간 게임에서 보낸 오류'}))),
+    facts([['신규 1일', admNum(u.new_1d)], ['신규 7일', admNum(u.new_7d)], ['점수 기록', admNum(p.scores)], ['대전 기록', admNum(p.versus)], ['시즌', admSeason(s.season)], ['지난 시즌', admSeason(s.prev)],
+      ['시즌 교체', admDate(s.rolled_at)], ['푸시 기기', admNum((d.push || {}).devices)], ['테스터', admNum((d.testers || {}).count)], ['관리자', admNum((d.admins || {}).count)]]),
+    el('h2', {text: '예약 작업'}),
+    Array.isArray(d.cron) && d.cron.length ? el('ul', {class: 'cron'}, d.cron.map(c => el('li', {}, st(admCronState(c)),
+      el('span', {}, el('div', {text: c.job || '—'}), el('div', {class: 'sub', text: c.schedule || ''})), el('span', {class: 'sub', text: '마지막 실행 ' + admDate(c.last_at)}))))
+      : empty('예약 작업이 없습니다 (pg_cron이 설치되지 않았습니다)'));
 }
 
 let kpiDays = 30;
 async function vKpi(){
   const d = await need('admin_kpi', admArgs.kpi(kpiDays)) || {};
-  const sel = el('select', {'aria-label': '기간', onchange: e => { kpiDays = Number(e.target.value); reload(); }}, [7, 14, 30, 60, 120].map(n => el('option', {value: n, selected: n === kpiDays ? 'selected' : null, text: `최근 ${n}일`})));
-  const inst = d.installs || [], daily = d.daily || [], mi = admMax(inst, 'installs'), md = admMax(daily, 'dau');
-  return el('div', {},
-    el('div', {class: 'tool'}, sel, el('span', {class: 'dim', text: '한국 시간 기준 · 끝나지 않은 날의 D-n은 —'})),
-    el('h2', {text: '설치 (첫 실행)'}),
-    table([['날짜', r => admDate(r.day)], ['설치', r => barCell(r.installs, mi), 'n']], inst),
-    el('h2', {text: '리텐션'}),
-    table([['날짜', r => admDate(r.day)], ['설치', r => admNum(r.installs), 'n'], ['D1', r => admPct(r.d1), 'n'], ['D7', r => admPct(r.d7), 'n'], ['D30', r => admPct(r.d30), 'n']], d.retention),
-    el('h2', {text: '일간'}),
-    table([['날짜', r => admDate(r.day)], ['DAU', r => barCell(r.dau, md), 'n'], ['판/DAU', r => admNum(r.runs_per_dau), 'n'], ['공유율', r => admPct(r.share_rate), 'n'], ['구매 전환', r => admPct(r.purchase_conversion), 'n'], ['광고 보기', r => admNum(r.ad_views), 'n'], ['오늘의 챌린지 판', r => admNum(r.daily_runs), 'n']], daily),
-    el('h2', {text: '세션'}),
-    table([['날짜', r => admDate(r.day)], ['세션', r => admNum(r.sessions), 'n'], ['평균(분)', r => admNum(r.avg_min), 'n'], ['중앙값(분)', r => admNum(r.median_min), 'n']], d.sessions));
+  const range = el('div', {class: 'range', role: 'group', 'aria-label': '기간'}, [7, 30, 90].map(n => el('button', {type: 'button', 'aria-pressed': String(n === kpiDays), text: `${n}일`, onclick: () => { kpiDays = n; reload(); }})));
+  const day = admSeries(d.daily, 'dau'), days = day.map(q => q.day), col = (k, rows = d.daily) => admSeries(rows, k).map(q => q.v);
+  const inst = admSeries(d.installs, 'installs'), ret = admSeries(d.retention, 'd1'), ses = admSeries(d.sessions, 'median_min');
+  const retS = [['D1', C.s1, 'd1'], ['D7', C.s2, 'd7'], ['D30', C.s3, 'd30']].map(([label, color, k]) => ({label, color, v: col(k, d.retention)}));
+  return el('div', {class: 'vw'},
+    el('div', {class: 'tool'}, range, el('span', {class: 'dim', text: '한국 시간 기준. 끝나지 않은 날의 리텐션은 비워 둡니다'})),
+    timeChart({title: '일일 활성 사용자', int: true, days, series: [{label: 'DAU', color: C.s1, v: day.map(q => q.v)}], fmt: fmtN, name: 'DAU', aria: '일일 활성 사용자 추이',
+      tbl: table([['날짜', q => admDate(q.day)], ['DAU', q => admNum(q.dau), 'n'], ['판/DAU', q => admNum(q.runs_per_dau), 'n'], ['공유율', q => admPct(q.share_rate), 'n'], ['구매 전환', q => admPct(q.purchase_conversion), 'n'], ['광고 보기', q => admNum(q.ad_views), 'n'], ['오늘의 챌린지 판', q => admNum(q.daily_runs), 'n']], d.daily)}),
+    timeChart({title: '설치', sub: '첫 실행 기준', kind: 'col', int: true, days: inst.map(q => q.day), series: [{label: '설치', color: C.s1, v: inst.map(q => q.v)}], fmt: fmtN, name: '설치', aria: '일별 설치 수',
+      tbl: table([['날짜', q => admDate(q.day)], ['설치', q => admNum(q.installs), 'n']], d.installs)}),
+    timeChart({title: '리텐션', sub: '설치한 날 기준', days: ret.map(q => q.day), series: retS, ends: true, pct: true, fmt: fmtP, aria: 'D1, D7, D30 리텐션 추이', legend: keys(retS.map(s => [s.label, s.color]), true),
+      tbl: table([['날짜', q => admDate(q.day)], ['설치', q => admNum(q.installs), 'n'], ['D1', q => admPct(q.d1), 'n'], ['D7', q => admPct(q.d7), 'n'], ['D30', q => admPct(q.d30), 'n']], d.retention)}),
+    timeChart({title: '세션 길이', sub: '중앙값', days: ses.map(q => q.day), series: [{label: '중앙값', color: C.s1, v: ses.map(q => q.v)}], fmt: fmtM, name: '중앙값', aria: '세션 길이 중앙값 추이',
+      tbl: table([['날짜', q => admDate(q.day)], ['세션', q => admNum(q.sessions), 'n'], ['평균(분)', q => admNum(q.avg_min), 'n'], ['중앙값(분)', q => admNum(q.median_min), 'n']], d.sessions)}),
+    el('div', {class: 'pair'},
+      timeChart({title: '공유율', h: 140, days, series: [{label: '공유율', color: C.s1, v: col('share_rate')}], pct: true, fmt: fmtP, name: '공유율', aria: '공유율 추이',
+        tbl: table([['날짜', q => admDate(q.day)], ['공유율', q => admPct(q.share_rate), 'n']], d.daily)}),
+      timeChart({title: '구매 전환', h: 140, days, series: [{label: '구매 전환', color: C.s1, v: col('purchase_conversion')}], pct: true, fmt: fmtP, name: '구매 전환', aria: '구매 전환율 추이',
+        tbl: table([['날짜', q => admDate(q.day)], ['구매 전환', q => admPct(q.purchase_conversion), 'n']], d.daily)})));
 }
 
 const flags = r => [r.hidden ? tag('숨김', 'bad') : null, r.guest ? tag('게스트') : null];
@@ -390,8 +721,8 @@ async function vPlayer(id){
   const nick = (sc && sc.nick) || (vs && vs.nick) || '(기록 없음)', back = () => show('players');
   const ref = p.referrals || {}, sv = p.save;
   const acts = el('div', {class: 'acts'},
-    el('button', {type: 'button', class: hidden ? 'ghost' : 'danger', text: hidden ? '숨김 해제' : '숨기기', onclick: e => write(
-      {title: hidden ? '숨김 해제' : '숨기기', body: `${nick} (${p.id})\n${hidden ? '랭킹에 다시 보이게 합니다.' : '랭킹·대전 목록에서 숨깁니다.'}`, done: hidden ? '숨김을 해제했습니다' : '숨겼습니다'},
+    el('button', {type: 'button', class: 'ghost', text: hidden ? '숨김 해제' : '숨기기', onclick: e => write(
+      {title: hidden ? '숨김 해제' : '숨기기', body: `${nick} (${p.id})\n${hidden ? '랭킹에 다시 보이게 합니다.' : '랭킹·대전 목록에서 숨깁니다.'}`, ok: hidden ? '숨김 해제' : '숨기기', danger: !hidden, done: hidden ? '숨김을 해제했습니다' : '숨겼습니다'},
       'admin_set_hidden', admArgs.hidden(p.id, !hidden), () => show('players', {id: p.id}), e.currentTarget)}),
     el('button', {type: 'button', class: 'ghost', text: '닉네임 초기화', onclick: e => write(
       {title: '닉네임 초기화', body: `${nick} → Pilot\n점수·대전·이번 시즌 기록의 이름을 Pilot으로 바꿉니다.`, done: '닉네임을 초기화했습니다'},
@@ -429,7 +760,7 @@ async function vPlayer(id){
 function deleteZone(p, nick){
   if (!admCanDelete(role, p, selfId)) return card('계정 삭제', el('p', {class: 'dim', text: p.id === selfId ? '자기 계정은 여기서 삭제할 수 없습니다.' : '관리자 계정은 삭제할 수 없습니다.'}));
   const inp = el('input', {id: 'delIn', placeholder: '플레이어 id를 그대로 입력', autocomplete: 'off', spellcheck: 'false', 'aria-label': '삭제 확인용 플레이어 id'});
-  const btn = el('button', {id: 'delBtn', type: 'button', class: 'danger', text: '계정 삭제', disabled: true});
+  const btn = el('button', {id: 'delBtn', type: 'button', class: 'ghost', text: '계정 삭제', disabled: true});
   inp.addEventListener('input', () => { btn.disabled = !admDeleteOk(inp.value, p.id); });
   btn.addEventListener('click', () => write(
     {title: '계정 영구 삭제', body: `${nick} (${p.id})\n계정과 연결된 모든 기록이 지워지며 되돌릴 수 없습니다.`, ok: '삭제', danger: true, done: '계정을 삭제했습니다'},
@@ -441,30 +772,37 @@ function deleteZone(p, nick){
 
 let rptLimit = 100;
 async function vReports(){
-  const rows = await need('admin_reports', admArgs.reports(rptLimit)) || [];
-  return el('div', {},
-    el('div', {class: 'tool'}, limitSel(rptLimit, [50, 100, 200], n => { rptLimit = n; reload(); }), el('span', {class: 'dim', text: '대상·사유별 묶음, 최근순. 집계 = 자동 숨김에 세는 신고 수'})),
-    table([['대상', r => el('span', {}, link(r.nick, openPlayer(r.target)), ' ', r.hidden ? tag('숨김', 'bad') : null)], ['사유', r => admReason(r.reason)], ['건수', r => admNum(r.n), 'n'], ['집계', r => admNum(r.counted), 'n'],
+  const rows = await need('admin_reports', admArgs.reports(rptLimit)) || [], top = admByTarget(rows);
+  const tbl = table([['대상', r => el('span', {}, link(r.nick, openPlayer(r.target)), ' ', r.hidden ? tag('숨김', 'bad') : null)], ['사유', r => admReason(r.reason)], ['건수', r => admNum(r.n), 'n'], ['집계', r => admNum(r.counted), 'n'],
       ['마지막', r => admDate(r.last)], ['장소', r => (Array.isArray(r.places) ? r.places : []).join(', ')],
       ['', r => el('span', {class: 'tool', style: 'margin:0;flex-wrap:nowrap'},
-        el('button', {type: 'button', class: r.hidden ? 'ghost sm' : 'danger sm', text: r.hidden ? '숨김 해제' : '숨기기', onclick: e => write(
-          {title: r.hidden ? '숨김 해제' : '숨기기', body: `${r.nick || ''} (${r.target})`, done: r.hidden ? '숨김을 해제했습니다' : '숨겼습니다'}, 'admin_set_hidden', admArgs.hidden(r.target, !r.hidden), reload, e.currentTarget)}),
+        el('button', {type: 'button', class: 'ghost sm', text: r.hidden ? '숨김 해제' : '숨기기', onclick: e => write(
+          {title: r.hidden ? '숨김 해제' : '숨기기', body: `${r.nick || ''} (${r.target})`, ok: r.hidden ? '숨김 해제' : '숨기기', danger: !r.hidden, done: r.hidden ? '숨김을 해제했습니다' : '숨겼습니다'}, 'admin_set_hidden', admArgs.hidden(r.target, !r.hidden), reload, e.currentTarget)}),
         el('button', {type: 'button', class: 'ghost sm', text: '신고 정리', onclick: e => write(
-          {title: '신고 정리', body: `${r.nick || ''} (${r.target})\n사유 '${admReason(r.reason)}' 신고 ${admNum(r.n)}건을 지웁니다.`, done: '신고를 정리했습니다'}, 'admin_reports_clear', admArgs.reportsClear(r.target, r.reason), reload, e.currentTarget)}))]],
-    rows, '신고가 없습니다'));
+          {title: '신고 정리', body: `${r.nick || ''} (${r.target})\n사유 '${admReason(r.reason)}' 신고 ${admNum(r.n)}건을 지웁니다.`, ok: '신고 정리', danger: true, done: '신고를 정리했습니다'}, 'admin_reports_clear', admArgs.reportsClear(r.target, r.reason), reload, e.currentTarget)}))]],
+    rows, '신고가 없습니다');
+  return el('div', {class: 'vw'},
+    el('div', {class: 'tool'}, limitSel(rptLimit, [50, 100, 200], n => { rptLimit = n; reload(); }), el('span', {class: 'dim', text: '집계는 자동 숨김에 세는 신고 수입니다'})),
+    barChart({title: '신고가 많은 플레이어', sub: '상위 10명', int: true, rows: top.map(t => ({label: t.nick, value: t.n, solid: t.counted, hot: t.hot, target: t.target,
+      tip: [{value: `신고 ${admNum(t.n)}건, 집계 ${admNum(t.counted)}건`}, {label: '사유: ' + [...new Set(t.reasons)].join(', ')}, t.hidden ? {label: '목록에서 숨겨짐'} : null].filter(Boolean)})),
+      marker: ADM_HIDE_AT, markerLabel: `자동 숨김 기준: 집계 ${ADM_HIDE_AT}`, fmt: v => admNum(v), pick: t => show('players', {id: t.target}), none: '신고가 없습니다',
+      aria: `신고 상위 ${top.length}명, 막대의 진한 부분이 자동 숨김에 세는 집계`, tbl, open: true,
+      legend: el('div', {}, keys([['집계 (자동 숨김에 셈)', C.s1], ['그 밖의 신고', 'rgba(30,162,182,.4)']]),
+        top.some(t => t.hot) ? el('p', {class: 'fig-s'}, st({k: 'crit', glyph: '!', label: '숨김이거나 집계가 기준에 닿은 플레이어'})) : null)}));
 }
 
 async function vSeason(){
-  const d = await need('admin_season') || {};
-  return el('div', {},
-    el('div', {class: 'grid'}, card('시즌', kv([['현재', admSeason(d.season)], ['지난', admSeason(d.prev)], ['교체 시각', admDate(d.rolled_at)]]))),
+  const d = await need('admin_season') || {}, live = Array.isArray(d.live) ? d.live : [];
+  return el('div', {class: 'vw'},
+    facts([['현재 시즌', admSeason(d.season)], ['지난 시즌', admSeason(d.prev)], ['교체 시각', admDate(d.rolled_at)]]),
     full() ? el('div', {class: 'acts'}, el('button', {type: 'button', text: '정산 확인 실행', onclick: e => write(
       {title: '시즌 정산 확인', body: '정산이 필요하면 지금 실행하고, 아니면 아무 일도 하지 않습니다.', done: '정산 확인을 실행했습니다'}, 'admin_season_tick', {}, reload, e.currentTarget)}))
       : role === 'owner' ? el('div', {class: 'acts'}, mfaNeed()) : null,
+    barChart({title: '이번 시즌 RP 상위 10', sub: '숨긴 플레이어 제외', int: true, rows: live.slice(0, 10).map(r => ({label: r.nick, value: admFin(r.rp) || 0, tip: [{value: `${admNum(r.rp)} RP`}, {value: `${admNum(r.wins)}승 ${admNum(r.losses)}패`}]})),
+      fmt: v => admNum(v), none: '이번 시즌 대전 기록이 아직 없습니다', aria: '이번 시즌 RP 상위 10명',
+      tbl: table([['닉네임', r => r.nick], ['RP', r => admNum(r.rp), 'n'], ['승', r => admNum(r.wins), 'n'], ['패', r => admNum(r.losses), 'n']], live)}),
     el('h2', {text: '지난 시즌 상위 10'}),
-    table([['순위', r => admNum(r.rank), 'n'], ['닉네임', r => r.nick], ['RP', r => admNum(r.rp), 'n'], ['티어', r => r.tier], ['보상 수령', r => admDate(r.claimed_at)]], d.top),
-    el('h2', {text: '이번 시즌 RP 상위 10'}),
-    table([['닉네임', r => r.nick], ['RP', r => admNum(r.rp), 'n'], ['승', r => admNum(r.wins), 'n'], ['패', r => admNum(r.losses), 'n']], d.live));
+    table([['순위', r => admNum(r.rank), 'n'], ['닉네임', r => r.nick], ['RP', r => admNum(r.rp), 'n'], ['티어', r => r.tier], ['보상 수령', r => admDate(r.claimed_at)]], d.top, '지난 시즌 기록이 없습니다'));
 }
 
 let errLimit = 50;
@@ -623,6 +961,9 @@ function boot(){
   // Never inside someone else's frame (clickjacking): a line of text, and no Supabase client at all
   let framed = true; try { framed = window.top !== window.self; } catch(e){}
   if (framed){ document.body.replaceChildren(el('p', {class: 'center', text: '이 페이지는 다른 페이지 안에서 열 수 없습니다.'})); return; }
+  // Fonts (Bungee for the wordmark and the hero number, Chakra Petch for figures) arrive late on purpose: a stylesheet in <head>
+  // would hold every script behind Google's response; until it lands the system fonts stand in
+  document.head.append(el('link', {rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;600&display=swap'}));
   const cb = admCallback(location.href);
   if (cb.err){ history.replaceState(null, '', cb.clean); banner(cb.err); }
   if (!window.supabase || !window.supabase.createClient){ screen('denied'); $('deniedTitle').textContent = '불러오지 못했습니다'; $('deniedTxt').textContent = 'Supabase SDK를 불러오지 못했습니다. 네트워크를 확인하고 새로고침하세요.'; return; }
