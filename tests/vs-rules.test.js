@@ -26,18 +26,20 @@ test('the per-rival cap is checked for every mode, FFA included', () => {
   assert.match(sql, /raise exception 'fw_vs_pair_cap/, 'the client keys its vsCap text on this error prefix');
 });
 
-test('every vsCap string (12 languages) tells the player 5 a day', () => {
+test('every vsCap string (23 languages) tells the player 5 a day', () => {
   const base = [...html.matchAll(/vsCap:'([^']+)'/g)].map(x => x[1]);
   const l10n = [...html.matchAll(/"vsCap":"([^"]+)"/g)].map(x => x[1]);
   assert.equal(base.length, 4, 'ko/en/ja/zh vsCap');
-  assert.equal(l10n.length, 8, 'vi/th/hi/es/pt/fr/de/id vsCap');
+  assert.equal(l10n.length, 19, 'vi/th/hi/es/pt/fr/de/id vsCap (I18N_L10N) + the 11 world-launch languages (I18N_W)');
   for (const t of [...base, ...l10n]) assert.ok(/5/.test(t), t);
 });
 
 test('every vsRules string tells the player -50, not -45', () => {
   const rules = [...html.matchAll(/vsRules:'([^']+)'/g)].map(x => x[1]);
+  const l10n = [...html.matchAll(/"vsRules":"([^"]+)"/g)].map(x => x[1]);
   assert.equal(rules.length, 4, 'ko/en/ja/zh vsRules');
-  for (const r of rules){ assert.ok(/[−-]50/.test(r), r); assert.ok(!/45/.test(r), r); }
+  assert.equal(l10n.length, 19, 'the other 19 languages (I18N_L10N + I18N_W)');
+  for (const r of [...rules, ...l10n]){ assert.ok(/\+50/.test(r), r); assert.ok(/[−-]50/.test(r), r); assert.ok(!/45/.test(r), r); }
 });
 
 test('FFA placement RP: client FFA_RP mirrors server fw_vs_cfg().ffa_rp', () => {

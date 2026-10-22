@@ -1,6 +1,7 @@
 // Pure helpers of the push-send edge function, shared with the Node tests (tests/push.test.js): the alert text, which tokens want
 // which kind, and the APNs provider token (ES256 JWT, https://developer.apple.com/documentation/usernotifications). Web Crypto only.
-export const LANGS = ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi'];
+export const LANGS = ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi',
+  'zh_TW', 'nl', 'ru', 'ms', 'nb', 'ar', 'it', 'tr', 'pl', 'fi', 'he'];
 
 export function alertFor(texts, lang, kind, nick, val) {
   const t = texts[LANGS.includes(lang) ? lang : 'en'] || texts.en;

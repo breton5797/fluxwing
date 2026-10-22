@@ -1,5 +1,5 @@
 // The sign-in sheet (Google / Apple / email code), the provider switches, and the tester flag that unlocks every
-// released unit for QA accounts: server table + rpc, client gate, strings in 12 languages.
+// released unit for QA accounts: server table + rpc, client gate, strings in 23 languages.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
@@ -9,7 +9,7 @@ import { loadCloud } from './helpers/cloud.js';
 const root = new URL('../', import.meta.url);
 const read = p => readFileSync(new URL(p, root), 'utf8');
 const html = read('index.html'), sql = read('supabase/schema.sql');
-const LANGS = ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi'];
+const LANGS = ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi', 'zh_TW', 'nl', 'ru', 'ms', 'nb', 'ar', 'it', 'tr', 'pl', 'fi', 'he'];
 
 test('sign-in sheet: brand buttons with logos, an email-code flow with a way back, guest note, signed-in card', () => {
   const sheet = html.slice(html.indexOf('id="authScr"'), html.indexOf('id="lbScr"'));

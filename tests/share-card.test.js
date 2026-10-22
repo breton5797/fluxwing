@@ -89,7 +89,7 @@ test('sharing pays nothing: no wallet, XP or reward inside the share rules (stor
 });
 
 test('the new share strings exist in every language', () => {
-  const LANGS = ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi'];
+  const LANGS = ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi', 'zh_TW', 'nl', 'ru', 'ms', 'nb', 'ar', 'it', 'tr', 'pl', 'fi', 'he'];
   for (const k of ['scCta', 'sendOn', 'saveImg', 'scSaved']){
     for (const l of LANGS){
       assert.equal(typeof I[l][k], 'string', `${l}.${k}`);

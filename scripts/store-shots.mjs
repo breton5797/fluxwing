@@ -1,15 +1,16 @@
 // Localized store screenshots from real autopilot play, with a caption band on top.
-//   node scripts/store-shots.mjs [--langs=en,ja,es,pt,id,ko,es-ES,pt-PT] [--platforms=play,iphone69] [--out=dir] [--port=5173] [--seed=2027] [--only=title,combo]
+//   node scripts/store-shots.mjs [--langs=en,ja,es,pt,id,ko,es-ES,pt-PT] [--platforms=play,iphone69] [--out=dir] [--port=5173] [--seed=2027] [--only=title,combo] [--reuse]
+// --reuse: keep the game captures already in raw/ and only redraw the caption frames.
 // Output: <out>/<lang>/<platform>/NN-name.png. play: 1080x1920 (Google Play phone) · iphone69: 1320x2868 (iPhone 6.9").
 // Default out: marketing/out/store/. Starts scripts/serve.mjs on --port unless a server is already there. *.supabase.co is never reached.
-import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, ensureServer, openGame, startRun, play } from './marketing-kit.mjs';
-import { SHOTS, CAPTIONS, LANGS, STORE_VARIANTS, gameLang, parseArgs } from './marketing-copy.mjs';
+import { SHOTS, CAPTIONS, SHOT_LANGS, STORE_VARIANTS, gameLang, captionFont, parseArgs } from './marketing-copy.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const opt = parseArgs(process.argv.slice(2), { langs: 'en,ja,es,pt,id,ko', platforms: 'play,iphone69', out: '', port: Number(process.env.PORT) || 5173, seed: 2027, only: '' });
+const opt = parseArgs(process.argv.slice(2), { langs: 'en,ja,es,pt,id,ko', platforms: 'play,iphone69', out: '', port: Number(process.env.PORT) || 5173, seed: 2027, only: '', reuse: false });
 const outDir = opt.out || join(ROOT, 'marketing/out/store');
 // px: final size. game: the CSS viewport the game is captured at (dsf 2, zoom 1.5: it lays out at game.w / 1.5).
 const PLATFORMS = {
@@ -93,14 +94,14 @@ async function gameShot(browser, lang, plat, name, path) {
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 // The frame: a caption band (headline + sub line) over the game shot, which sits in a rounded, glowing phone-like card.
 function frameHtml(lang, [W, H], [head, sub], shot) {
-  const cw = W / 2, ch = H / 2, band = Math.round(ch * .2), gh = Math.round(ch - band - ch * .035), gw = Math.round(gh * W / H);
-  return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8">
+  const cw = W / 2, ch = H / 2, band = Math.round(ch * .2), gh = Math.round(ch - band - ch * .035), gw = Math.round(gh * W / H), font = captionFont(lang);
+  return `<!doctype html><html lang="${lang.replace('_', '-')}" dir="${/^(ar|he)$/.test(lang) ? 'rtl' : 'ltr'}"><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&display=block" rel="stylesheet">
 <style>html,body{margin:0;width:${cw}px;height:${ch}px;overflow:hidden}
-body{background:radial-gradient(90% 60% at 50% 0%,#5a1772 0%,#250b3f 45%,#0d0618 100%);font-family:"Chakra Petch","Hiragino Sans","Apple SD Gothic Neo","PingFang SC","Thonburi","Kohinoor Devanagari","Noto Sans SC","Noto Sans Thai","Noto Sans Devanagari",system-ui,sans-serif;color:#fff}
+body{background:radial-gradient(90% 60% at 50% 0%,#5a1772 0%,#250b3f 45%,#0d0618 100%);font-family:${font.family};color:#fff}
 .band{height:${band}px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 ${Math.round(cw * .06)}px;box-sizing:border-box;gap:${Math.round(band * .05)}px}
-h1{margin:0;font-weight:700;font-size:${Math.round(cw * .083)}px;line-height:1.08;letter-spacing:-.01em;text-shadow:0 3px 0 rgba(0,0,0,.35),0 0 26px rgba(255,61,139,.55)}
-p{margin:0;font-weight:600;font-size:${Math.round(cw * .045)}px;color:#7ff3ff;opacity:.95}
+h1{margin:0;font-weight:700;font-size:${Math.round(cw * .083)}px;line-height:1.08;letter-spacing:${font.tracking};text-shadow:0 3px 0 rgba(0,0,0,.35),0 0 26px rgba(255,61,139,.55)}
+p{margin:0;font-weight:600;line-height:1.2;font-size:${Math.round(cw * .045)}px;color:#7ff3ff;opacity:.95}
 .shot{display:block;margin:0 auto;width:${gw}px;height:${gh}px;border-radius:${Math.round(cw * .055)}px;overflow:hidden;box-shadow:0 0 0 3px rgba(255,255,255,.18),0 0 0 7px #ff3d8b,0 0 46px rgba(255,61,139,.55),0 22px 60px rgba(0,0,0,.6)}
 .shot img{width:100%;height:100%;display:block}</style></head>
 <body><div class="band"><h1>${esc(head)}</h1><p>${esc(sub)}</p></div><div class="shot"><img src="data:image/png;base64,${shot.toString('base64')}"></div></body></html>`;
@@ -112,12 +113,40 @@ async function compose(browser, lang, plat, name, raw, path) {
   const page = await ctx.newPage();
   await page.setContent(frameHtml(lang, [W, H], CAPTIONS[lang][name], readFileSync(raw)), { waitUntil: 'networkidle' });
   await page.evaluate(() => document.fonts.ready);
+  const fit = await page.evaluate(fitCaption);
+  if (!fit.ok) { await ctx.close(); throw new Error(`${lang}/${plat}/${name}: caption does not fit its band (${fit.why})`); }
   await page.screenshot({ path });
   await ctx.close();
+  return fit;
+}
+
+// Runs in the frame page: shrinks the headline and sub line together (2% steps, down to 60%) until both sit inside the band, nothing is
+// cut on any side and the headline takes at most 2 lines (the sub line at most 2). Returns the scale used, or ok: false with the reason.
+function fitCaption() {
+  const band = document.querySelector('.band'), h1 = document.querySelector('h1'), p = document.querySelector('p');
+  const base = [h1, p].map(e => parseFloat(getComputedStyle(e).fontSize));
+  const lines = e => { const cs = getComputedStyle(e); return Math.round(e.getBoundingClientRect().height / (cs.lineHeight === 'normal' ? parseFloat(cs.fontSize) * 1.2 : parseFloat(cs.lineHeight))); };
+  const check = () => {
+    const b = band.getBoundingClientRect();
+    for (const e of [h1, p]) {
+      const r = e.getBoundingClientRect();
+      if (r.top < b.top - .5 || r.bottom > b.bottom + .5 || r.left < b.left - .5 || r.right > b.right + .5) return `${e.tagName} outside the band`;
+      if (e.scrollWidth > e.clientWidth + 1) return `${e.tagName} wider than the band`;
+    }
+    if (lines(h1) > 2) return `headline on ${lines(h1)} lines`;
+    if (lines(p) > 2) return `sub line on ${lines(p)} lines`;
+    return '';
+  };
+  for (let scale = 1; scale >= .6 - 1e-9; scale -= .02) {
+    h1.style.fontSize = base[0] * scale + 'px'; p.style.fontSize = base[1] * scale + 'px';
+    const why = check();
+    if (!why) return { ok: true, scale: Math.round(scale * 100) / 100, lines: [lines(h1), lines(p)] };
+    if (scale - .02 < .6 - 1e-9) return { ok: false, why };
+  }
 }
 
 const langs = opt.langs.split(','), plats = opt.platforms.split(','), only = opt.only ? opt.only.split(',') : SHOTS;
-for (const l of langs) if (!LANGS.includes(l) && !STORE_VARIANTS[l]) { console.error(`unknown lang ${l}`); process.exit(1); }
+for (const l of langs) if (!SHOT_LANGS.includes(l) && !STORE_VARIANTS[l]) { console.error(`unknown lang ${l}`); process.exit(1); }
 for (const p of plats) if (!PLATFORMS[p]) { console.error(`unknown platform ${p}`); process.exit(1); }
 const stop = await ensureServer(opt.port);
 const browser = await chromium.launch();
@@ -131,10 +160,10 @@ try {
       const { lang, plat, name, i } = jobs[next++], dir = join(outDir, lang, plat);
       mkdirSync(join(dir, 'raw'), { recursive: true });
       const file = `${String(i + 1).padStart(2, '0')}-${name}.png`, raw = join(dir, 'raw', file);
-      const tries = await gameShot(browser, lang, plat, name, raw);
-      await compose(browser, lang, plat, name, raw, join(dir, file));
-      made.push({ lang, platform: plat, file: join(lang, plat, file), caption: CAPTIONS[lang][name][0], size: PLATFORMS[plat].px.join('x'), tries });
-      console.log(`${lang}/${plat}/${file}  "${CAPTIONS[lang][name][0]}"`);
+      const tries = opt.reuse && existsSync(raw) ? 0 : await gameShot(browser, lang, plat, name, raw);
+      const fit = await compose(browser, lang, plat, name, raw, join(dir, file));
+      made.push({ lang, platform: plat, file: join(lang, plat, file), caption: CAPTIONS[lang][name][0], size: PLATFORMS[plat].px.join('x'), tries, captionScale: fit.scale, captionLines: fit.lines });
+      console.log(`${lang}/${plat}/${file}  "${CAPTIONS[lang][name][0]}"${fit.scale < 1 ? `  (caption shrunk to ${Math.round(fit.scale * 100)}%)` : ''}`);
     }
   }));
 } finally {

@@ -43,7 +43,7 @@ test('index.html: a hidden link in the menu, opened in a new tab, shown by the r
 
 test('the copy exists in every language and says pre-register, not download', () => {
   const I = loadI18N();
-  for (const l of ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi'])
+  for (const l of ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi', 'zh_TW', 'nl', 'ru', 'ms', 'nb', 'ar', 'it', 'tr', 'pl', 'fi', 'he'])
     assert.ok(I[l].playPre && (l === 'en' || I[l].playPre !== I.en.playPre), l);
   assert.match(I.en.playPre, /pre-register/i);
   assert.doesNotMatch(I.en.playPre, /download|install/i);

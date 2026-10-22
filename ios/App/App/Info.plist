@@ -8,6 +8,32 @@
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
 	<string>SWISHBY</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ko</string>
+		<string>ja</string>
+		<string>zh-Hans</string>
+		<string>zh-Hant</string>
+		<string>es</string>
+		<string>pt</string>
+		<string>fr</string>
+		<string>de</string>
+		<string>id</string>
+		<string>vi</string>
+		<string>th</string>
+		<string>hi</string>
+		<string>nl</string>
+		<string>ru</string>
+		<string>ms</string>
+		<string>nb</string>
+		<string>ar</string>
+		<string>it</string>
+		<string>tr</string>
+		<string>pl</string>
+		<string>fi</string>
+		<string>he</string>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

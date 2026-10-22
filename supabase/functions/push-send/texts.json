@@ -46,5 +46,49 @@
   "hi": {
     "on": "{n} ऑनलाइन है",
     "best": "{n} ने नया बेस्ट बनाया: {s}!"
+  },
+  "zh_TW": {
+    "on": "{n}上線了",
+    "best": "{n}刷新最高分 {s}！"
+  },
+  "nl": {
+    "on": "{n} is online",
+    "best": "{n} heeft een nieuw record: {s}!"
+  },
+  "ru": {
+    "on": "{n} в сети",
+    "best": "{n} ставит новый рекорд: {s}!"
+  },
+  "ms": {
+    "on": "{n} sedang dalam talian",
+    "best": "{n} cipta rekod baharu: {s}!"
+  },
+  "nb": {
+    "on": "{n} er pålogget",
+    "best": "{n} satte ny rekord: {s}!"
+  },
+  "ar": {
+    "on": "{n} متصل الآن",
+    "best": "{n} حقق رقمًا قياسيًا جديدًا: {s}!"
+  },
+  "it": {
+    "on": "{n} è online",
+    "best": "{n} ha fatto un nuovo record: {s}!"
+  },
+  "tr": {
+    "on": "{n} çevrimiçi",
+    "best": "{n} yeni rekor kırdı: {s}!"
+  },
+  "pl": {
+    "on": "{n} jest online",
+    "best": "{n} ma nowy rekord: {s}!"
+  },
+  "fi": {
+    "on": "{n} on linjoilla",
+    "best": "{n} teki uuden ennätyksen: {s}!"
+  },
+  "he": {
+    "on": "{n} מחובר/ת",
+    "best": "שיא חדש ל-{n}: {s}!"
   }
 }
