@@ -31,6 +31,20 @@
 | 11-17 (화) | 출시: 단계적 배포 20% → 이상 없으면 100%. 사전등록자 알림·자동 설치. 광고 1주차 시작 | 대표 + Claude |
 | 예비 | 심사 반려·지연 시 수정 후 재제출. 늦어도 2027-01-05까지 제출 | — |
 
+### iOS (같은 날 11-17 출시, 2026-10-21 결정)
+
+앱: Capacitor 8 (`ios/`, 설명은 `ios/README.md`). 코드·서버는 준비 완료 (#68, #69): PKCE 로그인, 햅틱, Game Center, 푸시(함수 `push-send` 배포, pg_net·Vault 설정, Redirect URL 등록). 남은 것은 Apple 쪽 설정이다.
+
+| 날짜 | 할 일 | 담당 |
+| --- | --- | --- |
+| 바로 | Apple 개발자 계정 개인 → 조직(MINIMALKOREA, D-U-N-S 696516627) 전환 요청 | 대표 |
+| 바로 | App Store Connect 로그인 (Chrome) → 앱 만들기·Game Center 리더보드(`swishby.best`, 반복 `swishby.daily`) | 대표 로그인 → Claude |
+| 바로 | APNs 키(.p8) 발급 → Supabase 함수 비밀값 `APNS_KEY`·`APNS_KEY_ID`·`APNS_TEAM_ID` 입력 | 대표 |
+| ~11-05 | TestFlight 빌드 업로드, 대표 아이폰에서 로그인·Game Center·푸시 확인 | Claude + 대표 |
+| ~11-09 | 스토어 문구(`store-listing.json` apple), 스크린샷 6.9″ 14개 언어 (`~/Downloads/swishby-marketing/appstore-1021`), 개인정보 라벨, 연령 등급 | Claude |
+| 11-10 | 심사 제출 (수동 출시) | 대표 승인 |
+| 11-17 | 출시 | 대표 |
+
 ## 필수 바이럴 3종
 
 | 전술 | 상태 | 메모 |
