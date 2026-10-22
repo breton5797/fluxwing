@@ -15,7 +15,7 @@
 | 5 | 설치·튜토리얼·D1/D7·결제·광고 이벤트 트래킹 | **완료** (#57, 운영 DB 적용, 400일 정리 cron `fw_events_gc` 10-21 등록) | `public.track` (자체 DB, 제3자 트래커 없음) + `supabase/checks/kpi.sql` | — |
 | 6 | 9:16 숏폼 자동 생성, 첫 20개 | 결과물 완료 (#56) | `scripts/shorts.mjs`, 결과물 `~/Downloads/swishby-marketing/` | 업로드 (대표, 8번 계정 개설 후) |
 | 7 | TikTok·Meta·구글 광고 계정 + 결제 수단 | 미착수 | — | 계정 개설·카드 등록은 대표만 가능. 마감 11-10. Meta 광고 계정은 8번 인스타 계정과 연결 |
-| 8 | 틱톡·유튜브·인스타 공식 계정, 프로필에 스토어 링크 | 핸들·프로필 키트 준비 완료 (10-23) | 핸들 **@swishbygame** (4곳 통일), 소개 문구 5개 언어 `sns-kit.json` (글자 수는 `tests/sns-kit.test.js`), 이미지 `node scripts/sns-images.mjs` → `marketing/out/sns/` | 계정 개설 (대표). TikTok에서 @swishbygame이 비어 있는지 가입 화면에서 확인. 스토어 전에는 https://swishby.com 링크 |
+| 8 | 틱톡·유튜브·인스타 공식 계정, 프로필에 스토어 링크 | 핸들·프로필 키트 준비 완료 (10-23) | 핸들 **@swishbygame** (4곳 통일), 소개 문구 5개 언어 `sns-kit.json` (글자 수는 `tests/sns-kit.test.js`), 이미지 `node scripts/sns-images.mjs` → `marketing/out/sns/` (원본 그림은 저장소 밖 `~/Downloads/swishby-marketing/brand/` key-art.png·bird.png) | 계정 개설 (대표). TikTok에서 @swishbygame이 비어 있는지 가입 화면에서 확인. 스토어 전에는 https://swishby.com 링크 |
 
 ## 프로덕션 출시 일정 (2026-10-21 결정: 11-17 화 출시)
 
