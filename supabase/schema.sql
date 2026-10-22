@@ -1837,7 +1837,10 @@ grant execute on function public.tester_me() to authenticated;
 -- Privacy law wants a way to withdraw. The client's "계정 삭제" calls public.delete_me(): one delete of the caller's
 -- auth.users row, and every game table (fw_scores, fw_saves, fw_versus, fw_vs_part, fw_vs_standing, fw_social,
 -- fw_friends, fw_friend_req, fw_social_feed, fw_testers, fw_events, fw_referrals, fw_ref_inviter, fw_ref_payouts, fw_reports, fw_push) references
--- auth.users (id) on delete cascade, as do the auth schema's own identities/sessions/refresh tokens. Nothing is anonymised or kept. A guest has no account to delete
+-- auth.users (id) on delete cascade, and so does fw_admins (an admin's row goes with the account), as do the auth schema's own
+-- identities/sessions/refresh tokens. Nothing is anonymised or kept,
+-- except that fw_client_errors and private.fw_admin_log keep their rows with the account's id set to null (fw_admin_log keeps its rows
+-- so the audit trail outlives an admin account; its target column has no reference at all). A guest has no account to delete
 -- (the client never offers it); a call without a user does nothing and returns false.
 create or replace function private.fw_delete_me() returns boolean
 language plpgsql security definer set search_path = '' as $$
@@ -2410,3 +2413,604 @@ revoke all on function private.fw_push_hook_ok(text) from public, anon, authenti
 grant execute on function private.fw_push_hook_ok(text) to service_role;
 revoke all on function public.push_hook_ok(text) from public, anon, authenticated;
 grant execute on function public.push_hook_ok(text) to service_role;
+-- =====================================================================================================
+-- ADMIN — the operator's page (admin.html, docs/admin.md): what the by-hand SQL in this file's comments does (hide, reset a name,
+-- clear reports, testers, held referrals, the season, account deletion), as server functions an operator calls from the page.
+-- The page is a static file anyone can read, and so is the publishable key: hiding a screen protects nothing, so EVERY decision is
+-- made here. Each private.fw_admin_* is a definer function whose first statement is private.fw_admin_gate(role): it answers the
+-- caller's id only when the caller is signed in, is not a guest (the JWT's is_anonymous claim, and auth.users.is_anonymous, so a
+-- token from before an upgrade cannot get round it either way), has a row in private.fw_admins, and holds the role asked for;
+-- otherwise it raises 'fw_admin: not allowed' (42501). Owner powers also need the session's second factor (the JWT's aal = 'aal2',
+-- Supabase MFA), else 'fw_admin_mfa: second factor required' (42501); admin_me tells the page the session's aal so it can ask for it.
+-- public.admin_* are the invoker wrappers the page calls; anon reaches none.
+-- Roles: mod  = read everything but the e-mail, admin roles and the log; hide / unhide and reset a name to Pilot (never an admin's);
+--        clear reports;
+--        owner = all of that plus testers, held referrals, running the season rollover, deleting an account, e-mails, the log.
+--        An owner session without aal2 has mod powers only.
+-- Admins are added and removed ONLY by hand, as the database owner (no function writes fw_admins):
+--   insert into private.fw_admins (user_id, role, note) values ('<auth.users id>', 'owner', '대표');
+--   update private.fw_admins set role = 'mod' where user_id = '<uuid>';   delete from private.fw_admins where user_id = '<uuid>';
+-- and the id of an account is found with
+--   select id, email, created_at from auth.users where email = '<address>';
+-- Every write function adds a row to private.fw_admin_log (who, what, whom, details), and so does an owner's admin_player read
+-- ('view_player': it shows the e-mail). The service role can only read the log. admin_id is set to null when that admin's
+-- account is deleted and target has no reference, so the log keeps rows about deleted players. Read it (or admin_log):
+--   select at, admin_id, action, target, detail from private.fw_admin_log order by id desc limit 50;
+-- Input: ids are uuids by type; limits are 1..200; strings are length-checked; anything else is 'fw_bad_input' (22023).
+-- =====================================================================================================
+create table if not exists private.fw_admins (
+  user_id  uuid        primary key references auth.users (id) on delete cascade,
+  role     text        not null check (role in ('owner', 'mod')),
+  note     text,
+  added_at timestamptz not null default now()
+);
+alter table private.fw_admins enable row level security;   -- no policy: the schema is not exposed, only the database owner writes it
+revoke all on table private.fw_admins from public, anon, authenticated;
+grant select, insert, update, delete on table private.fw_admins to service_role;
+
+create table if not exists private.fw_admin_log (
+  id       bigserial   primary key,
+  at       timestamptz not null default now(),
+  admin_id uuid        references auth.users (id) on delete set null,
+  action   text        not null,
+  target   uuid,
+  detail   jsonb
+);
+alter table private.fw_admin_log enable row level security;   -- no policy: the functions below write it
+revoke all on table private.fw_admin_log from public, anon, authenticated, service_role;
+grant select on table private.fw_admin_log to service_role;   -- read-only: only the admin functions (as the owner) write it; nobody updates or deletes
+
+-- The gate (see the header). Internal: it runs inside the definer functions below, clients cannot call it.
+create or replace function private.fw_admin_gate(p_role text) returns uuid
+language plpgsql stable security definer set search_path = '' as $$
+declare v_uid uuid := (select auth.uid()); v_role text;
+begin
+  if p_role is null or p_role not in ('owner', 'mod') then raise exception 'fw_bad_input: role' using errcode = '22023'; end if;
+  if v_uid is null
+     or coalesce((select auth.jwt()) ->> 'is_anonymous', 'false') = 'true'
+     or coalesce((select to_jsonb(u) ->> 'is_anonymous' from auth.users u where u.id = v_uid), 'false') = 'true' then
+    raise exception 'fw_admin: not allowed' using errcode = '42501';   -- no user, or a guest (to_jsonb: the column may be absent)
+  end if;
+  select a.role into v_role from private.fw_admins a where a.user_id = v_uid;
+  if v_role is null or (p_role = 'owner' and v_role <> 'owner') then
+    raise exception 'fw_admin: not allowed' using errcode = '42501';
+  end if;
+  -- owner powers (deletion, e-mails, the log) need a session signed in with a second factor (Supabase MFA: aal2)
+  if p_role = 'owner' and coalesce((select auth.jwt()) ->> 'aal', '') <> 'aal2' then
+    raise exception 'fw_admin_mfa: second factor required' using errcode = '42501';
+  end if;
+  return v_uid;
+end $$;
+
+-- inside a gated function: does the caller (already through the gate) hold owner powers right now (owner row and aal2)?
+create or replace function private.fw_adm_is_owner(p_uid uuid) returns boolean
+language sql stable set search_path = '' as $$
+  select exists (select 1 from private.fw_admins a where a.user_id = p_uid and a.role = 'owner')
+     and coalesce((select auth.jwt()) ->> 'aal', '') = 'aal2';
+$$;
+
+-- a page size: null = the default, otherwise 1..200
+create or replace function private.fw_adm_limit(p_limit integer, p_default integer) returns integer
+language plpgsql immutable set search_path = '' as $$
+begin
+  if p_limit is null then return p_default; end if;
+  if p_limit < 1 or p_limit > 200 then raise exception 'fw_bad_input: limit must be 1..200' using errcode = '22023'; end if;
+  return p_limit;
+end $$;
+
+-- the page's first call: never raises, so the page can tell "no rights" from an error. aal: the session's assurance level
+-- ('aal1', 'aal2' or null); an owner on aal1 is asked for the second factor before the owner tabs work
+create or replace function private.fw_admin_me() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_uid uuid; v_role text; v_aal text;
+begin
+  begin
+    v_aal := (select auth.jwt()) ->> 'aal';
+    v_uid := private.fw_admin_gate('mod');
+    select a.role into v_role from private.fw_admins a where a.user_id = v_uid;
+  exception when others then
+    v_role := null;   -- refused by the gate (no user, a guest, not an admin): the answer is "not an admin"
+  end;
+  return jsonb_build_object('admin', v_role is not null, 'role', v_role, 'aal', v_aal);
+end $$;
+
+create or replace function private.fw_admin_overview() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_cron jsonb := '[]'::jsonb; v jsonb;
+begin
+  perform private.fw_admin_gate('mod');
+  -- pg_cron may be absent (the rehearsal, a fresh project): read its tables with dynamic SQL only when they exist
+  if to_regclass('cron.job') is not null then
+    begin
+      if to_regclass('cron.job_run_details') is not null then
+        execute 'select coalesce(jsonb_agg(jsonb_build_object(''job'', j.jobname, ''schedule'', j.schedule, ''active'', j.active,
+                   ''last_status'', d.status, ''last_at'', d.start_time) order by j.jobname), ''[]''::jsonb)
+                 from cron.job j left join lateral (select r.status, r.start_time from cron.job_run_details r
+                   where r.jobid = j.jobid order by r.start_time desc nulls last limit 1) d on true' into v_cron;
+      else
+        execute 'select coalesce(jsonb_agg(jsonb_build_object(''job'', j.jobname, ''schedule'', j.schedule, ''active'', j.active,
+                   ''last_status'', null, ''last_at'', null) order by j.jobname), ''[]''::jsonb) from cron.job j' into v_cron;
+      end if;
+    exception when insufficient_privilege or undefined_table or undefined_column then
+      v_cron := '[]'::jsonb;   -- an unexpected pg_cron version must not take the whole overview down
+    end;
+  end if;
+  select jsonb_build_object(
+    'users', (select jsonb_build_object('total', count(*), 'guests', count(*) filter (where x.guest), 'signed_in', count(*) filter (where not x.guest),
+                       'new_1d', count(*) filter (where x.created_at > now() - interval '1 day'),
+                       'new_7d', count(*) filter (where x.created_at > now() - interval '7 days'))
+              from (select u.created_at, coalesce((to_jsonb(u) ->> 'is_anonymous')::boolean, false) as guest from auth.users u) x),
+    'players', jsonb_build_object('scores', (select count(*) from public.fw_scores), 'versus', (select count(*) from public.fw_versus),
+                 'hidden', (select count(*) from (select s.player_id from public.fw_scores s where s.hidden
+                                                  union select v.player_id from public.fw_versus v where v.hidden) h)),
+    'season', (select jsonb_build_object('season', s.season, 'prev', s.prev, 'rolled_at', s.rolled_at) from private.fw_vs_season s),
+    'reports', jsonb_build_object('open_targets', (select count(distinct r.target_id) from private.fw_reports r),
+                 'last_1d', (select count(*) from private.fw_reports r where r.at > now() - interval '1 day')),
+    'errors', jsonb_build_object('last_1d', (select count(*) from private.fw_client_errors e where e.at > now() - interval '1 day')),
+    'push', jsonb_build_object('devices', (select count(*) from private.fw_push)),
+    'testers', jsonb_build_object('count', (select count(*) from private.fw_testers)),
+    'admins', jsonb_build_object('count', (select count(*) from private.fw_admins)),
+    'cron', v_cron) into v;
+  return v;
+end $$;
+
+-- supabase/checks/kpi.sql (queries 1, 2, 5 and 3) over the last p_days Korean days, newest first
+create or replace function private.fw_admin_kpi(p_days integer) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_days integer; v_today date; v_from date; v_t0 timestamptz; v jsonb;
+begin
+  perform private.fw_admin_gate('mod');
+  v_days := coalesce(p_days, 30);
+  if v_days < 1 or v_days > 120 then raise exception 'fw_bad_input: days must be 1..120' using errcode = '22023'; end if;
+  v_today := (now() at time zone 'Asia/Seoul')::date;
+  v_from  := v_today - (v_days - 1);
+  v_t0    := v_from::timestamp at time zone 'Asia/Seoul';
+  with inst as (
+    select e.player_id, (min(e.at) at time zone 'Asia/Seoul')::date as d0 from private.fw_events e where e.kind = 'first_open' group by e.player_id
+  ), act as (
+    select distinct e.player_id, (e.at at time zone 'Asia/Seoul')::date as d from private.fw_events e where e.kind = 'session_start' and e.at >= v_t0
+  ), ses as (
+    select e.session, min(e.at) as t0,
+           coalesce(max(case when e.kind = 'session_end' and jsonb_typeof(e.props -> 'dur') = 'number' then (e.props ->> 'dur')::numeric end),
+                    extract(epoch from max(e.at) - min(e.at))) as sec
+    from private.fw_events e where e.session is not null and e.at >= v_t0 group by e.session
+  )
+  select jsonb_build_object(
+    'installs', (select coalesce(jsonb_agg(jsonb_build_object('day', x.day, 'installs', x.installs) order by x.day desc), '[]'::jsonb)
+                 from (select i.d0 as day, count(*) as installs from inst i where i.d0 >= v_from group by i.d0) x),
+    'retention', (select coalesce(jsonb_agg(jsonb_build_object('day', x.day, 'installs', x.installs, 'd1', x.d1, 'd7', x.d7, 'd30', x.d30) order by x.day desc), '[]'::jsonb)
+                  from (select i.d0 as day, count(*) as installs,
+                               case when i.d0 + 1  < v_today then round(100.0 * count(a1.player_id)  / count(*), 1) end as d1,
+                               case when i.d0 + 7  < v_today then round(100.0 * count(a7.player_id)  / count(*), 1) end as d7,
+                               case when i.d0 + 30 < v_today then round(100.0 * count(a30.player_id) / count(*), 1) end as d30
+                        from inst i
+                        left join act a1  on a1.player_id  = i.player_id and a1.d  = i.d0 + 1
+                        left join act a7  on a7.player_id  = i.player_id and a7.d  = i.d0 + 7
+                        left join act a30 on a30.player_id = i.player_id and a30.d = i.d0 + 30
+                        where i.d0 >= v_from group by i.d0) x),
+    'daily', (select coalesce(jsonb_agg(jsonb_build_object('day', x.day, 'dau', x.dau, 'runs_per_dau', x.runs_per_dau, 'share_rate', x.share_rate,
+                       'purchase_conversion', x.purchase_conversion, 'ad_views', x.ad_views, 'daily_runs', x.daily_runs) order by x.day desc), '[]'::jsonb)
+              from (select (e.at at time zone 'Asia/Seoul')::date as day,
+                           count(distinct e.player_id) as dau,
+                           round(count(*) filter (where e.kind = 'run_end')::numeric / count(distinct e.player_id), 2) as runs_per_dau,
+                           round(100.0 * count(distinct e.player_id) filter (where e.kind = 'share') / count(distinct e.player_id), 1) as share_rate,
+                           round(100.0 * count(distinct e.player_id) filter (where e.kind in ('shop_buy', 'purchase')) / count(distinct e.player_id), 2) as purchase_conversion,
+                           count(*) filter (where e.kind = 'ad_view') as ad_views,
+                           count(*) filter (where e.kind = 'daily_done') as daily_runs
+                    from private.fw_events e where e.at >= v_t0 group by 1) x),
+    'sessions', (select coalesce(jsonb_agg(jsonb_build_object('day', x.day, 'sessions', x.sessions, 'avg_min', x.avg_min, 'median_min', x.median_min) order by x.day desc), '[]'::jsonb)
+                 from (select (s.t0 at time zone 'Asia/Seoul')::date as day, count(*) as sessions,
+                              round(avg(s.sec) / 60, 2) as avg_min,
+                              round((percentile_cont(.5) within group (order by s.sec))::numeric / 60, 2) as median_min
+                       from ses s group by 1) x)) into v;
+  return v;
+end $$;
+
+-- search: a uuid finds that one account, anything else is a part of a name (fw_scores, else fw_versus); empty = newest accounts
+create or replace function private.fw_admin_players(p_q text, p_limit integer, p_offset integer) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_lim integer; v_off integer; v_q text; v_id uuid; v_pat text; v jsonb;
+begin
+  perform private.fw_admin_gate('mod');
+  v_lim := private.fw_adm_limit(p_limit, 50);
+  v_off := coalesce(p_offset, 0);
+  if v_off < 0 then raise exception 'fw_bad_input: offset must be >= 0' using errcode = '22023'; end if;
+  v_q := nullif(btrim(coalesce(p_q, '')), '');
+  if char_length(v_q) > 64 then raise exception 'fw_bad_input: query too long' using errcode = '22023'; end if;
+  if v_q ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then
+    v_id := v_q::uuid;
+  elsif v_q is not null then
+    v_pat := '%' || replace(replace(replace(v_q, '\', '\\'), '%', '\%'), '_', '\_') || '%';
+  end if;
+  with m as (
+    select u.id, to_jsonb(u) as uj, u.created_at, s.nick as s_nick, s.cc as s_cc, s.best, s.hidden as s_hidden,
+           v.nick as v_nick, v.cc as v_cc, v.rp, v.hidden as v_hidden
+    from auth.users u
+    left join public.fw_scores s on s.player_id = u.id
+    left join public.fw_versus v on v.player_id = u.id
+    where (v_id is null or u.id = v_id)
+      and (v_pat is null or s.nick ilike v_pat or v.nick ilike v_pat)
+  )
+  select jsonb_build_object('total', (select count(*) from m),
+    'rows', (select coalesce(jsonb_agg(jsonb_build_object('id', p.id, 'nick', coalesce(p.s_nick, p.v_nick), 'cc', coalesce(p.s_cc, p.v_cc),
+                       'best', p.best, 'rp', p.rp, 'hidden', coalesce(p.s_hidden, false) or coalesce(p.v_hidden, false),
+                       'guest', coalesce((p.uj ->> 'is_anonymous')::boolean, false), 'provider', p.uj -> 'raw_app_meta_data' -> 'provider',
+                       'created_at', p.created_at, 'last_sign_in_at', p.uj -> 'last_sign_in_at',
+                       'reports', (select count(*) from private.fw_reports r where r.target_id = p.id)) order by p.created_at desc, p.id), '[]'::jsonb)
+             from (select * from m order by m.created_at desc, m.id limit v_lim offset v_off) p)) into v;
+  return v;
+end $$;
+
+create or replace function private.fw_admin_player(p_id uuid) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid; v_owner boolean; v jsonb;
+begin
+  v_me := private.fw_admin_gate('mod');
+  v_owner := private.fw_adm_is_owner(v_me);
+  select jsonb_build_object('id', u.id, 'guest', coalesce((to_jsonb(u) ->> 'is_anonymous')::boolean, false),
+    'provider', to_jsonb(u) -> 'raw_app_meta_data' -> 'provider',
+    'email', case when v_owner then to_jsonb(u) -> 'email' end,
+    'created_at', u.created_at, 'last_sign_in_at', to_jsonb(u) -> 'last_sign_in_at',
+    'tester', exists (select 1 from private.fw_testers t where t.player_id = u.id),
+    'admin_role', case when v_owner then (select a.role from private.fw_admins a where a.user_id = u.id) end,
+    'scores', (select jsonb_build_object('nick', s.nick, 'cc', s.cc, 'best', s.best, 'gates', s.gates, 'bird', s.bird, 'daily_key', s.daily_key,
+                 'daily_score', s.daily_score, 'hidden', s.hidden, 'last_submit_at', s.last_submit_at) from public.fw_scores s where s.player_id = u.id),
+    'versus', (select jsonb_build_object('nick', x.nick, 'rp', x.rp, 'wins', x.wins, 'losses', x.losses, 'draws', x.draws, 'hidden', x.hidden)
+               from public.fw_versus x where x.player_id = u.id),
+    'standings', (select coalesce(jsonb_agg(jsonb_build_object('season', t.season, 'rank', t.rank, 'rp', t.rp, 'tier', t.tier, 'claimed_at', t.claimed_at)
+                    order by t.season desc), '[]'::jsonb) from public.fw_vs_standing t where t.player_id = u.id),
+    'save', (select jsonb_build_object('rev', f.rev, 'updated_at', f.updated_at) from public.fw_saves f where f.player_id = u.id),
+    'reports_received', (select coalesce(jsonb_agg(jsonb_build_object('reason', r.reason, 'place', r.place, 'nick', r.nick, 'seen', r.seen, 'at', r.at)
+                           order by r.at desc, r.id desc), '[]'::jsonb)
+                         from (select * from private.fw_reports r where r.target_id = u.id order by r.at desc, r.id desc limit 100) r),
+    'reports_sent', (select count(*) from private.fw_reports r where r.reporter_id = u.id),
+    'referrals', jsonb_build_object('invited', (select count(*) from private.fw_referrals r where r.inviter_id = u.id),
+                   'held', (select count(*) from private.fw_referrals r where r.inviter_id = u.id and r.held)),
+    'push_devices', (select count(*) from private.fw_push p where p.player_id = u.id),
+    'events', (select coalesce(jsonb_agg(jsonb_build_object('at', e.at, 'kind', e.kind, 'props', e.props) order by e.at desc, e.id desc), '[]'::jsonb)
+               from (select * from private.fw_events e where e.player_id = u.id order by e.at desc, e.id desc limit 20) e),
+    'errors', (select coalesce(jsonb_agg(jsonb_build_object('at', e.at, 'build', e.build, 'msg', e.msg) order by e.at desc, e.id desc), '[]'::jsonb)
+               from (select * from private.fw_client_errors e where e.player_id = u.id order by e.at desc, e.id desc limit 10) e))
+  into v from auth.users u where u.id = p_id;
+  if v is null then raise exception 'fw_bad_input: unknown player' using errcode = '22023'; end if;
+  if v_owner then   -- the owner's view shows the e-mail: who looked at whom is logged
+    insert into private.fw_admin_log (admin_id, action, target, detail) values (v_me, 'view_player', p_id, null);
+  end if;
+  return v;
+end $$;
+
+-- hide / unhide on both boards (the by-hand moderation of fw_scores / fw_versus)
+create or replace function private.fw_admin_set_hidden(p_id uuid, p_hidden boolean) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid; v_s integer; v_v integer;
+begin
+  v_me := private.fw_admin_gate('mod');
+  if p_id is null or p_hidden is null or not exists (select 1 from auth.users u where u.id = p_id) then
+    raise exception 'fw_bad_input: unknown player or flag' using errcode = '22023';
+  end if;
+  if exists (select 1 from private.fw_admins a where a.user_id = p_id) and not private.fw_adm_is_owner(v_me) then
+    raise exception 'fw_bad_input: only an owner can hide an admin' using errcode = '22023';
+  end if;
+  update public.fw_scores s set hidden = p_hidden where s.player_id = p_id;
+  get diagnostics v_s = row_count;
+  update public.fw_versus x set hidden = p_hidden where x.player_id = p_id;
+  get diagnostics v_v = row_count;
+  insert into private.fw_admin_log (admin_id, action, target, detail)
+  values (v_me, case when p_hidden then 'hide' else 'unhide' end, p_id, jsonb_build_object('scores', v_s, 'versus', v_v));
+  return jsonb_build_object('id', p_id, 'hidden', p_hidden);
+end $$;
+
+-- the name goes back to Pilot on the boards and in the latest archived season (the past-season board); no free renaming
+create or replace function private.fw_admin_reset_nick(p_id uuid) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid; v_prev text;
+begin
+  v_me := private.fw_admin_gate('mod');
+  if p_id is null or not exists (select 1 from auth.users u where u.id = p_id) then
+    raise exception 'fw_bad_input: unknown player' using errcode = '22023';
+  end if;
+  if exists (select 1 from private.fw_admins a where a.user_id = p_id) and not private.fw_adm_is_owner(v_me) then
+    raise exception 'fw_bad_input: only an owner can reset an admin''s name' using errcode = '22023';
+  end if;
+  v_prev := coalesce((select s.nick from public.fw_scores s where s.player_id = p_id), (select x.nick from public.fw_versus x where x.player_id = p_id));
+  update public.fw_scores s set nick = 'Pilot' where s.player_id = p_id;
+  update public.fw_versus x set nick = 'Pilot' where x.player_id = p_id;
+  update public.fw_vs_standing t set nick = 'Pilot'
+  where t.player_id = p_id and t.season in (select q.season from private.fw_vs_season q union select q.prev from private.fw_vs_season q);
+  insert into private.fw_admin_log (admin_id, action, target, detail) values (v_me, 'reset_nick', p_id, jsonb_build_object('prev', v_prev));
+  return jsonb_build_object('id', p_id, 'nick', 'Pilot');
+end $$;
+
+-- reports by target and reason, newest first. counted = the distinct reporters private.fw_report counts toward the auto-hide
+-- (reason 'name', the name the server has now, seen = nick, a real account older than min_age_h with a best)
+create or replace function private.fw_admin_reports(p_limit integer) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_lim integer; v_cfg jsonb; v jsonb;
+begin
+  perform private.fw_admin_gate('mod');
+  v_lim := private.fw_adm_limit(p_limit, 100);
+  v_cfg := private.fw_rpt_cfg();
+  select coalesce(jsonb_agg(jsonb_build_object('target', g.target_id, 'nick', g.nick, 'reason', g.reason, 'n', g.n, 'counted', g.counted,
+           'last', g.last, 'places', g.places, 'hidden', g.hidden) order by g.last desc, g.target_id, g.reason), '[]'::jsonb) into v
+  from (select k.target_id, k.reason, k.n, k.last, k.places, k.nick, k.hidden,
+               case when k.reason = 'name' and k.nick <> '' then
+                 (select count(distinct r.reporter_id) from private.fw_reports r join auth.users u on u.id = r.reporter_id
+                  where r.target_id = k.target_id and r.reason = 'name' and r.nick = k.nick and r.seen = r.nick
+                    and not coalesce((to_jsonb(u) ->> 'is_anonymous')::boolean, false)
+                    and u.created_at < now() - make_interval(hours => (v_cfg ->> 'min_age_h')::int)
+                    and exists (select 1 from public.fw_scores s where s.player_id = r.reporter_id and s.best > 0))
+               else 0 end as counted
+        from (select r.target_id, r.reason, count(*) as n, max(r.at) as last, jsonb_agg(distinct r.place) as places,
+                     coalesce((select s.nick from public.fw_scores s where s.player_id = r.target_id),
+                              (select x.nick from public.fw_versus x where x.player_id = r.target_id), '') as nick,
+                     coalesce((select s.hidden from public.fw_scores s where s.player_id = r.target_id), false)
+                       or coalesce((select x.hidden from public.fw_versus x where x.player_id = r.target_id), false) as hidden
+              from private.fw_reports r group by r.target_id, r.reason
+              order by max(r.at) desc, r.target_id, r.reason limit v_lim) k) g;
+  return v;
+end $$;
+
+create or replace function private.fw_admin_reports_clear(p_target uuid, p_reason text) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid; v_n integer;
+begin
+  v_me := private.fw_admin_gate('mod');
+  if p_target is null or p_reason is null or p_reason not in ('name', 'cheat', 'other', 'all') then
+    raise exception 'fw_bad_input: target or reason' using errcode = '22023';
+  end if;
+  delete from private.fw_reports r where r.target_id = p_target and (p_reason = 'all' or r.reason = p_reason);
+  get diagnostics v_n = row_count;
+  insert into private.fw_admin_log (admin_id, action, target, detail)
+  values (v_me, 'reports_clear', p_target, jsonb_build_object('reason', p_reason, 'deleted', v_n));
+  return jsonb_build_object('deleted', v_n);
+end $$;
+
+create or replace function private.fw_admin_testers() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v jsonb;
+begin
+  perform private.fw_admin_gate('owner');
+  select coalesce(jsonb_agg(jsonb_build_object('id', t.player_id,
+           'nick', coalesce((select s.nick from public.fw_scores s where s.player_id = t.player_id),
+                            (select x.nick from public.fw_versus x where x.player_id = t.player_id)),
+           'note', t.note, 'added_at', t.added_at) order by t.added_at desc, t.player_id), '[]'::jsonb) into v
+  from private.fw_testers t;
+  return v;
+end $$;
+
+create or replace function private.fw_admin_tester_set(p_id uuid, p_on boolean, p_note text) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid; v_note text;
+begin
+  v_me := private.fw_admin_gate('owner');
+  v_note := nullif(btrim(coalesce(p_note, '')), '');
+  if p_id is null or p_on is null or char_length(v_note) > 100 or not exists (select 1 from auth.users u where u.id = p_id) then
+    raise exception 'fw_bad_input: unknown player, flag or note' using errcode = '22023';
+  end if;
+  if p_on then
+    insert into private.fw_testers (player_id, note) values (p_id, v_note)
+    on conflict (player_id) do update set note = coalesce(excluded.note, private.fw_testers.note);
+  else
+    delete from private.fw_testers t where t.player_id = p_id;
+  end if;
+  insert into private.fw_admin_log (admin_id, action, target, detail)
+  values (v_me, case when p_on then 'tester_on' else 'tester_off' end, p_id, jsonb_build_object('note', v_note));
+  return jsonb_build_object('id', p_id, 'tester', p_on);
+end $$;
+
+create or replace function private.fw_admin_errors(p_limit integer) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_lim integer; v jsonb;
+begin
+  perform private.fw_admin_gate('mod');
+  v_lim := private.fw_adm_limit(p_limit, 50);
+  select coalesce(jsonb_agg(jsonb_build_object('id', e.id, 'at', e.at, 'player_id', e.player_id, 'build', e.build, 'msg', e.msg,
+           'stack', left(e.stack, 500), 'url', e.url, 'ua', e.ua) order by e.at desc, e.id desc), '[]'::jsonb) into v
+  from (select * from private.fw_client_errors e order by e.at desc, e.id desc limit v_lim) e;
+  return v;
+end $$;
+
+-- invites held for review (the burst rule of fw_referral_link), by inviter
+create or replace function private.fw_admin_referrals_held() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v jsonb;
+begin
+  perform private.fw_admin_gate('owner');
+  select coalesce(jsonb_agg(jsonb_build_object('invitee', r.invitee_id, 'inviter', r.inviter_id,
+           'inviter_nick', (select s.nick from public.fw_scores s where s.player_id = r.inviter_id),
+           'invitee_nick', si.nick, 'invitee_best', si.best, 'linked_at', r.linked_at, 'days', r.days, 'stage', r.stage)
+           order by r.inviter_id, r.linked_at, r.invitee_id), '[]'::jsonb) into v
+  from private.fw_referrals r left join public.fw_scores si on si.player_id = r.invitee_id
+  where r.held;
+  return v;
+end $$;
+
+create or replace function private.fw_admin_referral_release(p_inviter uuid) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid; v_n integer;
+begin
+  v_me := private.fw_admin_gate('owner');
+  if p_inviter is null then raise exception 'fw_bad_input: inviter' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(p_inviter::text, 3));   -- the inviter's referral writes (fw_referral_claim takes the same lock)
+  update private.fw_referrals r set held = false where r.inviter_id = p_inviter and r.held;
+  get diagnostics v_n = row_count;
+  insert into private.fw_admin_log (admin_id, action, target, detail) values (v_me, 'ref_release', p_inviter, jsonb_build_object('released', v_n));
+  return jsonb_build_object('released', v_n);
+end $$;
+
+create or replace function private.fw_admin_season() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v jsonb;
+begin
+  perform private.fw_admin_gate('mod');
+  select jsonb_build_object('season', q.season, 'prev', q.prev, 'rolled_at', q.rolled_at,
+    'top', (select coalesce(jsonb_agg(jsonb_build_object('rank', t.rank, 'nick', t.nick, 'rp', t.rp, 'tier', t.tier, 'claimed_at', t.claimed_at)
+              order by t.rank), '[]'::jsonb)
+            from public.fw_vs_standing t where t.season = q.prev and t.rank <= 10),
+    'live', (select coalesce(jsonb_agg(jsonb_build_object('nick', x.nick, 'rp', x.rp, 'wins', x.wins, 'losses', x.losses) order by x.rp desc, x.player_id), '[]'::jsonb)
+             from (select * from public.fw_versus x where not x.hidden and (x.wins > 0 or x.losses > 0 or x.draws > 0)
+                   order by x.rp desc, x.player_id limit 10) x))
+  into v from private.fw_vs_season q;
+  return v;
+end $$;
+
+-- the season gate by hand: rolls over when the month has changed (as the pg_cron job does), otherwise does nothing
+create or replace function private.fw_admin_season_tick() returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid; v_season integer;
+begin
+  v_me := private.fw_admin_gate('owner');
+  v_season := private.fw_vs_tick();
+  insert into private.fw_admin_log (admin_id, action, target, detail) values (v_me, 'season_tick', null, jsonb_build_object('season', v_season));
+  return jsonb_build_object('season', v_season);
+end $$;
+
+-- deletes the account (every game row goes with it, see ACCOUNT DELETION). The page makes the operator type the id again,
+-- and so does this: p_confirm must be p_id as text. Never yourself, never an admin (remove the fw_admins row by hand first).
+create or replace function private.fw_admin_delete_player(p_id uuid, p_confirm text) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid; v_nick text; v_done boolean;
+begin
+  v_me := private.fw_admin_gate('owner');
+  if p_id is null or p_confirm is distinct from p_id::text then
+    raise exception 'fw_bad_input: the confirmation does not match the id' using errcode = '22023';
+  end if;
+  if p_id = v_me then raise exception 'fw_bad_input: you cannot delete yourself' using errcode = '22023'; end if;
+  if exists (select 1 from private.fw_admins a where a.user_id = p_id) then
+    raise exception 'fw_bad_input: an admin account cannot be deleted here' using errcode = '22023';
+  end if;
+  v_nick := coalesce((select s.nick from public.fw_scores s where s.player_id = p_id), (select x.nick from public.fw_versus x where x.player_id = p_id));
+  delete from auth.users u where u.id = p_id;
+  v_done := found;
+  insert into private.fw_admin_log (admin_id, action, target, detail)
+  values (v_me, 'delete_player', p_id, jsonb_build_object('nick', v_nick, 'deleted', v_done));
+  return jsonb_build_object('deleted', v_done);
+end $$;
+
+create or replace function private.fw_admin_log(p_limit integer) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare v_lim integer; v jsonb;
+begin
+  perform private.fw_admin_gate('owner');
+  v_lim := private.fw_adm_limit(p_limit, 100);
+  select coalesce(jsonb_agg(jsonb_build_object('at', l.at, 'admin_id', l.admin_id,
+           'admin_nick', coalesce((select s.nick from public.fw_scores s where s.player_id = l.admin_id),
+                                  (select a.note from private.fw_admins a where a.user_id = l.admin_id)),
+           'action', l.action, 'target', l.target, 'detail', l.detail) order by l.id desc), '[]'::jsonb) into v
+  from (select * from private.fw_admin_log l order by l.id desc limit v_lim) l;
+  return v;
+end $$;
+
+create or replace function public.admin_me() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_me(); $$;
+create or replace function public.admin_overview() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_overview(); $$;
+create or replace function public.admin_kpi(p_days integer default 30) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_kpi(p_days); $$;
+create or replace function public.admin_players(p_q text default null, p_limit integer default 50, p_offset integer default 0) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_players(p_q, p_limit, p_offset); $$;
+create or replace function public.admin_player(p_id uuid) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_player(p_id); $$;
+create or replace function public.admin_set_hidden(p_id uuid, p_hidden boolean) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_set_hidden(p_id, p_hidden); $$;
+create or replace function public.admin_reset_nick(p_id uuid) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_reset_nick(p_id); $$;
+create or replace function public.admin_reports(p_limit integer default 100) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_reports(p_limit); $$;
+create or replace function public.admin_reports_clear(p_target uuid, p_reason text) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_reports_clear(p_target, p_reason); $$;
+create or replace function public.admin_testers() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_testers(); $$;
+create or replace function public.admin_tester_set(p_id uuid, p_on boolean, p_note text default null) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_tester_set(p_id, p_on, p_note); $$;
+create or replace function public.admin_errors(p_limit integer default 50) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_errors(p_limit); $$;
+create or replace function public.admin_referrals_held() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_referrals_held(); $$;
+create or replace function public.admin_referral_release(p_inviter uuid) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_referral_release(p_inviter); $$;
+create or replace function public.admin_season() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_season(); $$;
+create or replace function public.admin_season_tick() returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_season_tick(); $$;
+create or replace function public.admin_delete_player(p_id uuid, p_confirm text) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_delete_player(p_id, p_confirm); $$;
+create or replace function public.admin_log(p_limit integer default 100) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_admin_log(p_limit); $$;
+
+revoke all on function private.fw_admin_gate(text)          from public, anon, authenticated;
+revoke all on function private.fw_adm_limit(integer, integer) from public, anon, authenticated;
+revoke all on function private.fw_adm_is_owner(uuid)         from public, anon, authenticated;
+-- the invoker wrappers run their private function as the caller, so it needs execute; the gate inside decides
+revoke all on function private.fw_admin_me()                              from public, anon;
+revoke all on function private.fw_admin_overview()                        from public, anon;
+revoke all on function private.fw_admin_kpi(integer)                      from public, anon;
+revoke all on function private.fw_admin_players(text, integer, integer)   from public, anon;
+revoke all on function private.fw_admin_player(uuid)                      from public, anon;
+revoke all on function private.fw_admin_set_hidden(uuid, boolean)         from public, anon;
+revoke all on function private.fw_admin_reset_nick(uuid)                  from public, anon;
+revoke all on function private.fw_admin_reports(integer)                  from public, anon;
+revoke all on function private.fw_admin_reports_clear(uuid, text)         from public, anon;
+revoke all on function private.fw_admin_testers()                         from public, anon;
+revoke all on function private.fw_admin_tester_set(uuid, boolean, text)   from public, anon;
+revoke all on function private.fw_admin_errors(integer)                   from public, anon;
+revoke all on function private.fw_admin_referrals_held()                  from public, anon;
+revoke all on function private.fw_admin_referral_release(uuid)            from public, anon;
+revoke all on function private.fw_admin_season()                          from public, anon;
+revoke all on function private.fw_admin_season_tick()                     from public, anon;
+revoke all on function private.fw_admin_delete_player(uuid, text)         from public, anon;
+revoke all on function private.fw_admin_log(integer)                      from public, anon;
+grant execute on function private.fw_admin_me()                             to authenticated, service_role;
+grant execute on function private.fw_admin_overview()                       to authenticated, service_role;
+grant execute on function private.fw_admin_kpi(integer)                     to authenticated, service_role;
+grant execute on function private.fw_admin_players(text, integer, integer)  to authenticated, service_role;
+grant execute on function private.fw_admin_player(uuid)                     to authenticated, service_role;
+grant execute on function private.fw_admin_set_hidden(uuid, boolean)        to authenticated, service_role;
+grant execute on function private.fw_admin_reset_nick(uuid)                 to authenticated, service_role;
+grant execute on function private.fw_admin_reports(integer)                 to authenticated, service_role;
+grant execute on function private.fw_admin_reports_clear(uuid, text)        to authenticated, service_role;
+grant execute on function private.fw_admin_testers()                        to authenticated, service_role;
+grant execute on function private.fw_admin_tester_set(uuid, boolean, text)  to authenticated, service_role;
+grant execute on function private.fw_admin_errors(integer)                  to authenticated, service_role;
+grant execute on function private.fw_admin_referrals_held()                 to authenticated, service_role;
+grant execute on function private.fw_admin_referral_release(uuid)           to authenticated, service_role;
+grant execute on function private.fw_admin_season()                         to authenticated, service_role;
+grant execute on function private.fw_admin_season_tick()                    to authenticated, service_role;
+grant execute on function private.fw_admin_delete_player(uuid, text)        to authenticated, service_role;
+grant execute on function private.fw_admin_log(integer)                     to authenticated, service_role;
+revoke all on function public.admin_me()                             from public, anon;
+revoke all on function public.admin_overview()                       from public, anon;
+revoke all on function public.admin_kpi(integer)                     from public, anon;
+revoke all on function public.admin_players(text, integer, integer)  from public, anon;
+revoke all on function public.admin_player(uuid)                     from public, anon;
+revoke all on function public.admin_set_hidden(uuid, boolean)        from public, anon;
+revoke all on function public.admin_reset_nick(uuid)                 from public, anon;
+revoke all on function public.admin_reports(integer)                 from public, anon;
+revoke all on function public.admin_reports_clear(uuid, text)        from public, anon;
+revoke all on function public.admin_testers()                        from public, anon;
+revoke all on function public.admin_tester_set(uuid, boolean, text)  from public, anon;
+revoke all on function public.admin_errors(integer)                  from public, anon;
+revoke all on function public.admin_referrals_held()                 from public, anon;
+revoke all on function public.admin_referral_release(uuid)           from public, anon;
+revoke all on function public.admin_season()                         from public, anon;
+revoke all on function public.admin_season_tick()                    from public, anon;
+revoke all on function public.admin_delete_player(uuid, text)        from public, anon;
+revoke all on function public.admin_log(integer)                     from public, anon;
+grant execute on function public.admin_me()                             to authenticated;
+grant execute on function public.admin_overview()                       to authenticated;
+grant execute on function public.admin_kpi(integer)                     to authenticated;
+grant execute on function public.admin_players(text, integer, integer)  to authenticated;
+grant execute on function public.admin_player(uuid)                     to authenticated;
+grant execute on function public.admin_set_hidden(uuid, boolean)        to authenticated;
+grant execute on function public.admin_reset_nick(uuid)                 to authenticated;
+grant execute on function public.admin_reports(integer)                 to authenticated;
+grant execute on function public.admin_reports_clear(uuid, text)        to authenticated;
+grant execute on function public.admin_testers()                        to authenticated;
+grant execute on function public.admin_tester_set(uuid, boolean, text)  to authenticated;
+grant execute on function public.admin_errors(integer)                  to authenticated;
+grant execute on function public.admin_referrals_held()                 to authenticated;
+grant execute on function public.admin_referral_release(uuid)           to authenticated;
+grant execute on function public.admin_season()                         to authenticated;
+grant execute on function public.admin_season_tick()                    to authenticated;
+grant execute on function public.admin_delete_player(uuid, text)        to authenticated;
+grant execute on function public.admin_log(integer)                     to authenticated;

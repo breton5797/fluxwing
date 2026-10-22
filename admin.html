@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-1NxcWBUNlsfZmZ1M0/+VRACwdpLo6Q0i6wEnFd+5Spo=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js; style-src 'unsafe-inline'; connect-src https://ecjeyelgcqbliavwltbc.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<title>SWISHBY 관리자</title>
+<style>
+:root{color-scheme:dark;--bg:#150a33;--bg2:#250b3f;--card:#1d0f44;--line:#3a2a66;--fg:#ece9f7;--dim:#a49cc4;--acc:#4ff0ff;--acc2:#ff4fd8;--warn:#ffd54a;--bad:#ff5a6e;--ok:#5dff9b}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-text-size-adjust:100%}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.brand{font-weight:800;letter-spacing:.05em;color:var(--acc);white-space:nowrap}
+.brand span{color:var(--fg);font-weight:600;margin-left:6px;letter-spacing:0}
+.who{display:flex;align-items:center;gap:8px;min-width:0;font-size:12px;color:var(--dim)}
+#who{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46vw}
+@media (max-width:480px){#who{max-width:28vw}}
+main{max-width:1200px;margin:0 auto;padding:12px 16px 48px}
+h1{font-size:20px;margin:0 0 8px}
+h2{font-size:15px;margin:18px 0 6px}
+button{font:inherit;color:#120726;background:var(--acc);border:0;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer;min-height:34px;white-space:nowrap}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+button.danger{background:var(--bad);color:#fff}
+button.sm{min-height:28px;padding:2px 8px;font-size:12px}
+button.link{background:none;border:0;color:var(--acc);padding:0;min-height:0;font-weight:600;text-align:left;text-decoration:underline;white-space:normal;word-break:break-all}
+button:disabled{opacity:.45;cursor:not-allowed}
+input,select{font:inherit;color:var(--fg);background:#0e0626;border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-height:34px;min-width:0}
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);margin:0 0 12px;scrollbar-width:none}
+.tabs button{background:none;color:var(--dim);border-radius:0;border-bottom:2px solid transparent;white-space:nowrap;padding:8px 10px;font-weight:600}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--acc2)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.card h3{margin:0 0 6px;font-size:13px;color:var(--dim);font-weight:600}
+dl.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0}
+dl.kv dt{color:var(--dim)}
+dl.kv dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;word-break:break-all}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:6px 0 14px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+th{color:var(--dim);font-weight:600;background:#1a0c3d}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+td.w{white-space:normal;word-break:break-word;min-width:200px;max-width:460px}
+tr:last-child td{border-bottom:0}
+.bar{display:inline-block;height:6px;border-radius:3px;background:var(--acc2);vertical-align:middle;margin-left:6px}
+.tag{display:inline-block;font-size:11px;line-height:16px;padding:0 6px;border-radius:6px;border:1px solid var(--line);color:var(--dim);margin-right:4px}
+.tag.bad{color:var(--bad);border-color:var(--bad)}
+.tag.ok{color:var(--ok);border-color:var(--ok)}
+.tool{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
+.tool input{flex:1 1 180px}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.dim{color:var(--dim)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;word-break:break-all}
+pre{white-space:pre-wrap;word-break:break-word;font-size:11px;margin:4px 0;max-height:240px;overflow:auto}
+details summary{cursor:pointer;color:var(--acc);font-size:12px}
+.banner{border:1px solid var(--bad);color:var(--fg);background:#3a0d2a;border-radius:10px;padding:8px 12px;margin:0 0 12px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.center{max-width:420px;margin:32px auto}
+.col{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.row{display:flex;gap:8px;margin:8px 0}
+.row input{flex:1}
+.msg{min-height:1.5em;color:var(--warn)}
+.danger-zone{border-color:var(--bad)}
+.modal{position:fixed;inset:0;background:rgba(5,2,15,.72);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.mbox{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:16px;max-width:420px;width:100%}
+.mbox p{white-space:pre-wrap;word-break:break-word}
+.mbtns{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:var(--card);border:1px solid var(--acc);border-radius:10px;padding:8px 14px;z-index:30;max-width:calc(100% - 32px)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
+</head>
+<body>
+<header class="top">
+  <div class="brand">SWISHBY<span>관리자</span></div>
+  <div class="who"><span id="who"></span><span id="roleTag" class="tag" hidden></span><button id="outBtn" class="ghost sm" hidden>로그아웃</button></div>
+</header>
+<main>
+<div id="banner" class="banner" hidden><span id="bannerTxt"></span><button id="bannerX" class="ghost sm">닫기</button></div>
+
+<section id="boot" class="center"><p class="dim">불러오는 중…</p></section>
+
+<section id="login" class="center card" hidden>
+  <h1>관리자 로그인</h1>
+  <p class="dim">관리자로 등록된 계정만 들어올 수 있습니다. 게스트 계정으로는 쓸 수 없습니다.</p>
+  <div class="col">
+    <button id="gBtn">Google로 로그인</button>
+    <button id="aBtn">Apple로 로그인</button>
+  </div>
+  <form id="mailForm" class="row"><input id="mailIn" type="email" autocomplete="email" placeholder="이메일 주소" aria-label="이메일 주소"><button>코드 받기</button></form>
+  <form id="codeForm" class="row" hidden><input id="codeIn" inputmode="numeric" autocomplete="one-time-code" placeholder="이메일로 받은 코드" aria-label="코드"><button>확인</button></form>
+  <p id="loginMsg" class="msg"></p>
+</section>
+
+<section id="denied" class="center card" hidden>
+  <h1 id="deniedTitle">권한이 없습니다</h1>
+  <p id="deniedTxt" class="dim"></p>
+  <div class="acts"><button id="deniedOut">로그아웃</button><button id="deniedRetry" class="ghost">다시 확인</button></div>
+</section>
+
+<section id="app" hidden>
+  <nav id="tabs" class="tabs" role="tablist" aria-label="관리 메뉴"></nav>
+  <div id="mfaNote" class="banner" hidden><span>owner 기능은 2단계 인증 뒤에 열립니다.</span><button id="mfaNoteBtn" class="sm">2단계 인증</button></div>
+  <div id="view"></div>
+</section>
+</main>
+
+<div id="modal" class="modal" hidden>
+  <div class="mbox" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <h2 id="mTitle"></h2>
+    <p id="mBody"></p>
+    <div class="mbtns"><button id="mNo" class="ghost">취소</button><button id="mOk">확인</button></div>
+  </div>
+</div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script>
+(() => {
+'use strict';
+/* admin:start — pure helpers (no DOM): tab rights, input checks, rpc arguments, error text, display formats. tests/admin.test.js */
+const ADM_TABS = [
+  {id: 'overview', label: '개요', owner: false}, {id: 'kpi', label: '지표', owner: false}, {id: 'players', label: '플레이어', owner: false},
+  {id: 'reports', label: '신고', owner: false}, {id: 'season', label: '시즌', owner: false}, {id: 'errors', label: '오류', owner: false},
+  {id: 'testers', label: '테스터', owner: true}, {id: 'referrals', label: '추천', owner: true}, {id: 'log', label: '기록', owner: true}
+];
+const ADM_REASONS = {name: '닉네임', cheat: '부정행위', other: '기타'};
+const ADM_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+// admin_me's answer → 'owner' | 'mod' | null (anything unexpected is no access)
+const admRole = me => me && typeof me === 'object' && me.admin === true && (me.role === 'owner' || me.role === 'mod') ? me.role : null;
+const admTabs = role => role === 'owner' ? ADM_TABS.slice() : role === 'mod' ? ADM_TABS.filter(t => !t.owner) : [];
+const admCan = (role, tab) => admTabs(role).some(t => t.id === tab);
+const admOwnerTab = tab => ADM_TABS.some(t => t.id === tab && t.owner);
+// The server asks for a second factor (aal2) on every owner-level call: an owner at aal1 has the mod tabs, the owner ones wait for the TOTP step
+const admAal = me => me && typeof me === 'object' && (me.aal === 'aal1' || me.aal === 'aal2') ? me.aal : null;
+const admOwnerReady = (role, aal) => role === 'owner' && aal === 'aal2';
+const admNeedMfa = (role, aal) => role === 'owner' && aal !== 'aal2';
+const admMfaCode = s => { const v = typeof s === 'string' ? s.replace(/\s+/g, '') : ''; return /^\d{6}$/.test(v) ? v : ''; };
+// The enrolment QR: only an SVG data URL (the SDK prefixes the raw SVG without escaping it, so it is re-encoded here)
+function admQrSrc(s){
+  const v = typeof s === 'string' ? s : '', m = v.match(/^data:image\/svg\+xml;(?:utf-8|charset=utf-8),([\s\S]*)$/);
+  if (!m || !/^\s*<svg[\s>]/.test(m[1])) return '';
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(m[1]);
+}
+const admStr = v => typeof v === 'string' ? v : '';
+const admUuid = s => { const v = admStr(s).trim().toLowerCase(); return ADM_UUID.test(v) ? v : ''; };
+function admInt(v, lo, hi, def){
+  const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
+  return Number.isFinite(n) ? Math.min(hi, Math.max(lo, Math.trunc(n))) : def;
+}
+const admEmail = s => { const v = admStr(s).trim().toLowerCase(); return v.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) ? v : ''; };
+const admCode = s => { const v = admStr(s).replace(/\s+/g, ''); return /^\d{6,10}$/.test(v) ? v : ''; };
+// The retyped id must be exactly the player's id (as shown, lower case): the server checks p_confirm = p_id::text again
+const admDeleteOk = (typed, id) => { const u = admUuid(id); return !!u && admStr(typed).trim() === u; };
+// Who may be offered the delete button: owner only, never oneself or another admin (the server refuses those too)
+const admCanDelete = (role, p, self) => role === 'owner' && !!p && !!admUuid(p.id) && p.id !== self && !p.admin_role;
+// rpc arguments, one builder per call of the contract (docs/admin.md §2); null = the input is not valid, nothing is sent
+const admArgs = {
+  kpi: d => ({p_days: admInt(d, 1, 120, 30)}),
+  players: (q, limit, offset) => ({p_q: admStr(q).trim().slice(0, 64),p_limit: admInt(limit, 1, 200, 50), p_offset: admInt(offset, 0, 1e9, 0)}),
+  player: id => admUuid(id) ? {p_id: admUuid(id)} : null,
+  hidden: (id, on) => admUuid(id) ? {p_id: admUuid(id), p_hidden: on === true} : null,
+  resetNick: id => admUuid(id) ? {p_id: admUuid(id)} : null,
+  reports: limit => ({p_limit: admInt(limit, 1, 200, 100)}),
+  reportsClear: (target, reason) => admUuid(target) && ['name', 'cheat', 'other', 'all'].includes(reason) ? {p_target: admUuid(target), p_reason: reason} : null,
+  testerSet: (id, on, note) => admUuid(id) ? {p_id: admUuid(id), p_on: on === true, p_note: admStr(note).trim().slice(0, 100)} : null,
+  errors: limit => ({p_limit: admInt(limit, 1, 200, 50)}),
+  referralRelease: inviter => admUuid(inviter) ? {p_inviter: admUuid(inviter)} : null,
+  deletePlayer: (id, typed) => admDeleteOk(typed, id) ? {p_id: admUuid(id), p_confirm: admUuid(id)} : null,
+  log: limit => ({p_limit: admInt(limit, 1, 200, 100)})
+};
+// A server / network error → a short Korean line (fw_admin → 권한 없음, fw_bad_input → 입력 오류)
+function admErr(e){
+  const o = e && typeof e === 'object' ? e : {}, c = String(o.code || ''), m = String(o.message || '');
+  if (/fw_admin_mfa/.test(m)) return '2단계 인증 필요';
+  if (c === '42501' || /fw_admin/.test(m)) return '권한 없음';
+  if (c === '22023' || /fw_bad_input/.test(m)) return '입력 오류';
+  if (o.status === 401 || c === 'PGRST301' || /jwt/i.test(m)) return '로그인 만료 — 다시 로그인하세요';
+  if (c === 'PGRST202' || c === '42883') return '서버 함수 없음 — 마이그레이션 확인';
+  if (o.name === 'TypeError' || /failed to fetch|network/i.test(m)) return '네트워크 오류';
+  return '서버 오류';
+}
+const admErrText = e => { const k = admErr(e), m = String((e && e.message) || '').slice(0, 200); return m ? `${k} (${m})` : k; };
+// Sign-in errors are shown as fixed lines only: a URL's error_description is attacker-controlled text and is never displayed
+const ADM_AUTH_ERR = {
+  access_denied: '로그인을 취소했거나 거부되었습니다', otp_expired: '로그인 코드나 링크가 만료되었습니다', otp_disabled: '이메일 로그인이 꺼져 있습니다',
+  signup_disabled: '등록된 계정이 아닙니다', user_not_found: '등록된 계정이 아닙니다', provider_disabled: '이 로그인 방식은 꺼져 있습니다',
+  identity_already_exists: '이미 다른 계정에 연결된 로그인입니다', bad_oauth_state: '로그인 요청이 만료되었습니다. 다시 시도하세요', bad_oauth_callback: '로그인 요청이 만료되었습니다. 다시 시도하세요',
+  over_email_send_rate_limit: '요청이 너무 많습니다. 잠시 후 다시 시도하세요', over_request_rate_limit: '요청이 너무 많습니다. 잠시 후 다시 시도하세요'
+};
+const admAuthErr = (e, fallback = '로그인에 실패했습니다') => { const c = e && typeof e === 'object' ? String(e.code || e.error_code || '') : ''; return Object.prototype.hasOwnProperty.call(ADM_AUTH_ERR, c) ? ADM_AUTH_ERR[c] : fallback; };
+// The OAuth return: an error in the query or the hash is read (its code only) and stripped before the SDK sees the URL
+function admCallback(href){
+  const u = new URL(href), h = new URLSearchParams(u.hash.startsWith('#') && u.hash.includes('=') ? u.hash.slice(1) : '');
+  const has = u.searchParams.has('error') || h.has('error') || u.searchParams.has('error_code') || h.has('error_code');
+  if (!has) return {err: '', clean: ''};
+  const code = [u.searchParams.get('error_code'), h.get('error_code'), u.searchParams.get('error'), h.get('error')].find(k => k && admAuthErr({code: k}, '') !== '') || '';
+  ['error', 'error_code', 'error_description'].forEach(k => u.searchParams.delete(k));
+  u.hash = '';
+  return {err: admAuthErr({code}), clean: u.toString()};
+}
+const admPad = n => String(n).padStart(2, '0');
+// Times are shown in Korea time (UTC+9, no DST); a bare YYYY-MM-DD date is shown as is
+function admDate(v, time = true){
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const t = typeof v === 'string' && v ? Date.parse(v) : NaN;
+  if (!Number.isFinite(t)) return '—';
+  const d = new Date(t + 9 * 3600e3), day = `${d.getUTCFullYear()}-${admPad(d.getUTCMonth() + 1)}-${admPad(d.getUTCDate())}`;
+  return time ? `${day} ${admPad(d.getUTCHours())}:${admPad(d.getUTCMinutes())}` : day;
+}
+function admNum(v){
+  if (v == null || v === '' || typeof v === 'boolean') return '—';
+  const n = Number(v);
+  if (!Number.isFinite(n)) return '—';
+  const [i, f] = String(Math.abs(n)).split('.');
+  return (n < 0 ? '-' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (f ? '.' + f : '');
+}
+// KPI rates already come as percents (kpi.sql rounds 100.0 * …); null = the day has not ended yet
+const admPct = v => admNum(v) === '—' ? '—' : admNum(v) + '%';
+const admBar = (v, max) => { const n = Number(v), m = Number(max); return Number.isFinite(n) && Number.isFinite(m) && m > 0 && n > 0 ? Math.min(100, Math.round(100 * n / m)) : 0; };
+const admMax = (rows, k) => Array.isArray(rows) ? rows.reduce((m, r) => Math.max(m, Number(r && r[k]) || 0), 0) : 0;
+const admYes = v => v === true ? '예' : v === false ? '아니오' : '—';
+const admJson = (v, max = 300) => { let s = ''; try { s = v == null ? '' : typeof v === 'string' ? v : JSON.stringify(v); } catch(e){ s = ''; } return String(s || '').slice(0, max); };
+const admReason = r => ADM_REASONS[r] || admStr(r) || '—';
+const admProvider = (p, guest) => guest === true ? '게스트' : admStr(p) || '—';
+const admPage = (total, offset, limit) => {
+  const t = Math.max(0, Number(total) || 0), o = Math.max(0, Number(offset) || 0), l = Math.max(1, Number(limit) || 1);
+  return {from: t ? o + 1 : 0, to: Math.min(t, o + l), prev: o > 0, next: o + l < t, prevOffset: Math.max(0, o - l), nextOffset: o + l};
+};
+/* admin:end */
+
+const $ = id => document.getElementById(id);
+// Only the publishable key (the same as the game's FW_CONFIG). Every right is checked inside the server functions.
+const CFG = { url: 'https://ecjeyelgcqbliavwltbc.supabase.co', key: 'sb_publishable_wG1eznhHBLW33Ghrt1gNNg_c32xOXX1' };
+let sb = null, role = null, aal = null, selfId = null, tab = 'overview', gen = 0, startN = 0, mail = '', toastT = 0;
+const plState = {q: '', offset: 0, limit: 50};
+
+/* ---------- DOM helpers: every server value goes in as text (textContent / text nodes), never as markup ---------- */
+function el(tag, props, ...kids){
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})){
+    if (v == null || v === false) continue;
+    if (k === 'text') n.textContent = String(v);
+    else if (k === 'class') n.className = v;
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else if (k === 'disabled' || k === 'hidden') n[k] = true;
+    else if (k === 'value') n.value = String(v);
+    else n.setAttribute(k, String(v));
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) n.append(c instanceof Node ? c : String(c));
+  return n;
+}
+const tag = (text, cls = '') => el('span', {class: 'tag ' + cls, text});
+const link = (text, fn) => el('button', {class: 'link', type: 'button', text: text || '(이름 없음)', onclick: fn});
+const kv = pairs => el('dl', {class: 'kv'}, pairs.flatMap(([k, v]) => [el('dt', {text: k}), el('dd', {}, v instanceof Node ? v : String(v == null ? '—' : v))]));
+const card = (title, ...kids) => el('div', {class: 'card'}, el('h3', {text: title}), ...kids);
+const barCell = (v, max) => el('span', {}, admNum(v), el('span', {class: 'bar', style: `width:${Math.round(admBar(v, max) * 0.6)}px`}));
+// cols: [header, row => cell, 'n' (numbers) | 'w' (wrapping text)]
+function table(cols, rows, empty = '없음'){
+  if (!Array.isArray(rows) || !rows.length) return el('p', {class: 'dim', text: empty});
+  const cell = (tagName, c, v) => el(tagName, {class: c || null}, v instanceof Node ? v : String(v == null ? '—' : v));
+  return el('div', {class: 'tw'}, el('table', {},
+    el('thead', {}, el('tr', {}, cols.map(([h, , c]) => cell('th', c, h)))),
+    el('tbody', {}, rows.map(r => el('tr', {}, cols.map(([, f, c]) => cell('td', c, f(r))))))));
+}
+const limitSel = (cur, opts, fn) => el('select', {'aria-label': '개수', onchange: e => fn(Number(e.target.value))}, opts.map(o => el('option', {value: o, selected: o === cur ? 'selected' : null, text: `${o}개`})));
+
+function screen(id){ for (const s of ['boot', 'login', 'denied', 'app']) $(s).hidden = s !== id; $('outBtn').hidden = id !== 'app'; }
+function banner(text){ $('bannerTxt').textContent = text; $('banner').hidden = !text; }
+function toast(text){ const t = $('toast'); t.textContent = text; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600); }
+
+/* ---------- confirm dialog (in-page; every write asks first) ---------- */
+let modalRes = null;
+function ask(title, body, okText = '확인', danger = false){
+  if (modalRes) closeModal(false);
+  return new Promise(res => {
+    modalRes = res;
+    $('mTitle').textContent = title; $('mBody').textContent = body; $('mOk').textContent = okText; $('mOk').className = danger ? 'danger' : '';
+    $('modal').hidden = false; $('mNo').focus();
+  });
+}
+function closeModal(v){ $('modal').hidden = true; const r = modalRes; modalRes = null; if (r) r(v); }
+$('mOk').addEventListener('click', () => closeModal(true));
+$('mNo').addEventListener('click', () => closeModal(false));
+$('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && modalRes) closeModal(false); });
+$('bannerX').addEventListener('click', () => banner(''));
+
+/* ---------- server calls ---------- */
+async function rpc(name, args){
+  let r;
+  try { r = args ? await sb.rpc(name, args) : await sb.rpc(name); } catch(e){ r = {error: e || {}}; }
+  if (r.error && r.status && !r.error.status) r.error.status = r.status;
+  return r;
+}
+// A read for a view: the data, or the error thrown to the view's error box
+async function need(name, args){ const r = await rpc(name, args); if (r.error) throw r.error; return r.data; }
+// One write: confirm, call, report; after() redraws on success
+async function write(q, name, args, after, btn){
+  if (!args) return banner('입력 오류 (값을 확인하세요)');
+  if (!(await ask(q.title, q.body, q.ok || '확인', !!q.danger))) return;
+  if (btn) btn.disabled = true;
+  const r = await rpc(name, args);
+  if (btn) btn.disabled = false;
+  if (r.error) return banner(admErrText(r.error));
+  banner(''); toast(q.done || '완료했습니다');
+  if (after) after(r.data);
+}
+
+/* ---------- tabs and views ---------- */
+function renderTabs(){
+  $('tabs').replaceChildren(...admTabs(role).map(t => el('button', {type: 'button', role: 'tab', 'aria-selected': t.id === tab ? 'true' : 'false', 'data-tab': t.id, text: t.label, onclick: () => show(t.id)})));
+}
+const full = () => admOwnerReady(role, aal);
+const mfaNeed = () => el('button', {type: 'button', class: 'ghost', text: '2단계 인증 필요', onclick: () => show('mfa')});
+function paintRole(){
+  $('roleTag').hidden = !role;
+  $('roleTag').textContent = role ? role + (admNeedMfa(role, aal) ? ' · 2단계 미인증' : '') : '';
+  $('mfaNote').hidden = !admNeedMfa(role, aal);
+}
+async function show(t, arg){
+  tab = t === 'mfa' && admNeedMfa(role, aal) ? 'mfa' : admCan(role, t) ? t : 'overview';
+  renderTabs();
+  const g = ++gen, v = $('view');
+  v.replaceChildren(el('p', {class: 'dim', text: '불러오는 중…'}));
+  let node;
+  try { node = await (tab === 'mfa' || (admOwnerTab(tab) && !full()) ? vMfa : VIEWS[tab])(arg); }
+  catch(e){ node = el('div', {class: 'banner'}, el('span', {text: admErrText(e)}), el('button', {class: 'ghost sm', text: '다시 시도', onclick: () => show(tab, arg)})); }
+  if (g === gen) v.replaceChildren(node);
+}
+const reload = () => show(tab);
+
+async function vOverview(){
+  const d = await need('admin_overview') || {};
+  const u = d.users || {}, p = d.players || {}, s = d.season || {}, r = d.reports || {};
+  return el('div', {},
+    el('div', {class: 'grid'},
+      card('사용자', kv([['전체', admNum(u.total)], ['게스트', admNum(u.guests)], ['로그인 계정', admNum(u.signed_in)], ['신규 1일', admNum(u.new_1d)], ['신규 7일', admNum(u.new_7d)]])),
+      card('플레이어', kv([['점수 기록', admNum(p.scores)], ['대전 기록', admNum(p.versus)], ['숨김', admNum(p.hidden)]])),
+      card('시즌', kv([['현재', admNum(s.season)], ['지난', admNum(s.prev)], ['교체 시각', admDate(s.rolled_at)]])),
+      card('신고 · 오류', kv([['미처리 대상', admNum(r.open_targets)], ['신고 1일', admNum(r.last_1d)], ['오류 1일', admNum((d.errors || {}).last_1d)]])),
+      card('기타', kv([['푸시 기기', admNum((d.push || {}).devices)], ['테스터', admNum((d.testers || {}).count)], ['관리자', admNum((d.admins || {}).count)]]))),
+    el('h2', {text: '예약 작업 (pg_cron)'}),
+    table([['작업', c => c.job], ['일정', c => c.schedule], ['사용', c => admYes(c.active)], ['마지막 결과', c => c.last_status], ['마지막 실행', c => admDate(c.last_at)]], d.cron, '예약 작업 없음 (pg_cron 미설치)'));
+}
+
+let kpiDays = 30;
+async function vKpi(){
+  const d = await need('admin_kpi', admArgs.kpi(kpiDays)) || {};
+  const sel = el('select', {'aria-label': '기간', onchange: e => { kpiDays = Number(e.target.value); reload(); }}, [7, 14, 30, 60, 120].map(n => el('option', {value: n, selected: n === kpiDays ? 'selected' : null, text: `최근 ${n}일`})));
+  const inst = d.installs || [], daily = d.daily || [], mi = admMax(inst, 'installs'), md = admMax(daily, 'dau');
+  return el('div', {},
+    el('div', {class: 'tool'}, sel, el('span', {class: 'dim', text: '한국 시간 기준 · 끝나지 않은 날의 D-n은 —'})),
+    el('h2', {text: '설치 (첫 실행)'}),
+    table([['날짜', r => admDate(r.day)], ['설치', r => barCell(r.installs, mi), 'n']], inst),
+    el('h2', {text: '리텐션'}),
+    table([['날짜', r => admDate(r.day)], ['설치', r => admNum(r.installs), 'n'], ['D1', r => admPct(r.d1), 'n'], ['D7', r => admPct(r.d7), 'n'], ['D30', r => admPct(r.d30), 'n']], d.retention),
+    el('h2', {text: '일간'}),
+    table([['날짜', r => admDate(r.day)], ['DAU', r => barCell(r.dau, md), 'n'], ['판/DAU', r => admNum(r.runs_per_dau), 'n'], ['공유율', r => admPct(r.share_rate), 'n'], ['구매 전환', r => admPct(r.purchase_conversion), 'n'], ['광고 보기', r => admNum(r.ad_views), 'n'], ['오늘의 챌린지 판', r => admNum(r.daily_runs), 'n']], daily),
+    el('h2', {text: '세션'}),
+    table([['날짜', r => admDate(r.day)], ['세션', r => admNum(r.sessions), 'n'], ['평균(분)', r => admNum(r.avg_min), 'n'], ['중앙값(분)', r => admNum(r.median_min), 'n']], d.sessions));
+}
+
+const flags = r => [r.hidden ? tag('숨김', 'bad') : null, r.guest ? tag('게스트') : null];
+const openPlayer = id => () => show('players', {id});
+
+async function vPlayers(arg){
+  if (arg && arg.id) return vPlayer(arg.id);
+  const d = await need('admin_players', admArgs.players(plState.q, plState.limit, plState.offset)) || {};
+  const pg = admPage(d.total, plState.offset, plState.limit);
+  const q = el('input', {type: 'search', placeholder: '닉네임 일부 또는 플레이어 id', 'aria-label': '검색', maxlength: 64, value: plState.q});
+  const go = off => { plState.offset = off; reload(); };
+  return el('div', {},
+    el('form', {class: 'tool', onsubmit: e => { e.preventDefault(); plState.q = q.value; go(0); }}, q, el('button', {text: '검색'}),
+      plState.q ? el('button', {type: 'button', class: 'ghost', text: '전체', onclick: () => { plState.q = ''; go(0); }}) : null),
+    el('div', {class: 'tool'}, el('span', {class: 'dim', text: `${admNum(d.total)}명 중 ${pg.from}–${pg.to}`}),
+      el('button', {type: 'button', class: 'ghost sm', text: '이전', disabled: !pg.prev, onclick: () => go(pg.prevOffset)}),
+      el('button', {type: 'button', class: 'ghost sm', text: '다음', disabled: !pg.next, onclick: () => go(pg.nextOffset)})),
+    table([['닉네임', r => el('span', {}, link(r.nick, openPlayer(r.id)), ' ', flags(r))], ['국가', r => r.cc], ['최고', r => admNum(r.best), 'n'], ['RP', r => admNum(r.rp), 'n'],
+      ['신고', r => admNum(r.reports), 'n'], ['로그인', r => admProvider(r.provider, r.guest)], ['가입', r => admDate(r.created_at)], ['최근 로그인', r => admDate(r.last_sign_in_at)]], d.rows, '플레이어가 없습니다'));
+}
+
+async function vPlayer(id){
+  const a = admArgs.player(id);
+  if (!a) throw {code: '22023', message: 'player id'};
+  const p = await need('admin_player', a) || {};
+  const sc = p.scores, vs = p.versus, hidden = !!((sc && sc.hidden) || (vs && vs.hidden));
+  const nick = (sc && sc.nick) || (vs && vs.nick) || '(기록 없음)', back = () => show('players');
+  const ref = p.referrals || {}, sv = p.save;
+  const acts = el('div', {class: 'acts'},
+    el('button', {type: 'button', class: hidden ? 'ghost' : 'danger', text: hidden ? '숨김 해제' : '숨기기', onclick: e => write(
+      {title: hidden ? '숨김 해제' : '숨기기', body: `${nick} (${p.id})\n${hidden ? '랭킹에 다시 보이게 합니다.' : '랭킹·대전 목록에서 숨깁니다.'}`, done: hidden ? '숨김을 해제했습니다' : '숨겼습니다'},
+      'admin_set_hidden', admArgs.hidden(p.id, !hidden), () => show('players', {id: p.id}), e.currentTarget)}),
+    el('button', {type: 'button', class: 'ghost', text: '닉네임 초기화', onclick: e => write(
+      {title: '닉네임 초기화', body: `${nick} → Pilot\n점수·대전·이번 시즌 기록의 이름을 Pilot으로 바꿉니다.`, done: '닉네임을 초기화했습니다'},
+      'admin_reset_nick', admArgs.resetNick(p.id), () => show('players', {id: p.id}), e.currentTarget)}));
+  const parts = [
+    el('div', {class: 'tool'}, el('button', {type: 'button', class: 'ghost sm', text: '← 목록', onclick: back}), el('h1', {text: nick}), hidden ? tag('숨김', 'bad') : null, p.tester ? tag('테스터', 'ok') : null, p.admin_role ? tag('관리자 ' + p.admin_role) : null),
+    el('p', {class: 'mono dim', text: p.id || id}),
+    acts,
+    el('div', {class: 'grid'},
+      card('계정', kv([['로그인', admProvider(p.provider, p.guest)], ['이메일', full() ? (p.email || '—') : role === 'owner' ? '(2단계 인증 후)' : '(owner만)'], ['가입', admDate(p.created_at)], ['최근 로그인', admDate(p.last_sign_in_at)],
+        ['테스터', admYes(p.tester)], ['관리자', p.admin_role || '—'], ['세이브', sv ? `rev ${admNum(sv.rev)} · ${admDate(sv.updated_at)}` : '—'], ['보낸 신고', admNum(p.reports_sent)],
+        ['초대 / 보류', `${admNum(ref.invited)} / ${admNum(ref.held)}`], ['푸시 기기', admNum(p.push_devices)]])),
+      card('점수', sc ? kv([['닉네임', sc.nick], ['국가', sc.cc], ['최고', admNum(sc.best)], ['게이트', admNum(sc.gates)], ['기체', sc.bird], ['오늘 코스', sc.daily_key], ['오늘 점수', admNum(sc.daily_score)], ['숨김', admYes(sc.hidden)], ['마지막 제출', admDate(sc.last_submit_at)]]) : el('p', {class: 'dim', text: '없음'})),
+      card('대전', vs ? kv([['닉네임', vs.nick], ['RP', admNum(vs.rp)], ['승 / 패 / 무', `${admNum(vs.wins)} / ${admNum(vs.losses)} / ${admNum(vs.draws)}`], ['숨김', admYes(vs.hidden)]]) : el('p', {class: 'dim', text: '없음'}))),
+    el('h2', {text: '시즌 기록'}),
+    table([['시즌', r => admNum(r.season), 'n'], ['순위', r => admNum(r.rank), 'n'], ['RP', r => admNum(r.rp), 'n'], ['티어', r => r.tier], ['보상 수령', r => admDate(r.claimed_at)]], p.standings),
+    el('h2', {text: '받은 신고'}),
+    table([['사유', r => admReason(r.reason)], ['장소', r => r.place], ['그때 닉네임', r => r.nick], ['처리', r => admYes(r.seen)], ['시각', r => admDate(r.at)]], p.reports_received),
+    el('h2', {text: '최근 이벤트'}),
+    table([['시각', r => admDate(r.at)], ['종류', r => r.kind], ['내용', r => admJson(r.props), 'w']], p.events),
+    el('h2', {text: '최근 오류'}),
+    table([['시각', r => admDate(r.at)], ['빌드', r => r.build], ['메시지', r => r.msg, 'w']], p.errors)
+  ];
+  if (role === 'owner' && !full()) acts.append(mfaNeed());
+  if (full()){
+    const note = el('input', {placeholder: '메모 (선택, 100자)', maxlength: 100, 'aria-label': '테스터 메모'});
+    acts.append(el('span', {class: 'tool', style: 'margin:0'}, p.tester ? null : note, el('button', {type: 'button', class: 'ghost', text: p.tester ? '테스터 해제' : '테스터 지정', onclick: e => write(
+      {title: p.tester ? '테스터 해제' : '테스터 지정', body: `${nick} (${p.id})`, done: p.tester ? '테스터에서 뺐습니다' : '테스터로 지정했습니다'},
+      'admin_tester_set', admArgs.testerSet(p.id, !p.tester, note.value), () => show('players', {id: p.id}), e.currentTarget)})));
+    parts.push(deleteZone(p, nick));
+  }
+  return el('div', {}, parts);
+}
+// Account deletion: the id must be retyped before the button wakes up, then the dialog asks once more
+function deleteZone(p, nick){
+  if (!admCanDelete(role, p, selfId)) return card('계정 삭제', el('p', {class: 'dim', text: p.id === selfId ? '자기 계정은 여기서 삭제할 수 없습니다.' : '관리자 계정은 삭제할 수 없습니다.'}));
+  const inp = el('input', {id: 'delIn', placeholder: '플레이어 id를 그대로 입력', autocomplete: 'off', spellcheck: 'false', 'aria-label': '삭제 확인용 플레이어 id'});
+  const btn = el('button', {id: 'delBtn', type: 'button', class: 'danger', text: '계정 삭제', disabled: true});
+  inp.addEventListener('input', () => { btn.disabled = !admDeleteOk(inp.value, p.id); });
+  btn.addEventListener('click', () => write(
+    {title: '계정 영구 삭제', body: `${nick} (${p.id})\n계정과 연결된 모든 기록이 지워지며 되돌릴 수 없습니다.`, ok: '삭제', danger: true, done: '계정을 삭제했습니다'},
+    'admin_delete_player', admArgs.deletePlayer(p.id, inp.value), d => { if (d && d.deleted) show('players'); else banner('삭제되지 않았습니다'); }, btn));
+  const z = card('계정 삭제', el('p', {class: 'dim', text: '되돌릴 수 없습니다. 확인을 위해 아래에 플레이어 id를 다시 입력하세요.'}), el('div', {class: 'tool'}, inp, btn));
+  z.classList.add('danger-zone'); z.style.marginTop = '16px';
+  return z;
+}
+
+let rptLimit = 100;
+async function vReports(){
+  const rows = await need('admin_reports', admArgs.reports(rptLimit)) || [];
+  return el('div', {},
+    el('div', {class: 'tool'}, limitSel(rptLimit, [50, 100, 200], n => { rptLimit = n; reload(); }), el('span', {class: 'dim', text: '대상·사유별 묶음, 최근순. 집계 = 자동 숨김에 세는 신고 수'})),
+    table([['대상', r => el('span', {}, link(r.nick, openPlayer(r.target)), ' ', r.hidden ? tag('숨김', 'bad') : null)], ['사유', r => admReason(r.reason)], ['건수', r => admNum(r.n), 'n'], ['집계', r => admNum(r.counted), 'n'],
+      ['마지막', r => admDate(r.last)], ['장소', r => (Array.isArray(r.places) ? r.places : []).join(', ')],
+      ['', r => el('span', {class: 'tool', style: 'margin:0;flex-wrap:nowrap'},
+        el('button', {type: 'button', class: r.hidden ? 'ghost sm' : 'danger sm', text: r.hidden ? '숨김 해제' : '숨기기', onclick: e => write(
+          {title: r.hidden ? '숨김 해제' : '숨기기', body: `${r.nick || ''} (${r.target})`, done: r.hidden ? '숨김을 해제했습니다' : '숨겼습니다'}, 'admin_set_hidden', admArgs.hidden(r.target, !r.hidden), reload, e.currentTarget)}),
+        el('button', {type: 'button', class: 'ghost sm', text: '신고 정리', onclick: e => write(
+          {title: '신고 정리', body: `${r.nick || ''} (${r.target})\n사유 '${admReason(r.reason)}' 신고 ${admNum(r.n)}건을 지웁니다.`, done: '신고를 정리했습니다'}, 'admin_reports_clear', admArgs.reportsClear(r.target, r.reason), reload, e.currentTarget)}))]],
+    rows, '신고가 없습니다'));
+}
+
+async function vSeason(){
+  const d = await need('admin_season') || {};
+  return el('div', {},
+    el('div', {class: 'grid'}, card('시즌', kv([['현재', admNum(d.season)], ['지난', admNum(d.prev)], ['교체 시각', admDate(d.rolled_at)]]))),
+    full() ? el('div', {class: 'acts'}, el('button', {type: 'button', text: '정산 확인 실행', onclick: e => write(
+      {title: '시즌 정산 확인', body: '정산이 필요하면 지금 실행하고, 아니면 아무 일도 하지 않습니다.', done: '정산 확인을 실행했습니다'}, 'admin_season_tick', {}, reload, e.currentTarget)}))
+      : role === 'owner' ? el('div', {class: 'acts'}, mfaNeed()) : null,
+    el('h2', {text: '지난 시즌 상위 10'}),
+    table([['순위', r => admNum(r.rank), 'n'], ['닉네임', r => r.nick], ['RP', r => admNum(r.rp), 'n'], ['티어', r => r.tier], ['보상 수령', r => admDate(r.claimed_at)]], d.top),
+    el('h2', {text: '이번 시즌 RP 상위 10'}),
+    table([['닉네임', r => r.nick], ['RP', r => admNum(r.rp), 'n'], ['승', r => admNum(r.wins), 'n'], ['패', r => admNum(r.losses), 'n']], d.live));
+}
+
+let errLimit = 50;
+async function vErrors(){
+  const rows = await need('admin_errors', admArgs.errors(errLimit)) || [];
+  return el('div', {},
+    el('div', {class: 'tool'}, limitSel(errLimit, [50, 100, 200], n => { errLimit = n; reload(); })),
+    table([['시각', r => admDate(r.at)], ['플레이어', r => r.player_id ? link(String(r.player_id).slice(0, 8), openPlayer(r.player_id)) : '—'], ['빌드', r => r.build],
+      ['메시지', r => el('div', {}, String(r.msg || ''), (r.stack || r.url || r.ua) ? el('details', {}, el('summary', {text: '자세히'}), el('pre', {text: r.stack || ''}), el('div', {class: 'mono dim', text: r.url || ''}), el('div', {class: 'mono dim', text: r.ua || ''})) : null), 'w']],
+    rows, '오류가 없습니다'));
+}
+
+async function vTesters(){
+  const rows = await need('admin_testers') || [];
+  const id = el('input', {placeholder: '플레이어 id', 'aria-label': '플레이어 id', autocomplete: 'off'}), note = el('input', {placeholder: '메모 (선택)', maxlength: 100, 'aria-label': '메모'});
+  return el('div', {},
+    el('form', {class: 'tool', onsubmit: e => { e.preventDefault(); write({title: '테스터 지정', body: id.value.trim(), done: '테스터로 지정했습니다'}, 'admin_tester_set', admArgs.testerSet(id.value, true, note.value), reload); }}, id, note, el('button', {text: '지정'})),
+    table([['닉네임', r => link(r.nick, openPlayer(r.id))], ['id', r => el('span', {class: 'mono', text: r.id})], ['메모', r => r.note, 'w'], ['추가', r => admDate(r.added_at)],
+      ['', r => el('button', {type: 'button', class: 'ghost sm', text: '해제', onclick: e => write({title: '테스터 해제', body: `${r.nick || ''} (${r.id})`, done: '테스터에서 뺐습니다'}, 'admin_tester_set', admArgs.testerSet(r.id, false, ''), reload, e.currentTarget)})]],
+    rows, '테스터가 없습니다'));
+}
+
+async function vReferrals(){
+  const rows = await need('admin_referrals_held') || [];
+  return el('div', {},
+    el('p', {class: 'dim', text: '보류된 추천 보상. 해제는 그 초대자의 보류를 모두 풉니다.'}),
+    table([['초대자', r => link(r.inviter_nick, openPlayer(r.inviter))], ['초대받은 사람', r => link(r.invitee_nick, openPlayer(r.invitee))], ['최고', r => admNum(r.invitee_best), 'n'],
+      ['연결', r => admDate(r.linked_at)], ['일수', r => admNum(r.days), 'n'], ['단계', r => admNum(r.stage), 'n'],
+      ['', r => el('button', {type: 'button', class: 'ghost sm', text: '초대자 보류 해제', onclick: e => write({title: '추천 보류 해제', body: `초대자 ${r.inviter_nick || ''} (${r.inviter})`, done: '보류를 해제했습니다'}, 'admin_referral_release', admArgs.referralRelease(r.inviter), d => { toast(`${admNum(d && d.released)}건 해제`); reload(); }, e.currentTarget)})]],
+    rows, '보류된 추천이 없습니다'));
+}
+
+let logLimit = 100;
+async function vLog(){
+  const rows = await need('admin_log', admArgs.log(logLimit)) || [];
+  return el('div', {},
+    el('div', {class: 'tool'}, limitSel(logLimit, [50, 100, 200], n => { logLimit = n; reload(); })),
+    table([['시각', r => admDate(r.at)], ['관리자', r => r.admin_nick || (r.admin_id ? String(r.admin_id).slice(0, 8) : '—')], ['작업', r => r.action], ['대상', r => r.target ? link(String(r.target).slice(0, 8), openPlayer(r.target)) : '—'], ['내용', r => admJson(r.detail), 'w']],
+    rows, '기록이 없습니다'));
+}
+
+/* ---------- second factor (TOTP): enrol once, then a 6-digit code each session; the server then sees aal2 ---------- */
+async function vMfa(){
+  const f = await sb.auth.mfa.listFactors();
+  if (f.error) throw f.error;
+  const all = (f.data && f.data.all) || [], ok = all.find(x => x.factor_type === 'totp' && x.status === 'verified');
+  const msg = el('p', {id: 'mfaMsg', class: 'msg'});
+  const form = run => {
+    const code = el('input', {id: 'mfaCode', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: 8, placeholder: '6자리 코드', 'aria-label': '인증 코드'});
+    const btn = el('button', {id: 'mfaGo', text: '확인'});
+    return el('form', {class: 'tool', onsubmit: async e => {
+      e.preventDefault();
+      const c = admMfaCode(code.value);
+      if (!c){ msg.textContent = '6자리 코드를 입력하세요'; return; }
+      btn.disabled = true;
+      let r; try { r = await run(c); } catch(err){ r = {error: err}; }
+      btn.disabled = false;
+      if (!r || r.error){ msg.textContent = '코드가 맞지 않거나 만료되었습니다'; code.value = ''; return; }
+      msg.textContent = ''; mfaDone();
+    }}, code, btn);
+  };
+  const box = el('div', {class: 'card', id: 'mfaBox'}, el('h3', {text: '2단계 인증 필요'}),
+    el('p', {class: 'dim', text: 'owner 기능(테스터, 추천, 기록, 시즌 정산, 테스터 지정, 계정 삭제)은 인증 앱(TOTP) 확인 뒤에 열립니다. 그 전에도 다른 탭은 쓸 수 있습니다.'}));
+  if (ok){
+    box.append(el('p', {text: '인증 앱에 표시된 6자리 코드를 입력하세요.'}), form(c => sb.auth.mfa.challengeAndVerify({factorId: ok.id, code: c})), msg);
+    return box;
+  }
+  const go = el('button', {id: 'mfaEnroll', type: 'button', text: '인증 앱 등록 시작', onclick: async () => {
+    go.disabled = true; msg.textContent = '';
+    for (const x of all) if (x.factor_type === 'totp' && x.status !== 'verified') await sb.auth.mfa.unenroll({factorId: x.id}).catch(() => {});   // the QR of an earlier, unfinished try
+    let r; try { r = await sb.auth.mfa.enroll({factorType: 'totp', friendlyName: 'SWISHBY admin'}); } catch(err){ r = {error: err}; }
+    if (r.error || !r.data || !r.data.id){ go.disabled = false; msg.textContent = '등록을 시작하지 못했습니다 (' + admErr(r.error) + ')'; return; }
+    const id = r.data.id, t = r.data.totp || {}, qr = admQrSrc(t.qr_code);
+    go.replaceWith(el('div', {},
+      el('p', {text: '인증 앱(Google Authenticator, 1Password 등)으로 QR을 찍거나 아래 키를 입력한 뒤, 표시된 6자리 코드를 입력하세요.'}),
+      qr ? el('img', {id: 'mfaQr', src: qr, alt: '인증 앱 등록 QR', width: 180, height: 180, style: 'background:#fff;border-radius:8px;padding:6px'}) : null,
+      el('p', {id: 'mfaSecret', class: 'mono', text: admStr(t.secret)}),
+      form(async c => { const ch = await sb.auth.mfa.challenge({factorId: id}); return ch.error ? ch : sb.auth.mfa.verify({factorId: id, challengeId: ch.data.id, code: c}); })));
+  }});
+  box.append(go, msg);
+  return box;
+}
+// After a verify the SDK holds the aal2 session; admin_me is asked again so the page follows what the server now sees
+async function mfaDone(){
+  await sb.auth.getSession().catch(() => {});
+  const r = await rpc('admin_me');
+  if (!r.error){ role = admRole(r.data); aal = admAal(r.data); }
+  paintRole();
+  if (!role){ selfId = null; return start(); }
+  if (admNeedMfa(role, aal)) return banner('2단계 인증이 아직 반영되지 않았습니다. 다시 시도하세요');
+  banner(''); toast('2단계 인증을 마쳤습니다');
+  show(tab === 'mfa' ? 'overview' : tab);
+}
+
+const VIEWS = {overview: vOverview, kpi: vKpi, players: vPlayers, reports: vReports, season: vSeason, errors: vErrors, testers: vTesters, referrals: vReferrals, log: vLog};
+
+/* ---------- sign-in ---------- */
+const say = t => { $('loginMsg').textContent = t; };
+async function start(){
+  const n = ++startN;
+  const { data } = await sb.auth.getSession().catch(() => ({data: {}}));
+  const u = data && data.session && data.session.user;
+  if (n !== startN) return;
+  if (!u || u.is_anonymous !== false){ role = null; aal = null; selfId = null; $('who').textContent = ''; paintRole(); return screen('login'); }
+  if (u.id === selfId && role) return;   // a token refresh: nothing changed
+  $('who').textContent = u.email || u.id;
+  const r = await rpc('admin_me');
+  if (n !== startN) return;
+  role = r.error ? null : admRole(r.data);
+  aal = r.error ? null : admAal(r.data);
+  selfId = u.id;
+  paintRole();
+  if (!role){
+    $('deniedTitle').textContent = r.error ? '확인할 수 없습니다' : '권한이 없습니다';
+    $('deniedTxt').textContent = r.error ? admErrText(r.error) : `${u.email || u.id} 계정은 관리자로 등록되어 있지 않습니다.`;
+    return screen('denied');
+  }
+  screen('app'); show('overview');
+}
+async function signOut(){ try { await sb.auth.signOut({scope: 'local'}); } catch(e){} role = null; selfId = null; start(); }
+const back = () => location.origin + location.pathname;
+async function oauth(provider){
+  say('');
+  let r; try { r = await sb.auth.signInWithOAuth({provider, options: {redirectTo: back()}}); } catch(e){ r = {error: e}; }
+  if (r && r.error) say(admAuthErr(r.error, '로그인을 시작하지 못했습니다'));
+}
+$('gBtn').addEventListener('click', () => oauth('google'));
+$('aBtn').addEventListener('click', () => oauth('apple'));
+$('mailForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = admEmail($('mailIn').value); if (!email) return say('이메일 주소를 확인하세요');
+  let r; try { r = await sb.auth.signInWithOtp({email, options: {shouldCreateUser: false, emailRedirectTo: back()}}); } catch(err){ r = {error: err}; }
+  if (r.error) return say(admAuthErr(r.error, '코드를 보내지 못했습니다 (등록된 계정인지 확인하세요)'));
+  mail = email; $('codeForm').hidden = false; $('codeIn').value = ''; $('codeIn').focus(); say(`${email}로 코드를 보냈습니다`);
+});
+$('codeForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const token = admCode($('codeIn').value); if (!token || !mail) return say('코드를 확인하세요');
+  let r; try { r = await sb.auth.verifyOtp({email: mail, token, type: 'email'}); } catch(err){ r = {error: err}; }
+  if (r.error) return say(admAuthErr(r.error, '코드가 맞지 않거나 만료되었습니다'));
+  mail = ''; $('codeForm').hidden = true; say(''); start();
+});
+$('outBtn').addEventListener('click', signOut);
+$('deniedOut').addEventListener('click', signOut);
+$('deniedRetry').addEventListener('click', () => { role = null; selfId = null; start(); });
+$('mfaNoteBtn').addEventListener('click', () => show('mfa'));
+// Providers switched off in the project are hidden (the public auth settings, as the game reads them)
+async function providers(){
+  try {
+    const j = await (await fetch(CFG.url + '/auth/v1/settings', {headers: {apikey: CFG.key}})).json(), x = j && j.external;
+    if (x && typeof x === 'object'){ $('gBtn').hidden = x.google === false; $('aBtn').hidden = x.apple !== true; }
+  } catch(e){}
+}
+
+function boot(){
+  // Never inside someone else's frame (clickjacking): a line of text, and no Supabase client at all
+  let framed = true; try { framed = window.top !== window.self; } catch(e){}
+  if (framed){ document.body.replaceChildren(el('p', {class: 'center', text: '이 페이지는 다른 페이지 안에서 열 수 없습니다.'})); return; }
+  const cb = admCallback(location.href);
+  if (cb.err){ history.replaceState(null, '', cb.clean); banner(cb.err); }
+  if (!window.supabase || !window.supabase.createClient){ screen('denied'); $('deniedTitle').textContent = '불러오지 못했습니다'; $('deniedTxt').textContent = 'Supabase SDK를 불러오지 못했습니다. 네트워크를 확인하고 새로고침하세요.'; return; }
+  // Same project, same default storage key as the game: a session signed in there is used here
+  sb = window.supabase.createClient(CFG.url, CFG.key, {auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit'}});
+  sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT' || ev === 'USER_UPDATED') setTimeout(start, 0); });   // no Supabase call inside the callback
+  providers();
+  start();
+}
+boot();
+})();
+</script>
+</body>
+</html>
