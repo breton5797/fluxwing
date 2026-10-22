@@ -1,6 +1,6 @@
 # SWISHBY 출시 준비 현황
 
-기준: 2026-10-21 (수) 오후. 근거 문서: 「스위스비 글로벌 마케팅 플랜」(2026-10-19)의 출시 전 체크리스트와 필수 바이럴 3종.
+기준: 2026-10-22 (목) 오후. 근거 문서: 「스위스비 글로벌 마케팅 플랜」(2026-10-19)의 출시 전 체크리스트와 필수 바이럴 3종.
 
 플랜 원칙: 아래 체크리스트가 모두 끝나야 1주차 광고를 켠다.
 
@@ -9,7 +9,7 @@
 | # | 항목 | 상태 | 어디에 | 남은 일 (담당) |
 | --- | --- | --- | --- | --- |
 | 1 | 영문 이름·상표 | 1차 조사 완료 | 아래 "상표 메모" | 변리사 유사성 의견, KIPRIS·USPTO·WIPO 직접 검색 (대표) |
-| 2 | 스토어 제목·설명·스크린샷 현지화 | **완료**: Play 등록정보 14개 언어 게시 (10-21) | `store-listing.json` (글자수 제한은 `tests/store-listing.test.js`가 검사), 스크린샷 `scripts/store-shots.mjs` | es-ES·pt-PT 전용 캡션 스크린샷 (지금은 es-419·pt-BR 재사용), th·hi·vi 원어민 검수 |
+| 2 | 스토어 제목·설명·스크린샷 현지화 | **완료**: Play 14개 언어 게시 (10-21, es-ES·pt-PT 전용 스크린샷과 th·hi·vi 수정 #65 포함), App Store 14개 언어 입력 (10-22) | `store-listing.json` (글자수 제한은 `tests/store-listing.test.js`가 검사), 스크린샷 `scripts/store-shots.mjs` | — |
 | 3 | 게임 언어 자동 전환 = 스토어 언어 | **완료** | `detectLang()`: 브라우저 언어 → 12개 언어, 없으면 영어 | — |
 | 4 | 일일 챌린지 결과 공유 이미지 버튼 | **완료** (#57, 라이브) | `shareCardSpec` | — |
 | 5 | 설치·튜토리얼·D1/D7·결제·광고 이벤트 트래킹 | **완료** (#57, 운영 DB 적용, 400일 정리 cron `fw_events_gc` 10-21 등록) | `public.track` (자체 DB, 제3자 트래커 없음) + `supabase/checks/kpi.sql` | — |
@@ -23,7 +23,7 @@
 
 | 날짜 | 할 일 | 담당 |
 | --- | --- | --- |
-| ~10-23 (금) | IARC 재심사 승인 확인, PR #65 머지, 새 스크린샷(`~/Downloads/swishby-marketing/store-v2`, `store-eu`) 업로드 후 심사 제출 | Claude (업로드·제출은 대표 승인) |
+| ~10-23 (금) | **완료 (10-22 확인)**: IARC 재심사 승인 (스토어에 "전체이용가 · 사용자 상호작용"), #65 머지, 새 스크린샷 17건 게시 | — |
 | 10-27 (화) ~ 11-08 (일) | 비공개 테스트 Alpha: 지인 10~20명 초대, Android vitals(비정상 종료·ANR)와 피드백 확인 | 대표 (테스터 초대), Claude (집계·수정) |
 | 11-01 (일) 00:00 KST | 첫 시즌 정산 자동 실행 → 결과 확인 | Claude |
 | 11-09 (월) | 수정이 있으면 1.0.1 (versionCode 2) AAB 빌드·업로드 | Claude |
@@ -33,17 +33,16 @@
 
 ### iOS (같은 날 11-17 출시, 2026-10-21 결정)
 
-앱: Capacitor 8 (`ios/`, 설명은 `ios/README.md`). 코드·서버는 준비 완료 (#68, #69): PKCE 로그인, 햅틱, Game Center, 푸시(함수 `push-send` 배포, pg_net·Vault 설정, Redirect URL 등록). 남은 것은 Apple 쪽 설정이다.
+앱: Capacitor 8 (`ios/`, 설명은 `ios/README.md`). 코드·서버 (#68, #69, #73): PKCE 로그인, 햅틱, Game Center, 푸시(함수 `push-send`, pg_net·Vault, Redirect URL). 10-22에 TestFlight 빌드 1.0.0 (2)로 대표 iPad에서 Apple 로그인, 점수 제출, 신고, 푸시(등록 → APNs 발송 `sent: 1`)를 확인했다. App Store Connect 앱 ID 6825629800.
 
 | 날짜 | 할 일 | 담당 |
 | --- | --- | --- |
-| 바로 | Apple 개발자 계정 개인 → 조직(MINIMALKOREA, D-U-N-S 696516627) 전환 요청 | 대표 |
-| 바로 | App Store Connect 로그인 (Chrome) → 앱 만들기·Game Center 리더보드(`swishby.best`, 반복 `swishby.daily`) | 대표 로그인 → Claude |
-| 바로 | APNs 키(.p8) 발급 → Supabase 함수 비밀값 `APNS_KEY`·`APNS_KEY_ID`·`APNS_TEAM_ID` 입력 | 대표 |
-| ~11-05 | TestFlight 빌드 업로드, 대표 아이폰에서 로그인·Game Center·푸시 확인 | Claude + 대표 |
-| ~11-09 | 스토어 문구(`store-listing.json` apple), 스크린샷 6.9″ 14개 언어 (`~/Downloads/swishby-marketing/appstore-1021`), 개인정보 라벨, 연령 등급 | Claude |
-| 11-10 | 심사 제출 (수동 출시) | 대표 승인 |
-| 11-17 | 출시 | 대표 |
+| 10-22 | Apple 개발자 계정 개인 → 조직(MINIMALKOREA, D-U-N-S 696516627) 전환 요청 **제출**. 답은 minimalkorea@naver.com으로 | 대표 (승인 메일 확인) |
+| 10-22 | **완료**: 앱 만들기, Game Center 리더보드 `swishby.best`·반복 `swishby.daily`, APNs 키(Key ID AK53HL92SY) → Supabase 함수 비밀값 | — |
+| 10-22 | **완료**: TestFlight 1.0.0 (2), 대표 iPad에서 확인. 빌드 1은 푸시 토큰 대소문자 버그로 등록 실패 → #73으로 수정 | — |
+| 10-22 | **완료**: 등록정보 14개 언어(문구, 6.9″ 스크린샷 84장), 빌드 2 연결, Game Center 켬, 카테고리 게임 › 액션·캐주얼, 연령 등급 4+ (한국 전체이용가), 무료 174개국(중국 제외), 개인정보 라벨 게시, 심사 연락처·메모, 출시 예약 11-17 00:00 KST, 개인정보처리방침 갱신 #72 | — |
+| 11-10 (화) 10:00 | 심사 제출: 버전 1.0.0 + 리더보드 2개를 한 묶음으로. 구글 캘린더 알림 있음. 무인 자동 제출은 권한 정책상 불가라, 대표가 세션에서 "iOS 심사 제출해"라고 하면 Claude가 제출. 조직 전환 완료 여부 먼저 확인 (판매자 이름) | 대표 지시 → Claude |
+| 11-17 (화) 00:00 KST | 승인되면 자동 출시 (예약) | — |
 
 ## 필수 바이럴 3종
 
@@ -60,11 +59,11 @@
 - 개발자 계정: MINIMALKOREA (계정 ID 5761637377585574051), D-U-N-S 696516627, 웹사이트 https://swishby.com 인증, 연락처 contact@swishby.com (→ minimalkorea@naver.com 전달).
 - 앱: "SWISHBY: One-Tap Sky Dash", 패키지 `com.minimalkorea.swishby`, 비공개 테스트 Alpha 1.0.0 (vc 1), 카테고리 아케이드.
 - 앱 콘텐츠 10개 선언 저장: 대상 13세 이상, 광고 없음, 데이터 보안은 `privacy.html` 기준, 계정 삭제 URL https://swishby.com/delete-account.html.
-- 콘텐츠 등급(IARC): 10-21 재제출 (사용자 차단·신고 기능 "예", #63 반영) → **검토 중**. 등급 값은 이전과 같음.
+- 콘텐츠 등급(IARC): 10-21 재제출 (사용자 차단·신고 기능 "예", #63 반영) → **승인·게시** (10-22 확인, 스토어 표시 "전체이용가 · 사용자 상호작용").
 - 사전등록: 178개국, 리워드 없음, 지원 기기는 번들 1.0.0 기준 19,299대. 정식(프로덕션) 출시는 **2027-01-19까지**.
 - 결제 프로필의 조직 주소가 예전 주소(성남대로 69, 702호)로 남아 있음. 인증 후에는 수정이 막혀 있어 Google 결제 지원에 변경 요청 필요 (대표).
 
-**Apple**: 개발자 프로그램 가입 완료 (개인, Team 6SGPPQF3VQ). App Store Connect는 이 Chrome에서 로그인되어 있지 않음. 주의: 웹페이지를 감싸기만 한 앱은 심사 4.2(최소 기능)로 반려될 수 있어, iOS는 Capacitor 등으로 Game Center·햅틱 같은 네이티브 기능을 붙이는 편이 안전하다.
+**Apple**: 개발자 프로그램 (Team 6SGPPQF3VQ, 지금은 개인 명의 → 조직 전환 요청 10-22). App Store Connect는 Chrome에 로그인되어 있음. 앱 "SWISHBY: One-Tap Sky Dash" (Apple ID 6825629800, SKU `swishby-ios`, 번들 `com.minimalkorea.swishby`). 심사 4.2(최소 기능) 대비로 Capacitor 앱에 Game Center·햅틱·푸시를 붙였다.
 
 **Android 패키지 (2026-10-21 빌드 완료)**: PWA를 TWA(Bubblewrap)로 감싼 서명된 AAB `~/swishby-android/swishby-1.0.0-1.aab` (패키지 `com.minimalkorea.swishby`, 1.0.0 / versionCode 1, targetSdk 36). 업로드 키와 비밀번호 파일은 같은 폴더에 있다 (맥 밖에 백업 필요). 재빌드 방법과 키 정보는 `android/README.md`. `https://swishby.com/.well-known/assetlinks.json`에 업로드 키 지문이 들어 있고, 첫 업로드 후 Play 앱 서명 키 지문을 추가해야 설치된 앱에서 주소창이 사라진다.
 
@@ -78,11 +77,11 @@
 ## 이 문서 밖의 열린 항목 (이전 세션에서 이어짐)
 
 - 신고·차단 (Play UGC 정책): **완료** (#63, 운영 DB 적용). 서로 다른 로그인 사용자 3명이 같은 닉네임을 신고하면 리더보드에서 자동 숨김. 검토·해제 쿼리는 `supabase/schema.sql` REPORTS 주석.
-- 업로드 키 백업: `~/swishby-android/`의 키스토어와 비밀번호 파일을 맥 밖(오프라인 저장소)에 백업 (대표). 잃어버리면 Play에 키 재설정 요청이 필요.
+- 업로드 키 백업: **완료** (10-21, USB). 잃어버리면 Play에 키 재설정 요청이 필요. APNs 키 파일(AuthKey_AK53HL92SY.p8)도 다시 받을 수 없으니 같은 곳에 백업 (대표).
 - 프로덕션 출시: 11-17 (화)로 결정, 위 "프로덕션 출시 일정" 참고.
-- iOS: App Store Connect 미로그인. 웹 래퍼만으로는 심사 4.2 위험이 있어 Capacitor + Game Center·햅틱 권장.
+- iOS: 위 "iOS" 일정 참고. 11-10 심사 제출만 남음.
 - CAPTCHA: Cloudflare Turnstile 사이트 키가 아직 비어 있음 (클라이언트는 머지됨, 키를 넣는 한 줄 PR + Supabase Attack Protection 설정).
-- 게임물 등급분류(GRAC): 사업자 게임에 광고를 붙이려면 등급이 먼저 필요. 스토어 출시분은 IARC 설문으로 처리되지만 swishby.com 웹 버전은 별도 확인 필요.
+- 게임물 등급분류(GRAC): 사업자 게임에 광고를 붙이려면 등급이 먼저 필요. 스토어 출시분은 IARC(Play)·Apple 자체 등급으로 처리. swishby.com 웹 버전은 국민신문고로 질의 제출 (접수번호 1AA-2610-0856753, 답변 기한 11-04 전후). 답이 없거나 "필요"면 등급분류 신청.
 - 첫 시즌 보상 정산: 2026-11-01 (일) 00:00 KST.
 
 ## 출처
