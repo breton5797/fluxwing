@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-1wj7n/ep+v5s4H2+2023qIV8iGHZUMZdLf3mlLyJJJs=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://ecjeyelgcqbliavwltbc.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-8X4a+h5vq6gPuSeBFzYU8CdjJrD/M7NnqherwNaP+ks=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://ecjeyelgcqbliavwltbc.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <title>SWISHBY 관리자</title>
 <style>
 :root{color-scheme:dark;--sky-0:#0d0820;--sky-1:#140c2b;--sky-2:#1d1440;--line:#2c2152;--ink:#f3eefc;--ink-2:#b8afd6;--ink-3:#7f77a3;--cool:#4ff0ff;
@@ -78,6 +78,7 @@ details summary{cursor:pointer;color:var(--cool);font-size:12px}
 .hero h1{font-size:16px;font-weight:600;color:var(--ink-2);margin:0}
 .hero-n{font:56px/1.05 var(--disp);color:var(--ink);margin:6px 0 4px}
 .hero-s{color:var(--ink-2);margin:0}
+.hero-s.quiet{color:var(--ink-3)}
 .hero .fig{margin:0}
 @media (max-width:720px){.hero{grid-template-columns:1fr}.hero-n{font-size:36px}}
 .up::before{content:"▲ ";color:var(--good)} .down::before{content:"▼ ";color:var(--crit)}
@@ -354,21 +355,28 @@ function admHBar(x0, y, len, h, r = 4){
 const admNearest = (x, x0, x1, n) => n <= 1 ? 0 : Math.max(0, Math.min(n - 1, Math.round((x - x0) / ((x1 - x0) / (n - 1)))));
 // direct end labels only when every pair is gap px apart; otherwise the legend and the tooltip carry identity
 const admLabelsFit = (ys, gap = 14) => { const s = ys.filter(y => y != null).sort((a, b) => a - b); return s.every((y, i) => !i || y - s[i - 1] >= gap); };
-// change of the latest value against the mean of the ones before it, in whole percent; null with no base or a zero base
-function admDelta(cur, base){
-  const c = admFin(cur), b = (Array.isArray(base) ? base : []).map(admFin).filter(v => v != null);
-  if (c == null || !b.length) return null;
-  const m = b.reduce((s, v) => s + v, 0) / b.length;
-  return m > 0 ? Math.round(100 * (c - m) / m) : null;
-}
-const admDeltaText = p => p == null ? '' : p === 0 ? '지난 7일 평균과 같음' : `지난 7일 평균보다 ${Math.abs(p)}% ${p > 0 ? '많음' : '적음'}`;
 const admToday = now => admDate(new Date(now).toISOString(), false);
-// the overview hero: the latest day with a DAU, its change against the 7 days before it, and whether that day is still running
+// calendar arithmetic on a YYYY-MM-DD day (done in UTC, so no time zone or DST can shift it)
+const admDayAdd = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+// the overview hero number: the latest day with a DAU (today so far when today has one), and whether that day is still running
 function admHero(daily, now){
   const s = admSeries(daily, 'dau'), i = s.map(p => p.v != null).lastIndexOf(true);
   if (i < 0) return null;
-  return {day: s[i].day, dau: s[i].v, delta: admDelta(s[i].v, s.slice(Math.max(0, i - 7), i).map(p => p.v)), live: s[i].day === admToday(now)};
+  return {day: s[i].day, dau: s[i].v, live: s[i].day === admToday(now)};
 }
+// the hero comparison never uses today (a partial day): yesterday (Asia/Seoul), the last complete day, against the mean of the
+// 7 complete days before it, and only when all 8 days are in the series. kind: up | down | same (|change| < 1%)
+function admHeroCompare(daily, now){
+  const y = admDayAdd(admToday(now), -1), m = new Map(admSeries(daily, 'dau').map(p => [p.day, p.v]));
+  const cur = m.get(y), base = Array.from({length: 7}, (_, i) => m.get(admDayAdd(y, -1 - i)));
+  if (cur == null || base.some(v => v == null)) return {ready: false};
+  const mean = base.reduce((a, v) => a + v, 0) / 7;
+  if (!(mean > 0)) return {ready: false};
+  const pct = 100 * (cur - mean) / mean;
+  return {ready: true, day: y, dau: cur, pct: Math.round(Math.abs(pct)), kind: Math.abs(pct) < 1 ? 'same' : pct > 0 ? 'up' : 'down'};
+}
+const admHeroText = c => !c || !c.ready ? '비교는 기록이 8일 쌓이면 보입니다'
+  : `어제는 ${admNum(c.dau)}명으로 그 전 7일 평균` + (c.kind === 'same' ? '과 같음' : `보다 ${c.pct}% ${c.kind === 'up' ? '많음' : '적음'}`);
 // two parts of a whole as percents of the track (guests vs signed in)
 const admShare = (a, b) => { const x = Math.max(0, admFin(a) || 0), y = Math.max(0, admFin(b) || 0), t = x + y; return t ? [admR(100 * x / t), admR(100 - admR(100 * x / t))] : [0, 0]; };
 // a cron job's state: always a glyph and a word, never colour alone
@@ -493,18 +501,18 @@ function timeChart(o){
     const H = o.h || 180, hero = !!o.hero, anim = hero && !drawn; drawn = true;
     const L = hero ? 4 : 40, R = o.ends ? 52 : 12, T = 10, B = 22,
     ticks = admTicks(o.series.flatMap(s => s.v), !!o.int), y = admScale(0, ticks[2], H - B, T), band = (w - L - R) / n;
-    const x = o.kind === 'col' ? i => L + band * (i + 0.5) : admScale(0, Math.max(1, n - 1), L, w - R);
+    const x = o.kind === 'col' ? i => L + band * (i + 0.5) : n === 1 ? () => w - R : admScale(0, n - 1, L, w - R);   // one day: a dot at the right, no line
     const svg = sv('svg', {class: 'chart', width: w, height: H, viewBox: `0 0 ${w} ${H}`, role: 'img', 'aria-label': o.aria});
     if (!hero) for (const t of ticks) svg.append(sv('line', {class: 'grid', x1: L, x2: w - R, y1: admR(y(t)), y2: admR(y(t))}), sv('text', {x: L - 6, y: admR(y(t)) + 4, 'text-anchor': 'end'}, admTick(t) + (o.pct ? '%' : '')));
     const xl = n > 1 ? [0, n - 1] : [0];
     if (n > 4 && w > 520) xl.splice(1, 0, Math.floor((n - 1) / 2));
-    for (const i of xl) svg.append(sv('text', {x: admR(x(i)), y: H - 4, 'text-anchor': i === 0 && o.kind !== 'col' ? 'start' : i === n - 1 && o.kind !== 'col' ? 'end' : 'middle'}, md(o.days[i])));
+    for (const i of xl) svg.append(sv('text', {x: admR(x(i)), y: H - 4, 'text-anchor': o.kind === 'col' ? 'middle' : n === 1 ? 'end' : i === 0 ? 'start' : i === n - 1 && o.kind !== 'col' ? 'end' : 'middle'}, md(o.days[i])));
     const cols = [], dots = [];
     if (o.kind === 'col'){
       const bw = Math.max(2, Math.min(24, band - 2));
       o.series[0].v.forEach((v, i) => { const p = sv('path', {d: admCol(x(i) - bw / 2, bw, y(v || 0), y(0)), fill: o.series[0].color}); cols.push(p); svg.append(p); });
     } else {
-      for (const s of o.series){
+      if (n > 1) for (const s of o.series){
         const pts = s.v.map((v, i) => [x(i), v == null ? null : y(v)]);
         if (o.area) svg.append(sv('path', {d: admArea(pts, y(0)), fill: s.color, 'fill-opacity': hero ? 0.07 : 0.1}));
         svg.append(sv('path', {class: 'ln' + (anim ? ' draw' : ''), d: admPath(pts), stroke: s.color, pathLength: anim ? 1 : null}));
@@ -641,13 +649,13 @@ function spark(values, label){
 async function vOverview(){
   const [d0, k] = await Promise.all([need('admin_overview'), rpc('admin_kpi', admArgs.kpi(30))]);
   const d = d0 || {}, kd = (!k.error && k.data) || {}, u = d.users || {}, p = d.players || {}, s = d.season || {}, r = d.reports || {};
-  const dau = admSeries(kd.daily, 'dau'), inst = admSeries(kd.installs, 'installs'), runs = admSeries(kd.daily, 'runs_per_dau'), h = admHero(kd.daily, Date.now());
+  const dau = admSeries(kd.daily, 'dau'), inst = admSeries(kd.installs, 'installs'), runs = admSeries(kd.daily, 'runs_per_dau'), h = admHero(kd.daily, Date.now()), cmp = admHeroCompare(kd.daily, Date.now());
   const [pg, ps] = admShare(u.guests, u.signed_in), open = admFin(r.open_targets) || 0, hidden = admFin(p.hidden) || 0;
   const instSum = inst.reduce((a, q) => a + (q.v || 0), 0), runLast = [...runs].reverse().find(q => q.v != null);
   const heroTxt = el('div', {}, el('h1', {text: '오늘의 하늘'}),
     el('div', {class: 'hero-n', text: h ? admNum(h.dau) : '—'}),
     el('p', {class: 'hero-s', text: h ? `${h.live ? '오늘 지금까지' : h.day + ' 하루'} 활성 사용자` : '활성 사용자 기록이 아직 없습니다'}),
-    h && h.delta != null ? el('p', {class: 'hero-s ' + (h.delta > 0 ? 'up' : h.delta < 0 ? 'down' : ''), text: admDeltaText(h.delta)}) : null,
+    k.error ? null : el('p', {id: 'heroCmp', class: 'hero-s ' + (!cmp.ready ? 'quiet' : cmp.kind === 'up' ? 'up' : cmp.kind === 'down' ? 'down' : ''), text: admHeroText(cmp)}),
     k.error ? el('p', {class: 'hero-s', text: '지표를 불러오지 못했습니다: ' + admErr(k.error)}) : null);
   const vital = (title, n, ...rest) => el('div', {class: 'vital'}, el('h3', {text: title}), el('div', {class: 'vital-n', text: n}), ...rest);
   return el('div', {class: 'vw'},

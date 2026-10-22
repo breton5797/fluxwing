@@ -16,7 +16,7 @@ function loadAdmin(html = page){
   const m = html.match(/\/\* admin:start[\s\S]*?\/\* admin:end \*\//);
   if (!m) throw new Error('admin block not found in admin.html');
   return new Function(`${m[0]}\nreturn {ADM_TABS, ADM_REASONS, ADM_AUTH_ERR, admRole, admOwnerTab, admAal, admOwnerReady, admNeedMfa, admMfaCode, admQrSrc, admAuthErr, admTabs, admCan, admUuid, admInt, admEmail, admCode, admDeleteOk, admCanDelete, admArgs, admErr, admErrText, admCallback, admDate, admNum, admSeason, admPct, admBar, admMax, admYes, admJson, admReason, admProvider, admPage,
-    admFin, admSeries, admNiceCeil, admTicks, admTick, admScale, admPath, admArea, admSpark, admCol, admHBar, admNearest, admLabelsFit, admDelta, admDeltaText, admHero, admShare, admCronState, ADM_HIDE_AT, admByTarget, admClip, admPct1, admSegs};`)();
+    admFin, admSeries, admNiceCeil, admTicks, admTick, admScale, admPath, admArea, admSpark, admCol, admHBar, admNearest, admLabelsFit, admDayAdd, admHeroCompare, admHeroText, admHero, admShare, admCronState, ADM_HIDE_AT, admByTarget, admClip, admPct1, admSegs};`)();
 }
 const A = loadAdmin();
 const ID = '0f8fad5b-d9cb-469f-a165-70867728950e';
@@ -266,22 +266,52 @@ test('charts: scales, line and area paths break at missing days, sparkline, colu
   assert.equal(A.admLabelsFit([]), true);
 });
 
-test('charts: percent change against the 7 days before, the hero day, shares, cron states', () => {
-  assert.equal(A.admDelta(110, [100, 100]), 10);
-  assert.equal(A.admDelta(90, [100, null, 100]), -10, 'nulls are not zeros');
-  assert.equal(A.admDelta(5, []), null);
-  assert.equal(A.admDelta(5, [0, 0]), null, 'no change against a zero base');
-  assert.equal(A.admDelta(null, [3]), null);
-  assert.equal(A.admDeltaText(12), '지난 7일 평균보다 12% 많음');
-  assert.equal(A.admDeltaText(-4), '지난 7일 평균보다 4% 적음');
-  assert.equal(A.admDeltaText(0), '지난 7일 평균과 같음');
-  assert.equal(A.admDeltaText(null), '');
-  const daily = Array.from({length: 9}, (_, i) => ({day: `2026-10-${String(22 - i).padStart(2, '0')}`, dau: i === 0 ? 120 : 100}));
-  assert.deepEqual(A.admHero(daily, Date.parse('2026-10-22T03:00:00Z')), {day: '2026-10-22', dau: 120, delta: 20, live: true});
+test('hero comparison: yesterday against the 7 complete days before it, never today, only with all 8 days', () => {
+  const NOW = Date.parse('2026-10-22T03:00:00Z');   // 12:00 in Seoul on 10-22: today is partial, yesterday is 10-21
+  // n days ending at `end` (newest first, as the server sends them), DAU from f(i), i = 0 for `end`
+  const days = (n, end, f) => Array.from({length: n}, (_, i) => ({day: A.admDayAdd(end, -i), dau: f(i)}));
+  const withToday = (rows, v = 7) => [{day: '2026-10-22', dau: v}, ...rows];
+  assert.equal(A.admDayAdd('2026-10-01', -1), '2026-09-30');
+  assert.equal(A.admDayAdd('2024-02-28', 1), '2024-02-29');
+  assert.equal(A.admDayAdd('2026-12-31', 1), '2027-01-01');
+  const off = {ready: false};
+  assert.deepEqual(A.admHeroCompare([], NOW), off, '0 days');
+  assert.deepEqual(A.admHeroCompare(withToday([]), NOW), off, '1 day: today only');
+  assert.deepEqual(A.admHeroCompare(withToday(days(1, '2026-10-21', () => 9)), NOW), off, '2 days: today and yesterday (the live case of 10-22)');
+  assert.deepEqual(A.admHeroCompare(days(7, '2026-10-21', () => 100), NOW), off, '7 complete days: yesterday has only 6 before it');
+  const eight = days(8, '2026-10-21', i => i === 0 ? 105 : 100);
+  assert.deepEqual(A.admHeroCompare(eight, NOW), {ready: true, day: '2026-10-21', dau: 105, pct: 5, kind: 'up'}, '8 days');
+  assert.deepEqual(A.admHeroCompare(withToday(eight, 3), NOW), A.admHeroCompare(eight, NOW), 'a partial today changes nothing');
+  assert.deepEqual(A.admHeroCompare(withToday(eight, 3000), NOW), A.admHeroCompare(eight, NOW));
+  const thirty = days(30, '2026-10-21', i => i === 0 ? 128 : i <= 7 ? 100 : 1);
+  assert.equal(A.admHeroCompare(thirty, NOW).pct, 28, 'only the 7 days right before yesterday count');
+  assert.deepEqual(A.admHeroCompare(days(8, '2026-10-21', i => i === 3 ? null : 100), NOW), off, 'a missing day in the base');
+  assert.deepEqual(A.admHeroCompare(days(8, '2026-10-20', () => 100), NOW), off, 'no row for yesterday');
+  assert.deepEqual(A.admHeroCompare(days(8, '2026-10-21', i => i ? 0 : 5), NOW), off, 'no comparison against a zero base');
+  const k = v => A.admHeroCompare(days(8, '2026-10-21', i => i ? 100 : v), NOW);
+  assert.deepEqual([k(95).kind, k(95).pct], ['down', 5]);
+  assert.deepEqual([k(100).kind, k(100.9).kind, k(99.1).kind], ['same', 'same', 'same'], '|change| under 1% is the same');
+  assert.deepEqual([k(101).kind, k(101).pct, k(99).kind, k(99).pct], ['up', 1, 'down', 1]);
+  // the Seoul day boundary: 16:00 UTC is already the next day in Korea
+  assert.equal(A.admHeroCompare(days(8, '2026-10-21', () => 50), Date.parse('2026-10-21T16:00:00Z')).day, '2026-10-21');
+  assert.deepEqual(A.admHeroCompare(days(8, '2026-10-21', () => 50), Date.parse('2026-10-21T14:59:00Z')), off, 'still 10-21 in Seoul: yesterday is 10-20');
+  assert.equal(A.admHeroText(k(105)), '어제는 105명으로 그 전 7일 평균보다 5% 많음');
+  assert.equal(A.admHeroText(k(95)), '어제는 95명으로 그 전 7일 평균보다 5% 적음');
+  assert.equal(A.admHeroText(k(100.4)), '어제는 100.4명으로 그 전 7일 평균과 같음');
+  assert.equal(A.admHeroText({ready: true, dau: 1280, pct: 3, kind: 'up'}), '어제는 1,280명으로 그 전 7일 평균보다 3% 많음');
+  assert.equal(A.admHeroText(off), '비교는 기록이 8일 쌓이면 보입니다');
+  assert.equal(A.admHeroText(null), '비교는 기록이 8일 쌓이면 보입니다');
+});
+
+test('hero number: today so far, or the latest day with a value', () => {
+  const daily = Array.from({length: 9}, (_, i) => ({day: `2026-10-${String(22 - i).padStart(2, '0')}`, dau: i === 0 ? 7 : 100}));
+  assert.deepEqual(A.admHero(daily, Date.parse('2026-10-22T03:00:00Z')), {day: '2026-10-22', dau: 7, live: true});
   assert.equal(A.admHero(daily, Date.parse('2026-10-23T03:00:00Z')).live, false, 'a finished day');
   assert.equal(A.admHero([{day: '2026-10-22', dau: null}, {day: '2026-10-21', dau: 80}], 0).day, '2026-10-21', 'the latest day with a value');
   assert.equal(A.admHero([], 0), null);
-  assert.equal(A.admHero([{day: '2026-10-22', dau: 9}], 0).delta, null, 'no base yet');
+});
+
+test('charts: shares, cron states', () => {
   assert.deepEqual(A.admShare(900, 334), [72.9, 27.1]);
   assert.deepEqual(A.admShare(0, 0), [0, 0]);
   assert.deepEqual(A.admShare(null, 5), [0, 100]);

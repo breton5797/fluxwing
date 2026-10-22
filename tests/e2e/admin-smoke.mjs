@@ -77,8 +77,8 @@ const canned = role => ({
 });
 
 const b = await chromium.launch();
-async function open({ role, signedIn = true, width = 1280, aal = 'aal2', factors = [] }){
-  const ctx = await b.newContext({ viewport: { width, height: 900 } }), page = await ctx.newPage(), calls = [], errors = [], data = canned(role), sbReqs = [];
+async function open({ role, signedIn = true, width = 1280, aal = 'aal2', factors = [], over = {} }){
+  const ctx = await b.newContext({ viewport: { width, height: 900 } }), page = await ctx.newPage(), calls = [], errors = [], data = { ...canned(role), ...over }, sbReqs = [];
   const st = { aal, factors: factors.map(f => ({ ...f })), verifies: [] };
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
@@ -182,6 +182,7 @@ const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${p
   for (const label of ['플레이어', '신고', '시즌', '오류', '추천']) assert.ok(seen[label].includes(XSS), `${label} shows the nickname as text`);
   // overview: the hero flight path, two sparklines, the users split; then each chart tab
   assert.equal(await page.locator('#view .hero svg.chart path.ln').count(), 1);
+  assert.match(await page.textContent('#heroCmp'), /^어제는 [\d,]+명으로 그 전 7일 평균(보다 \d+% (많음|적음)|과 같음)$/, 'a full month compares yesterday');
   assert.match(await page.textContent('#view .hero-n'), /^[\d,]+$/);
   assert.equal(await page.locator('#view .vital svg.chart').count(), 2, 'sparklines');
   assert.equal(await page.locator('#view .split i').count(), 2);
@@ -262,6 +263,26 @@ const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${p
   assert.ok(calls.some(c => c.name === 'admin_season_tick'));
   assert.deepEqual(errors, [], 'no page errors (owner)');
   console.log('PASS admin-smoke owner', calls.length, 'rpc calls,', [...new Set(calls.map(c => c.name))].length, 'distinct');
+  await ctx.close();
+}
+
+// --- a young history: today + yesterday only (production began 10-21): no comparison yet, a quiet line; one day: a dot, no line
+for (const n of [2, 1, 0]){
+  const daily = KPI.daily.slice(0, n), kpi = { ...KPI, daily };
+  const { ctx, page, errors } = await open({ role: 'owner', over: { admin_kpi: kpi } });
+  await page.waitForSelector('#view .vw');
+  if (n){
+    assert.equal(await page.textContent('#view .hero-n'), String(daily[0].dau), 'the big number is today so far');
+    assert.match(await page.textContent('#view .hero'), /오늘 지금까지 활성 사용자/);
+    assert.equal(await page.textContent('#heroCmp'), '비교는 기록이 8일 쌓이면 보입니다');
+    assert.equal(await page.getAttribute('#heroCmp', 'class'), 'hero-s quiet', 'no glyph, no colour');
+  }
+  assert.equal(await page.locator('#view .hero svg.chart path.ln').count(), n === 2 ? 1 : 0, `${n} days: line`);
+  assert.equal(await page.locator('#view .hero svg.chart circle.glow').count(), n ? 1 : 0, `${n} days: the dot`);
+  if (n === 0) assert.match(await page.textContent('#view .hero'), /아직 데이터가 없습니다/);
+  assert.ok(await page.evaluate(() => { const s = document.querySelector('#view .hero svg.chart'); return !s || [...s.querySelectorAll('text')].every(t => t.getBBox().x + t.getBBox().width <= s.width.baseVal.value + 1); }), 'labels inside the chart');
+  assert.deepEqual(errors, []);
+  console.log('PASS admin-smoke hero with', n, 'days');
   await ctx.close();
 }
 
