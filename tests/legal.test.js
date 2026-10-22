@@ -38,6 +38,14 @@ test('privacy.html states what the game actually does with data', () => {
   }
 });
 
+test('privacy.html covers the apps (push tokens, Game Center) and nickname reports', () => {
+  const h = read('privacy.html');
+  for (const must of ['APNs', 'Game Center', '푸시 토큰', 'push token', '신고 기록', 'Reports']) {
+    assert.ok(h.includes(must), 'privacy policy must mention ' + must);
+  }
+  assert.ok(!h.includes('신고·추적 없이'), 'nicknames can be reported now (schema.sql REPORTS)');
+});
+
 test('terms.html covers the rules that the server enforces', () => {
   const h = read('terms.html');
   for (const must of ['RP', '시즌', '닉네임', '환불', 'MONARCH']) assert.ok(h.includes(must), 'terms must mention ' + must);
