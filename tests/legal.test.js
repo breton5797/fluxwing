@@ -7,7 +7,7 @@ import { loadI18N } from './helpers/i18n.js';
 
 const root = new URL('../', import.meta.url);
 const read = p => readFileSync(new URL(p, root), 'utf8');
-const LANGS = ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi'];
+const LANGS = ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi', 'zh_TW', 'nl', 'ru', 'ms', 'nb', 'ar', 'it', 'tr', 'pl', 'fi', 'he'];
 const OPERATOR = '미니멀코리아', EMAIL = 'minimalkorea@naver.com';
 
 for (const page of ['privacy.html', 'terms.html']){

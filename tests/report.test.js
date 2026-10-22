@@ -137,7 +137,7 @@ test('the copy exists in every language and never threatens or promises a ban', 
   const keys = Object.keys(I.en).filter(k => /^(rp|blk)/.test(k));
   for (const k of ['rpTitle', 'rpName', 'rpCheat', 'rpOther', 'rpSent', 'rpDup', 'rpSelf', 'rpRate', 'rpFail', 'rpOff', 'blkDo', 'blkUndo', 'blkDone', 'blkHead'])
     assert.ok(keys.includes(k), k);
-  for (const l of ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi'])
+  for (const l of ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi', 'zh_TW', 'nl', 'ru', 'ms', 'nb', 'ar', 'it', 'tr', 'pl', 'fi', 'he'])
     for (const k of keys) assert.ok(typeof I[l][k] === 'string' && I[l][k] && (l === 'en' || I[l][k] !== I.en[k]), `${l}.${k}`);
   for (const k of keys) assert.doesNotMatch(I.en[k], /\bban/i, k);
 });

@@ -14,14 +14,22 @@ const TEXTS = JSON.parse(read('supabase/functions/push-send/texts.json'));
 
 test('the push copy is the game copy, in every language', () => {
   const I = loadI18N();
-  assert.deepEqual(LANGS, ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi']);
-  for (const l of LANGS) assert.deepEqual(TEXTS[l], { on: I[l].ntOn, best: I[l].ntBest }, l);
+  assert.deepEqual(LANGS, ['ko', 'en', 'ja', 'zh', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi',
+    'zh_TW', 'nl', 'ru', 'ms', 'nb', 'ar', 'it', 'tr', 'pl', 'fi', 'he']);
+  assert.deepEqual(Object.keys(TEXTS), LANGS);
+  for (const l of Object.keys(I)) assert.ok(LANGS.includes(l), `${l}: the game speaks it, push-send must too`);
+  for (const l of LANGS) {
+    assert.ok(TEXTS[l].on.includes('{n}') && TEXTS[l].best.includes('{n}') && TEXTS[l].best.includes('{s}'), l);
+    if (I[l]) assert.deepEqual(TEXTS[l], { on: I[l].ntOn, best: I[l].ntBest }, l);
+  }
 });
 
 test('alertFor: the sender name and score filled in, the language falls back to English, unknown kinds send nothing', () => {
   assert.deepEqual(alertFor(TEXTS, 'ko', 'on', 'Mina', 0), { title: 'SWISHBY', body: 'Mina님이 접속했어요' });
   assert.deepEqual(alertFor(TEXTS, 'en', 'best', 'Joon', 87), { title: 'SWISHBY', body: 'Joon set a new best: 87!' });
   assert.equal(alertFor(TEXTS, 'xx', 'on', 'A', 0).body, 'A is online');
+  assert.equal(alertFor(TEXTS, 'zh_TW', 'on', 'A', 0).body, 'A上線了');
+  assert.equal(alertFor(TEXTS, 'he', 'best', 'A', 9).body, 'שיא חדש ל-A: 9!');
   assert.equal(alertFor(TEXTS, 'en', 'other', 'A', 0), null);
   assert.equal(alertFor(TEXTS, 'en', 'on', '', 0).body, 'Pilot is online');
   assert.equal(alertFor(TEXTS, 'en', 'on', 'x'.repeat(40), 0).body.length <= 14 + ' is online'.length, true);
@@ -104,7 +112,7 @@ test('page wiring: the app registers its token while alerts are on, drops it whe
   assert.match(html, /'push_unregister'/);
   assert.match(html, /'fw27_ptok'/, 'the token is device-only (FS_LOCAL)');
   const I = loadI18N();
-  for (const l of LANGS) assert.ok(I[l].ntOffApp && (l === 'en' || I[l].ntOffApp !== I.en.ntOffApp), l + '.ntOffApp');
+  for (const l of LANGS.filter(l => I[l])) assert.ok(I[l].ntOffApp && (l === 'en' || I[l].ntOffApp !== I.en.ntOffApp), l + '.ntOffApp');
   assert.doesNotMatch(I.en.ntOffApp, /browser/i);
   const cap = JSON.parse(read('capacitor.config.json'));
   assert.deepEqual(cap.plugins.PushNotifications.presentationOptions, [], 'the page shows its own toasts while open');

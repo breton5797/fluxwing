@@ -47,6 +47,38 @@ begin
   if (select lang from private.fw_push where token = pg_temp.tok('7')) <> 'ja' then raise exception 'lang is stored'; end if;
 end $$;
 
+\echo === languages: region variants (zh_TW) and the newer codes are kept, anything else falls back to en ===
+insert into auth.users (id, created_at) values (pg_temp.u('c'), now() - interval '9 days'), (pg_temp.u('d'), now() - interval '9 days');
+set role authenticated;
+do $$
+declare sub constant text := 'request.jwt.claim.sub';
+begin
+  perform set_config(sub, pg_temp.u('c')::text, true);
+  perform public.push_register(pg_temp.tok('a'), '{}', 'zh_TW');
+  perform public.push_register(pg_temp.tok('b'), '{}', 'nb');
+  perform public.push_register(pg_temp.tok('c'), '{}', 'he');
+  perform public.push_register(pg_temp.tok('d'), '{}', 'xx-bad');
+  perform public.push_register(pg_temp.tok('e'), '{}', 'zh_tw');
+  perform public.submit_score(0, 0, 'endless', null, 'volt', 'Cat', 'TW', 'zh_tw');   -- the board keeps the canonical spelling
+  perform set_config(sub, pg_temp.u('d')::text, true);
+  perform public.submit_score(0, 0, 'endless', null, 'volt', 'Dan', 'NO', 'xx-bad');
+end $$;
+reset role;
+do $$
+declare got text;
+begin
+  select string_agg(lang, ',' order by token) into got from private.fw_push where player_id = pg_temp.u('c');
+  if got <> 'zh_TW,nb,he,en,en' then raise exception 'push langs: got %', got; end if;
+  if (select lang from public.fw_scores where player_id = pg_temp.u('c')) <> 'zh_TW' then raise exception 'submit_score keeps zh_TW'; end if;
+  if (select lang from public.fw_scores where player_id = pg_temp.u('d')) <> 'en' then raise exception 'submit_score falls back to en'; end if;
+  begin
+    insert into private.fw_push (token, player_id, lang) values (pg_temp.tok('f'), pg_temp.u('c'), 'zh-TW');
+    raise exception 'the lang constraint must refuse zh-TW';
+  exception when check_violation then null;
+  end;
+  delete from private.fw_push where player_id = pg_temp.u('c');
+end $$;
+
 \echo === the feed keeps working with devices registered and no pg_net (the hook stays quiet) ===
 set role authenticated;
 select set_config('request.jwt.claim.sub', pg_temp.u('a')::text, false);

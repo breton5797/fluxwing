@@ -9,6 +9,8 @@ import { iosHtml, IOS_ASSETS, SDK_LOCAL } from '../scripts/ios-build.mjs';
 const root = new URL('../', import.meta.url);
 const read = p => readFileSync(new URL(p, root), 'utf8');
 const html = read('index.html');
+// Every game language under its Xcode folder name (zh = zh-Hans, zh_TW = zh-Hant)
+const IOS_LANGS = ['en', 'ko', 'ja', 'zh-Hans', 'zh-Hant', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi', 'nl', 'ru', 'ms', 'nb', 'ar', 'it', 'tr', 'pl', 'fi', 'he'];
 
 test('iosHtml swaps only the SDK address; config and everything else stay as on swishby.com', () => {
   const out = iosHtml(html);
@@ -39,4 +41,26 @@ test('Capacitor config: the App Store id, the bundle folder, https scheme for st
   assert.equal(c.appName, 'SWISHBY');
   assert.equal(c.webDir, 'ios-www');
   assert.match(read('.gitignore'), /^ios-www\/$/m, 'the built bundle is not committed');
+});
+
+test('Info.plist lists every game language for the App Store, English as the development region', () => {
+  const plist = read('ios/App/App/Info.plist');
+  assert.match(plist, /<key>CFBundleDevelopmentRegion<\/key>\s*<string>en<\/string>/);
+  const list = plist.match(/<key>CFBundleLocalizations<\/key>\s*<array>([\s\S]*?)<\/array>/)[1];
+  assert.deepEqual([...list.matchAll(/<string>([^<]+)<\/string>/g)].map(m => m[1]), IOS_LANGS);
+  assert.doesNotMatch(plist, /UsageDescription/, 'a usage description would need translating in every InfoPlist.strings');
+});
+
+test('every language ships an InfoPlist.strings the project builds, so the App Store lists it', () => {
+  const pbx = read('ios/App/App.xcodeproj/project.pbxproj');
+  const q = l => l.includes('-') ? `"${l}"` : l;
+  const regions = pbx.match(/knownRegions = \(([\s\S]*?)\);/)[1].split(',').map(s => s.trim()).filter(Boolean);
+  assert.deepEqual(regions, [...IOS_LANGS.map(q), 'Base']);
+  const group = pbx.match(/\/\* InfoPlist\.strings \*\/ = \{\s*isa = PBXVariantGroup;\s*children = \(([\s\S]*?)\);/)[1];
+  assert.match(pbx, /\/\* InfoPlist\.strings in Resources \*\/,\n\t+\);/, 'in the App target resources');
+  for (const l of IOS_LANGS){
+    assert.match(read(`ios/App/App/${l}.lproj/InfoPlist.strings`), /^"CFBundleDisplayName" = "SWISHBY";$/m, l);
+    assert.ok(group.includes(`/* ${l} */`), `${l} in the InfoPlist.strings variant group`);
+    assert.ok(pbx.includes(`path = ${q(l + '.lproj/InfoPlist.strings')};`), `${l} file reference`);
+  }
 });

@@ -6,7 +6,7 @@ import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, ensureServer, openGame, startRun, play } from './marketing-kit.mjs';
-import { SHOTS, CAPTIONS, LANGS, STORE_VARIANTS, gameLang, parseArgs } from './marketing-copy.mjs';
+import { SHOTS, CAPTIONS, SHOT_LANGS, STORE_VARIANTS, gameLang, parseArgs } from './marketing-copy.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const opt = parseArgs(process.argv.slice(2), { langs: 'en,ja,es,pt,id,ko', platforms: 'play,iphone69', out: '', port: Number(process.env.PORT) || 5173, seed: 2027, only: '' });
@@ -94,7 +94,7 @@ const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&
 // The frame: a caption band (headline + sub line) over the game shot, which sits in a rounded, glowing phone-like card.
 function frameHtml(lang, [W, H], [head, sub], shot) {
   const cw = W / 2, ch = H / 2, band = Math.round(ch * .2), gh = Math.round(ch - band - ch * .035), gw = Math.round(gh * W / H);
-  return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8">
+  return `<!doctype html><html lang="${lang.replace('_', '-')}" dir="${/^(ar|he)$/.test(lang) ? 'rtl' : 'ltr'}"><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&display=block" rel="stylesheet">
 <style>html,body{margin:0;width:${cw}px;height:${ch}px;overflow:hidden}
 body{background:radial-gradient(90% 60% at 50% 0%,#5a1772 0%,#250b3f 45%,#0d0618 100%);font-family:"Chakra Petch","Hiragino Sans","Apple SD Gothic Neo","PingFang SC","Thonburi","Kohinoor Devanagari","Noto Sans SC","Noto Sans Thai","Noto Sans Devanagari",system-ui,sans-serif;color:#fff}
@@ -117,7 +117,7 @@ async function compose(browser, lang, plat, name, raw, path) {
 }
 
 const langs = opt.langs.split(','), plats = opt.platforms.split(','), only = opt.only ? opt.only.split(',') : SHOTS;
-for (const l of langs) if (!LANGS.includes(l) && !STORE_VARIANTS[l]) { console.error(`unknown lang ${l}`); process.exit(1); }
+for (const l of langs) if (!SHOT_LANGS.includes(l) && !STORE_VARIANTS[l]) { console.error(`unknown lang ${l}`); process.exit(1); }
 for (const p of plats) if (!PLATFORMS[p]) { console.error(`unknown platform ${p}`); process.exit(1); }
 const stop = await ensureServer(opt.port);
 const browser = await chromium.launch();
