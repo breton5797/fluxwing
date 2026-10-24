@@ -77,3 +77,8 @@ test('the portal builds ship the legal pages', () => {
   const s = read('scripts/portal-build.mjs');
   assert.match(s, /'privacy\.html'/); assert.match(s, /'terms\.html'/);
 });
+
+test('the launch board cleanup runbook names the tool and the accounts', () => {
+  const md = read('docs/launch/board-cleanup.md');
+  for (const s of ['admin_set_hidden', 'admin_tester_set', 'QAb A1Z', 'QATEST', 'QA-B2', '2026-11-17']) assert.ok(md.includes(s), s);
+});
