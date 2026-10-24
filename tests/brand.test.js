@@ -63,3 +63,10 @@ test('the menu shows the SWISHBY logo image and the file ships with the page', (
   assert.ok(m, 'menu logo image tag');
   assert.ok(readFileSync(new URL('../' + m[1], import.meta.url)).length > 10000, 'logo file is there');
 });
+
+test('CJK text wraps at word boundaries', () => {
+  const css = read('../styles.css');
+  assert.match(css, /:lang\(ko\)[^{]*\{[^}]*word-break:\s*keep-all[^}]*overflow-wrap:\s*anywhere/);
+  assert.match(css, /:lang\(ja\)[^{]*\{[^}]*word-break:\s*auto-phrase/);
+  assert.match(css, /:lang\(ja\) \.btn[^{]*\{[^}]*white-space:\s*nowrap/);
+});

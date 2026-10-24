@@ -100,3 +100,7 @@ canvas{display:block;width:100%;height:100%}
 @keyframes pulse{50%{box-shadow:0 0 34px rgba(79,240,255,.95)}}
 @media (max-height:560px){.tag{display:none}.overlay{gap:10px;padding-top:56px}}
 @media (prefers-reduced-motion:reduce){#dashBtn.ready{animation:none}.btn{transition:none}}
+/* CJK line breaking: Korean keeps words whole, Japanese breaks at phrase boundaries where the browser can */
+html:lang(ko) body{word-break:keep-all;overflow-wrap:anywhere}
+html:lang(ja) body{word-break:auto-phrase;line-break:strict}
+html:lang(ja) .btn{white-space:nowrap}
