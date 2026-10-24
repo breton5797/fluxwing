@@ -80,4 +80,10 @@ test('first paint shows a boot indicator and nothing blocks it', () => {
   assert.match(html, /<picture><source srcset="logo-swishby\.webp" type="image\/webp"><img class="logoimg" src="logo-swishby\.png"/);
   assert.ok(statSync(new URL('../logo-swishby.webp', import.meta.url)).size < 60 * 1024, 'webp logo under 60 KB');
   assert.match(html, /\$\('boot'\)\.remove\(\)/);
+  assert.match(html, /#boot\{[^}]*z-index:\s*9\d/, 'the spinner sits above the stage and the menu overlay');
+});
+
+test('the effects button does nothing during a live ranked match (it used to pause, which versus now ignores)', () => {
+  const html = read('../index.html');
+  assert.match(html, /\$\('fxBtn'\)\.addEventListener\('click', e => \{[^\n]*if \(mode === 'versus' && state === 'play'\) return;/);
 });

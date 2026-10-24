@@ -161,7 +161,7 @@ test('the account modal stacks above the leaderboard it is opened from', () => {
 });
 
 test('fsNorm clamps the wallet to the server caps and drops units nobody can earn', () => {
-  const n = C.fsNorm({ v: 1, w: { coins: 9e9, dia: 9e9, gems: 9e9, lvl: 9999, xp: 0 }, owned: ['volt', 'aurora', 'mochi'] });
-  assert.deepEqual(n.w, { xp: 0, lvl: 500, coins: 5e7, dia: 1e7, gems: 1e5 });
+  const n = C.fsNorm({ v: 1, w: { coins: 9e9, dia: 9e9, gems: 9e9, lvl: 9e9, xp: 0 }, owned: ['volt', 'aurora', 'mochi'] });
+  assert.deepEqual(n.w, { xp: 0, lvl: 1e5, coins: 5e7, dia: 1e7, gems: 1e5 });
   assert.ok(!n.owned.includes('aurora')); assert.ok(n.owned.includes('mochi'));
 });

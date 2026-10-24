@@ -1246,7 +1246,7 @@ declare
   c_cap_coins constant bigint := 50000000;
   c_cap_dia   constant bigint := 10000000;
   c_cap_gems  constant bigint := 100000;
-  c_cap_lvl   constant bigint := 500;
+  c_cap_lvl   constant bigint := 100000;   -- a skilled player gains ~1 level a run
   c_never_owned constant text[] := array['aurora','tempest','pleiad'];   -- units with no earning path (monarch is a season grant)
   v_uid   uuid := private.fw_save_me();
   v_today date := (now() at time zone 'utc')::date;

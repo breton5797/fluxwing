@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#07050f;color:#f3eefc}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;display:grid;place-items:center;background:#07050f;animation:btgone 0s 8s forwards}@keyframes btgone{to{visibility:hidden}}#boot i{width:28px;height:28px;border:3px solid #4ff0ff;border-right-color:transparent;border-radius:50%;animation:bt 1s linear infinite}@keyframes bt{to{transform:rotate(1turn)}}</style>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#07050f;color:#f3eefc}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:#07050f;animation:btgone 0s 8s forwards}@keyframes btgone{to{visibility:hidden}}#boot i{width:28px;height:28px;border:3px solid #4ff0ff;border-right-color:transparent;border-radius:50%;animation:bt 1s linear infinite}@keyframes bt{to{transform:rotate(1turn)}}</style>
 <title>SWISHBY 2027</title>
 <meta name="description" content="탭 한 번으로 나는 원터치 비행 게임. 게이트를 아슬아슬하게 스쳐 콤보를 쌓고, 대시로 뚫고, 랭크 대전과 시즌에 도전하세요.">
 <meta name="theme-color" content="#07050f"><meta name="color-scheme" content="dark">
@@ -1937,7 +1937,7 @@ const adGuardMs = prov => prov === 'stub' ? AD_CFG.timeoutMs : AD_SDK.guardMs;
 /* cloud:start — cloud save (merge rules) and login rules: pure, no DOM, no storage, no clock (get/set come in). tests/cloud.test.js runs this block as it stands (tests/helpers/cloud.js). */
 const FS_CFG = Object.freeze({ v: 1, maxBytes: 16384, stN: 50, owned0: Object.freeze(['volt', 'blitz', 'nimbus', 'titan']),
   // Plausibility caps, mirrored by private.fw_save_put (tests/cloud-sql.test.js keeps them equal): an expert earns ~2,115 coins a run, so 5e7 is 20,000+ runs
-  caps: Object.freeze({ coins: 5e7, dia: 1e7, gems: 1e5, lvl: 500 }),
+  caps: Object.freeze({ coins: 5e7, dia: 1e7, gems: 1e5, lvl: 1e5 }),   // lvl: ~1 level a run for a skilled player, so 1e5 is 100,000 runs
   neverOwned: Object.freeze(['aurora', 'tempest', 'pleiad']) });   // no earning path in the game; monarch is granted by the season
 // Synced to the account (public.fw_saves). Every other fw27_ key stays on this device: FS_LOCAL ("_" at the end = a prefix)
 const FS_KEYS = Object.freeze(['fw27_wallet2', 'fw27_owned', 'fw27_pass', 'fw27_starter', 'fw27_best', 'fw27_bestg', 'fw27_stg2', 'fw27_stage2',
@@ -2750,7 +2750,7 @@ function renderFxScr(){
   $('fxRmNote').hidden = !RM; if (RM) $('fxRmNote').textContent = t('fxRm');
 }
 function fxApply(){ store.set('fw27_fxq', fxSettings.q); store.set('fw27_fxshake', fxSettings.shake); store.set('fw27_fxflash', fxSettings.flash); IMP = impNew(fxSettings.q === 'auto' ? null : fxSettings.q); resize(); renderFxScr(); }
-$('fxBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); if (state === 'play') togglePause(); renderFxScr(); $('fxScr').hidden = false; lbOpen = true; });
+$('fxBtn').addEventListener('click', e => { e.stopPropagation(); if (mode === 'versus' && state === 'play') return; audioInit(); if (state === 'play') togglePause(); renderFxScr(); $('fxScr').hidden = false; lbOpen = true; });
 $('fxClose').addEventListener('click', e => { e.stopPropagation(); $('fxScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden; });
 $('fxScr').addEventListener('pointerdown', e => { if (e.target === $('fxScr')) $('fxClose').click(); });
 document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); fxSettings.q = b.dataset.fxq; fxApply(); }));
