@@ -119,3 +119,14 @@ test('using the dash grants half a second of invincibility', () => {
   assert.ok(m, 'dash() found');
   assert.match(m[0], /invuln = Math\.max\(invuln, \.5\)/);
 });
+
+test('a ranked match cannot be paused: keys and the button do nothing, leaving the tab is a death', () => {
+  const { vsPauseAction } = loadHitLoop();
+  assert.equal(vsPauseAction('endless', 'play', 'key'), 'pause');
+  assert.equal(vsPauseAction('daily', 'play', 'hidden'), 'pause');
+  assert.equal(vsPauseAction('versus', 'play', 'key'), 'ignore');
+  assert.equal(vsPauseAction('versus', 'play', 'button'), 'ignore');
+  assert.equal(vsPauseAction('versus', 'play', 'hidden'), 'die');
+  assert.equal(vsPauseAction('versus', 'paused', 'key'), 'ignore');
+  assert.equal(vsPauseAction('versus', 'over', 'hidden'), 'ignore');
+});

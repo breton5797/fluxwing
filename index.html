@@ -1345,6 +1345,12 @@ function challengeResult(ch, mode, score){
   if (!ch || !ch.live || mode !== (ch.daily ? 'daily' : 'endless')) return null;
   return { beat: score > ch.score, by: Math.abs(score - ch.score) };
 }
+// Pause in a ranked match (versus): keys and the button are ignored, leaving the tab (why 'hidden') ends the run, since a hidden tab
+// stops the clock and would let a player wait out the opponent. Every other mode pauses as before.
+function vsPauseAction(mode, state, why){
+  if (mode !== 'versus') return 'pause';
+  return state === 'play' && why === 'hidden' ? 'die' : 'ignore';
+}
 /* hit-loop:end */
 /* share-card:start — the 9:16 result image and the one messenger a country opens: pure rules, no state, no DOM. Builds on the hit-loop block. tests/share-card.test.js runs it (tests/helpers/sharecard.js). Sharing pays nothing: app stores turn down a game that pays for social posts. */
 // Only messengers a plain web link can open with the text filled in. KakaoTalk (KR) needs the Kakao SDK + app key, Messenger (PH/US/CA) a Facebook app id, Zalo (VN) has no web share link: there the native share sheet covers it.
@@ -2628,7 +2634,7 @@ addEventListener('keydown', e => {
   else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyD' || e.code === 'KeyE'){ e.preventDefault(); dash(); }
   else if (e.code === 'KeyS' || e.code === 'KeyQ'){ e.preventDefault(); useSkill(); }
   else if (e.code === 'KeyA' || e.code === 'KeyF'){ e.preventDefault(); useUlt(); }
-  else if (e.code === 'KeyP' || e.code === 'Escape'){ togglePause(); }
+  else if (e.code === 'KeyP' || e.code === 'Escape'){ togglePause('key'); }
 });
 $('startBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); SFX.click(); startFromMenu(); });
 $('dailyBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); startGame('daily'); });
@@ -2694,8 +2700,8 @@ $('shareBtn').addEventListener('click', async e => {
   catch { prompt(t('shareManual'), text); evTrack('share', { mode, via: 'manual' }); }
 });
 $('over').addEventListener('click', e => { if (e.target === $('over')) flap(); });
-$('resumeBtn').addEventListener('click', togglePause);
-$('pauseBtn').addEventListener('click', e => { e.stopPropagation(); togglePause(); });
+$('resumeBtn').addEventListener('click', () => togglePause('button'));
+$('pauseBtn').addEventListener('click', e => { e.stopPropagation(); togglePause('button'); });
 $('muteBtn').addEventListener('click', e => {
   e.stopPropagation(); audioInit(); muted = !muted; store.set('fw27_mute', muted);
   if (master) master.gain.value = adVol(muted, adOn); $('muteBtn').style.opacity = muted ? .4 : 1;
@@ -2733,9 +2739,12 @@ $('fxScr').addEventListener('pointerdown', e => { if (e.target === $('fxScr')) $
 document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); fxSettings.q = b.dataset.fxq; fxApply(); }));
 document.querySelector('[data-fxshake]').addEventListener('click', e => { e.stopPropagation(); fxSettings.shake = !fxSettings.shake; fxApply(); });
 document.querySelector('[data-fxflash]').addEventListener('click', e => { e.stopPropagation(); fxSettings.flash = !fxSettings.flash; fxApply(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause(); adPlaySync(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause('hidden'); adPlaySync(); });
 
-function togglePause(){
+function togglePause(why = 'key'){
+  const a = vsPauseAction(mode, state, why);
+  if (a === 'ignore') return;
+  if (a === 'die'){ reviveLeft = 0; rewindLeft = 0; die(); return; }   // no revive or rewind: a hidden tab must end the ranked run, not absorb a life
   if (state === 'play'){ state = 'paused'; $('pauseScr').hidden = false; }
   else if (state === 'paused'){ state = 'play'; $('pauseScr').hidden = true; last = performance.now(); }
 }
@@ -2748,7 +2757,7 @@ function startGame(m){
   $('wallet').hidden = true; $('shopScr').hidden = true;
   mode = m; reset(); state = 'play';
   $('menu').hidden = true; $('over').hidden = true; $('pauseScr').hidden = true;
-  $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false; $('ultBtn').hidden = !ultOn();
+  $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = mode === 'versus'; $('ultBtn').hidden = !ultOn();
   $('skillBtn').style.setProperty('--ring', hsl(B.uiCol || B.col)); hudCache.d = hudCache.s = hudCache.sl = hudCache.u = hudCache.ul = '';
   flap(); banner(t('go'), B.col, .75); SFX.go();
   if (mode === 'endless' && stTier(curStage) === 3) banner(t('idleRule'), [0,100,62], 1.6, false);
@@ -2993,7 +3002,7 @@ function closeCont(go){
   contUsed = true; state = 'play'; IMP = impNew(IMP.q); FX.fogT = 0; overT = weightT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; setGod(2.5); hurtT = 0;
   cam.tz = 1; cam.fx = LW/2; cam.fy = LH/2;
   for (const g of gates) if (Math.abs(g.x + g.w/2 - bird.x) < 140) g.broken = true;
-  $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false; $('ultBtn').hidden = !ultOn();
+  $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = mode === 'versus'; $('ultBtn').hidden = !ultOn();
   banner(t('go'), [45,100,62], .8); SFX.go(); haptic('power'); ring(bird.x, bird.y, LW, [45,100,62], .8, 10);
 }
 $('contAd').addEventListener('click', async e => {
