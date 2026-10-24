@@ -6402,17 +6402,27 @@ $('vsCancel').addEventListener('click', e => { e.stopPropagation(); vsReset(); v
 renderVsBadge();
 
 /* ---------- loop ---------- */
+/* loop-rules:start — how a frame's elapsed time becomes simulation steps: pure. tests/loop.test.js runs this block as it stands (tests/helpers/loop.js). */
+// A slow frame (below ~30fps) is simulated in full by several steps of at most maxStep seconds (the step the physics is tuned for), so the
+// game never runs in slow motion. elapsed is capped (a tab coming back from the background) so one frame cannot spiral.
+function frameSteps(elapsedS, maxStep = .034, cap = .25){
+  const out = []; let left = Math.min(elapsedS, cap);
+  while (left > 1e-9){ const h = Math.min(maxStep, left); out.push(h); left -= h; }
+  return out;
+}
+/* loop-rules:end */
 let last = performance.now();
 const fxFrameMs = []; let fxFrameI = 0;
 function loop(now){
-  const rdt = Math.min(.034, (now - last)/1000); last = now;
+  const el = (now - last)/1000; last = now;
+  const steps = frameSteps(el);
   if (fxSettings.q === 'auto' && state === 'play'){
-    fxFrameMs[fxFrameI++ % 120] = rdt * 1000;
+    fxFrameMs[fxFrameI++ % 120] = el * 1000;
     if (fxFrameI % 120 === 0){ const srt = fxFrameMs.slice().sort((a, b) => a - b), p90 = srt[Math.floor(srt.length * .9)];
       const q2 = fxQualityStep(IMP.q, p90); if (q2 !== IMP.q) IMP = impNew(q2); }
   }
-  if (state !== 'paused' && !(window.FW && window.FW.hold)) update(rdt);
-  render(); drawHangarPreview(); musicTick(); tutTick(rdt); if (state === 'play' || state === 'dying' || state === 'over') vsTick(rdt);
+  if (state !== 'paused' && !(window.FW && window.FW.hold)) for (const h of steps) update(h);
+  render(); drawHangarPreview(); musicTick(); tutTick(el); if (state === 'play' || state === 'dying' || state === 'over') vsTick(el);
   adPlaySync();
   requestAnimationFrame(loop);
 }
