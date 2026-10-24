@@ -1355,6 +1355,12 @@ function vsPauseAction(mode, state, why){
 // after a few taps (step 2) is not a finished tutorial, the next PLAY NOW starts it again.
 const TUT_MAX_RUNS = 3;
 const tutDone = (flag, step, runs) => !!flag || step >= 3 || runs >= TUT_MAX_RUNS;
+// A unit shown on a board (leaderboard, friends, versus): a hidden unit the viewer does not own stays a secret, "???" in a neutral colour
+function boardUnit(bd, ownedHas){
+  if (!bd) return null;
+  if (bd.hidden && !ownedHas(bd.id)) return { name: '???', col: [260, 20, 45] };
+  return { name: bd.name, col: bd.uiCol || bd.col };
+}
 /* hit-loop:end */
 /* share-card:start — the 9:16 result image and the one messenger a country opens: pure rules, no state, no DOM. Builds on the hit-loop block. tests/share-card.test.js runs it (tests/helpers/sharecard.js). Sharing pays nothing: app stores turn down a game that pays for social posts. */
 // Only messengers a plain web link can open with the text filled in. KakaoTalk (KR) needs the Kakao SDK + app key, Messenger (PH/US/CA) a Facebook app id, Zalo (VN) has no web share link: there the native share sheet covers it.
@@ -5375,13 +5381,13 @@ function renderLB(){
     const f = document.createElement('span'); f.textContent = flag(r.cc);
     const nm = document.createElement('span'); nm.className = 'nm';
     if (vsT){ const ti = r.ti != null ? r.ti : tierOf(Number(r.sc) || 0), tb = vtBadgeImg(ti, true); tb.classList.add('tb'); nm.appendChild(tb); }
-    const bd = birdById(r.bird); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
+    const bd = boardUnit(birdById(r.bird), id => owned.has(id)); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
     nm.appendChild(document.createTextNode(showNick(r.nick || '') || '—'));
     if (me){ const tg = document.createElement('span'); tg.className = 'me-tag'; tg.textContent = t('you'); nm.appendChild(tg); }
     else { const fb = frPlusBtn(r.id); if (fb) nm.appendChild(fb);
       if (sb && SOC_UID.test(r.id)){ nm.classList.add('tap'); nm.addEventListener('click', e => { e.stopPropagation(); plOpen([{id: r.id, nick: r.nick}], 'board'); }); } }
     const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = Math.max(0, Math.floor(Number(r.sc) || 0));
-    if (bd){ const ub = document.createElement('span'); ub.className = 'ub'; ub.textContent = bd.name; ub.style.color = hsl(bd.uiCol || bd.col); sc.prepend(ub); }
+    if (bd){ const ub = document.createElement('span'); ub.className = 'ub'; ub.textContent = bd.name; ub.style.color = hsl(bd.col); sc.prepend(ub); }
     if (r.wl){ const w = document.createElement('span'); w.className = 'wl'; w.textContent = r.wl; sc.appendChild(w); }   // wins–losses
     li.append(n, f, nm, sc); list.appendChild(li);
   });
@@ -5469,7 +5475,7 @@ function renderFr(){
     const d = document.createElement('span'); d.className = 'frdot' + (fr.online ? ' on' : ''); if (fr.online) d.title = t('frOnline');
     const fl = document.createElement('span'); fl.textContent = flag(fr.cc);
     const nm = document.createElement('span'); nm.className = 'nm';
-    const bd = birdById(fr.bird); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
+    const bd = boardUnit(birdById(fr.bird), id => owned.has(id)); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
     nm.appendChild(document.createTextNode(showNick(fr.nick) || '—'));
     nm.classList.add('tap'); nm.addEventListener('click', e => { e.stopPropagation(); plOpen([{id: fr.id, nick: fr.nick}], 'friend'); });
     const b = document.createElement('span'); b.className = 'bst'; b.textContent = fr.best;
@@ -6325,7 +6331,7 @@ function vsFillOver(){
     $('oPlace').textContent = `${vsSum(a)} : ${vsSum(b)}  ·  ${vsRpNote(!!vs.ai, vs.rk, vs.result)}`;
   } else { ttl.textContent = t('vsVs'); ttl.style.color = 'var(--cool)'; }
   const o = vs.pl[0] || {};
-  $('oMode').textContent = duo ? `2v2 · ${B.name}` : `${B.name} ${t('vsVs')} ${(o.nick || t('opp'))} · ${(birdById(o.bird) || BIRDS[0]).name}`;
+  $('oMode').textContent = duo ? `2v2 · ${B.name}` : `${B.name} ${t('vsVs')} ${(o.nick || t('opp'))} · ${boardUnit(birdById(o.bird) || BIRDS[0], id => owned.has(id)).name}`;
   const box = $('oTeams'); box.hidden = !duo; if (!duo) return;
   // 2v2: both teams, each player's own score (✕ = out). Rebuilt only when something in it changed.
   const sig = JSON.stringify([a, b, lang]); if (box.dataset.sig === sig) return; box.dataset.sig = sig; box.textContent = '';

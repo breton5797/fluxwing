@@ -139,3 +139,12 @@ test('the tutorial ends only after the DASH tip or three runs; an old save stays
   assert.equal(tutDone(0, 1, TUT_MAX_RUNS), true);
   assert.equal(tutDone(0, 1, TUT_MAX_RUNS - 1), false);
 });
+
+test('a hidden unit on a board is ??? for players who do not own it', () => {
+  const { boardUnit } = loadHitLoop();
+  const aurora = { id: 'aurora', name: 'AURORA', hidden: true, col: [160, 90, 58] };
+  assert.deepEqual(boardUnit(aurora, () => false), { name: '???', col: [260, 20, 45] });
+  assert.deepEqual(boardUnit(aurora, id => id === 'aurora'), { name: 'AURORA', col: [160, 90, 58] });
+  assert.deepEqual(boardUnit({ id: 'volt', name: 'VOLT', col: [1, 2, 3], uiCol: [4, 5, 6] }, () => false), { name: 'VOLT', col: [4, 5, 6] });
+  assert.equal(boardUnit(undefined, () => true), null);
+});
