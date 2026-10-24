@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { test } from 'node:test';
 
 const read = p => readFileSync(new URL(p, import.meta.url), 'utf8');
@@ -69,4 +69,15 @@ test('CJK text wraps at word boundaries', () => {
   assert.match(css, /:lang\(ko\)[^{]*\{[^}]*word-break:\s*keep-all[^}]*overflow-wrap:\s*anywhere/);
   assert.match(css, /:lang\(ja\)[^{]*\{[^}]*word-break:\s*auto-phrase/);
   assert.match(css, /:lang\(ja\) \.btn[^{]*\{[^}]*white-space:\s*nowrap/);
+});
+
+test('first paint shows a boot indicator and nothing blocks it', () => {
+  const html = read('../index.html');
+  const body = html.indexOf('<body'), boot = html.indexOf('id="boot"'), script = html.indexOf('<script', body);
+  assert.ok(boot > body && boot < script, 'boot indicator is in the body before the first script');
+  assert.match(html, /<link rel="preload" as="style" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*">/);
+  assert.match(html, /<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*" media="print" onload="this\.media='all'">/);
+  assert.match(html, /<picture><source srcset="logo-swishby\.webp" type="image\/webp"><img class="logoimg" src="logo-swishby\.png"/);
+  assert.ok(statSync(new URL('../logo-swishby.webp', import.meta.url)).size < 60 * 1024, 'webp logo under 60 KB');
+  assert.match(html, /\$\('boot'\)\.remove\(\)/);
 });

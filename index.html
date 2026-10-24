@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#07050f;color:#f3eefc}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#07050f;color:#f3eefc}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;display:grid;place-items:center;background:#07050f;animation:btgone 0s 8s forwards}@keyframes btgone{to{visibility:hidden}}#boot i{width:28px;height:28px;border:3px solid #4ff0ff;border-right-color:transparent;border-radius:50%;animation:bt 1s linear infinite}@keyframes bt{to{transform:rotate(1turn)}}</style>
 <title>SWISHBY 2027</title>
 <meta name="description" content="탭 한 번으로 나는 원터치 비행 게임. 게이트를 아슬아슬하게 스쳐 콤보를 쌓고, 대시로 뚫고, 랭크 대전과 시즌에 도전하세요.">
 <meta name="theme-color" content="#07050f"><meta name="color-scheme" content="dark">
@@ -16,7 +16,9 @@
 <meta name="twitter:image" content="https://swishby.com/og-swishby.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;600;700&display=swap">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;600;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;600;700&display=swap"></noscript>
 <style>
 /* Layout: one full-screen canvas stage, HTML overlays for menus and leaderboard, a thumb-reach dash button bottom-right */
 :root{
@@ -394,6 +396,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.abtn.ready,#over .card,.rank.stamp,.newbest,.logowrap,.startbig,#tip{animation:none!important}.btn{transition:none}}
 </style>
 </head><body>
+<div id="boot" aria-hidden="true"><i></i></div>
 
 <div id="stage">
   <canvas id="c" aria-label="SWISHBY"></canvas>
@@ -420,7 +423,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 
   <div class="overlay" id="menu">
     <div class="logowrap">
-      <img class="logoimg" src="logo-swishby.png" alt="SWISHBY 2027" width="800" height="285" decoding="async">
+      <picture><source srcset="logo-swishby.webp" type="image/webp"><img class="logoimg" src="logo-swishby.png" alt="SWISHBY 2027" width="800" height="285" decoding="async"></picture>
     </div>
     <p class="tag" data-i18n="tag"></p>
     <div class="tierline" id="menuTier"></div>
@@ -6411,6 +6414,7 @@ $('vsAi').addEventListener('click', e => { e.stopPropagation(); audioInit(); vsR
 $('vsFill').addEventListener('click', e => { e.stopPropagation(); if (vs.room && vs.phase === 'room'){ vs.room.set({fl: 1}); vsOnRoom(); } });
 $('vsCancel').addEventListener('click', e => { e.stopPropagation(); vsReset(); vsShow(true); });
 renderVsBadge();
+$('boot').remove();   // the menu is drawn: the boot spinner (first thing in <body>) goes
 
 /* ---------- loop ---------- */
 /* loop-rules:start — how a frame's elapsed time becomes simulation steps: pure. tests/loop.test.js runs this block as it stands (tests/helpers/loop.js). */
