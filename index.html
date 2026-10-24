@@ -1351,6 +1351,10 @@ function vsPauseAction(mode, state, why){
   if (mode !== 'versus') return 'pause';
   return state === 'play' && why === 'hidden' ? 'die' : 'ignore';
 }
+// The tutorial is done once saved as done (flag), once the DASH tip was shown (step 3), or after TUT_MAX_RUNS tutorial runs; a death
+// after a few taps (step 2) is not a finished tutorial, the next PLAY NOW starts it again.
+const TUT_MAX_RUNS = 3;
+const tutDone = (flag, step, runs) => !!flag || step >= 3 || runs >= TUT_MAX_RUNS;
 /* hit-loop:end */
 /* share-card:start — the 9:16 result image and the one messenger a country opens: pure rules, no state, no DOM. Builds on the hit-loop block. tests/share-card.test.js runs it (tests/helpers/sharecard.js). Sharing pays nothing: app stores turn down a game that pays for social posts. */
 // Only messengers a plain web link can open with the text filled in. KakaoTalk (KR) needs the Kakao SDK + app key, Messenger (PH/US/CA) a Facebook app id, Zalo (VN) has no web share link: there the native share sheet covers it.
@@ -1934,6 +1938,7 @@ const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_stg', 'fw27_stage', 'fw27_l
   'fw27_ptok',         // the iOS app's APNs device token (one per install)
   'fw27_ev_first',     // product events: this device's first launch was reported (an install is per device)
   'fw27_ref', 'fw27_refpaid', 'fw27_refnudge',   // friend invites: this device's pending link / reports, the payout ids it granted, the nudge day
+  'fw27_tutruns',      // tutorial runs started on this device (the done flag fw27_tut itself syncs)
   'fw27_block']);   // report block: the players this device has blocked (the store copy says "on this device")
 const fsI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
 const fsDay = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
@@ -5705,13 +5710,13 @@ function showTip(txt){ const el = $('tip'); el.textContent = txt; el.hidden = fa
 function hideTip(){ $('tip').hidden = true; }
 function tutTick(dt){
   if (!tutStep) return;
-  if (state !== 'play'){ if (state === 'dying' || state === 'over' || state === 'menu'){ hideTip(); if (tutStep >= 2){ tutStep = 0; store.set('fw27_tut', 1); evTrack('tutorial_done', { how: 'run' }); } } return; }
+  if (state !== 'play'){ if (state === 'dying' || state === 'over' || state === 'menu'){ hideTip(); if (tutDone(0, tutStep, store.get('fw27_tutruns', 0))){ store.set('fw27_tut', 1); evTrack('tutorial_done', { how: 'run' }); } tutStep = 0; } return; }
   if (tutStep === 1 && tutFlaps >= 3){ tutStep = 2; showTip(t('tut2')); }
   else if (tutStep === 2 && gatesPassed >= 3){ tutStep = 3; tutT = 4.5; showTip(t('tut3')); dashMeter = Math.max(dashMeter, 1); skillCharge = 1; }
   else if (tutStep === 3){ tutT -= dt; if (tutT <= 0){ tutStep = 0; hideTip(); store.set('fw27_tut', 1); evTrack('tutorial_done', { how: 'tips' }); } }
 }
 function startFromMenu(){
-  if (!store.get('fw27_tut', 0)){ curStage = 0; startGame('endless'); tutStep = 1; tutFlaps = 0; showTip(t('tut1')); }
+  if (!tutDone(store.get('fw27_tut', 0), 0, store.get('fw27_tutruns', 0))){ store.set('fw27_tutruns', store.get('fw27_tutruns', 0) + 1); curStage = 0; startGame('endless'); tutStep = 1; tutFlaps = 0; showTip(t('tut1')); }
   else openStages();
 }
 $('helpBtn').addEventListener('click', e => { e.stopPropagation(); SFX.click(); $('helpScr').hidden = false; });

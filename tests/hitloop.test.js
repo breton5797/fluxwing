@@ -130,3 +130,12 @@ test('a ranked match cannot be paused: keys and the button do nothing, leaving t
   assert.equal(vsPauseAction('versus', 'paused', 'key'), 'ignore');
   assert.equal(vsPauseAction('versus', 'over', 'hidden'), 'ignore');
 });
+
+test('the tutorial ends only after the DASH tip or three runs; an old save stays done', () => {
+  const { tutDone, TUT_MAX_RUNS } = loadHitLoop();
+  assert.equal(tutDone(1, 0, 0), true);
+  assert.equal(tutDone(0, 2, 1), false);   // died after 3 flaps: not done yet
+  assert.equal(tutDone(0, 3, 1), true);
+  assert.equal(tutDone(0, 1, TUT_MAX_RUNS), true);
+  assert.equal(tutDone(0, 1, TUT_MAX_RUNS - 1), false);
+});
