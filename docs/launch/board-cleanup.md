@@ -36,4 +36,4 @@
 
 | 날짜 | 한 사람 | 숨긴 계정 | 비고 |
 |---|---|---|---|
-| | | | |
+| 2026-10-25 | Claude (CLI `supabase db query --linked`) | `QAb A1Z`, `민황`, `QATEST`, `QA-B2` | 넷 다 익명 계정이라 이메일 확인 불가. `민황`은 AURORA 2404점 기록이라 QA로 판단. fw_scores 4행·fw_versus 1행 숨김, fw_testers 4행 등록(note `QA 2026-10`). 확인 쿼리 결과 4행 일치. 숨김 후 1위 `내가 민황! 바로 3등` 1122점 |
