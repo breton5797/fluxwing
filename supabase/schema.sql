@@ -1241,6 +1241,13 @@ language plpgsql security definer set search_path = '' as $$
 declare
   c_max_bytes constant integer := 16384;   -- FS_CFG.maxBytes in index.html (tests/cloud-sql.test.js keeps the two equal)
   c_day_cap   constant integer := 1500;    -- accepted writes per account per UTC day
+  -- Plausibility caps (FS_CFG.caps / FS_CFG.neverOwned in index.html; tests/cloud-sql.test.js keeps them equal).
+  -- An expert earns ~2,115 coins a run, so c_cap_coins is 20,000+ runs; nobody reaches these by playing.
+  c_cap_coins constant bigint := 50000000;
+  c_cap_dia   constant bigint := 10000000;
+  c_cap_gems  constant bigint := 100000;
+  c_cap_lvl   constant bigint := 500;
+  c_never_owned constant text[] := array['aurora','tempest','pleiad'];   -- units with no earning path (monarch is a season grant)
   v_uid   uuid := private.fw_save_me();
   v_today date := (now() at time zone 'utc')::date;
   v_row   public.fw_saves%rowtype;
@@ -1251,6 +1258,16 @@ begin
   end if;
   if octet_length(p_data::text) > c_max_bytes then
     raise exception 'fw_bad_input: save too large' using errcode = '22023';
+  end if;
+  if (jsonb_typeof(p_data -> 'w' -> 'coins') = 'number' and (p_data -> 'w' ->> 'coins')::numeric > c_cap_coins)
+     or (jsonb_typeof(p_data -> 'w' -> 'dia') = 'number' and (p_data -> 'w' ->> 'dia')::numeric > c_cap_dia)
+     or (jsonb_typeof(p_data -> 'w' -> 'gems') = 'number' and (p_data -> 'w' ->> 'gems')::numeric > c_cap_gems)
+     or (jsonb_typeof(p_data -> 'w' -> 'lvl') = 'number' and (p_data -> 'w' ->> 'lvl')::numeric > c_cap_lvl) then
+    raise exception 'fw_bad_input: save out of range' using errcode = '22023';
+  end if;
+  if jsonb_typeof(p_data -> 'owned') = 'array' and exists (
+       select 1 from jsonb_array_elements_text(p_data -> 'owned') o(id) where o.id = any (c_never_owned)) then
+    raise exception 'fw_bad_input: save owns a unit nobody can earn' using errcode = '22023';
   end if;
   select * into v_row from public.fw_saves where player_id = v_uid for update;
   if not found then

@@ -1914,7 +1914,10 @@ function adMake(p, env){
 const adGuardMs = prov => prov === 'stub' ? AD_CFG.timeoutMs : AD_SDK.guardMs;
 /* ads:end */
 /* cloud:start — cloud save (merge rules) and login rules: pure, no DOM, no storage, no clock (get/set come in). tests/cloud.test.js runs this block as it stands (tests/helpers/cloud.js). */
-const FS_CFG = Object.freeze({ v: 1, maxBytes: 16384, stN: 50, owned0: Object.freeze(['volt', 'blitz', 'nimbus', 'titan']) });
+const FS_CFG = Object.freeze({ v: 1, maxBytes: 16384, stN: 50, owned0: Object.freeze(['volt', 'blitz', 'nimbus', 'titan']),
+  // Plausibility caps, mirrored by private.fw_save_put (tests/cloud-sql.test.js keeps them equal): an expert earns ~2,115 coins a run, so 5e7 is 20,000+ runs
+  caps: Object.freeze({ coins: 5e7, dia: 1e7, gems: 1e5, lvl: 500 }),
+  neverOwned: Object.freeze(['aurora', 'tempest', 'pleiad']) });   // no earning path in the game; monarch is granted by the season
 // Synced to the account (public.fw_saves). Every other fw27_ key stays on this device: FS_LOCAL ("_" at the end = a prefix)
 const FS_KEYS = Object.freeze(['fw27_wallet2', 'fw27_owned', 'fw27_pass', 'fw27_starter', 'fw27_best', 'fw27_bestg', 'fw27_stg2', 'fw27_stage2',
   'fw27_bird', 'fw27_nick', 'fw27_tut', 'fw27_rookie_runs', 'fw27_dstreak', 'fw27_dbonus', 'fw27_vsclaim']);
@@ -1935,8 +1938,8 @@ function fsNorm(raw){
   if (!raw || typeof raw !== 'object' || Array.isArray(raw) || raw.v !== FS_CFG.v) return null;
   const w = fsObj(raw.w), s = fsObj(raw.stg), d = fsObj(raw.ds);
   return { v: FS_CFG.v,
-    w: { xp: fsI(w.xp, 0, 99), lvl: fsI(w.lvl, 1, 1e6), coins: fsI(w.coins, 0, 1e12), dia: fsI(w.dia, 0, 1e12), gems: fsI(w.gems, 0, 1e9) },
-    owned: [...new Set([...FS_CFG.owned0, ...(Array.isArray(raw.owned) ? raw.owned : []).filter(fsId)])].sort().slice(0, 64),
+    w: { xp: fsI(w.xp, 0, 99), lvl: fsI(w.lvl, 1, FS_CFG.caps.lvl), coins: fsI(w.coins, 0, FS_CFG.caps.coins), dia: fsI(w.dia, 0, FS_CFG.caps.dia), gems: fsI(w.gems, 0, FS_CFG.caps.gems) },
+    owned: [...new Set([...FS_CFG.owned0, ...(Array.isArray(raw.owned) ? raw.owned : []).filter(id => fsId(id) && !FS_CFG.neverOwned.includes(id))])].sort().slice(0, 64),
     pass: raw.pass === true, starter: raw.starter === true, best: fsI(raw.best, 0, 1e9), bestg: fsI(raw.bestg, 0, 1e6),
     stg: { gates: fsArr(s.gates, 1e9), score: fsArr(s.score, 1e9), clr: fsArr(s.clr, 1), open: fsI(s.open, 0, FS_CFG.stN - 1) },
     stage: fsI(raw.stage, 0, FS_CFG.stN - 1), bird: fsId(raw.bird) ? raw.bird : 'volt',

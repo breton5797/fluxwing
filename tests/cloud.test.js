@@ -24,7 +24,7 @@ test('fsNorm refuses non-objects and other versions, clamps the rest', () => {
   for (const raw of [null, 7, 'x', [], { v: 2 }, { v: '1' }]) assert.equal(C.fsNorm(raw), null);
   const s = C.fsNorm({ v: 1, w: { coins: 1e30, xp: 500, lvl: -3, dia: 'x', gems: 2.7 }, owned: ['zero', 'BAD', '__proto__', 7, 'zero'],
     best: -5, stg: { gates: [3, 'x'], clr: [5], open: 999 }, nick: 'x'.repeat(40), bird: '<b>', ds: { last: 'nope', streak: 3 }, vsg: ['202610:' + UID, 'junk'] });
-  assert.deepEqual(s.w, { xp: 99, lvl: 1, coins: 1e12, dia: 0, gems: 2 });
+  assert.deepEqual(s.w, { xp: 99, lvl: 1, coins: 5e7, dia: 0, gems: 2 });
   assert.deepEqual(s.owned, ['blitz', 'nimbus', 'titan', 'volt', 'zero']);   // starters always kept, sorted, unique
   assert.equal(s.best, 0); assert.equal(s.stg.gates.length, 50); assert.equal(s.stg.gates[0], 3); assert.equal(s.stg.clr[0], 1);
   assert.equal(s.stg.open, 49); assert.equal(s.nick.length, 14); assert.equal(s.bird, 'volt'); assert.equal(s.ds, null);
@@ -158,4 +158,10 @@ test('the account modal stacks above the leaderboard it is opened from', () => {
   // authScr sits before lbScr in the DOM, so without an explicit z-index the
   // leaderboard card paints over the account modal and taps look dead.
   assert.match(html, /#authScr\{z-index:/);
+});
+
+test('fsNorm clamps the wallet to the server caps and drops units nobody can earn', () => {
+  const n = C.fsNorm({ v: 1, w: { coins: 9e9, dia: 9e9, gems: 9e9, lvl: 9999, xp: 0 }, owned: ['volt', 'aurora', 'mochi'] });
+  assert.deepEqual(n.w, { xp: 0, lvl: 500, coins: 5e7, dia: 1e7, gems: 1e5 });
+  assert.ok(!n.owned.includes('aurora')); assert.ok(n.owned.includes('mochi'));
 });
