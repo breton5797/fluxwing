@@ -7,5 +7,5 @@ export const readIndex = () => readFileSync(new URL('../../index.html', import.m
 export function loadHitLoop(html = readIndex()) {
   const m = html.match(/\/\* hit-loop:start[\s\S]*?\/\* hit-loop:end \*\//);
   if (!m) throw new Error('hit-loop block not found in index.html');
-  return new Function(`${m[0]}\nreturn {SHARE_URL, ROOKIE, DAILY_REWARD, rookieRun, rookieGate, deathHint, shareUrl, shareMsg, readChallenge, challengeResult, dayIndex, dailyStreakNext, dailyReward};`)();
+  return new Function(`${m[0]}\nreturn {SHARE_URL, ROOKIE, DAILY_REWARD, rookieRun, rookieGate, deathHint, shareUrl, shareMsg, readChallenge, challengeResult, dayIndex, dailyStreakNext, dailyReward, vsPauseAction, tutDone, TUT_MAX_RUNS, boardUnit};`)();
 }

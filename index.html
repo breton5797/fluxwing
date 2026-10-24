@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#07050f;color:#f3eefc}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#07050f;color:#f3eefc}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:#07050f;animation:btgone 0s 8s forwards}@keyframes btgone{to{visibility:hidden}}#boot i{width:28px;height:28px;border:3px solid #4ff0ff;border-right-color:transparent;border-radius:50%;animation:bt 1s linear infinite}@keyframes bt{to{transform:rotate(1turn)}}</style>
 <title>SWISHBY 2027</title>
 <meta name="description" content="탭 한 번으로 나는 원터치 비행 게임. 게이트를 아슬아슬하게 스쳐 콤보를 쌓고, 대시로 뚫고, 랭크 대전과 시즌에 도전하세요.">
 <meta name="theme-color" content="#07050f"><meta name="color-scheme" content="dark">
@@ -16,7 +16,9 @@
 <meta name="twitter:image" content="https://swishby.com/og-swishby.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;600;700&display=swap">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;600;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;600;700&display=swap"></noscript>
 <style>
 /* Layout: one full-screen canvas stage, HTML overlays for menus and leaderboard, a thumb-reach dash button bottom-right */
 :root{
@@ -394,6 +396,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.abtn.ready,#over .card,.rank.stamp,.newbest,.logowrap,.startbig,#tip{animation:none!important}.btn{transition:none}}
 </style>
 </head><body>
+<div id="boot" aria-hidden="true"><i></i></div>
 
 <div id="stage">
   <canvas id="c" aria-label="SWISHBY"></canvas>
@@ -420,7 +423,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 
   <div class="overlay" id="menu">
     <div class="logowrap">
-      <img class="logoimg" src="logo-swishby.png" alt="SWISHBY 2027" width="800" height="285" decoding="async">
+      <picture><source srcset="logo-swishby.webp" type="image/webp"><img class="logoimg" src="logo-swishby.png" alt="SWISHBY 2027" width="800" height="285" decoding="async"></picture>
     </div>
     <p class="tag" data-i18n="tag"></p>
     <div class="tierline" id="menuTier"></div>
@@ -824,7 +827,7 @@ vi:['BAY!','BỐC LỬA!','CƠN SỐT x2','HẾT CƠN SỐT','KỶ LỤC MỚI!'
 const I18N_D_KEYS = ['r_common','r_epic','r_mythic','r_legendary','r_mochi','r_aegis','r_phoenix','r_zero','p_mochi','p_aegis','p_phoenix','p_zero',
   'shop','testBuild','pass','passDesc','starter','starterDesc','gemPack','owned','trial','trialUsed','passOnly','needMore','unlocked','granted','levelUp','rewards','trialRun','rebirth','fairNote','soldOut'];
 const I18N_D = {
-ko:['기본','에픽','미식','레전더리','힐링형','철벽형','불사형','암살형',
+ko:['기본','에픽','신화','레전더리','힐링형','철벽형','불사형','암살형',
  '경험치 2배. 가까운 오브를 자동으로 끌어당긴다.','실드 1개를 달고 출발(최대 3개). 게이트 40개마다 실드 1개 재충전.','한 판에 한 번 불꽃 속에서 부활한다. 피버가 7콤보에서 시작된다.','대시 게이지가 가득 찬 채 출발. 대시가 1.5배 길고 대시 관통 점수 2배.',
  '상점','테스트 빌드: 실제 결제 없이 바로 지급됩니다.','스위시 패스 · 시즌 1','ZERO 유닛 + 젬 150 + 크레딧 2,000 · 4주','스타터 팩','MOCHI + 젬 100 · 첫 7일 한 번만','젬 {n}개','보유 중','체험하기 (오늘 1회)','오늘 체험을 이미 사용했어요','스위시 패스 전용','재화가 부족해요','{u} 해금!','지급 완료','레벨 업!','획득 보상','체험 중','부활!','오늘의 챌린지에서는 프리미엄 능력이 일부 제한됩니다','구매 완료'],
 en:['Common','Epic','Mythic','Legendary','Healer','Fortress','Undying','Assassin',
@@ -859,7 +862,7 @@ I18N_D_KEYS.forEach((k,i) => { for (const l in I18N) I18N[l][k] = (I18N_D[l] || 
 const I18N_F_KEYS = ['start','stageSel','stage','locked','unlockHint','bestG','vs','autoMatch','makeRoom','joinRoom','aiMatch','searching','roomCode','waitingOpp','enterCode','join','cancel','aiFallback','youWin','youLose','drawR','rankPts','forfeit','onlineNA','opp','watching','rematch','seasonNote','help','hControls','hScore','hMoney','hUnits','tut1','tut2','tut3','skillLbl','potionP','contTitle','contAd','contCoin','giveUp','adPlaying','confirmBuy','confirmUnlock','buy','danger','easy','normal','hard','expert','vsVs','shareCode','matchFound'];
 const I18N_F = {
 ko:['PLAY NOW','스테이지 선택','STAGE {n}','잠김','이전 스테이지를 클리어하면 열려요','최고 {n}점','대전','자동 매치','방 만들기','코드로 참가','AI와 연습전','상대 찾는 중… {s}초','방 코드','상대를 기다리는 중…','4자리 코드','참가','취소','1분 동안 상대가 없어 AI와 연습전을 합니다','승리!','패배','무승부','랭크 점수','상대가 나가서 승리했어요','온라인 대전에 연결할 수 없어요. AI와는 대전할 수 있어요.','상대','상대가 아직 날고 있어요…','다시 대전','한 달 시즌 · 랭크전 10판 이상이면 티어 보상, 상위 10명에게는 한정 유닛 MONARCH','도움말',
- '조작 — 화면 탭(스페이스)으로 날갯짓. 게이지가 차면 DASH(Shift)로 벽을 뚫고, SKILL(S)로 유닛 고유 스킬을 써요.','점수 — 게이트 통과 1점. 가장자리를 아슬아슬하게 스치면 PERFECT로 콤보 점수, 10콤보부터 피버 2배.','재화 — 유닛은 코인·다이아몬드·젬 세 가지를 모두 내고 사요. 코인은 스테이지에서 50점마다(난이도가 높을수록 더 많이) 받고 필드 오브로도 모아요. 다이아몬드는 레벨업·오늘의 챌린지 첫 판·스테이지 첫 클리어 보상이에요. 젬은 스테이지 플레이 중 1% 확률로 떨어져요.','유닛 — 기본·에픽·레전더리·미식·울트라 5등급. 모두 고유 스킬과 아우라가 있고, 오늘의 챌린지와 2인 대전에서는 능력이 공정하게 제한돼요.',
+ '조작 — 화면 탭(스페이스)으로 날갯짓. 게이지가 차면 DASH(Shift)로 벽을 뚫고, SKILL(S)로 유닛 고유 스킬을 써요.','점수 — 게이트 통과 1점. 가장자리를 아슬아슬하게 스치면 PERFECT로 콤보 점수, 10콤보부터 피버 2배.','재화 — 유닛은 코인·다이아몬드·젬 세 가지를 모두 내고 사요. 코인은 스테이지에서 50점마다(난이도가 높을수록 더 많이) 받고 필드 오브로도 모아요. 다이아몬드는 레벨업·오늘의 챌린지 첫 판·스테이지 첫 클리어 보상이에요. 젬은 스테이지 플레이 중 1% 확률로 떨어져요.','유닛 — 기본·에픽·레전더리·신화·울트라 5등급. 모두 고유 스킬과 아우라가 있고, 오늘의 챌린지와 2인 대전에서는 능력이 공정하게 제한돼요.',
  '화면을 탭해서 날아오르세요','게이트 가장자리를 아슬아슬하게 스치면 PERFECT!','게이지가 차면 DASH, SKILL 버튼으로 고유 스킬!','스킬','무적 질주!','이어서 할까요?','광고 보고 이어하기','{n} 코인으로 이어하기','그만하기','광고 재생 중 (테스트 빌드)','{item} · {price}\n구매할까요?','{u}을(를) 해금할까요?\n{list}','구매','위험!','쉬움','일반','보통','어려움','VS','친구에게 이 코드를 알려주세요','상대를 찾았어요!'],
 en:['PLAY NOW','Select stage','STAGE {n}','Locked','Clear the previous stage to unlock','Best {n}','Versus','Quick match','Create room','Join with code','Practice vs AI','Finding an opponent… {s}s','Room code','Waiting for an opponent…','4-digit code','Join','Cancel','No opponent in 1 minute. Practice match vs the AI.','VICTORY!','DEFEAT','DRAW','Rank points','Your opponent left. You win.','Online versus is unavailable here. You can still play the AI.','Rival','Your rival is still flying…','Rematch','Monthly seasons · tier rewards for 10+ ranked matches · the top 10 get the limited unit MONARCH','Help',
  'Controls — tap (Space) to flap. When the meter fills, DASH (Shift) breaks walls; SKILL (S) fires your unit’s own skill.','Score — 1 point per gate. Skim an edge for a PERFECT and combo points; Fever doubles points from a 10 combo.','Currencies — a unit costs coins, diamonds and gems together. Coins: paid for every 50 score in stage play (more on harder tiers), plus field orbs. Diamonds: level-ups, your first Daily run of the day and first stage clears. Gems: a 1% drop chance during stage play.','Units — Common, Epic, Legendary, Mythic, Ultra. Every unit has a skill and an aura; Daily Challenge and Versus cap abilities for fairness.',
@@ -1345,6 +1348,22 @@ function challengeResult(ch, mode, score){
   if (!ch || !ch.live || mode !== (ch.daily ? 'daily' : 'endless')) return null;
   return { beat: score > ch.score, by: Math.abs(score - ch.score) };
 }
+// Pause in a ranked match (versus): keys and the button are ignored, leaving the tab (why 'hidden') ends the run, since a hidden tab
+// stops the clock and would let a player wait out the opponent. Every other mode pauses as before.
+function vsPauseAction(mode, state, why){
+  if (mode !== 'versus') return 'pause';
+  return state === 'play' && why === 'hidden' ? 'die' : 'ignore';
+}
+// The tutorial is done once saved as done (flag), once the DASH tip was shown (step 3), or after TUT_MAX_RUNS tutorial runs; a death
+// after a few taps (step 2) is not a finished tutorial, the next PLAY NOW starts it again.
+const TUT_MAX_RUNS = 3;
+const tutDone = (flag, step, runs) => !!flag || step >= 3 || runs >= TUT_MAX_RUNS;
+// A unit shown on a board (leaderboard, friends, versus): a hidden unit the viewer does not own stays a secret, "???" in a neutral colour
+function boardUnit(bd, ownedHas){
+  if (!bd) return null;
+  if (bd.hidden && !ownedHas(bd.id)) return { name: '???', col: [260, 20, 45] };
+  return { name: bd.name, col: bd.uiCol || bd.col };
+}
 /* hit-loop:end */
 /* share-card:start — the 9:16 result image and the one messenger a country opens: pure rules, no state, no DOM. Builds on the hit-loop block. tests/share-card.test.js runs it (tests/helpers/sharecard.js). Sharing pays nothing: app stores turn down a game that pays for social posts. */
 // Only messengers a plain web link can open with the text filled in. KakaoTalk (KR) needs the Kakao SDK + app key, Messenger (PH/US/CA) a Facebook app id, Zalo (VN) has no web share link: there the native share sheet covers it.
@@ -1458,7 +1477,9 @@ function fxFeatures(q, a11y, rm, fair) {
     shake: (rm || !a11y.shake) ? 0 : 1,
     flash: !rm && !!a11y.flash,
     slowmo: !rm && !fair,
-    waves: low ? 0 : high ? 2 : 1
+    waves: low ? 0 : high ? 2 : 1,
+    glow: !low,               // canvas shadowBlur at the per-frame hot spots (the costliest raster work)
+    dprCap: low ? 1.5 : 2     // backing-store pixels scale with the square of this
   };
 }
 const hitstopFor = (level, cfg) => fxClamp(cfg.hitstop[level] ?? cfg.hitstop.mid, .04, .12);
@@ -1914,7 +1935,10 @@ function adMake(p, env){
 const adGuardMs = prov => prov === 'stub' ? AD_CFG.timeoutMs : AD_SDK.guardMs;
 /* ads:end */
 /* cloud:start — cloud save (merge rules) and login rules: pure, no DOM, no storage, no clock (get/set come in). tests/cloud.test.js runs this block as it stands (tests/helpers/cloud.js). */
-const FS_CFG = Object.freeze({ v: 1, maxBytes: 16384, stN: 50, owned0: Object.freeze(['volt', 'blitz', 'nimbus', 'titan']) });
+const FS_CFG = Object.freeze({ v: 1, maxBytes: 16384, stN: 50, owned0: Object.freeze(['volt', 'blitz', 'nimbus', 'titan']),
+  // Plausibility caps, mirrored by private.fw_save_put (tests/cloud-sql.test.js keeps them equal): an expert earns ~2,115 coins a run, so 5e7 is 20,000+ runs
+  caps: Object.freeze({ coins: 5e7, dia: 1e7, gems: 1e5, lvl: 1e5 }),   // lvl: ~1 level a run for a skilled player, so 1e5 is 100,000 runs
+  neverOwned: Object.freeze(['aurora', 'tempest', 'pleiad']) });   // no earning path in the game; monarch is granted by the season
 // Synced to the account (public.fw_saves). Every other fw27_ key stays on this device: FS_LOCAL ("_" at the end = a prefix)
 const FS_KEYS = Object.freeze(['fw27_wallet2', 'fw27_owned', 'fw27_pass', 'fw27_starter', 'fw27_best', 'fw27_bestg', 'fw27_stg2', 'fw27_stage2',
   'fw27_bird', 'fw27_nick', 'fw27_tut', 'fw27_rookie_runs', 'fw27_dstreak', 'fw27_dbonus', 'fw27_vsclaim']);
@@ -1925,6 +1949,7 @@ const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_stg', 'fw27_stage', 'fw27_l
   'fw27_ptok',         // the iOS app's APNs device token (one per install)
   'fw27_ev_first',     // product events: this device's first launch was reported (an install is per device)
   'fw27_ref', 'fw27_refpaid', 'fw27_refnudge',   // friend invites: this device's pending link / reports, the payout ids it granted, the nudge day
+  'fw27_tutruns',      // tutorial runs started on this device (the done flag fw27_tut itself syncs)
   'fw27_block']);   // report block: the players this device has blocked (the store copy says "on this device")
 const fsI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
 const fsDay = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
@@ -1935,8 +1960,8 @@ function fsNorm(raw){
   if (!raw || typeof raw !== 'object' || Array.isArray(raw) || raw.v !== FS_CFG.v) return null;
   const w = fsObj(raw.w), s = fsObj(raw.stg), d = fsObj(raw.ds);
   return { v: FS_CFG.v,
-    w: { xp: fsI(w.xp, 0, 99), lvl: fsI(w.lvl, 1, 1e6), coins: fsI(w.coins, 0, 1e12), dia: fsI(w.dia, 0, 1e12), gems: fsI(w.gems, 0, 1e9) },
-    owned: [...new Set([...FS_CFG.owned0, ...(Array.isArray(raw.owned) ? raw.owned : []).filter(fsId)])].sort().slice(0, 64),
+    w: { xp: fsI(w.xp, 0, 99), lvl: fsI(w.lvl, 1, FS_CFG.caps.lvl), coins: fsI(w.coins, 0, FS_CFG.caps.coins), dia: fsI(w.dia, 0, FS_CFG.caps.dia), gems: fsI(w.gems, 0, FS_CFG.caps.gems) },
+    owned: [...new Set([...FS_CFG.owned0, ...(Array.isArray(raw.owned) ? raw.owned : []).filter(id => fsId(id) && !FS_CFG.neverOwned.includes(id))])].sort().slice(0, 64),
     pass: raw.pass === true, starter: raw.starter === true, best: fsI(raw.best, 0, 1e9), bestg: fsI(raw.bestg, 0, 1e6),
     stg: { gates: fsArr(s.gates, 1e9), score: fsArr(s.score, 1e9), clr: fsArr(s.clr, 1), open: fsI(s.open, 0, FS_CFG.stN - 1) },
     stage: fsI(raw.stage, 0, FS_CFG.stN - 1), bird: fsId(raw.bird) ? raw.bird : 'volt',
@@ -2056,7 +2081,7 @@ let blocked = blkNorm(store.get('fw27_block', []));   // players this device has
 
 function resize(){
   const r = cv.getBoundingClientRect();
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  dpr = Math.min(window.devicePixelRatio || 1, IMP ? IMP.feat.dprCap : 2);
   cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
   scale = cv.height / LH; LW = cv.width / scale;
   buildSkyline();
@@ -2203,6 +2228,7 @@ const FXCFG0 = (() => { try { return JSON.parse($('fxcfg').textContent); } catch
 let FXCFG = fxCfgMerge(FX_DEFAULTS, FXCFG0);
 const fxSettings = { q: store.get('fw27_fxq', 'auto'), shake: store.get('fw27_fxshake', true), flash: store.get('fw27_fxflash', true) };
 const fxHw = { cores: navigator.hardwareConcurrency || 4, mem: navigator.deviceMemory || 4, dpr: window.devicePixelRatio || 1 };
+const glowPx = px => IMP.feat.glow ? px : 0;   // shadowBlur radius at the hot spots: 0 on low quality
 function impNew(q){
   q = q || fxQualityPick(fxHw, fxSettings.q);
   return { q, feat: fxFeatures(q, fxSettings, RM, fairMode()), pool: fxPool(FXCFG.pool[q]), shk: { ox: 0, oy: 0, vx: 0, vy: 0 },
@@ -2470,7 +2496,7 @@ function bgTide(){
     ctx.stroke();
   }
   for (let i=0;i<6;i++){ const bx = ((i*150 + 40 - bgOff*.25) % (LW + 160) + LW + 160) % (LW + 160) - 80, by = hy + 40 + (i%3)*30 + Math.sin(T*2 + i)*4;
-    ctx.fillStyle = hsl(pal.b, .9); ctx.shadowColor = hsl(pal.b); ctx.shadowBlur = 14; ctx.beginPath(); ctx.arc(bx, by, 2.6, 0, 6.28); ctx.fill(); ctx.shadowBlur = 0; }
+    ctx.fillStyle = hsl(pal.b, .9); ctx.shadowColor = hsl(pal.b); ctx.shadowBlur = glowPx(14); ctx.beginPath(); ctx.arc(bx, by, 2.6, 0, 6.28); ctx.fill(); ctx.shadowBlur = 0; }
 }
 function bgSolar(){
   const cx = LW*.5, cy = GROUND - 150, R = 120;
@@ -2511,7 +2537,7 @@ function drawGateDeco(g, top, bot, col, z){
   } else if (z === 2){   // solar: obelisk caps + glowing veins
     ctx.fillStyle = hsl(col); ctx.beginPath(); ctx.moveTo(g.x - 10, top); ctx.lineTo(g.x + g.w + 10, top); ctx.lineTo(g.x + g.w/2, top + 16); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.moveTo(g.x - 10, bot); ctx.lineTo(g.x + g.w + 10, bot); ctx.lineTo(g.x + g.w/2, bot - 16); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = hsl([32,100,62], .55 + .3*Math.sin(T*4 + g.ph)); ctx.lineWidth = 2; ctx.shadowColor = 'hsl(32,100%,60%)'; ctx.shadowBlur = 10;
+    ctx.strokeStyle = hsl([32,100,62], .55 + .3*Math.sin(T*4 + g.ph)); ctx.lineWidth = 2; ctx.shadowColor = 'hsl(32,100%,60%)'; ctx.shadowBlur = glowPx(10);
     ctx.beginPath(); let up = true; for (let y = top - 18; y > 0; y -= 22){ ctx.lineTo(g.x + g.w/2 + (up ? 10 : -10), y); up = !up; } ctx.stroke();
     ctx.beginPath(); up = true; for (let y = bot + 18; y < GROUND; y += 22){ ctx.lineTo(g.x + g.w/2 + (up ? 10 : -10), y); up = !up; } ctx.stroke(); ctx.shadowBlur = 0;
   } else if (z === 3){   // void: crystal spikes + glitch slice
@@ -2625,7 +2651,7 @@ addEventListener('keydown', e => {
   else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyD' || e.code === 'KeyE'){ e.preventDefault(); dash(); }
   else if (e.code === 'KeyS' || e.code === 'KeyQ'){ e.preventDefault(); useSkill(); }
   else if (e.code === 'KeyA' || e.code === 'KeyF'){ e.preventDefault(); useUlt(); }
-  else if (e.code === 'KeyP' || e.code === 'Escape'){ togglePause(); }
+  else if (e.code === 'KeyP' || e.code === 'Escape'){ togglePause('key'); }
 });
 $('startBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); SFX.click(); startFromMenu(); });
 $('dailyBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); startGame('daily'); });
@@ -2691,8 +2717,8 @@ $('shareBtn').addEventListener('click', async e => {
   catch { prompt(t('shareManual'), text); evTrack('share', { mode, via: 'manual' }); }
 });
 $('over').addEventListener('click', e => { if (e.target === $('over')) flap(); });
-$('resumeBtn').addEventListener('click', togglePause);
-$('pauseBtn').addEventListener('click', e => { e.stopPropagation(); togglePause(); });
+$('resumeBtn').addEventListener('click', () => togglePause('button'));
+$('pauseBtn').addEventListener('click', e => { e.stopPropagation(); togglePause('button'); });
 $('muteBtn').addEventListener('click', e => {
   e.stopPropagation(); audioInit(); muted = !muted; store.set('fw27_mute', muted);
   if (master) master.gain.value = adVol(muted, adOn); $('muteBtn').style.opacity = muted ? .4 : 1;
@@ -2723,16 +2749,19 @@ function renderFxScr(){
   sh.disabled = fl.disabled = RM;
   $('fxRmNote').hidden = !RM; if (RM) $('fxRmNote').textContent = t('fxRm');
 }
-function fxApply(){ store.set('fw27_fxq', fxSettings.q); store.set('fw27_fxshake', fxSettings.shake); store.set('fw27_fxflash', fxSettings.flash); IMP = impNew(fxSettings.q === 'auto' ? null : fxSettings.q); renderFxScr(); }
-$('fxBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); if (state === 'play') togglePause(); renderFxScr(); $('fxScr').hidden = false; lbOpen = true; });
+function fxApply(){ store.set('fw27_fxq', fxSettings.q); store.set('fw27_fxshake', fxSettings.shake); store.set('fw27_fxflash', fxSettings.flash); IMP = impNew(fxSettings.q === 'auto' ? null : fxSettings.q); resize(); renderFxScr(); }
+$('fxBtn').addEventListener('click', e => { e.stopPropagation(); if (mode === 'versus' && state === 'play') return; audioInit(); if (state === 'play') togglePause(); renderFxScr(); $('fxScr').hidden = false; lbOpen = true; });
 $('fxClose').addEventListener('click', e => { e.stopPropagation(); $('fxScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden; });
 $('fxScr').addEventListener('pointerdown', e => { if (e.target === $('fxScr')) $('fxClose').click(); });
 document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); fxSettings.q = b.dataset.fxq; fxApply(); }));
 document.querySelector('[data-fxshake]').addEventListener('click', e => { e.stopPropagation(); fxSettings.shake = !fxSettings.shake; fxApply(); });
 document.querySelector('[data-fxflash]').addEventListener('click', e => { e.stopPropagation(); fxSettings.flash = !fxSettings.flash; fxApply(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause(); adPlaySync(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause('hidden'); adPlaySync(); });
 
-function togglePause(){
+function togglePause(why = 'key'){
+  const a = vsPauseAction(mode, state, why);
+  if (a === 'ignore') return;
+  if (a === 'die'){ reviveLeft = 0; rewindLeft = 0; die(); return; }   // no revive or rewind: a hidden tab must end the ranked run, not absorb a life
   if (state === 'play'){ state = 'paused'; $('pauseScr').hidden = false; }
   else if (state === 'paused'){ state = 'play'; $('pauseScr').hidden = true; last = performance.now(); }
 }
@@ -2745,7 +2774,7 @@ function startGame(m){
   $('wallet').hidden = true; $('shopScr').hidden = true;
   mode = m; reset(); state = 'play';
   $('menu').hidden = true; $('over').hidden = true; $('pauseScr').hidden = true;
-  $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false; $('ultBtn').hidden = !ultOn();
+  $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = mode === 'versus'; $('ultBtn').hidden = !ultOn();
   $('skillBtn').style.setProperty('--ring', hsl(B.uiCol || B.col)); hudCache.d = hudCache.s = hudCache.sl = hudCache.u = hudCache.ul = '';
   flap(); banner(t('go'), B.col, .75); SFX.go();
   if (mode === 'endless' && stTier(curStage) === 3) banner(t('idleRule'), [0,100,62], 1.6, false);
@@ -2990,7 +3019,7 @@ function closeCont(go){
   contUsed = true; state = 'play'; IMP = impNew(IMP.q); FX.fogT = 0; overT = weightT = 0; FX.idleT = 0; FX.idleWarn = false; bird.y = LH*.4; bird.vy = -160; bird.rot = 0; setGod(2.5); hurtT = 0;
   cam.tz = 1; cam.fx = LW/2; cam.fy = LH/2;
   for (const g of gates) if (Math.abs(g.x + g.w/2 - bird.x) < 140) g.broken = true;
-  $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = false; $('ultBtn').hidden = !ultOn();
+  $('dashBtn').hidden = false; $('skillBtn').hidden = false; $('pauseBtn').hidden = mode === 'versus'; $('ultBtn').hidden = !ultOn();
   banner(t('go'), [45,100,62], .8); SFX.go(); haptic('power'); ring(bird.x, bird.y, LW, [45,100,62], .8, 10);
 }
 $('contAd').addEventListener('click', async e => {
@@ -3425,12 +3454,12 @@ function render(){
     }
     if (o.k === 'orb'){
       ctx.save(); ctx.translate(o.x, o.y + bob); ctx.rotate(o.t*2);
-      ctx.shadowColor = 'hsl(48,100%,60%)'; ctx.shadowBlur = 14;
+      ctx.shadowColor = 'hsl(48,100%,60%)'; ctx.shadowBlur = glowPx(14);
       ctx.fillStyle = 'hsl(48,100%,66%)'; ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(6,0); ctx.lineTo(0,8); ctx.lineTo(-6,0); ctx.closePath(); ctx.fill();
       ctx.restore();
     } else if (o.k === 'gem'){
       ctx.save(); ctx.translate(o.x, o.y + bob);
-      ctx.shadowColor = 'hsl(335,100%,70%)'; ctx.shadowBlur = 18;
+      ctx.shadowColor = 'hsl(335,100%,70%)'; ctx.shadowBlur = glowPx(18);
       ctx.fillStyle = 'hsl(335,100%,70%)'; ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(9,-2); ctx.lineTo(0,11); ctx.lineTo(-9,-2); ctx.closePath(); ctx.fill();
       ctx.restore();
     } else drawPower(o, bob);
@@ -3475,7 +3504,7 @@ function render(){
   }
   for (const q of rings){
     const k = q.life/q.max0; ctx.globalAlpha = k; ctx.strokeStyle = hsl(q.col); ctx.lineWidth = Math.max(.5, q.w*k);
-    ctx.shadowColor = hsl(q.col); ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.28); ctx.stroke();
+    ctx.shadowColor = hsl(q.col); ctx.shadowBlur = glowPx(12); ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.28); ctx.stroke();
   }
   ctx.globalAlpha = 1; ctx.shadowBlur = 0;
   if (ghosts.length){
@@ -3492,7 +3521,7 @@ function render(){
     const a = 1 - Math.max(0,(p.t-.6)/.5), s = p.big ? popScale(Math.min(1, p.t / FXCFG.pop.dur), FXCFG.pop.from) : 1;
     ctx.save(); ctx.globalAlpha = a; ctx.translate(p.x, p.y); ctx.scale(s,s);
     ctx.font = `${p.big?18:14}px Bungee, ${SYS}`; ctx.textAlign = 'center';
-    ctx.fillStyle = hsl(p.col); ctx.shadowColor = hsl(p.col); ctx.shadowBlur = 10; ctx.fillText(p.text, 0, 0);
+    ctx.fillStyle = hsl(p.col); ctx.shadowColor = hsl(p.col); ctx.shadowBlur = glowPx(10); ctx.fillText(p.text, 0, 0);
     ctx.restore();
   }
 
@@ -5358,13 +5387,13 @@ function renderLB(){
     const f = document.createElement('span'); f.textContent = flag(r.cc);
     const nm = document.createElement('span'); nm.className = 'nm';
     if (vsT){ const ti = r.ti != null ? r.ti : tierOf(Number(r.sc) || 0), tb = vtBadgeImg(ti, true); tb.classList.add('tb'); nm.appendChild(tb); }
-    const bd = birdById(r.bird); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
+    const bd = boardUnit(birdById(r.bird), id => owned.has(id)); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
     nm.appendChild(document.createTextNode(showNick(r.nick || '') || '—'));
     if (me){ const tg = document.createElement('span'); tg.className = 'me-tag'; tg.textContent = t('you'); nm.appendChild(tg); }
     else { const fb = frPlusBtn(r.id); if (fb) nm.appendChild(fb);
       if (sb && SOC_UID.test(r.id)){ nm.classList.add('tap'); nm.addEventListener('click', e => { e.stopPropagation(); plOpen([{id: r.id, nick: r.nick}], 'board'); }); } }
     const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = Math.max(0, Math.floor(Number(r.sc) || 0));
-    if (bd){ const ub = document.createElement('span'); ub.className = 'ub'; ub.textContent = bd.name; ub.style.color = hsl(bd.uiCol || bd.col); sc.prepend(ub); }
+    if (bd){ const ub = document.createElement('span'); ub.className = 'ub'; ub.textContent = bd.name; ub.style.color = hsl(bd.col); sc.prepend(ub); }
     if (r.wl){ const w = document.createElement('span'); w.className = 'wl'; w.textContent = r.wl; sc.appendChild(w); }   // wins–losses
     li.append(n, f, nm, sc); list.appendChild(li);
   });
@@ -5452,7 +5481,7 @@ function renderFr(){
     const d = document.createElement('span'); d.className = 'frdot' + (fr.online ? ' on' : ''); if (fr.online) d.title = t('frOnline');
     const fl = document.createElement('span'); fl.textContent = flag(fr.cc);
     const nm = document.createElement('span'); nm.className = 'nm';
-    const bd = birdById(fr.bird); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
+    const bd = boardUnit(birdById(fr.bird), id => owned.has(id)); if (bd){ const dot = document.createElement('i'); dot.className = 'bdot'; dot.style.background = hsl(bd.col); dot.title = bd.name; nm.appendChild(dot); }
     nm.appendChild(document.createTextNode(showNick(fr.nick) || '—'));
     nm.classList.add('tap'); nm.addEventListener('click', e => { e.stopPropagation(); plOpen([{id: fr.id, nick: fr.nick}], 'friend'); });
     const b = document.createElement('span'); b.className = 'bst'; b.textContent = fr.best;
@@ -5693,13 +5722,13 @@ function showTip(txt){ const el = $('tip'); el.textContent = txt; el.hidden = fa
 function hideTip(){ $('tip').hidden = true; }
 function tutTick(dt){
   if (!tutStep) return;
-  if (state !== 'play'){ if (state === 'dying' || state === 'over' || state === 'menu'){ hideTip(); if (tutStep >= 2){ tutStep = 0; store.set('fw27_tut', 1); evTrack('tutorial_done', { how: 'run' }); } } return; }
+  if (state !== 'play'){ if (state === 'dying' || state === 'over' || state === 'menu'){ hideTip(); if (tutDone(0, tutStep, store.get('fw27_tutruns', 0))){ store.set('fw27_tut', 1); evTrack('tutorial_done', { how: 'run' }); } tutStep = 0; } return; }
   if (tutStep === 1 && tutFlaps >= 3){ tutStep = 2; showTip(t('tut2')); }
   else if (tutStep === 2 && gatesPassed >= 3){ tutStep = 3; tutT = 4.5; showTip(t('tut3')); dashMeter = Math.max(dashMeter, 1); skillCharge = 1; }
   else if (tutStep === 3){ tutT -= dt; if (tutT <= 0){ tutStep = 0; hideTip(); store.set('fw27_tut', 1); evTrack('tutorial_done', { how: 'tips' }); } }
 }
 function startFromMenu(){
-  if (!store.get('fw27_tut', 0)){ curStage = 0; startGame('endless'); tutStep = 1; tutFlaps = 0; showTip(t('tut1')); }
+  if (!tutDone(store.get('fw27_tut', 0), 0, store.get('fw27_tutruns', 0))){ store.set('fw27_tutruns', store.get('fw27_tutruns', 0) + 1); curStage = 0; startGame('endless'); tutStep = 1; tutFlaps = 0; showTip(t('tut1')); }
   else openStages();
 }
 $('helpBtn').addEventListener('click', e => { e.stopPropagation(); SFX.click(); $('helpScr').hidden = false; });
@@ -6308,7 +6337,7 @@ function vsFillOver(){
     $('oPlace').textContent = `${vsSum(a)} : ${vsSum(b)}  ·  ${vsRpNote(!!vs.ai, vs.rk, vs.result)}`;
   } else { ttl.textContent = t('vsVs'); ttl.style.color = 'var(--cool)'; }
   const o = vs.pl[0] || {};
-  $('oMode').textContent = duo ? `2v2 · ${B.name}` : `${B.name} ${t('vsVs')} ${(o.nick || t('opp'))} · ${(birdById(o.bird) || BIRDS[0]).name}`;
+  $('oMode').textContent = duo ? `2v2 · ${B.name}` : `${B.name} ${t('vsVs')} ${(o.nick || t('opp'))} · ${boardUnit(birdById(o.bird) || BIRDS[0], id => owned.has(id)).name}`;
   const box = $('oTeams'); box.hidden = !duo; if (!duo) return;
   // 2v2: both teams, each player's own score (✕ = out). Rebuilt only when something in it changed.
   const sig = JSON.stringify([a, b, lang]); if (box.dataset.sig === sig) return; box.dataset.sig = sig; box.textContent = '';
@@ -6388,19 +6417,30 @@ $('vsAi').addEventListener('click', e => { e.stopPropagation(); audioInit(); vsR
 $('vsFill').addEventListener('click', e => { e.stopPropagation(); if (vs.room && vs.phase === 'room'){ vs.room.set({fl: 1}); vsOnRoom(); } });
 $('vsCancel').addEventListener('click', e => { e.stopPropagation(); vsReset(); vsShow(true); });
 renderVsBadge();
+$('boot').remove();   // the menu is drawn: the boot spinner (first thing in <body>) goes
 
 /* ---------- loop ---------- */
+/* loop-rules:start — how a frame's elapsed time becomes simulation steps: pure. tests/loop.test.js runs this block as it stands (tests/helpers/loop.js). */
+// A slow frame (below ~30fps) is simulated in full by several steps of at most maxStep seconds (the step the physics is tuned for), so the
+// game never runs in slow motion. elapsed is capped (a tab coming back from the background) so one frame cannot spiral.
+function frameSteps(elapsedS, maxStep = .034, cap = .25){
+  const out = []; let left = Math.min(elapsedS, cap);
+  while (left > 1e-9){ const h = Math.min(maxStep, left); out.push(h); left -= h; }
+  return out;
+}
+/* loop-rules:end */
 let last = performance.now();
 const fxFrameMs = []; let fxFrameI = 0;
 function loop(now){
-  const rdt = Math.min(.034, (now - last)/1000); last = now;
+  const el = (now - last)/1000; last = now;
+  const steps = frameSteps(el);
   if (fxSettings.q === 'auto' && state === 'play'){
-    fxFrameMs[fxFrameI++ % 120] = rdt * 1000;
+    fxFrameMs[fxFrameI++ % 120] = el * 1000;
     if (fxFrameI % 120 === 0){ const srt = fxFrameMs.slice().sort((a, b) => a - b), p90 = srt[Math.floor(srt.length * .9)];
-      const q2 = fxQualityStep(IMP.q, p90); if (q2 !== IMP.q) IMP = impNew(q2); }
+      const q2 = fxQualityStep(IMP.q, p90); if (q2 !== IMP.q){ IMP = impNew(q2); resize(); } }
   }
-  if (state !== 'paused' && !(window.FW && window.FW.hold)) update(rdt);
-  render(); drawHangarPreview(); musicTick(); tutTick(rdt); if (state === 'play' || state === 'dying' || state === 'over') vsTick(rdt);
+  if (state !== 'paused' && !(window.FW && window.FW.hold)) for (const h of steps) update(h);
+  render(); drawHangarPreview(); musicTick(); tutTick(el); if (state === 'play' || state === 'dying' || state === 'over') vsTick(el);
   adPlaySync();
   requestAnimationFrame(loop);
 }
@@ -6581,7 +6621,7 @@ if (window.FW){
   addBtn('Copy JSON', () => { try { navigator.clipboard.writeText(JSON.stringify(FXCFG, null, 2)); } catch (e) {} });
   document.body.appendChild(pd);
 }
-resize(); reset(); state = 'menu';
+resize(); reset(); resize(); state = 'menu';   // the second resize sizes the backing store to the picked quality's DPR cap (IMP exists only after reset)
 applyI18n(); renderWallet();
 requestAnimationFrame(loop);
 ADS.ev('loaded');

@@ -29,3 +29,13 @@ test('definer functions pin search_path, refuse anonymous players, and are reach
   }
   assert.match(sql, /revoke all on function private\.fw_save_me\(\)\s+from public, anon, authenticated;/);
 });
+
+test('save_put refuses implausible wallets and units nobody can earn', () => {
+  assert.deepEqual(C.FS_CFG.caps, { coins: 5e7, dia: 1e7, gems: 1e5, lvl: 1e5 });
+  assert.deepEqual(C.FS_CFG.neverOwned, ['aurora', 'tempest', 'pleiad']);
+  for (const [k, v] of [['coins', 50000000], ['dia', 10000000], ['gems', 100000], ['lvl', 100000]])
+    assert.equal(Number(sql.match(new RegExp(`c_cap_${k}\\s+constant bigint\\s*:=\\s*(\\d+)`))[1]), v, k);
+  assert.match(sql, /c_never_owned\s+constant text\[\]\s*:=\s*array\['aurora','tempest','pleiad'\]/);
+  assert.match(sql, /fw_bad_input: save out of range/);
+  assert.match(sql, /fw_bad_input: save owns a unit nobody can earn/);
+});

@@ -136,3 +136,12 @@ test('hapticFor reads the event table and returns null for silent events', () =>
   assert.deepEqual(F.hapticFor('shieldHit', table), [40, 20, 70]);
   assert.equal(F.hapticFor('gate', table), null);
 });
+
+test('low quality drops canvas glow and caps the backing store at 1.5x', () => {
+  const a = { shake: true, flash: true };
+  assert.equal(F.fxFeatures('low', a, false, false).glow, false);
+  assert.equal(F.fxFeatures('mid', a, false, false).glow, true);
+  assert.equal(F.fxFeatures('high', a, false, false).glow, true);
+  assert.equal(F.fxFeatures('low', a, false, false).dprCap, 1.5);
+  assert.equal(F.fxFeatures('high', a, false, false).dprCap, 2);
+});

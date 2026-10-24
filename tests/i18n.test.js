@@ -111,3 +111,8 @@ test('fonts: scripts the Latin faces lack fall back to readable system faces', (
   assert.match(html, /:root:lang\(ru\),:root:lang\(ar\),:root:lang\(he\)\{--cjk:system-ui[^}]*sans-serif\}/);
   assert.match(html, /:lang\(ar\) \*\{letter-spacing:0!important\}/, 'cursive Arabic is never letter-spaced');
 });
+
+test('Korean rarity names: mythic is 신화, never the food word', () => {
+  const ko = I.ko; assert.equal(ko.r_mythic, '신화');
+  for (const v of Object.values(ko)) assert.doesNotMatch(String(v), /미식/);
+});

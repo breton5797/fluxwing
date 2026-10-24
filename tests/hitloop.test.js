@@ -119,3 +119,32 @@ test('using the dash grants half a second of invincibility', () => {
   assert.ok(m, 'dash() found');
   assert.match(m[0], /invuln = Math\.max\(invuln, \.5\)/);
 });
+
+test('a ranked match cannot be paused: keys and the button do nothing, leaving the tab is a death', () => {
+  const { vsPauseAction } = loadHitLoop();
+  assert.equal(vsPauseAction('endless', 'play', 'key'), 'pause');
+  assert.equal(vsPauseAction('daily', 'play', 'hidden'), 'pause');
+  assert.equal(vsPauseAction('versus', 'play', 'key'), 'ignore');
+  assert.equal(vsPauseAction('versus', 'play', 'button'), 'ignore');
+  assert.equal(vsPauseAction('versus', 'play', 'hidden'), 'die');
+  assert.equal(vsPauseAction('versus', 'paused', 'key'), 'ignore');
+  assert.equal(vsPauseAction('versus', 'over', 'hidden'), 'ignore');
+});
+
+test('the tutorial ends only after the DASH tip or three runs; an old save stays done', () => {
+  const { tutDone, TUT_MAX_RUNS } = loadHitLoop();
+  assert.equal(tutDone(1, 0, 0), true);
+  assert.equal(tutDone(0, 2, 1), false);   // died after 3 flaps: not done yet
+  assert.equal(tutDone(0, 3, 1), true);
+  assert.equal(tutDone(0, 1, TUT_MAX_RUNS), true);
+  assert.equal(tutDone(0, 1, TUT_MAX_RUNS - 1), false);
+});
+
+test('a hidden unit on a board is ??? for players who do not own it', () => {
+  const { boardUnit } = loadHitLoop();
+  const aurora = { id: 'aurora', name: 'AURORA', hidden: true, col: [160, 90, 58] };
+  assert.deepEqual(boardUnit(aurora, () => false), { name: '???', col: [260, 20, 45] });
+  assert.deepEqual(boardUnit(aurora, id => id === 'aurora'), { name: 'AURORA', col: [160, 90, 58] });
+  assert.deepEqual(boardUnit({ id: 'volt', name: 'VOLT', col: [1, 2, 3], uiCol: [4, 5, 6] }, () => false), { name: 'VOLT', col: [4, 5, 6] });
+  assert.equal(boardUnit(undefined, () => true), null);
+});
