@@ -99,3 +99,10 @@ test('only the pause button stays on screen while a run is live', () => {
   assert.match(html, /body\.playing #topBtns \.ib:not\(#pauseBtn\)\{display:none\}/);
   assert.match(html, /document\.body\.classList\.toggle\('playing', state === 'play'\)/);
 });
+
+test('landscape phones get a rotate prompt instead of a squashed stage', () => {
+  const html = read('../index.html');
+  assert.match(html, /#rotate\{display:none\}/);
+  assert.match(html, /@media \(orientation:landscape\) and \(max-height:500px\) and \(pointer:coarse\)\{#rotate\{display:grid[^}]*z-index:98[^}]*\}\}/);
+  assert.match(html, /<div id="rotate" aria-hidden="true"><b data-i18n="rotate"><\/b><\/div>/);
+});

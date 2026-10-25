@@ -121,3 +121,8 @@ test('daily intro copy exists and says what the mode is', () => {
   assert.equal(I.ko.dIntroT, '오늘의 챌린지'); assert.match(I.en.dIntroB, /same course/i); assert.match(I.ja.dIntroB, /同じコース/);
   for (const l of Object.keys(I)) for (const k of ['dIntroT', 'dIntroB', 'dIntroGo']) assert.ok(typeof I[l][k] === 'string' && I[l][k].length, `${l}.${k}`);
 });
+
+test('the rotate prompt is translated', () => {
+  assert.equal(I.ko.rotate, '세로로 돌려 주세요');
+  for (const l of Object.keys(I)) assert.ok(typeof I[l].rotate === 'string' && I[l].rotate.length, l);
+});
