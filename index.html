@@ -1377,6 +1377,13 @@ function ownedBoot(raw){
   const ids = Array.isArray(raw) ? raw.filter(v => typeof v === 'string' && /^[a-z]{1,12}$/.test(v)) : [];
   return [...new Set([...S, ...ids])];
 }
+// Daily / versus difficulty by 12-gate zone: a zone's value is reached over its first `span` gates, eased in from the previous zone's
+function zoneMix(arr, idx, span = 6){
+  const z = Math.min(3, Math.floor(idx / 12));
+  if (z === 0) return arr[0];
+  const t = (idx - 12 * z) / span;
+  return t >= 1 ? arr[z] : arr[z - 1] + (arr[z] - arr[z - 1]) * t;
+}
 /* hit-loop:end */
 /* share-card:start — the 9:16 result image and the one messenger a country opens: pure rules, no state, no DOM. Builds on the hit-loop block. tests/share-card.test.js runs it (tests/helpers/sharecard.js). Sharing pays nothing: app stores turn down a game that pays for social posts. */
 // Only messengers a plain web link can open with the text filled in. KakaoTalk (KR) needs the Kakao SDK + app key, Messenger (PH/US/CA) a Facebook app id, Zalo (VN) has no web share link: there the native share sheet covers it.
@@ -2401,10 +2408,9 @@ function hazHit(h){
 function spawnGate(x){
   const idx = spawnIdx++;
   const d = runD(Math.max(idx - 2, 0));
-  const stIx = Math.min(3, Math.floor(idx / 12));
   const jit = rng()*14 - 7; const tr = stTier(curStage), inSt = mode === 'endless', ease = rookieGate(idx, rookieOn());
   const gap = (inSt ? Math.max(128, (212 - d*62) * ST_GM[tr]) + jit : 212 - d*62 + jit) + ease.gap;
-  const mv = inSt ? ST_MOVE[tr] : ZONE_MOVE[stIx], pu = inSt ? ST_PULSE[tr] : ZONE_PULSE[stIx];
+  const mv = inSt ? ST_MOVE[tr] : zoneMix(ZONE_MOVE, idx), pu = inSt ? ST_PULSE[tr] : zoneMix(ZONE_PULSE, idx);
   let type = 'static';
   const r = rng();
   if (idx > 5){

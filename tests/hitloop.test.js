@@ -172,3 +172,11 @@ test('a corrupted owned list boots with the starters instead of a TypeError', ()
   for (const bad of [null, 'volt', 7, {}, { length: 2 }]) assert.deepEqual(ownedBoot(bad).sort(), [...S].sort(), String(bad));
   assert.deepEqual(ownedBoot(['mochi', 3, '__proto__', 'BAD', 'volt']).sort(), [...S, 'mochi'].sort());
 });
+
+test('zone values ramp over six gates instead of jumping at the zone line', () => {
+  const { zoneMix } = loadHitLoop();
+  const MV = [.16, .42, .2, .36];
+  assert.equal(zoneMix(MV, 0), .16); assert.equal(zoneMix(MV, 11), .16); assert.equal(zoneMix(MV, 12), .16);
+  assert.ok(Math.abs(zoneMix(MV, 15) - .29) < 1e-9); assert.equal(zoneMix(MV, 18), .42); assert.equal(zoneMix(MV, 23), .42);
+  assert.ok(Math.abs(zoneMix(MV, 27) - .31) < 1e-9); assert.equal(zoneMix(MV, 60), .36);
+});
