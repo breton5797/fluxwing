@@ -92,3 +92,9 @@
 - [Apple App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
 - [ThinkFun IP Holdings 상표 목록 (Justia)](https://trademarks.justia.com/owners/thinkfun-ip-holdings-inc-2169868)
 - [SWISH 85977614 (Furm)](https://furm.com/trademarks/swish-85977614)
+
+## 인게임 광고 선언
+
+- 공개 빌드(swishby.com, Play TWA)는 `window.FW_CONFIG = { ads: 'none', … }`이다. 이 값이면 광고 UI(부활·2배 보상 버튼)도 포털 SDK도 로드되지 않는다(`tests/ads.test.js`, `tests/brand.test.js`).
+- 광고는 포털 빌드(`ads`에 포털 이름)에서만 켠다. Play Console의 "광고 없음" 선언은 이 값에 의존하므로, 공개 빌드에서 바꾸려면 선언부터 먼저 고친다.
+- 상점의 무결제 구매 버튼(결제 연동 전 스텁)은 localhost에서만 동작한다(`shopStubAllowed`).

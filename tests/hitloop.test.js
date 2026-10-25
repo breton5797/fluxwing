@@ -148,3 +148,64 @@ test('a hidden unit on a board is ??? for players who do not own it', () => {
   assert.deepEqual(boardUnit({ id: 'volt', name: 'VOLT', col: [1, 2, 3], uiCol: [4, 5, 6] }, () => false), { name: 'VOLT', col: [4, 5, 6] });
   assert.equal(boardUnit(undefined, () => true), null);
 });
+
+test('a daily run that crossed UTC midnight still posts to yesterday, unless today is already posted', () => {
+  const { prevDay, dailyKeyOk } = loadHitLoop();
+  assert.equal(prevDay('2026-11-01'), '2026-10-31'); assert.equal(prevDay('2026-03-01'), '2026-02-28');
+  assert.equal(dailyKeyOk('2026-10-25', '2026-10-25', ''), true);
+  assert.equal(dailyKeyOk('2026-10-24', '2026-10-25', ''), true);
+  assert.equal(dailyKeyOk('2026-10-24', '2026-10-25', '2026-10-24'), true);
+  assert.equal(dailyKeyOk('2026-10-24', '2026-10-25', '2026-10-25'), false);   // today already on the board: never regress
+  assert.equal(dailyKeyOk('2026-10-23', '2026-10-25', ''), false);
+  assert.equal(dailyKeyOk('2026-10-26', '2026-10-25', ''), false);
+});
+
+test('audio resumes after an iOS interruption as well as a suspend', () => {
+  const { audioResumeOn } = loadHitLoop();
+  for (const s of ['suspended', 'interrupted']) assert.equal(audioResumeOn(s), true, s);
+  for (const s of ['running', 'closed', undefined]) assert.equal(audioResumeOn(s), false, String(s));
+});
+
+test('a corrupted owned list boots with the starters instead of a TypeError', () => {
+  const { ownedBoot } = loadHitLoop();
+  const S = ['volt', 'blitz', 'nimbus', 'titan'];
+  for (const bad of [null, 'volt', 7, {}, { length: 2 }]) assert.deepEqual(ownedBoot(bad).sort(), [...S].sort(), String(bad));
+  assert.deepEqual(ownedBoot(['mochi', 3, '__proto__', 'BAD', 'volt']).sort(), [...S, 'mochi'].sort());
+});
+
+test('zone values ramp over six gates instead of jumping at the zone line', () => {
+  const { zoneMix } = loadHitLoop();
+  const MV = [.16, .42, .2, .36];
+  assert.equal(zoneMix(MV, 0), .16); assert.equal(zoneMix(MV, 11), .16); assert.equal(zoneMix(MV, 12), .16);
+  assert.ok(Math.abs(zoneMix(MV, 15) - .29) < 1e-9); assert.equal(zoneMix(MV, 18), .42); assert.equal(zoneMix(MV, 23), .42);
+  assert.ok(Math.abs(zoneMix(MV, 27) - .31) < 1e-9); assert.equal(zoneMix(MV, 60), .36);
+});
+
+test('the first stall of a run costs the combo only; later stalls also strip the buffs', () => {
+  const { STALL, stallPenalty } = loadHitLoop();
+  assert.deepEqual(STALL, { warn: .6, at: 2 });
+  assert.deepEqual(stallPenalty(0), { combo: true, buffs: false });
+  assert.deepEqual(stallPenalty(1), { combo: true, buffs: true });
+});
+
+test('score coins settle every 10 points so a 49-point run is not worth zero', () => {
+  const html = readIndex();
+  const f = new Function(`const INCOME_X = 5, ST_SCOIN = [30,40,55,67]; ${html.match(/const scoreCoins = [^\n]+/)[0]}\nreturn scoreCoins;`)();
+  assert.deepEqual([0, 9, 10, 49, 50, 99, 100, 275].map(s => f(s, 0)), [0, 0, 30, 120, 150, 270, 300, 810]);
+  assert.deepEqual([1, 2, 3].map(tr => f(120, tr)), [480, 660, 804]);
+  for (let sc = 0; sc < 400; sc += 7) for (let tr = 0; tr < 4; tr++) assert.ok(Number.isInteger(f(sc, tr)), `${sc}/${tr} is whole coins`);
+  assert.equal(Number(html.match(/const DIA_LEVEL = (\d+)/)[1]), 250);
+});
+
+test('the daily intro card shows once', () => {
+  const { dailyIntroDue } = loadHitLoop();
+  assert.equal(dailyIntroDue(0), true); assert.equal(dailyIntroDue(1), false);
+});
+
+test('the no-payment shop stub only works on localhost', () => {
+  const { shopStubAllowed } = loadHitLoop();
+  assert.equal(shopStubAllowed('localhost', true), true);
+  assert.equal(shopStubAllowed('127.0.0.1', true), true);
+  assert.equal(shopStubAllowed('swishby.com', true), false);
+  assert.equal(shopStubAllowed('localhost', false), false);
+});

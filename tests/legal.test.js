@@ -82,3 +82,8 @@ test('the launch board cleanup runbook names the tool and the accounts', () => {
   const md = read('docs/launch/board-cleanup.md');
   for (const s of ['admin_set_hidden', 'admin_tester_set', 'QAb A1Z', 'QATEST', 'QA-B2', '2026-11-17']) assert.ok(md.includes(s), s);
 });
+
+test('the launch README ties the no-ads Play declaration to FW_CONFIG.ads', () => {
+  const md = read('docs/launch/README.md');
+  assert.match(md, /## 인게임 광고 선언/); assert.match(md, /ads: 'none'/);
+});

@@ -87,3 +87,40 @@ test('the effects button does nothing during a live ranked match (it used to pau
   const html = read('../index.html');
   assert.match(html, /\$\('fxBtn'\)\.addEventListener\('click', e => \{[^\n]*if \(mode === 'versus' && state === 'play'\) return;/);
 });
+
+test('short screens push the game-over card below the HUD and tighten it', () => {
+  const html = read('../index.html');
+  assert.match(html, /@media \(max-height:700px\)\{#over\{justify-content:flex-start;padding-top:calc\(64px \+ env\(safe-area-inset-top,0px\)\)\}#over \.card\{gap:8px;padding:14px 16px\}/);
+  assert.match(html, /@media \(max-height:700px\)\{[^\n]*#over \.stats\{grid-template-columns:repeat\(4,1fr\)/, 'stats go to one row on short screens');
+});
+
+test('only the pause button stays on screen while a run is live', () => {
+  const html = read('../index.html');
+  assert.match(html, /body\.playing #topBtns \.ib:not\(#pauseBtn\)\{display:none\}/);
+  assert.match(html, /document\.body\.classList\.toggle\('playing', state === 'play'\)/);
+});
+
+test('landscape phones get a rotate prompt instead of a squashed stage', () => {
+  const html = read('../index.html');
+  assert.match(html, /#rotate\{display:none\}/);
+  assert.match(html, /@media \(orientation:landscape\) and \(max-height:500px\) and \(pointer:coarse\)\{#rotate\{display:grid[^}]*z-index:98[^}]*\}\}/);
+  assert.match(html, /<div id="rotate" role="alert"><b data-i18n="rotate"><\/b><\/div>/);
+});
+
+test('the public build declares no ads, matching the Play listing', () => {
+  assert.match(read('../index.html'), /window\.FW_CONFIG = \{ ads: 'none'/);
+});
+
+test('Escape closes the daily intro card itself, not just the keyboard lock', () => {
+  const html = read('../index.html');
+  assert.match(html, /else if \(!\$\('dIntro'\)\.hidden\) dIntroClose\(\);/);
+  assert.match(html, /function dIntroClose\(\)\{ \$\('dIntro'\)\.hidden = true; lbOpen = false; \}/);
+});
+
+test('turning a phone sideways mid-run pauses the run behind the rotate prompt', () => {
+  const html = read('../index.html');
+  const css = html.match(/@media (\(orientation:landscape\) and \(max-height:500px\) and \(pointer:coarse\))\{#rotate/)[1];
+  assert.ok(html.includes(`const ROTATE_MQ = matchMedia('${css}');`), 'the pause listens to the same query as the CSS');
+  assert.match(html, /ROTATE_MQ\.addEventListener\('change', \(\) => \{ if \(ROTATE_MQ\.matches && state === 'play'\) togglePause\('hidden'\); \}\);/);
+  assert.match(html, /<div id="rotate" role="alert"><b data-i18n="rotate"><\/b><\/div>/);
+});
