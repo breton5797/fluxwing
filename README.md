@@ -14,6 +14,18 @@ npm run coverage # 커버리지 리포트
 
 ES 모듈을 쓰므로 `v2.html`을 파일로 직접 열면 동작하지 않는다. 정적 서버(위 `dev` 스크립트 또는 아무 호스팅)로 띄운다. 배포는 저장소 루트를 그대로 정적 호스팅에 올리면 된다.
 
+## 배포 (2026-10-26부터)
+
+| 브랜치 | 서버 | 주소 |
+| --- | --- | --- |
+| `main` | Vercel (팀 Minimalkora, 프로젝트 `swishby`, Pro) | https://swishby.com (www는 308로 넘어감) |
+| `dev` | GitHub Pages (사용자 지정 도메인 없음) | https://breton5797.github.io/fluxwing/ |
+
+- 흐름: 기능 PR → `dev`에 머지 → 개발 주소에서 확인 → `dev`→`main` PR → 머지하면 Vercel이 운영에 배포한다.
+- 개발 주소도 **운영 Supabase**를 쓴다. 거기서 한 플레이는 운영 랭킹에 남는다.
+- Vercel은 빌드 없이 저장소 루트를 그대로 올린다(설치 명령은 비워 둠). 공개하면 안 되는 폴더는 `.vercelignore`로 뺀다(`tests/vercel-deploy.test.js`가 검사).
+- DNS는 Namecheap: `@` A `216.150.1.1`, `216.150.16.1`, `www` CNAME `323774410988634b.vercel-dns-016.com`. 메일 전달(MX)과 TXT는 그대로 둔다.
+
 ## 조작
 
 | 입력 | 동작 |
