@@ -93,3 +93,9 @@ test('short screens push the game-over card below the HUD and tighten it', () =>
   assert.match(html, /@media \(max-height:700px\)\{#over\{justify-content:flex-start;padding-top:calc\(64px \+ env\(safe-area-inset-top,0px\)\)\}#over \.card\{gap:8px;padding:14px 16px\}/);
   assert.match(html, /@media \(max-height:700px\)\{[^\n]*#over \.stats\{grid-template-columns:repeat\(4,1fr\)/, 'stats go to one row on short screens');
 });
+
+test('only the pause button stays on screen while a run is live', () => {
+  const html = read('../index.html');
+  assert.match(html, /body\.playing #topBtns \.ib:not\(#pauseBtn\)\{display:none\}/);
+  assert.match(html, /document\.body\.classList\.toggle\('playing', state === 'play'\)/);
+});

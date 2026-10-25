@@ -185,6 +185,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 @keyframes pulse3{50%{box-shadow:0 0 44px var(--ring),0 0 0 3px var(--ring)}}
 @keyframes pulse2{50%{box-shadow:0 0 38px var(--ring)}}
 #topBtns{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));inset-inline-end:12px;display:flex;gap:8px;z-index:4}
+body.playing #topBtns .ib:not(#pauseBtn){display:none}   /* a live run keeps only pause; the pause screen brings the settings back */
 .ib{position:relative;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:rgba(14,10,30,.55);color:var(--ink);font:700 15px var(--body);cursor:pointer}
 .ib::after{content:"";position:absolute;inset:-4px;border-radius:50%}   /* 46px touch target around the 38px button */
 .ib:focus-visible,#dashBtn:focus-visible{outline:2px solid var(--cool);outline-offset:3px}
@@ -6466,6 +6467,7 @@ function loop(now){
       const q2 = fxQualityStep(IMP.q, p90); if (q2 !== IMP.q){ IMP = impNew(q2); resize(); } }
   }
   if (state !== 'paused' && !(window.FW && window.FW.hold)) for (const h of steps) update(h);
+  document.body.classList.toggle('playing', state === 'play');
   render(); drawHangarPreview(); musicTick(); tutTick(el); if (state === 'play' || state === 'dying' || state === 'over') vsTick(el);
   adPlaySync();
   requestAnimationFrame(loop);
