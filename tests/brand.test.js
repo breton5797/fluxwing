@@ -106,3 +106,7 @@ test('landscape phones get a rotate prompt instead of a squashed stage', () => {
   assert.match(html, /@media \(orientation:landscape\) and \(max-height:500px\) and \(pointer:coarse\)\{#rotate\{display:grid[^}]*z-index:98[^}]*\}\}/);
   assert.match(html, /<div id="rotate" aria-hidden="true"><b data-i18n="rotate"><\/b><\/div>/);
 });
+
+test('the public build declares no ads, matching the Play listing', () => {
+  assert.match(read('../index.html'), /window\.FW_CONFIG = \{ ads: 'none'/);
+});

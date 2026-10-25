@@ -1396,6 +1396,8 @@ const STALL = Object.freeze({ warn: .6, at: 2 });
 const stallPenalty = n => ({ combo: true, buffs: n >= 1 });
 // The daily challenge explains itself once (same course worldwide, one reward a day, fair rules) before its first run
 const dailyIntroDue = seen => !seen;
+// The shop's buy buttons grant items without a payment (a stub until store billing exists): they work only on a developer's machine
+const shopStubAllowed = (host, on) => !!on && (host === 'localhost' || host === '127.0.0.1');
 /* hit-loop:end */
 /* share-card:start — the 9:16 result image and the one messenger a country opens: pure rules, no state, no DOM. Builds on the hit-loop block. tests/share-card.test.js runs it (tests/helpers/sharecard.js). Sharing pays nothing: app stores turn down a game that pays for social posts. */
 // Only messengers a plain web link can open with the text filled in. KakaoTalk (KR) needs the Kakao SDK + app key, Messenger (PH/US/CA) a Facebook app id, Zalo (VN) has no web share link: there the native share sheet covers it.
@@ -4824,7 +4826,7 @@ function renderShop(){
     const nm = document.createElement('b'); nm.textContent = it.name();
     const bt = document.createElement('button'); bt.className = 'ghost'; const done = it.done && it.done();
     bt.textContent = done ? t('soldOut') : it.price; bt.disabled = !!done;
-    bt.addEventListener('click', e => { e.stopPropagation(); audioInit(); confirmDlg(t('confirmBuy', {item: it.name(), price: it.price}), () => { const unit = it.buy(); saveW(); evTrack('shop_buy', { item: it.id, price: it.price, paid: false }); renderShop(); renderWallet(); renderHangar(); if (unit){ B = unit; store.set('fw27_bird', B.id); celebrate(unit); } else { toast(t('granted')); SFX.power(); haptic('power'); } }); });
+    bt.addEventListener('click', e => { e.stopPropagation(); audioInit(); if (!shopStubAllowed(location.hostname, SHOP_ON)) return; confirmDlg(t('confirmBuy', {item: it.name(), price: it.price}), () => { const unit = it.buy(); saveW(); evTrack('shop_buy', { item: it.id, price: it.price, paid: false }); renderShop(); renderWallet(); renderHangar(); if (unit){ B = unit; store.set('fw27_bird', B.id); celebrate(unit); } else { toast(t('granted')); SFX.power(); haptic('power'); } }); });
     row.append(nm, bt);
     const ds = it.desc(); if (ds){ const sm = document.createElement('small'); sm.textContent = ds; row.appendChild(sm); }
     L.appendChild(row);

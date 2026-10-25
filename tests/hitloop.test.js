@@ -201,3 +201,11 @@ test('the daily intro card shows once', () => {
   const { dailyIntroDue } = loadHitLoop();
   assert.equal(dailyIntroDue(0), true); assert.equal(dailyIntroDue(1), false);
 });
+
+test('the no-payment shop stub only works on localhost', () => {
+  const { shopStubAllowed } = loadHitLoop();
+  assert.equal(shopStubAllowed('localhost', true), true);
+  assert.equal(shopStubAllowed('127.0.0.1', true), true);
+  assert.equal(shopStubAllowed('swishby.com', true), false);
+  assert.equal(shopStubAllowed('localhost', false), false);
+});
