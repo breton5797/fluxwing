@@ -187,3 +187,12 @@ test('the first stall of a run costs the combo only; later stalls also strip the
   assert.deepEqual(stallPenalty(0), { combo: true, buffs: false });
   assert.deepEqual(stallPenalty(1), { combo: true, buffs: true });
 });
+
+test('score coins settle every 10 points so a 49-point run is not worth zero', () => {
+  const html = readIndex();
+  const f = new Function(`const INCOME_X = 5, ST_SCOIN = [30,40,55,67]; ${html.match(/const scoreCoins = [^\n]+/)[0]}\nreturn scoreCoins;`)();
+  assert.deepEqual([0, 9, 10, 49, 50, 99, 100, 275].map(s => f(s, 0)), [0, 0, 30, 120, 150, 270, 300, 810]);
+  assert.deepEqual([1, 2, 3].map(tr => f(120, tr)), [480, 660, 804]);
+  for (let sc = 0; sc < 400; sc += 7) for (let tr = 0; tr < 4; tr++) assert.ok(Number.isInteger(f(sc, tr)), `${sc}/${tr} is whole coins`);
+  assert.equal(Number(html.match(/const DIA_LEVEL = (\d+)/)[1]), 250);
+});
