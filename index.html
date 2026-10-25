@@ -1204,7 +1204,7 @@ const W = (() => {
   if (!w){ n.coins += clampI(o.credits, 0, 1e12) * 2; n.gems = Math.ceil(n.gems * 6 / 100); store.set('fw27_wallet2', n); }
   return n;
 })();
-const owned = new Set(store.get('fw27_owned', ['volt','blitz','nimbus','titan']));
+const owned = new Set(ownedBoot(store.get('fw27_owned', null)));
 let hasPass = store.get('fw27_pass', false), starterBought = store.get('fw27_starter', false);
 const XP_PER_LEVEL = 100;
 // Diamonds come from milestones only, so unit passives (SOLARIS x2) never multiply them. Provisional amounts: retune after measuring.
@@ -1370,6 +1370,13 @@ function prevDay(key){ const d = new Date(key + 'T00:00:00Z'); d.setUTCDate(d.ge
 const dailyKeyOk = (key, today, docKey) => key === today || (key === prevDay(today) && docKey !== today);
 // iOS leaves an AudioContext 'interrupted' after a call or Siri (other browsers say 'suspended'): either must be resumed on the next gesture
 const audioResumeOn = st => st === 'suspended' || st === 'interrupted';
+// The owned-unit list read at boot (a function declaration: it is called above this block). Anything but an array falls back to the
+// starters; inside an array only plain lower-case ids survive ('__proto__' does not), and the starters are always kept.
+function ownedBoot(raw){
+  const S = ['volt', 'blitz', 'nimbus', 'titan'];
+  const ids = Array.isArray(raw) ? raw.filter(v => typeof v === 'string' && /^[a-z]{1,12}$/.test(v)) : [];
+  return [...new Set([...S, ...ids])];
+}
 /* hit-loop:end */
 /* share-card:start — the 9:16 result image and the one messenger a country opens: pure rules, no state, no DOM. Builds on the hit-loop block. tests/share-card.test.js runs it (tests/helpers/sharecard.js). Sharing pays nothing: app stores turn down a game that pays for social posts. */
 // Only messengers a plain web link can open with the text filled in. KakaoTalk (KR) needs the Kakao SDK + app key, Messenger (PH/US/CA) a Facebook app id, Zalo (VN) has no web share link: there the native share sheet covers it.

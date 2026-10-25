@@ -165,3 +165,10 @@ test('audio resumes after an iOS interruption as well as a suspend', () => {
   for (const s of ['suspended', 'interrupted']) assert.equal(audioResumeOn(s), true, s);
   for (const s of ['running', 'closed', undefined]) assert.equal(audioResumeOn(s), false, String(s));
 });
+
+test('a corrupted owned list boots with the starters instead of a TypeError', () => {
+  const { ownedBoot } = loadHitLoop();
+  const S = ['volt', 'blitz', 'nimbus', 'titan'];
+  for (const bad of [null, 'volt', 7, {}, { length: 2 }]) assert.deepEqual(ownedBoot(bad).sort(), [...S].sort(), String(bad));
+  assert.deepEqual(ownedBoot(['mochi', 3, '__proto__', 'BAD', 'volt']).sort(), [...S, 'mochi'].sort());
+});
