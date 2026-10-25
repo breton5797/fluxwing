@@ -263,6 +263,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .hg-skill b{color:var(--ink)}
 .hg-skill.ult{color:hsl(300,100%,82%)}
 #over:not([hidden]) .card{animation:cardIn .38s cubic-bezier(.2,1.5,.4,1) both}
+@media (max-height:700px){#over{justify-content:flex-start;padding-top:calc(64px + env(safe-area-inset-top,0px))}#over .card{gap:8px;padding:14px 16px}#over .big{font-size:44px}#over .stats{grid-template-columns:repeat(4,1fr);gap:4px}#over .stat{padding:5px 2px}#over .stat span{font-size:9px;letter-spacing:.04em}#over .btn{padding:9px 22px}#over .ghost{padding-top:7px;padding-bottom:7px}}
 @keyframes cardIn{from{opacity:0;transform:scale(1.35)}70%{opacity:1;transform:scale(.96)}to{opacity:1;transform:none}}
 .rank.stamp{animation:stamp .42s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes stamp{0%{opacity:0;transform:scale(2.8) rotate(-14deg)}60%{opacity:1;transform:scale(.9) rotate(-3deg)}100%{transform:scale(1) rotate(-4deg)}}

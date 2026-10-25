@@ -87,3 +87,9 @@ test('the effects button does nothing during a live ranked match (it used to pau
   const html = read('../index.html');
   assert.match(html, /\$\('fxBtn'\)\.addEventListener\('click', e => \{[^\n]*if \(mode === 'versus' && state === 'play'\) return;/);
 });
+
+test('short screens push the game-over card below the HUD and tighten it', () => {
+  const html = read('../index.html');
+  assert.match(html, /@media \(max-height:700px\)\{#over\{justify-content:flex-start;padding-top:calc\(64px \+ env\(safe-area-inset-top,0px\)\)\}#over \.card\{gap:8px;padding:14px 16px\}/);
+  assert.match(html, /@media \(max-height:700px\)\{[^\n]*#over \.stats\{grid-template-columns:repeat\(4,1fr\)/, 'stats go to one row on short screens');
+});
