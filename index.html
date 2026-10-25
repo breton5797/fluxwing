@@ -1384,6 +1384,10 @@ function zoneMix(arr, idx, span = 6){
   const t = (idx - 12 * z) / span;
   return t >= 1 ? arr[z] : arr[z - 1] + (arr[z] - arr[z - 1]) * t;
 }
+// Hard-tier stall (stage 41+): the warning ring turns red at `warn` s without a tap, the stall hits at `at` s. n = stalls so far this run:
+// the first costs the combo only, later ones also strip invincibility, potion and low gravity.
+const STALL = Object.freeze({ warn: .6, at: 2 });
+const stallPenalty = n => ({ combo: true, buffs: n >= 1 });
 /* hit-loop:end */
 /* share-card:start — the 9:16 result image and the one messenger a country opens: pure rules, no state, no DOM. Builds on the hit-loop block. tests/share-card.test.js runs it (tests/helpers/sharecard.js). Sharing pays nothing: app stores turn down a game that pays for social posts. */
 // Only messengers a plain web link can open with the text filled in. KakaoTalk (KR) needs the Kakao SDK + app key, Messenger (PH/US/CA) a Facebook app id, Zalo (VN) has no web share link: there the native share sheet covers it.
@@ -3220,11 +3224,11 @@ function update(rdt){
   if (overT > 0) overT -= dt; if (weightT > 0) weightT -= dt;
   if (FX.fogT > 0) FX.fogT -= rdt; if (FX.heavyT > 0) FX.heavyT -= dt; if (FX.resoT > 0) FX.resoT -= dt; if (FX.pingT > 0) FX.pingT -= dt;
   if (FX.strikeN > 0){ FX.strikeT -= rdt; if (FX.strikeT <= 0 && strikeNext()){ FX.strikeN--; FX.strikeT = .18; } }
-  // Hard tier: go 2s (game time) without a tap and the engine stalls — invincibility, glide and combo are lost
+  // Hard tier: go STALL.at s (game time) without a tap and the engine stalls — the combo is lost; from the run's second stall also invincibility and glide
   if (mode === 'endless' && stTier(curStage) === 3){
     if (!(autoT > 0 || freezeT > 0 || dashT > 0)) FX.idleT += dt;
-    if (FX.idleT >= 1.2 && !FX.idleWarn){ FX.idleWarn = true; tone(880,.12,'square',.08); }
-    if (FX.idleT >= 2){ FX.idleT = 0; FX.idleWarn = false; godT = 0; potionT = 0; lowGravT = 0; combo = 0; tier = 0; banner(t('idleStall'), [0,100,62], .9, false); shake = Math.max(shake, 10); hurtT = .35; haptic('shieldBreak'); tone(140,.4,'sawtooth',.18,-80); }
+    if (FX.idleT >= STALL.warn && !FX.idleWarn){ FX.idleWarn = true; tone(880,.12,'square',.08); }
+    if (FX.idleT >= STALL.at){ FX.idleT = 0; FX.idleWarn = false; const sp = stallPenalty(FX.stallN || 0); FX.stallN = (FX.stallN || 0) + 1; if (sp.buffs){ godT = 0; potionT = 0; lowGravT = 0; } combo = 0; tier = 0; banner(t('idleStall'), [0,100,62], .9, false); shake = Math.max(shake, 10); hurtT = .35; haptic('shieldBreak'); tone(140,.4,'sawtooth',.18,-80); }
   }
 
   speed = (190 + spdD(diff())*120) * B.speed;
@@ -4111,8 +4115,8 @@ function drawBird(){
   ctx.save(); ctx.translate(bird.x, bird.y);
   drawAura(ctx, B, bird.r, T); unitBack(B);
   if (mode === 'endless' && stTier(curStage) === 3 && (state === 'play' || state === 'paused')){
-    const wn = FX.idleT >= 1.2; ctx.strokeStyle = wn ? `rgba(255,70,90,${RM ? .9 : .7 + .3*Math.sin(T*24)})` : 'rgba(255,255,255,.35)'; ctx.lineWidth = wn ? 3 : 2;
-    ctx.beginPath(); ctx.arc(0, 0, bird.r + 22, -1.57, -1.57 + 6.283 * Math.max(0, 1 - FX.idleT/2)); ctx.stroke();
+    const wn = FX.idleT >= STALL.warn; ctx.strokeStyle = wn ? `rgba(255,70,90,${RM ? .9 : .7 + .3*Math.sin(T*24)})` : 'rgba(255,255,255,.35)'; ctx.lineWidth = wn ? 3 : 2;
+    ctx.beginPath(); ctx.arc(0, 0, bird.r + 22, -1.57, -1.57 + 6.283 * Math.max(0, 1 - FX.idleT/STALL.at)); ctx.stroke();
   }
   const skA = godT > 0 || boostT > 0 || lowGravT > 0 || autoT > 0 || rushT > 0 || foreT > 0 || freezeT > 0;
   if (skA && !U.active){ ctx.strokeStyle = hsl(godT > 0 ? [45,100,62] : (B.uiCol || B.col), .6 + .3*Math.sin(T*14)); ctx.lineWidth = 3; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(0,0,bird.r*2.1 + Math.sin(T*10)*3,0,6.28); ctx.stroke(); ctx.shadowBlur = 0; }

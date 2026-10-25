@@ -180,3 +180,10 @@ test('zone values ramp over six gates instead of jumping at the zone line', () =
   assert.ok(Math.abs(zoneMix(MV, 15) - .29) < 1e-9); assert.equal(zoneMix(MV, 18), .42); assert.equal(zoneMix(MV, 23), .42);
   assert.ok(Math.abs(zoneMix(MV, 27) - .31) < 1e-9); assert.equal(zoneMix(MV, 60), .36);
 });
+
+test('the first stall of a run costs the combo only; later stalls also strip the buffs', () => {
+  const { STALL, stallPenalty } = loadHitLoop();
+  assert.deepEqual(STALL, { warn: .6, at: 2 });
+  assert.deepEqual(stallPenalty(0), { combo: true, buffs: false });
+  assert.deepEqual(stallPenalty(1), { combo: true, buffs: true });
+});
