@@ -1,0 +1,17 @@
+# Vercel serves the repo root as the static site (main → swishby.com). These are repo-only and stay off the public site.
+# tests/vercel-deploy.test.js checks that every file the pages load is still deployed.
+tests
+scripts
+supabase
+docs
+marketing
+ios
+ios-www
+android
+node_modules
+package.json
+package-lock.json
+capacitor.config.json
+plan-social.md
+README.md
+CNAME
