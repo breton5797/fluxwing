@@ -159,3 +159,9 @@ test('a daily run that crossed UTC midnight still posts to yesterday, unless tod
   assert.equal(dailyKeyOk('2026-10-23', '2026-10-25', ''), false);
   assert.equal(dailyKeyOk('2026-10-26', '2026-10-25', ''), false);
 });
+
+test('audio resumes after an iOS interruption as well as a suspend', () => {
+  const { audioResumeOn } = loadHitLoop();
+  for (const s of ['suspended', 'interrupted']) assert.equal(audioResumeOn(s), true, s);
+  for (const s of ['running', 'closed', undefined]) assert.equal(audioResumeOn(s), false, String(s));
+});

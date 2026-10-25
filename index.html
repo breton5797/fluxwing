@@ -1368,6 +1368,8 @@ function boardUnit(bd, ownedHas){
 // accepts yesterday's key), unless today's daily is already on this player's board row, which a late post must not overwrite.
 function prevDay(key){ const d = new Date(key + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); }
 const dailyKeyOk = (key, today, docKey) => key === today || (key === prevDay(today) && docKey !== today);
+// iOS leaves an AudioContext 'interrupted' after a call or Siri (other browsers say 'suspended'): either must be resumed on the next gesture
+const audioResumeOn = st => st === 'suspended' || st === 'interrupted';
 /* hit-loop:end */
 /* share-card:start — the 9:16 result image and the one messenger a country opens: pure rules, no state, no DOM. Builds on the hit-loop block. tests/share-card.test.js runs it (tests/helpers/sharecard.js). Sharing pays nothing: app stores turn down a game that pays for social posts. */
 // Only messengers a plain web link can open with the text filled in. KakaoTalk (KR) needs the Kakao SDK + app key, Messenger (PH/US/CA) a Facebook app id, Zalo (VN) has no web share link: there the native share sheet covers it.
@@ -2095,7 +2097,7 @@ addEventListener('resize', resize);
 /* ---------- audio ---------- */
 let ac = null, master = null;
 function audioInit(){
-  if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
+  if (ac) { if (audioResumeOn(ac.state)) ac.resume().catch(() => {}); return; }
   try {
     ac = new (window.AudioContext || window.webkitAudioContext)();
     master = ac.createGain(); master.gain.value = adVol(muted, adOn); master.connect(ac.destination);
@@ -2760,7 +2762,7 @@ $('fxScr').addEventListener('pointerdown', e => { if (e.target === $('fxScr')) $
 document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); fxSettings.q = b.dataset.fxq; fxApply(); }));
 document.querySelector('[data-fxshake]').addEventListener('click', e => { e.stopPropagation(); fxSettings.shake = !fxSettings.shake; fxApply(); });
 document.querySelector('[data-fxflash]').addEventListener('click', e => { e.stopPropagation(); fxSettings.flash = !fxSettings.flash; fxApply(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause('hidden'); adPlaySync(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && ac && audioResumeOn(ac.state)) ac.resume().catch(() => {}); if (document.hidden && state === 'play') togglePause('hidden'); adPlaySync(); });
 
 function togglePause(why = 'key'){
   const a = vsPauseAction(mode, state, why);
