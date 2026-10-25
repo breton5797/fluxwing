@@ -116,3 +116,8 @@ test('Korean rarity names: mythic is 신화, never the food word', () => {
   const ko = I.ko; assert.equal(ko.r_mythic, '신화');
   for (const v of Object.values(ko)) assert.doesNotMatch(String(v), /미식/);
 });
+
+test('daily intro copy exists and says what the mode is', () => {
+  assert.equal(I.ko.dIntroT, '오늘의 챌린지'); assert.match(I.en.dIntroB, /same course/i); assert.match(I.ja.dIntroB, /同じコース/);
+  for (const l of Object.keys(I)) for (const k of ['dIntroT', 'dIntroB', 'dIntroGo']) assert.ok(typeof I[l][k] === 'string' && I[l][k].length, `${l}.${k}`);
+});

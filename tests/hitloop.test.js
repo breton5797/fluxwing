@@ -196,3 +196,8 @@ test('score coins settle every 10 points so a 49-point run is not worth zero', (
   for (let sc = 0; sc < 400; sc += 7) for (let tr = 0; tr < 4; tr++) assert.ok(Number.isInteger(f(sc, tr)), `${sc}/${tr} is whole coins`);
   assert.equal(Number(html.match(/const DIA_LEVEL = (\d+)/)[1]), 250);
 });
+
+test('the daily intro card shows once', () => {
+  const { dailyIntroDue } = loadHitLoop();
+  assert.equal(dailyIntroDue(0), true); assert.equal(dailyIntroDue(1), false);
+});
