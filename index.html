@@ -1364,6 +1364,10 @@ function boardUnit(bd, ownedHas){
   if (bd.hidden && !ownedHas(bd.id)) return { name: '???', col: [260, 20, 45] };
   return { name: bd.name, col: bd.uiCol || bd.col };
 }
+// Daily keys are UTC days. A run started before UTC midnight and finished after it still belongs to the day it started (the server
+// accepts yesterday's key), unless today's daily is already on this player's board row, which a late post must not overwrite.
+function prevDay(key){ const d = new Date(key + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); }
+const dailyKeyOk = (key, today, docKey) => key === today || (key === prevDay(today) && docKey !== today);
 /* hit-loop:end */
 /* share-card:start — the 9:16 result image and the one messenger a country opens: pure rules, no state, no DOM. Builds on the hit-loop block. tests/share-card.test.js runs it (tests/helpers/sharecard.js). Sharing pays nothing: app stores turn down a game that pays for social posts. */
 // Only messengers a plain web link can open with the text filled in. KakaoTalk (KR) needs the Kakao SDK + app key, Messenger (PH/US/CA) a Facebook app id, Zalo (VN) has no web share link: there the native share sheet covers it.
@@ -5284,6 +5288,8 @@ function syncLocal(){
   const k = dayKey(), dl = dailyBestLocal(k), dg = store.get('fw27_dg', null);
   if (best > ((myDoc && myDoc.best) || 0) && best !== store.get('fw27_rej', 0)) submitScore(best, store.get('fw27_bestg', 0), 'endless', k);
   if (dg && dg.k === k && dl > ((myDoc && myDoc.dailyKey === k && myDoc.dailyScore) || 0)) submitScore(dl, dg.g, 'daily', k);
+  const y = prevDay(k), dly = dailyBestLocal(y);   // a run that ended after UTC midnight, if its post was dropped or failed
+  if (dg && dg.k === y && dly > 0 && !(myDoc && myDoc.dailyKey === k) && dly > ((myDoc && myDoc.dailyKey === y && myDoc.dailyScore) || 0)) submitScore(dly, dg.g, 'daily', y);
 }
 async function initDB(){
   const cfg = supaCfg();
@@ -5318,7 +5324,7 @@ function submitScore(sc, gp, m, key){
     const doc = Object.assign({nick, cc:CC, lang, best:0, gates:0, at:0, dailyKey:'', dailyScore:0}, myDoc || {});
     let changed = false;
     if (sc > (doc.best||0)){ doc.best = sc; if (gp) doc.gates = gp; doc.at = Date.now(); doc.bird = B.id; changed = true; }
-    if (m === 'daily' && key === dayKey()){
+    if (m === 'daily' && dailyKeyOk(key, dayKey(), doc.dailyKey || '')){
       if (doc.dailyKey !== key){ doc.dailyKey = key; doc.dailyScore = 0; }
       if (sc > (doc.dailyScore||0)){ doc.dailyScore = sc; doc.dailyBird = B.id; changed = true; }
     }

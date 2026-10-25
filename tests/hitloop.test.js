@@ -148,3 +148,14 @@ test('a hidden unit on a board is ??? for players who do not own it', () => {
   assert.deepEqual(boardUnit({ id: 'volt', name: 'VOLT', col: [1, 2, 3], uiCol: [4, 5, 6] }, () => false), { name: 'VOLT', col: [4, 5, 6] });
   assert.equal(boardUnit(undefined, () => true), null);
 });
+
+test('a daily run that crossed UTC midnight still posts to yesterday, unless today is already posted', () => {
+  const { prevDay, dailyKeyOk } = loadHitLoop();
+  assert.equal(prevDay('2026-11-01'), '2026-10-31'); assert.equal(prevDay('2026-03-01'), '2026-02-28');
+  assert.equal(dailyKeyOk('2026-10-25', '2026-10-25', ''), true);
+  assert.equal(dailyKeyOk('2026-10-24', '2026-10-25', ''), true);
+  assert.equal(dailyKeyOk('2026-10-24', '2026-10-25', '2026-10-24'), true);
+  assert.equal(dailyKeyOk('2026-10-24', '2026-10-25', '2026-10-25'), false);   // today already on the board: never regress
+  assert.equal(dailyKeyOk('2026-10-23', '2026-10-25', ''), false);
+  assert.equal(dailyKeyOk('2026-10-26', '2026-10-25', ''), false);
+});
