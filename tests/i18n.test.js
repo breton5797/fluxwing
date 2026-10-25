@@ -126,3 +126,14 @@ test('the rotate prompt is translated', () => {
   assert.equal(I.ko.rotate, '세로로 돌려 주세요');
   for (const l of Object.keys(I)) assert.ok(typeof I[l].rotate === 'string' && I[l].rotate.length, l);
 });
+
+test('Korean and Japanese copy: one register, no retired currency, full friend warning', () => {
+  assert.equal(I.ko.frWarn, '친구 목록은 이 기기의 게스트 계정에 묶여 있어요. 브라우저 데이터를 지우면 사라져요');
+  assert.equal(I.ja.frWarn, 'フレンドはこの端末のゲストアカウントに紐づきます。ブラウザのデータを消すと失われます');
+  for (const l of Object.keys(I)) assert.equal((I[l].passDesc.split(' · ')[0].match(/\+/g) || []).length, 1, `${l} passDesc is unit + gems only: ${I[l].passDesc}`);
+  for (const k of ['hControls', 'hUlt', 'hScore', 'hHaz', 'hMoney', 'hUnits']) {
+    assert.match(I.ja[k], /(ます|です)。$/, k);
+    for (const s of I.ja[k].split('。').filter(Boolean)) assert.match(s, /(ます|です|ません)$/, `${k}: ${s}`);
+  }
+  for (const l of Object.keys(I)) assert.match(I[l].hMoney, /10/, `${l} hMoney says coins come every 10 points`);
+});
