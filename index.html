@@ -401,7 +401,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 </style>
 </head><body>
 <div id="boot" aria-hidden="true"><i></i></div>
-<div id="rotate" aria-hidden="true"><b data-i18n="rotate"></b></div>
+<div id="rotate" role="alert"><b data-i18n="rotate"></b></div>
 
 <div id="stage">
   <canvas id="c" aria-label="SWISHBY"></canvas>
@@ -2678,7 +2678,7 @@ addEventListener('keydown', e => {
   const tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' && (e.code === 'Space' || e.code === 'Enter')) return;
   if (!$('plScr').hidden){ if (e.code === 'Escape') plClose(); return; }   // the report menu sits over everything: no game key goes through it
-  if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else if (!$('frScr').hidden) frClose(); else closeLB(); } return; }
+  if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else if (!$('frScr').hidden) frClose(); else if (!$('dIntro').hidden) dIntroClose(); else closeLB(); } return; }
   if (state === 'menu' && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')){ e.preventDefault(); pickBird(ROSTER.indexOf(B) + (e.code === 'ArrowRight' ? 1 : -1)); return; }
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){ e.preventDefault(); if (state==='paused') togglePause(); else flap(); }
   else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyD' || e.code === 'KeyE'){ e.preventDefault(); dash(); }
@@ -2688,7 +2688,8 @@ addEventListener('keydown', e => {
 });
 $('startBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); SFX.click(); startFromMenu(); });
 $('dailyBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); if (dailyIntroDue(store.get('fw27_dintro', 0))){ $('dIntro').hidden = false; lbOpen = true; return; } startGame('daily'); });
-$('dIntroGo').addEventListener('click', e => { e.stopPropagation(); store.set('fw27_dintro', 1); $('dIntro').hidden = true; lbOpen = false; startGame('daily'); });
+function dIntroClose(){ $('dIntro').hidden = true; lbOpen = false; }
+$('dIntroGo').addEventListener('click', e => { e.stopPropagation(); store.set('fw27_dintro', 1); dIntroClose(); startGame('daily'); });
 // Leaving the result card may show one interstitial: at most one per AD_CFG.interEvery finished runs, never inside the gap, never in versus and never on a run where a rewarded ad was watched
 async function adLeave(go){
   if (adBusy) return; const now = Date.now(), st = adNorm(store.get('fw27_ads', null), now);
@@ -2790,6 +2791,8 @@ $('fxScr').addEventListener('pointerdown', e => { if (e.target === $('fxScr')) $
 document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); fxSettings.q = b.dataset.fxq; fxApply(); }));
 document.querySelector('[data-fxshake]').addEventListener('click', e => { e.stopPropagation(); fxSettings.shake = !fxSettings.shake; fxApply(); });
 document.querySelector('[data-fxflash]').addEventListener('click', e => { e.stopPropagation(); fxSettings.flash = !fxSettings.flash; fxApply(); });
+const ROTATE_MQ = matchMedia('(orientation:landscape) and (max-height:500px) and (pointer:coarse)');   // the #rotate prompt's query: it covers the stage
+ROTATE_MQ.addEventListener('change', () => { if (ROTATE_MQ.matches && state === 'play') togglePause('hidden'); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && ac && audioResumeOn(ac.state)) ac.resume().catch(() => {}); if (document.hidden && state === 'play') togglePause('hidden'); adPlaySync(); });
 
 function togglePause(why = 'key'){
