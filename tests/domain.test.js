@@ -1,15 +1,16 @@
-// The game's public address is swishby.com (GitHub Pages custom domain): the CNAME file, the Open Graph tags and the
-// share link must all say so, and nothing may still point at the old project-site address.
+// The game's public address is swishby.com, served by Vercel from main; GitHub Pages serves the dev branch at its own
+// github.io address with no custom domain, so there is no CNAME file. The Open Graph tags and the share link must say
+// swishby.com, and nothing may still point at the old project-site address.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url);
 const read = p => readFileSync(new URL(p, root), 'utf8');
 const SITE = 'https://swishby.com/';
 
-test('CNAME names the custom domain, nothing else', () => {
-  assert.equal(read('CNAME').trim(), 'swishby.com');
+test('no CNAME file: GitHub Pages (dev) must not claim swishby.com, which Vercel serves', () => {
+  assert.ok(!existsSync(new URL('CNAME', root)), 'CNAME would make GitHub Pages claim swishby.com again');
 });
 
 test('index.html: og:url, og:image, twitter:image and SHARE_URL sit on the custom domain', () => {

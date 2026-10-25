@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SWISHBY 가이드 · 처음부터 콤보·대시·모드까지</title>
+<meta name="description" content="탭 한 번으로 나는 아케이드 비행 게임 SWISHBY의 플레이 가이드. 조작, PERFECT·콤보·피버, 대시, 게임 모드, 기체와 재화, 랭킹과 시즌을 실제 게임 화면으로 설명합니다.">
+<link rel="canonical" href="https://swishby.com/guide/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SWISHBY 가이드">
+<meta property="og:description" content="처음 한 판부터 콤보·대시·대전까지, 실제 게임 화면으로 보는 SWISHBY 플레이 가이드.">
+<meta property="og:url" content="https://swishby.com/guide/">
+<meta property="og:image" content="https://swishby.com/og-swishby.png">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<style>
+:root{color-scheme:dark;--bg:#07050f;--fg:#e8e6f0;--dim:#9a96ad;--line:#2a2540;--acc:#ffd54a;--card:#120d22}
+*{box-sizing:border-box}
+html{overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;-webkit-text-size-adjust:100%;overflow-x:hidden}
+main{max-width:760px;margin:0 auto;padding:28px 16px 72px}
+header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--line)}
+header a{color:var(--acc);text-decoration:none;font-weight:700}
+nav.top{font-size:13px;color:var(--dim)}
+nav.top a{color:var(--fg);margin-left:10px;font-weight:400}
+h1{font-size:26px;margin:24px 0 6px}
+.lead{color:var(--fg);font-size:16px}
+h2{font-size:20px;margin:40px 0 10px;padding-top:18px;border-top:1px solid var(--line);scroll-margin-top:12px}
+h3{font-size:16px;margin:24px 0 8px}
+small,.meta{color:var(--dim);font-size:13px}
+a{color:var(--acc)}
+.toc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin:18px 0}
+.toc ol{margin:6px 0;padding-left:22px;columns:2;column-gap:24px}
+.toc li{break-inside:avoid}
+@media (max-width:520px){.toc ol{columns:1}}
+figure{margin:16px auto;max-width:360px;text-align:center}
+figure img{width:100%;height:auto;border-radius:14px;border:1px solid var(--line);display:block}
+figcaption{color:var(--dim);font-size:13px;margin-top:6px}
+.pair{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.pair figure{flex:1 1 220px;max-width:300px;margin:8px 0}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:10px 0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:7px 6px;border-bottom:1px solid var(--line);overflow-wrap:anywhere;word-break:keep-all}
+th{color:var(--dim);font-weight:600}
+@media (max-width:480px){table{font-size:13px}th,td{padding:6px 4px}}
+td.n{width:36px;text-align:center}
+.num{display:inline-block;width:22px;height:22px;border-radius:50%;background:var(--acc);color:#120826;font-weight:800;font-size:12px;line-height:22px;text-align:center}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+.tip{background:var(--card);border-left:3px solid var(--acc);border-radius:8px;padding:10px 14px;margin:14px 0}
+.cta{display:inline-block;margin-top:28px;padding:12px 22px;border-radius:999px;background:var(--fg);color:#120826;font-weight:800;text-decoration:none}
+footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);color:var(--dim);font-size:13px}
+footer a{color:var(--dim)}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <a href="../">← SWISHBY 플레이</a>
+  <nav class="top"><a href="../about/">소개</a><a href="../terms.html">이용약관</a><a href="../privacy.html">개인정보처리방침</a></nav>
+</header>
+
+<h1>SWISHBY 가이드</h1>
+<p class="lead">SWISHBY는 탭 한 번으로 나는 아케이드 비행 게임입니다. 첫 판부터 콤보·대시·모드·성장까지 실제 게임 화면과 함께 설명합니다.</p>
+<p class="meta">2026년 10월 기준 · 숫자는 게임 버전에 따라 바뀔 수 있습니다.</p>
+
+<div class="toc">
+  <strong>목차</strong>
+  <ol>
+    <li><a href="#s1">시작하기</a></li>
+    <li><a href="#s2">기본 조작</a></li>
+    <li><a href="#s3">점수 올리기: PERFECT·콤보·피버</a></li>
+    <li><a href="#s4">대시: 벽을 뚫고 지나기</a></li>
+    <li><a href="#s5">파워업·구역·방해 아이템</a></li>
+    <li><a href="#s6">게임 모드</a></li>
+    <li><a href="#s7">기체와 성장</a></li>
+    <li><a href="#s8">랭킹·시즌·친구</a></li>
+    <li><a href="#s9">계정과 저장</a></li>
+    <li><a href="#s10">초보자 팁</a></li>
+  </ol>
+</div>
+
+<h2 id="s1">1. 시작하기</h2>
+<p>첫 화면에서 기체를 고르고 <strong>PLAY NOW</strong>를 누르면 바로 시작합니다. 로그인 없이 게스트로 플레이할 수 있고, 진행은 이 기기에 저장됩니다(<a href="#s9">9장</a> 참고).</p>
+<figure><img src="img/title-annotated.jpg" alt="SWISHBY 첫 화면, 각 부분에 1부터 12까지 번호 표시" width="720" height="1280" loading="lazy"><figcaption>첫 화면 — 번호는 아래 표 참고</figcaption></figure>
+<div class="tw"><table>
+<tr><th>번호</th><th>이름</th><th>하는 일</th></tr>
+<tr><td class="n"><span class="num">1</span></td><td>레벨</td><td>플레이어 레벨과 경험치 바. 100 XP마다 레벨업</td></tr>
+<tr><td class="n"><span class="num">2</span></td><td>코인</td><td>기본 재화. 스테이지 점수와 필드 오브로 모음</td></tr>
+<tr><td class="n"><span class="num">3</span></td><td>다이아몬드</td><td>레벨업·데일리 첫 판·스테이지 첫 클리어 보상</td></tr>
+<tr><td class="n"><span class="num">4</span></td><td>젬</td><td>희귀 재화. 스테이지에서 게이트마다 1% 확률로 떨어짐</td></tr>
+<tr><td class="n"><span class="num">5</span></td><td>대전 티어</td><td>대전 점수(RP)로 정해지는 등급. 브론즈부터 반신까지 7단계</td></tr>
+<tr><td class="n"><span class="num">6</span></td><td>기체 선택</td><td>좌우 화살표(키보드 ←/→)로 기체를 바꿈. 오른쪽 위 숫자는 몇 번째 기체인지</td></tr>
+<tr><td class="n"><span class="num">7</span></td><td>능력치</td><td>속도·점프력·체공·대시 충전 4가지</td></tr>
+<tr><td class="n"><span class="num">8</span></td><td>SKILL</td><td>기체마다 다른 고유 스킬과 재사용 시간</td></tr>
+<tr><td class="n"><span class="num">9</span></td><td>PLAY NOW</td><td>스테이지 선택으로 이동. 처음 한 번은 튜토리얼 판이 시작됨</td></tr>
+<tr><td class="n"><span class="num">10</span></td><td>글로벌 데일리 런</td><td>전 세계가 같은 코스로 겨루는 일일 챌린지. 연속 일수와 첫 판 보상 표시</td></tr>
+<tr><td class="n"><span class="num">11</span></td><td>대전</td><td>1v1·2v2·FFA 대전과 내 RP</td></tr>
+<tr><td class="n"><span class="num">12</span></td><td>랭킹</td><td>오늘·전체·대전 순위표</td></tr>
+</table></div>
+<p>화면 아래쪽의 <strong>?</strong> 버튼을 누르면 게임 안 도움말(조작·점수·방해 아이템·재화·유닛 요약)을 볼 수 있습니다.</p>
+
+<h2 id="s2">2. 기본 조작</h2>
+<p>화면을 탭할 때마다 기체가 한 번 날갯짓합니다. 가만히 두면 떨어지고, 게이트(위아래 네온 기둥) 사이 틈을 지나면 점수가 올라갑니다. 기둥이나 바닥에 닿으면 판이 끝납니다.</p>
+<p><strong>첫 판은 튜토리얼입니다.</strong> 처음 PLAY NOW를 누르면 스테이지 1이 시작되고 안내 문구가 3단계로 나옵니다.</p>
+<ol>
+  <li>출발 직후: 「화면을 탭해서 날아오르세요」</li>
+  <li>날갯짓 3번 후: 「게이트 가장자리를 아슬아슬하게 스치면 PERFECT!」</li>
+  <li>게이트 3개 통과 후: 「게이지가 차면 DASH, SKILL 버튼으로 고유 스킬!」 — 이때 대시 게이지와 스킬이 한 번 가득 채워져서 바로 써 볼 수 있습니다.</li>
+</ol>
+<div class="pair">
+  <figure><img src="img/tut-1.jpg" alt="튜토리얼 1단계, 출발 직후 '화면을 탭해서 날아오르세요' 안내" width="720" height="1280" loading="lazy"><figcaption>튜토리얼 1단계</figcaption></figure>
+  <figure><img src="img/tut-3.jpg" alt="튜토리얼 3단계, DASH 버튼이 GO!로 빛나는 화면" width="720" height="1280" loading="lazy"><figcaption>튜토리얼 3단계 — DASH 버튼이 GO!로 빛남</figcaption></figure>
+</div>
+<p>처음 3판은 <strong>루키 보정</strong>이 들어갑니다(스테이지 1만). 첫 게이트 3개의 틈이 더 넓고, 첫 게이트가 조금 늦게 나오며, 바닥에 닿아도 2번까지는 튕겨 올라옵니다.</p>
+
+<h3>플레이 화면 읽기</h3>
+<figure><img src="img/hud-annotated.jpg" alt="플레이 화면, 각 부분에 1부터 9까지 번호 표시" width="720" height="1280" loading="lazy"><figcaption>플레이 화면 — 번호는 아래 표 참고</figcaption></figure>
+<div class="tw"><table>
+<tr><th>번호</th><th>이름</th><th>뜻</th></tr>
+<tr><td class="n"><span class="num">1</span></td><td>하트</td><td>체력. 기본 1칸 + 실드 1개마다 1칸(실드는 부딪힘 1번을 막아 줌)</td></tr>
+<tr><td class="n"><span class="num">2</span></td><td>점수</td><td>이번 판 점수</td></tr>
+<tr><td class="n"><span class="num">3</span></td><td>코인</td><td>이번 판에 모은 코인</td></tr>
+<tr><td class="n"><span class="num">4</span></td><td>일시정지</td><td>탭 또는 P / Esc</td></tr>
+<tr><td class="n"><span class="num">5</span></td><td>기체</td><td>내 기체. 뒤에 날갯짓 궤적이 남음</td></tr>
+<tr><td class="n"><span class="num">6</span></td><td>게이트</td><td>위아래 기둥 사이 틈을 통과</td></tr>
+<tr><td class="n"><span class="num">7</span></td><td>SKILL</td><td>기체 고유 스킬. 숫자는 남은 재사용 시간</td></tr>
+<tr><td class="n"><span class="num">8</span></td><td>DASH</td><td>대시 게이지(%). 100%가 되면 GO!</td></tr>
+<tr><td class="n"><span class="num">9</span></td><td>진행</td><td>스테이지 번호 · 구역 · 통과한 게이트/목표 게이트</td></tr>
+</table></div>
+
+<h3>키보드 단축키 (PC)</h3>
+<div class="tw"><table>
+<tr><th>동작</th><th>키</th><th>터치</th></tr>
+<tr><td>날갯짓</td><td>Space, ↑, W</td><td>화면 탭</td></tr>
+<tr><td>대시</td><td>Shift, D, E</td><td>DASH 버튼</td></tr>
+<tr><td>스킬</td><td>S, Q</td><td>SKILL 버튼</td></tr>
+<tr><td>궁극기(울트라 기체, 스테이지 전용)</td><td>A, F</td><td>ULT 버튼</td></tr>
+<tr><td>일시정지</td><td>P, Esc</td><td>Ⅱ 버튼</td></tr>
+<tr><td>기체 바꾸기(첫 화면)</td><td>←, →</td><td>좌우 화살표</td></tr>
+</table></div>
+
+<h2 id="s3">3. 점수 올리기: PERFECT·콤보·피버</h2>
+<p>점수는 게이트를 얼마나 <strong>아슬아슬하게</strong> 지나느냐로 갈립니다. 틈 한가운데로 지나면 1점뿐이지만, 가장자리를 스치면 PERFECT가 되고 콤보가 쌓일수록 한 번에 받는 점수가 커집니다.</p>
+<figure><img src="img/combo.jpg" alt="콤보 5에서 PERFECT +6을 받고 '불붙었다!' 배너가 뜬 화면" width="720" height="1280" loading="lazy"><figcaption>콤보 5 — PERFECT +6과 「불붙었다!」</figcaption></figure>
+<div class="tw"><table>
+<tr><th>판정</th><th>조건</th><th>얻는 것</th><th>콤보</th></tr>
+<tr><td>통과</td><td>틈을 여유 있게 지남</td><td>1점, 대시 게이지 +8%</td><td>0으로 끊김</td></tr>
+<tr><td>PERFECT</td><td>게이트 가장자리를 아슬아슬하게 스침</td><td>(1 + 콤보 + 기체 보너스) × 피버 배율, 대시 게이지 +34%</td><td>1 오름</td></tr>
+<tr><td>페이즈</td><td>대시로 게이트를 뚫고 지남</td><td>+2점</td><td>그대로</td></tr>
+</table></div>
+<ul>
+  <li><strong>PERFECT 점수 예:</strong> 콤보 3에서 PERFECT면 +4, 콤보 5에서는 +6. 화면에 「퍼펙트 X3 +4」처럼 표시됩니다.</li>
+  <li><strong>콤보 5:</strong> 「불붙었다!」 배너가 뜹니다.</li>
+  <li><strong>콤보 10: 피버 타임.</strong> 점수가 2배가 됩니다. 시간 제한은 없고, PERFECT가 아닌 게이트를 하나 지나는 순간 「콤보 끊김」과 함께 끝납니다.</li>
+  <li><strong>PERFECT 판정 폭은 기체마다 다릅니다.</strong> 예를 들어 NIMBUS는 VOLT·BLITZ·TITAN보다 폭이 넓고, BLITZ는 PERFECT마다 보너스 +1점이 붙습니다.</li>
+  <li>글로벌 데일리 런과 대전에서는 공정하게 모두 콤보 10에서 피버 2배로 맞춰집니다.</li>
+</ul>
+<p class="tip">팁: 게이트 바로 앞에서는 탭을 쉬고, 아래 기둥 위 끝에 살짝 붙어 지나가면 PERFECT가 가장 안정적으로 나옵니다.</p>
+
+<h2 id="s4">4. 대시: 벽을 뚫고 지나기</h2>
+<p>대시 게이지가 100%가 되면 DASH 버튼에 <strong>GO!</strong>가 뜨고, 누르면 앞의 게이트를 그대로 뚫고 지나갑니다. 뚫고 지나는 동안에는 부딪혀도 죽지 않습니다.</p>
+<figure><img src="img/dash.jpg" alt="대시로 게이트를 뚫은 직후, 게이지가 0%로 돌아간 화면" width="720" height="1280" loading="lazy"><figcaption>대시 직후 — 게이지가 0%로 돌아감</figcaption></figure>
+<div class="tw"><table>
+<tr><th>게이지를 채우는 방법</th><th>오르는 양</th></tr>
+<tr><td>PERFECT</td><td>+34%</td></tr>
+<tr><td>일반 통과</td><td>+8%</td></tr>
+<tr><td>코인 오브 먹기</td><td>+5%</td></tr>
+<tr><td>대시로 뚫은 게이트</td><td>0%</td></tr>
+</table></div>
+<ul>
+  <li>기본 능력치라면 PERFECT 3번(34% × 3)으로 가득 찹니다. 기체의 <strong>대시 충전</strong> 능력치가 높을수록 더 빨리 찹니다(예: TITAN은 1.4배, BLITZ는 0.85배).</li>
+  <li>대시는 약 0.55초 동안 이어지고, 그동안 무적입니다. 뚫고 지난 게이트는 「페이즈 +2」점이고 콤보는 그대로 유지됩니다.</li>
+  <li>쓰는 타이밍: 틈을 도저히 못 맞출 것 같은 게이트 <strong>바로 앞</strong>에서 누르세요. 너무 일찍 누르면 게이트에 닿기 전에 끝납니다.</li>
+</ul>
+<h3>SKILL과 ULT</h3>
+<ul>
+  <li><strong>SKILL</strong>: 기체마다 다른 고유 스킬입니다. 버튼의 숫자(예: 13s)가 남은 재사용 시간이고, PERFECT로도 충전됩니다. 예를 들어 VOLT의 「오버드라이브」는 재사용 16초, 3초간 유지됩니다.</li>
+  <li><strong>ULT(궁극기)</strong>: 울트라 등급 기체에만 있는 세 번째 버튼입니다. 게이트를 지날 때마다 차고 PERFECT면 더 빨리 차며, 스테이지에서만 쓸 수 있습니다.</li>
+</ul>
+
+<h2 id="s5">5. 파워업·구역·방해 아이템</h2>
+<p>게이트 6개를 지나면 게이트 사이에 파워업이 나오기 시작합니다(게이트마다 약 14% 확률). 닿기만 하면 바로 적용됩니다.</p>
+<div class="tw"><table>
+<tr><th>파워업</th><th>효과</th><th>시간</th><th>나오는 비율</th></tr>
+<tr><td>자석</td><td>주변 코인을 끌어당김</td><td>7초</td><td>40%</td></tr>
+<tr><td>실드</td><td>부딪힘 1번을 막아 줌(하트 1칸 추가)</td><td>막을 때까지</td><td>20%</td></tr>
+<tr><td>슬로모션</td><td>게임 속도가 0.7배로 느려짐</td><td>3초</td><td>20%</td></tr>
+<tr><td>무적 질주</td><td>무적 + 속도 1.2배</td><td>3초</td><td>20%</td></tr>
+</table></div>
+<h3>구역 4개</h3>
+<p>배경과 게이트 규칙이 다른 4개 구역이 있습니다. 스테이지에서는 난이도별로 구역이 정해져 있고, 글로벌 데일리 런과 대전에서는 게이트 12개마다 다음 구역으로 넘어갑니다.</p>
+<div class="tw"><table>
+<tr><th>구역</th><th>난이도</th><th>스테이지</th><th>특징</th></tr>
+<tr><td>DUSK ARC</td><td>★ 쉬움</td><td>1–10</td><td>넓은 틈</td></tr>
+<tr><td>TIDE GRID</td><td>★★ 일반</td><td>11–25</td><td>좁은 틈</td></tr>
+<tr><td>SOLAR VEIN</td><td>★★★ 보통</td><td>26–40</td><td>더 좁은 틈, 0.5초 안개</td></tr>
+<tr><td>NULL VOID</td><td>★★★★ 어려움</td><td>41–50</td><td>가장 좁은 틈, 2초 안개, 2초 안에 탭</td></tr>
+</table></div>
+<p>뒤쪽 구역일수록 위아래로 움직이거나 틈이 숨 쉬듯 벌어졌다 좁아지는 게이트가 늘어납니다. NULL VOID에서는 2초 동안 탭을 안 하면 「엔진 정지!」로 콤보가 0이 됩니다.</p>
+<h3>방해 아이템 (스테이지 11부터)</h3>
+<p>붉은 테두리의 검은 가시 원반이 게이트 사이에 나옵니다. 닿으면 아래 넷 중 하나에 걸립니다. 실드가 있거나 대시·무적 중이면 아무 일 없이 터집니다.</p>
+<div class="tw"><table>
+<tr><th>방해</th><th>효과</th></tr>
+<tr><td>과속</td><td>3초간 빨라짐</td></tr>
+<tr><td>무게추</td><td>3초간 무거워짐</td></tr>
+<tr><td>연막</td><td>2.5초간 안개</td></tr>
+<tr><td>방전</td><td>대시 게이지·스킬 충전·콤보가 0</td></tr>
+</table></div>
+
+<h2 id="s6">6. 게임 모드</h2>
+<p>플레이할 수 있는 모드는 스테이지·글로벌 데일리 런·대전 세 가지입니다. PLAY NOW는 스테이지 선택으로 연결됩니다.</p>
+<div class="tw"><table>
+<tr><th></th><th>스테이지</th><th>글로벌 데일리 런</th><th>대전</th></tr>
+<tr><th>들어가기</th><td>PLAY NOW</td><td>첫 화면 하늘색 버튼</td><td>첫 화면 「대전」</td></tr>
+<tr><th>목표</th><td>목표 게이트 수 통과(클리어)</td><td>오늘 최고 점수</td><td>상대보다 높은 점수</td></tr>
+<tr><th>코스</th><td>스테이지마다 고정</td><td>전 세계 같은 코스, 매일 09:00(한국 시간) 교체</td><td>참가자가 같은 코스</td></tr>
+<tr><th>기체 능력</th><td>그대로</td><td>공정 모드(일부 제한)</td><td>공정 모드(일부 제한)</td></tr>
+<tr><th>보상</th><td>코인·첫 클리어 보상·젬</td><td>첫 판 보상·연속 보너스</td><td>RP(대전 점수)·시즌 보상</td></tr>
+</table></div>
+<h3>스테이지 (50개)</h3>
+<figure><img src="img/stages.jpg" alt="스테이지 선택 화면, 쉬움·일반·보통 구역별 스테이지 칸" width="720" height="1280" loading="lazy"><figcaption>스테이지 선택 — 칸의 「0/10」은 최고 통과 게이트/목표</figcaption></figure>
+<ul>
+  <li>난이도 4단계에 10·15·15·10개씩, 모두 50개입니다(구역은 <a href="#s5">5장</a> 표 참고).</li>
+  <li>칸의 두 번째 숫자가 목표 게이트 수입니다. 스테이지 1–2는 10개로 시작해 두 스테이지마다 1개씩 늘고, 난이도가 올라갈 때 크게 뜁니다(스테이지 11은 21개).</li>
+  <li>목표를 넘기면 클리어되고 다음 스테이지가 열립니다. 판은 그 뒤로도 계속되니 점수를 더 모을 수 있습니다.</li>
+  <li>부딪히면 한 판에 한 번, 점수가 3 이상일 때 <strong>200코인으로 이어하기</strong>를 고를 수 있습니다(스테이지 전용).</li>
+</ul>
+<h3>글로벌 데일리 런</h3>
+<ul>
+  <li>전 세계 플레이어가 날마다 같은 코스를 날고, 매일 한국 시간 오전 9시(UTC 0시)에 바뀝니다.</li>
+  <li>하루 첫 판을 끝내면 보상을 받습니다. 연속으로 할수록 코인이 늘고, 3일·7일째에는 젬이 더 붙습니다(<a href="#s7">7장</a> 표 참고).</li>
+  <li>순위표는 「오늘」 탭에서 상위 50명을 보여 줍니다.</li>
+  <li>공정 모드라 비싼 기체의 특수 능력(부활, 여러 개의 실드 등)이 제한되고, 피버도 모두 콤보 10에서 2배입니다.</li>
+</ul>
+<h3>대전</h3>
+<div class="pair">
+  <figure><img src="img/versus-menu.jpg" alt="대전 메뉴, 1v1·2v2·FFA 선택과 자동 매치·방 만들기·AI와 연습전 버튼" width="720" height="1280" loading="lazy"><figcaption>대전 메뉴</figcaption></figure>
+  <figure><img src="img/versus.jpg" alt="대전 플레이 화면" width="720" height="1280" loading="lazy"><figcaption>대전 플레이 화면</figcaption></figure>
+</div>
+<div class="tw"><table>
+<tr><th>방식</th><th>사람 수</th><th>승패</th><th>RP</th></tr>
+<tr><td>1v1</td><td>2명</td><td>점수가 높은 쪽</td><td>승리 +50, 패배 −50</td></tr>
+<tr><td>2v2</td><td>4명(2팀)</td><td>팀 점수 합</td><td>승리 +50, 패배 −50</td></tr>
+<tr><td>FFA</td><td>4명</td><td>등수</td><td>1등 +50, 2등 +20, 3등 −20, 4등 −50</td></tr>
+<tr><td>AI와 연습전</td><td>나 + AI</td><td>점수</td><td>변동 없음</td></tr>
+</table></div>
+<ul>
+  <li><strong>자동 매치</strong>: 60초 동안 상대를 찾고, 못 찾으면 AI 연습전으로 이어집니다(RP 변동 없음).</li>
+  <li><strong>방 만들기 / 참가</strong>: 방을 만들면 4자리 코드가 나오고, 친구는 그 코드를 입력해 들어옵니다.</li>
+  <li>같은 상대와는 하루 5판까지만 RP가 반영됩니다.</li>
+</ul>
+
+<h2 id="s7">7. 기체와 성장</h2>
+<p>격납고에는 기체 20종이 있고, 기본 4종은 처음부터 무료입니다. 나머지는 코인·다이아몬드·젬 세 가지를 <strong>함께</strong> 내고 삽니다.</p>
+<figure><img src="img/roster.jpg" alt="기체 카드 두 장, SOLARIS(울트라)와 KRAKEN(신화)의 능력치와 스킬" width="720" height="1280" loading="lazy"><figcaption>기체 카드 — SOLARIS(울트라)와 KRAKEN(신화)</figcaption></figure>
+<ul>
+  <li><strong>등급</strong>: 기본 → 에픽 → 레전더리 → 신화 → 울트라 순으로 높아집니다. 모든 기체에 고유 스킬이 있고, 울트라는 궁극기(ULT)까지 있습니다.</li>
+  <li><strong>능력치 4종</strong>: 속도 · 점프력 · 체공 · 대시 충전(100%가 기준).</li>
+  <li><strong>카드 아래 설명</strong>: 그 기체만의 특수 능력입니다(예: PHOENIX는 한 판에 한 번 부활). 글로벌 데일리 런과 대전에서는 공정하게 일부가 제한됩니다.</li>
+</ul>
+<div class="tw"><table>
+<tr><th>등급</th><th>코인</th><th>다이아몬드</th><th>젬</th></tr>
+<tr><td>기본</td><td>무료</td><td>무료</td><td>무료</td></tr>
+<tr><td>에픽</td><td>40,000</td><td>10,000</td><td>15</td></tr>
+<tr><td>레전더리</td><td>90,000</td><td>22,000</td><td>25</td></tr>
+<tr><td>신화</td><td>100,000</td><td>33,000</td><td>40</td></tr>
+<tr><td>울트라</td><td>150,000</td><td>40,000</td><td>100</td></tr>
+</table></div>
+<p>MONARCH는 살 수 없고, 대전 시즌 상위 10명에게만 주는 한정 기체입니다.</p>
+<h3>재화 모으기</h3>
+<div class="tw"><table>
+<tr><th>재화</th><th>얻는 방법</th><th>양</th></tr>
+<tr><td>코인</td><td>스테이지 점수</td><td>10점마다 30 / 40 / 55 / 67 (쉬움 / 일반 / 보통 / 어려움)</td></tr>
+<tr><td>코인</td><td>필드 오브</td><td>1개에 5</td></tr>
+<tr><td>코인 + 다이아몬드</td><td>스테이지 첫 클리어</td><td>(100 + 10 × 스테이지 번호) × 5 코인 + 200 / 375 / 575 / 750 다이아(난이도별)</td></tr>
+<tr><td>코인 + 다이아몬드(+젬)</td><td>레벨업</td><td>250 코인 + 250 다이아, 5레벨마다 젬 1</td></tr>
+<tr><td>코인 + 다이아몬드 + 젬</td><td>글로벌 데일리 런 하루 첫 판</td><td>300 + 50 × 연속 일수(최대 7) 코인, 100 다이아, 젬 1(연속 3일부터 2, 7일부터 4)</td></tr>
+<tr><td>젬</td><td>스테이지 플레이</td><td>게이트마다 1% 확률</td></tr>
+</table></div>
+<p>경험치(XP)는 한 판에 <strong>통과 게이트 + PERFECT × 2 + 점수 ÷ 10</strong>만큼 쌓이고, 100 XP마다 레벨이 오릅니다.</p>
+<h3>결과 화면 읽기</h3>
+<figure><img src="img/result-annotated.jpg" alt="결과 화면, 각 부분에 1부터 8까지 번호 표시" width="720" height="1280" loading="lazy"><figcaption>결과 화면 — 번호는 아래 표 참고</figcaption></figure>
+<div class="tw"><table>
+<tr><th>번호</th><th>내용</th></tr>
+<tr><td class="n"><span class="num">1</span></td><td>이번 판 점수</td></tr>
+<tr><td class="n"><span class="num">2</span></td><td>실패 원인과 다음 판 요령(예: 「너무 높았어요 · 위쪽 벽에 닿았어요」)</td></tr>
+<tr><td class="n"><span class="num">3</span></td><td>최고 점수 · 통과 게이트 · PERFECT 수 · 최대 콤보</td></tr>
+<tr><td class="n"><span class="num">4</span></td><td>이번 판 보상: XP, 점수 코인, 필드 코인, 첫 클리어 코인·다이아</td></tr>
+<tr><td class="n"><span class="num">5</span></td><td>다시 하기</td></tr>
+<tr><td class="n"><span class="num">6</span></td><td>친구에게 도전장 보내기(내 점수가 담긴 링크)</td></tr>
+<tr><td class="n"><span class="num">7</span></td><td>결과 이미지 저장</td></tr>
+<tr><td class="n"><span class="num">8</span></td><td>랭킹 · 메뉴</td></tr>
+</table></div>
+<p>위 화면은 스테이지 1에서 62점을 낸 판입니다. 계산해 보면 XP는 게이트 13 + PERFECT 9 × 2 + 62 ÷ 10(6) = 37, 점수 코인은 6 × 30 = 180, 필드 코인은 오브 9개 × 5 = 45, 첫 클리어는 (100 + 10) × 5 = 550 코인과 200 다이아로 화면과 같습니다.</p>
+
+<h2 id="s8">8. 랭킹·시즌·친구</h2>
+<p>랭킹은 세 탭으로 나뉩니다. 대전 시즌은 한 달 단위로 돌아가고, 매월 1일 00:00(한국 시간)에 정산됩니다.</p>
+<div class="tw"><table>
+<tr><th>탭</th><th>보여 주는 것</th><th>인원</th></tr>
+<tr><td>오늘</td><td>글로벌 데일리 런 오늘 점수</td><td>상위 50명</td></tr>
+<tr><td>전체</td><td>역대 최고 점수</td><td>상위 50명</td></tr>
+<tr><td>대전</td><td>이번 시즌 RP</td><td>상위 100명</td></tr>
+</table></div>
+<h3>대전 티어와 시즌 보상</h3>
+<div class="tw"><table>
+<tr><th>티어</th><th>필요한 RP</th></tr>
+<tr><td>브론즈</td><td>0</td></tr>
+<tr><td>실버</td><td>400</td></tr>
+<tr><td>골드</td><td>1,000</td></tr>
+<tr><td>플래티넘</td><td>2,000</td></tr>
+<tr><td>다이아</td><td>3,600</td></tr>
+<tr><td>넘사</td><td>5,600</td></tr>
+<tr><td>반신</td><td>8,000</td></tr>
+</table></div>
+<ul>
+  <li>한 시즌에 랭크전을 <strong>10판 이상</strong> 하면 시즌이 끝날 때 티어에 맞는 보상을 받습니다.</li>
+  <li>상위 10명에게는 한정 기체 <strong>MONARCH</strong>가 주어집니다.</li>
+  <li>AI 연습전은 RP에 반영되지 않습니다.</li>
+</ul>
+<h3>친구·초대·도전장</h3>
+<ul>
+  <li><strong>친구</strong>: 첫 화면 아래 「친구」에서 내 친구 코드를 복사해 보내거나 상대 코드를 입력해 친구 요청을 보냅니다. 친구가 접속하면 알림이 옵니다.</li>
+  <li><strong>초대 보상</strong>: 내 초대 링크로 들어온 친구가 서로 다른 3일 동안 플레이하고 스테이지 10에 도달하면 젬 30개를 받습니다. 초대 성공 3·10·25명에서 각각 젬 50·150·500개가 더 나오며, 한 달에 25명까지 인정됩니다.</li>
+  <li><strong>도전장</strong>: 결과 화면의 「친구에게 도전장 보내기」로 내 점수가 담긴 링크를 보냅니다. 글로벌 데일리 런 점수라면 친구는 같은 날 같은 코스에서 겨루게 됩니다.</li>
+</ul>
+<h3>닉네임·신고</h3>
+<ul>
+  <li>닉네임은 최대 14자이고, 부적절한 단어는 「사용할 수 없는 이름입니다」로 막힙니다.</li>
+  <li>랭킹에서 다른 플레이어를 눌러 「부적절한 닉네임」·「부정행위」·「기타」로 신고하거나 차단할 수 있습니다. 신고는 플레이어마다 하루 1번입니다.</li>
+</ul>
+
+<h2 id="s9">9. 계정과 저장</h2>
+<p>로그인 없이도 모든 모드를 플레이할 수 있지만, 게스트 진행은 그 기기의 브라우저에만 남아서 <strong>브라우저 데이터를 지우면 사라집니다.</strong> 기기를 바꾸거나 진행을 지키려면 로그인하세요.</p>
+<div class="tw"><table>
+<tr><th>방법</th><th>비고</th></tr>
+<tr><td>Google 로그인</td><td>카카오톡 등 앱 안 브라우저에서는 Google이 막으므로 Chrome·Safari로 열기</td></tr>
+<tr><td>Apple 로그인</td><td>iPhone·iPad에서 가장 간편</td></tr>
+<tr><td>이메일 코드</td><td>이메일로 받은 6자리 코드 입력</td></tr>
+</table></div>
+<ul>
+  <li>로그인하면 <strong>클라우드 세이브</strong>가 켜져서 코인·기체·시즌 보상이 모든 기기에서 같게 유지됩니다.</li>
+  <li>게스트로 하던 진행과 계정에 이미 있던 진행이 다르면, 합칠지 「계정 진행만 사용」할지 고르는 창이 뜹니다.</li>
+  <li>계정 삭제는 로그인 후 계정 카드의 빨간 「계정 삭제」에서 할 수 있고, <strong>되돌릴 수 없습니다</strong>. <a href="../delete-account.html">계정 삭제 안내</a>도 참고하세요.</li>
+  <li>게임 언어는 기기 언어를 따라 23개 언어 중에서 자동으로 정해지고, 첫 화면 아래 언어 버튼(예: 「한국어」)으로 바꿀 수 있습니다.</li>
+</ul>
+
+<h2 id="s10">10. 초보자 팁</h2>
+<p>점수를 빨리 올리는 순서는 「살아남기 → PERFECT → 콤보 10 유지 → 대시로 위기 넘기기」입니다.</p>
+<ol>
+  <li><strong>첫 3판은 리듬 익히기.</strong> 루키 보정으로 틈이 넓고 바닥에서 2번 튕겨 오르니, 탭 간격만 익히세요.</li>
+  <li><strong>게이트 앞에서는 탭을 쉬세요.</strong> 가장 흔한 실패는 너무 높게 떠서 위쪽 벽에 닿는 것입니다. 결과 화면의 실패 원인 문구를 꼭 읽어 보세요.</li>
+  <li><strong>아래 기둥 위 끝에 살짝 붙어 지나기.</strong> 여기서 PERFECT가 가장 안정적으로 나오고, PERFECT 3번이면 대시가 가득 찹니다.</li>
+  <li><strong>피버는 끊기지 않는 게 핵심.</strong> 콤보 10부터는 점수가 2배이고 시간 제한이 없으니, 애매한 게이트는 PERFECT를 노리는 대신 대시로 뚫어도 됩니다(대시는 콤보를 끊지 않음).</li>
+  <li><strong>매일 글로벌 데일리 런 한 판.</strong> 첫 판 보상이 하루에 한 번이고, 연속 7일이면 코인 650·다이아 100·젬 4개까지 늘어납니다.</li>
+  <li><strong>스테이지는 순서대로 첫 클리어.</strong> 첫 클리어 보상(코인 + 다이아)이 제일 크고, 다음 스테이지도 열립니다.</li>
+  <li><strong>대전은 AI 연습전부터.</strong> RP가 걸리지 않으니 구역이 바뀌는 코스에 먼저 익숙해지세요.</li>
+  <li><strong>로그인해 두기.</strong> 기체를 산 뒤라면 특히, 브라우저 데이터가 지워져도 진행이 남습니다.</li>
+</ol>
+<p>게임 안에서도 첫 화면의 <strong>?</strong> 버튼으로 요약 도움말을 볼 수 있습니다.</p>
+<figure><img src="img/help.jpg" alt="게임 안 도움말 화면, 조작·궁극기·점수·방해 아이템·재화 설명" width="720" height="1280" loading="lazy"><figcaption>게임 안 도움말</figcaption></figure>
+
+<p style="text-align:center"><a class="cta" href="../">SWISHBY 플레이하기</a></p>
+
+<footer>
+  <p>© MINIMALKOREA · <a href="../about/">소개</a> · <a href="../terms.html">이용약관</a> · <a href="../privacy.html">개인정보처리방침</a> · 문의 contact@swishby.com</p>
+</footer>
+</main>
+</body>
+</html>

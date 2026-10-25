@@ -523,7 +523,7 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
     <div class="card helpcard">
       <div class="lbhead"><h2 class="mtitle" data-i18n="help"></h2><button class="ghost" id="helpClose" data-i18n="close"></button></div>
       <p data-i18n="hControls"></p><p data-i18n="hUlt"></p><p data-i18n="hScore"></p><p data-i18n="hHaz"></p><p data-i18n="hMoney"></p><p data-i18n="hUnits"></p>
-      <div class="legal"><a href="about/" target="_blank" rel="noopener" data-i18n="legalAbout"></a> · <a href="terms.html" target="_blank" rel="noopener" data-i18n="legalTerms"></a> · <a href="privacy.html" target="_blank" rel="noopener" data-i18n="legalPrivacy"></a></div>
+      <div class="legal"><span data-lang-only="ko"><a href="guide/" target="_blank" rel="noopener">가이드</a> · </span><a href="about/" target="_blank" rel="noopener" data-i18n="legalAbout"></a> ·<a href="terms.html" target="_blank" rel="noopener" data-i18n="legalTerms"></a> · <a href="privacy.html" target="_blank" rel="noopener" data-i18n="legalPrivacy"></a></div>
     </div>
   </div>
 
@@ -1247,6 +1247,7 @@ function applyI18n(){
   document.documentElement.lang = bcp47(lang);
   document.documentElement.dir = RTL_LANGS.includes(lang) ? 'rtl' : 'ltr';
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-lang-only]').forEach(el => { el.hidden = el.dataset.langOnly !== lang; });   // pages written in one language (the Korean guide)
   $('dashBtn').setAttribute('aria-label', t('dashK'));
   $('pauseBtn').setAttribute('aria-label', t('pauseK'));
   $('vibBtn').setAttribute('aria-label', t('vib')); $('pushBtn').setAttribute('aria-label', t('push'));
