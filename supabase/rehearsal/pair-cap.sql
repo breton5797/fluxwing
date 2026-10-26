@@ -38,7 +38,8 @@ begin
     perform pg_temp.as_user(b); r := private.fw_versus_report(mid, 'lose');
     if (select status from private.fw_vs_match where id = mid) <> 'settled' then raise exception 'match % not settled', mid; end if;
   end loop;
-  if (select rp from public.fw_versus where player_id = a) <> cap * 50 then raise exception 'a should hold % RP', cap * 50; end if;
+  -- RP by the rivals' RP (fw_vs_delta): +50, then the same rival again x0.5, x0.25: 50, 74, 85, 96, 107
+  if (select rp from public.fw_versus where player_id = a) <> 107 then raise exception 'a should hold 107 RP, has %', (select rp from public.fw_versus where player_id = a); end if;
 
   mid := 'c6.' || a || '.' || b;
   msg := pg_temp.refused(a, mid, '1v1', 0);
@@ -54,7 +55,7 @@ begin
   update private.fw_vs_part set joined_at = joined_at - interval '1 minute' where match_id = mid;
   perform pg_temp.as_user(a); r := private.fw_versus_report(mid, 'win');
   perform pg_temp.as_user(c); r := private.fw_versus_report(mid, 'lose');
-  if (select rp from public.fw_versus where player_id = a) <> cap * 50 + 50 then raise exception 'a vs c should have counted'; end if;
+  if (select rp from public.fw_versus where player_id = a) <> 151 then raise exception 'a vs c should have counted in full (107 + 44), a has %', (select rp from public.fw_versus where player_id = a); end if;
 
   -- FFA: b sits in the room, so a is refused; d (no history) and c (one match vs a) get in
   mid := 'f1.' || a || '+' || b || '+' || c || '+' || d;
