@@ -37,5 +37,5 @@ test('the tutorial starts only when the run did', () => {
 });
 
 test('a hit during Eternal Return is not undone when the ultimate ends', () => {
-  assert.match(html, /const hitReset = \(\) => \{ FX\.arch = 0; FX\.loops = 0; FX\.loopsWas = -1; \};/);
+  assert.match(html, /const hitReset = \(\) => \{ FX\.arch = 0; FX\.loops = 0; FX\.loopsWas = -1; FX\.hit = true; \};/);
 });

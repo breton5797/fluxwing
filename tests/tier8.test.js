@@ -49,7 +49,7 @@ test('the new passives are stage mode only and wired into the gate, Perfect and 
   assert.match(html, /\(PK\.archStep \? 1 \+ Math\.min\(PK\.archMax, FX\.arch\) : 1\)/, 'ARCHON multiplies a Perfect');
   assert.match(html, /\(PK\.ouroAt \? 1 \+ \.2\*FX\.loops : 1\)/, 'OUROBOROS multiplies a Perfect');
   assert.match(html, /if \(PK\.archStep\) FX\.arch = Math\.min\(PK\.archMax, FX\.arch \+ PK\.archStep\);/, 'ARCHON stacks per gate');
-  assert.match(html, /const hitReset = \(\) => \{ FX\.arch = 0; FX\.loops = 0; FX\.loopsWas = -1; \};/, 'one rule: a hit clears ARCHON\'s stack and OUROBOROS\'s loops (also the ones Eternal Return would hand back)');
+  assert.match(html, /const hitReset = \(\) => \{ FX\.arch = 0; FX\.loops = 0; FX\.loopsWas = -1; FX\.hit = true; \};/, 'one rule: a hit clears ARCHON\'s stack and OUROBOROS\'s loops (also the ones Eternal Return would hand back)');
   assert.match(html, /function breakShield\(dirY\)\{ hitReset\(\);/); assert.match(html, /bounceLeft--; hitReset\(\);/); assert.match(html, /reviveLeft--; hitReset\(\);/);
   assert.match(html, /contUsed = true; hitReset\(\);/, 'a continue after a death clears them too');
   assert.match(html, /if \(PK\.ouroAt && combo >= PK\.ouroAt\)\{ combo = PK\.feverAt; FX\.loops = Math\.min\(3, FX\.loops \+ 1\);/, 'OUROBOROS loops');
