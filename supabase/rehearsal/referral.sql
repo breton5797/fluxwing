@@ -177,7 +177,7 @@ do $$ begin
   if has_function_privilege('anon', 'public.referral_me()', 'execute') then raise exception 'anon must not call referral_me'; end if;
   if has_function_privilege('anon', 'public.referral_link(text)', 'execute') then raise exception 'anon must not call referral_link'; end if;
   if has_function_privilege('authenticated', 'private.fw_ref_cfg()', 'execute') then raise exception 'the cfg helper stays private'; end if;
-  if not has_function_privilege('authenticated', 'private.fw_referral_claim()', 'execute') then raise exception 'the invoker wrapper needs execute on the private function'; end if;
+  if not has_function_privilege('authenticated', 'private.fw_referral_claim(text)', 'execute') then raise exception 'the invoker wrapper needs execute on the private function'; end if;
 end $$;
 delete from auth.users where id = pg_temp.u('b');
 do $$ begin

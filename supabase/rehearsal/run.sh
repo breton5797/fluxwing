@@ -7,6 +7,7 @@
 #               pg_cron job), claims, and a 100,000-player rollover timed under the 8 s API timeout.
 # harden.sql:   the leaderboard gate cap, time budget and hidden rows.
 # nick.sql:     private.fw_nick_bad against the browser filter's test names (printed by scripts/nick-rehearsal.mjs).
+# ranking.sql:  guests refused ranked play, rivals at the rollover, claim nonces, set_nick, no score without gates.
 # Needs: Postgres 17 binaries (Homebrew: brew install postgresql@17). pg_cron is not needed: the cron block skips itself.
 set -u
 HERE=$(cd "$(dirname "$0")" && pwd); ROOT=$(cd "$HERE/../.." && pwd)
