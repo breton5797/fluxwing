@@ -758,7 +758,7 @@ const BIRDS = [
   { id:'zero',    name:'ZERO',    rarity:2, col:[268,35,22],  wingCol:[288,100,66],speed:1.10, flap:480, grav:1560, maxFall:740, dash:1.20, r:12.5, window:16, bonus:0, uiCol:[288,100,66], nose:21, h:11, span:26, stats:[4,3,3,5],
     dashFull:true, dashLen:1.5, dashPts:2 },
   // ---- high-end premium (special abilities) ----
-  { id:'pixel',   name:'PIXEL',   rarity:1, col:[48,100,58],  wingCol:[20,100,58],  speed:1.00, flap:470, grav:1500, maxFall:720, dash:1.00, r:13,   window:16, bonus:0, nose:16, h:13, span:26, stats:[3,3,3,3],
+  { id:'pixel',   name:'PIXEL',   rarity:1, col:[345,75,72],  wingCol:[48,100,58],  speed:1.00, flap:470, grav:1500, maxFall:720, dash:1.00, r:13,   window:16, bonus:0, nose:16, h:13, span:26, stats:[3,3,3,3],
     coinMul:2, orbShieldEvery:50, shieldMax:2 },
   { id:'neko',    name:'NEKO',    rarity:1, col:[275,60,86],  wingCol:[330,80,75],  speed:0.98, flap:450, grav:1400, maxFall:680, dash:1.00, r:13,   window:17, bonus:0, nose:16, h:13, span:24, stats:[3,3,4,3],
     bounce:99 },
@@ -3952,13 +3952,15 @@ function drawMochi(c, d, w, glow){
   c.save(); c.translate(-6,2); c.rotate(-.6 + w*1.2); c.fillStyle = hsl(d.wingCol); c.beginPath(); c.ellipse(-4,0,6,3.6,0,0,6.28); c.fill(); c.restore();
   c.restore();
 }
-const PIX_A = ['..YYYY..','.YYYYWK.','YYYYYWWO','RRYYYYOO','RRRYYYY.','.RYYYYY.','..YY.YY.'];
-const PIX_B = ['..YYYY..','.YYYYWK.','RRYYYWWO','RRRYYYOO','.YYYYYY.','.YYYYYY.','..YY.YY.'];
+// PIXEL: a winged pixel-art piggy bank with a coin in its slot (coin unit). Frame A wing down, B wing up. P body, S snout, N nostril, E ear,
+// T tail, C slot, G coin, K eye, W wing, L legs
+const PIX_A = ['...GG....','..PCCPPE.','.PPPPPPKP','TPPPPPPSS','.PWWPPPSN','..WWPPPP.','..LL..LL.'];
+const PIX_B = ['...GG....','.WWCCPPE.','.WWPPPPKP','TPPPPPPSS','.PPPPPPSN','..PPPPPP.','..LL..LL.'];
 function drawPixel(c, d, w, glow){
   const k = d.r/13, cs = 3.6, rows = w > .5 ? PIX_B : PIX_A;
-  const pal2 = { Y: hsl(d.col), O: hsl([28,100,55]), K: '#140a0a', W: '#fff', R: hsl(d.wingCol) };
+  const pal2 = { P: hsl(d.col), S: hsl(d.col, 1, -12), N: '#3a0d1a', E: hsl(d.col, 1, -18), T: hsl(d.col, 1, -18), C: '#2a0a14', G: hsl(d.wingCol), K: '#140a0a', W: '#fff', L: hsl(d.col, 1, -24) };
   c.save(); c.scale(k,k); if (glow){ c.shadowColor = hsl(d.col); c.shadowBlur = 14; }
-  rows.forEach((row, j) => { for (let i=0;i<row.length;i++){ const ch = row.charAt(i); if (ch !== '.'){ c.fillStyle = pal2[ch]; c.fillRect(-14.4 + i*cs, -12.6 + j*cs, cs + .3, cs + .3); } } });
+  rows.forEach((row, j) => { for (let i=0;i<row.length;i++){ const ch = row.charAt(i); if (ch !== '.'){ c.fillStyle = pal2[ch]; c.fillRect(-row.length*cs/2 + i*cs, -rows.length*cs/2 + j*cs, cs + .3, cs + .3); } } });
   c.restore();
 }
 function drawNeko(c, d, w, glow){

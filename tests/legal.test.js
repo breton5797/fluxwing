@@ -38,6 +38,11 @@ test('privacy.html states what the game actually does with data', () => {
   }
 });
 
+test('privacy.html names the host of swishby.com (Vercel) in both languages', () => {
+  const h = read('privacy.html'), [ko, en] = [h.slice(0, h.indexOf('Effective:')), h.slice(h.indexOf('Effective:'))];
+  for (const part of [ko, en]) assert.match(part, /<tr><td>Vercel Inc\.<\/td>/, 'a Vercel row in the processor table');
+});
+
 test('privacy.html covers the apps (push tokens, Game Center) and nickname reports', () => {
   const h = read('privacy.html');
   for (const must of ['APNs', 'Game Center', '푸시 토큰', 'push token', '신고 기록', 'Reports']) {
