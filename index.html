@@ -4089,12 +4089,13 @@ function update(rdt){
   if (danger > .55 && T - lastWarnT > .6){ lastWarnT = T; tone(880, .06, 'square', .05); tone(660, .08, 'square', .05, 0, .07); }
   for (const o of orbs){
     o.x -= vx*dt; o.t += dt; if (o.vy) o.y += o.vy*dt;   // vy: a coin of SOLARIS's rain, falling
+    if (o.star && o.gate){ const mr0 = rushT > 0 ? 240 : magnetT > 0 ? 190 : PK.magnet; if (mr0 && Math.hypot(bird.x - o.x, bird.y - o.y) < mr0) o.gate = null; }   // COSMOS: in a magnet's reach a star leaves its gate and flies in like a coin
     if (o.gate) { o.x = o.gate.x + o.gate.w/2; o.y = gY(o.gate); }
     if (o.got) continue;
     const dx = bird.x - o.x, dy = bird.y - o.y, d = Math.hypot(dx,dy);
     const mr = o.k === 'gem' ? 110 : rushT > 0 ? 240 : magnetT > 0 ? 190 : PK.magnet;
     if (mr && (o.k === 'orb' || o.k === 'gem') && d < mr && d > 0){ o.x += dx/d * 520*dt; o.y += dy/d * 520*dt; o.pull = 1; }
-    if (d < bird.r + (o.k==='orb'?10:o.k==='gem'?22:16)){
+    if (d < bird.r + (o.star ? 13 : o.k==='orb'?10:o.k==='gem'?22:16)){
       o.got = true;
       if (o.k === 'orb' && !o.star && PK.orbShieldEvery && Math.floor((orbsGot + (rushT > 0 ? 2 : 1)) / PK.orbShieldEvery) > Math.floor(orbsGot / PK.orbShieldEvery) && shields < PK.shieldMax){ shields++; popT = 0; pop(t('shieldP') + ' +1', bird.x, bird.y-34, [48,100,62], true); SFX.power(); haptic('power'); }
       if (o.k === 'orb'){ if (!o.star) orbsGot += rushT > 0 ? 2 : 1; if (PK.orbPts) addScore(PK.orbPts);
@@ -4196,7 +4197,9 @@ function render(){
       for (let i = 1; i <= 2; i++){ ctx.beginPath(); ctx.arc(o.x - dxp/dp*i*9, o.y + bob - dyp/dp*i*9, 2.4 - i*.7, 0, 6.283); ctx.fill(); }
     }
     if (o.star){   // COSMOS's star: a violet five-point star instead of the coin
-      ctx.save(); ctx.translate(o.x, o.y + bob); ctx.rotate(o.t); ctx.fillStyle = 'hsl(310,100%,75%)'; ctx.beginPath(); for (let i = 0; i < 10; i++){ const a = i*.628 - 1.571, r = i % 2 ? 4 : 10; ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r); } ctx.closePath(); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.translate(o.x, o.y + bob); ctx.strokeStyle = `hsla(310,100%,80%,${RM ? .6 : .45 + .3*Math.sin(o.t*5)})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 17, 0, 6.283); ctx.stroke();   // a halo ring, so it reads over COSMOS's own violet
+      ctx.rotate(o.t); ctx.fillStyle = 'hsl(310,100%,72%)'; ctx.beginPath(); for (let i = 0; i < 10; i++){ const a = i*.628 - 1.571, r = i % 2 ? 5.5 : 13; ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r); } ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, 6.283); ctx.fill(); ctx.restore();   // a white core
     } else if (o.k === 'orb'){
       ctx.save(); ctx.translate(o.x, o.y + bob); ctx.rotate(o.t*2);
       ctx.shadowColor = 'hsl(48,100%,60%)'; ctx.shadowBlur = glowPx(14);
