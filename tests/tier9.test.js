@@ -92,3 +92,14 @@ test('a constellation is four stars, the body counts them, and every language sa
   const P = loadI18NParts();
   for (const [l, tb] of Object.entries(P.I18N)){ assert.match(tb.p_cosmos, /4/, `${l} p_cosmos says four`); assert.doesNotMatch(tb.p_cosmos, /5/, `${l} p_cosmos: no five left`); }
 });
+
+test('a star reads at a glance and answers a magnet', () => {
+  const draw = html.slice(html.indexOf("if (o.star){   // COSMOS's star"), html.indexOf("} else if (o.k === 'orb'){"));
+  assert.match(draw, /r = i % 2 \? 5\.5 : 13/, 'a bigger star (13 px points)');
+  assert.match(draw, /ctx\.arc\(0, 0, 17,/, 'a halo ring round it');
+  assert.match(draw, /ctx\.arc\(0, 0, 4,/, 'a white core');
+  assert.match(html, /if \(d < bird\.r \+ \(o\.star \? 13 : o\.k==='orb'\?10/, 'the pickup matches the bigger star');
+  assert.match(html, /if \(o\.star && o\.gate\)\{ const mr0 = rushT > 0 \? 240 : magnetT > 0 \? 190 : PK\.magnet; if \(mr0 && Math\.hypot\(bird\.x - o\.x, bird\.y - o\.y\) < mr0\) o\.gate = null; \}/, 'in a magnet\'s reach a star leaves its gate and flies in like a coin');
+  const a = html.indexOf('if (o.star && o.gate){ const mr0'), b = html.indexOf('if (o.gate) { o.x = o.gate.x + o.gate.w/2;');
+  assert.ok(a > 0 && b > a, 'released before the gate would pin it again');
+});
