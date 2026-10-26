@@ -48,12 +48,14 @@ async function run(){
   }, AIM);
 }
 
+// a reload that hangs (seen once in a 160-run batch) is retried rather than ending the batch
+const menu = async () => { for (let i = 0; ; i++){ try { await page.reload({ timeout: 30000 }); await page.waitForFunction(() => window.FW && FW.state === 'menu'); return; } catch (e){ if (i >= 2) throw e; } } };
 const q = (a, p) => { const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(p * s.length))]; };
 const rows = [];
 for (const u of units){
-  await seed(u.id); await page.reload(); await page.waitForFunction(() => window.FW && FW.state === 'menu');
+  await seed(u.id); await menu();
   const res = [];
-  for (let i = 0; i < RUNS; i++){ res.push(await run()); await page.waitForFunction(() => FW.state !== 'play', null, { timeout: 15000 }).catch(() => {}); await page.reload(); await page.waitForFunction(() => window.FW && FW.state === 'menu'); }
+  for (let i = 0; i < RUNS; i++){ res.push(await run()); await page.waitForFunction(() => FW.state !== 'play', null, { timeout: 15000 }).catch(() => {}); await menu(); }
   const sc = res.map(r => r.score), mean = sc.reduce((a, c) => a + c, 0) / sc.length;
   const bound = Math.max(...res.map(r => r.gates ? r.score / (3*r.gates*r.gates + 75*r.gates) : 0));
   rows.push({ id: u.id, rarity: u.rarity, mean: Math.round(mean), median: q(sc, .5), p90: q(sc, .9), gates: +(res.reduce((a, r) => a + r.gates, 0) / res.length).toFixed(1), bound: +bound.toFixed(3) });
