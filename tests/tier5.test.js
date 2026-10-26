@@ -43,22 +43,44 @@ test('every language has the six unit strings, with {n} in the skill and ultimat
     assert.match(tb['sd_' + id], /\{n\}/, `${l} sd_${id}`); assert.match(tb['ud_' + id], /\{n\}/, `${l} ud_${id}`);
   }
   for (const l of Object.keys(P.I18N_W)) for (const id of IDS) assert.ok(P.I18N_W[l]['ul_' + id], `world table ${l} has ul_${id} itself`);
+  // multiples come from SK / ULT through {m}, so tuning a number never leaves a text behind
+  for (const [l, tb] of Object.entries(I)) for (const id of ['seraph', 'lumen', 'halcyon']) for (const k of ['sd_', 'ud_']){
+    assert.match(tb[k + id], /×\{m\}/, `${l} ${k}${id}`); assert.doesNotMatch(tb[k + id], /×\d/, `${l} ${k}${id} has no fixed multiple`);
+  }
+  assert.match(html, /t\('sd_' \+ B\.id, \{n: skN\(B\.id\), m: SK\[B\.id\]\.mul \?\? ''\}\)/);
+  assert.match(html, /t\('ud_' \+ B\.id, \{n: u\.dur \?\? u\.n, m: u\.mul \?\? ''\}\)/);
 });
 
 test('skills and ultimates of ranks above ultra grow at evolution forms III and V; ranks up to ultra never', () => {
   assert.equal(T.skillBoost(4, 4), 1);
-  assert.deepEqual([0, 1, 2, 3, 4].map(f => T.skillBoost(5, f)), [1, 1, 1.15, 1.15, 1.3]);
+  assert.deepEqual([0, 1, 2, 3, 4].map(f => T.skillBoost(5, f)), [1, 1, 1.1, 1.1, 1.2]);
   const skv = block('const skv = k =>', 'const skillCd');
   assert.match(skv, /skillBoost/);
   assert.match(html, /const ultRow = id =>/);
   assert.match(block('function useUlt(', '\n}\n'), /u = ultRow\(id\)/);
 });
 
-test('form-scaled passives: SERAPH Perfect bonus +1 at forms II and IV, LUMEN keeps +5% of the combo per form (stage mode)', () => {
+test('form-scaled passives: SERAPH Perfect bonus +1 at forms II and IV, LUMEN keeps +2% of the combo per form (stage mode)', () => {
   const perks = html.slice(html.indexOf('function perks(){'), html.indexOf('const I18N_C = {'));
   assert.match(perks, /B\.formBonus \? \(fm \+ 1\) >> 1 : 0/);
-  assert.match(perks, /B\.formKeep \? \.05\*fm : 0/);
+  assert.match(perks, /B\.formKeep \? \.02\*fm : 0/);
   assert.match(row('seraph'), /formBonus:1/); assert.match(row('lumen'), /formKeep:1/);
+});
+
+test('fair modes: no combo protection, no Resonance at x1 (window stays +10 at most), fair rows say so', () => {
+  const sk = block('const SK = {', '\n};'), us = block('function useSkill(', '\n}\n');
+  assert.match(sk, /lumen:\{[^}]*keep:1[^}]*f:\{[^}]*keep:0/, 'LUMEN: keep only outside fair modes');
+  assert.match(us, /case 'lumen':[^\n]*if \(skv\('keep'\)\)/);
+  for (const id of ['seraph', 'lumen', 'halcyon']) assert.match(us, new RegExp(`case '${id}':[^\\n]*if \\(skv\\('mul'\\) > 1\\)`), `${id}: Resonance only with a real multiple`);
+});
+
+test('an ultimate never lowers the multiple a skill set; Everlight\'s sure gates end with it; SERAPH has its own lane step-back', () => {
+  assert.match(html, /\(FX\.resoT > 0 \|\| bang \? Math\.max\(FX\.resoT > 0 \? FX\.resoMul : 1, bang \? ULT\[B\.id\]\.mul : 1\) : 1\)/);
+  const uu = block('function useUlt(', '\n}\n'), ue = block('function ultEnd(', '\n}\n');
+  for (const id of ['seraph', 'lumen']) assert.match(uu.slice(uu.indexOf(`case '${id}'`)), /FX\.resoMul = Math\.max\(FX\.resoT > 0 \? FX\.resoMul : 1, u\.mul\)/, id);
+  assert.match(ue, /g\.everl/); assert.match(ue, /ULT\[B\.id\]\.out \?\? ULT\.aurora\.out/);
+  assert.match(html, /seraph:\{dur:[\d.]+, gap:\d+, mul:[\d.]+, out:\d\}/);
+  assert.match(html, /resoT:0, resoMul:1, keepT:0/, 'keepT is per-run state');
 });
 
 test('shared machinery reads the unit\'s own row: storm chain, carry and Big Bang multiplier', () => {

@@ -40,3 +40,21 @@ Each rank's mean is about 11% above the one below, starting from the open ultras
 | 9 genesis | ×1.50 → ×1.70 | ~251 |
 
 A rank's PR is ready when its four units are on target at form I and form V, and the best run's bound ratio stays below 0.25.
+
+## Rank 5 · celestial (P1), 2026-10-26 (stage 20, 60 runs): `tier5-s20-f0.json`, `tier5-s20-f4.json`
+
+| Unit | Form I | Form V | Best bound ratio (V) |
+|---|---|---|---|
+| seraph | 138 | 369 | 0.090 |
+| valkyrie | 195 | 336 | 0.029 |
+| lumen | 113 | 527 | 0.115 |
+| halcyon | 145 | 454 | 0.178 |
+| **rank mean** | **148** (target ~165) | **422** (target ~410) | |
+
+The open ultras at form V, for reference: solaris 182, pulsar 444 (mean ~313).
+
+- **Form V is on target.** Celestial is about 35% above the open ultras, which is about the rank step × mastery the design asks for.
+- **Form I sits about 10% under target**, roughly level with the open ultras (~149). The difference shows at the higher forms, as intended for "grows with the unit's level".
+- **Run-to-run noise is about ±20–25% at 60 runs.** The same settings gave seraph 161 and 122 at form I in two batches. Do not tune on one batch, and compare rank means rather than single units.
+- **LUMEN scales the most** (form I ~113–138, form V ~410–550). Its combo-keep passive turns longer runs into much longer combos. Re-check it with players before rank 5 is released.
+- **All runs stay at or below 0.18 of the server bound** (3g² + 75g). Re-derive the bound with the next ranks' numbers before the first rank above ultra is released.

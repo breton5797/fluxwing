@@ -71,6 +71,7 @@ export function buildAbout(){
   const { BIRDS, I18N_B, ZONES, PTIERS, RARITY_KEY, RARITY_COL, SK, ULT, ST, season, I } = gameData();
   if (ST.ST_FIRST.length !== ZONES.length || ST.ST_FIRST.at(-1) + ST.ST_CNT.at(-1) !== ST.ST_N) throw new Error('stage layout and zones disagree');
   const num = (t, id) => String((t[id] && (t[id].dur ?? t[id].n)) ?? '');
+  const mul = (t, id) => String((t[id] && t[id].mul) ?? '');   // {m}: a skill's / ultimate's Perfect multiple
   if (season.tier_rp.join() !== PTIERS.map(p => p[1]).join()) throw new Error('server tier_rp and client PTIERS disagree');
   const GAME_KEYS = ['_n', 'tag', 'startSub', 'c1', 'c2', 'c3', 'c4', 'c5', 'endless', 'daily', 'ranking', 'vs', 'start', 'legalTerms', 'legalPrivacy',
     ...PTIERS.map(p => 'pt_' + p[0]), ...RARITY_KEY, 'r_season'];
@@ -83,8 +84,8 @@ export function buildAbout(){
     for (const k of GAME_KEYS) L[k] = I[l][k] ?? I.en[k];
     for (const u of units) for (const k of unitKeys(u.id)) {
       let v = I[l][k] ?? I.en[k]; if (!v) continue;
-      if (k.startsWith('sd_')) v = v.replace(/\{n\}/g, num(SK, u.id));
-      if (k.startsWith('ud_')) v = v.replace(/\{n\}/g, num(ULT, u.id));
+      if (k.startsWith('sd_')) v = v.replace(/\{n\}/g, num(SK, u.id)).replace(/\{m\}/g, mul(SK, u.id));
+      if (k.startsWith('ud_')) v = v.replace(/\{n\}/g, num(ULT, u.id)).replace(/\{m\}/g, mul(ULT, u.id));
       L[k] = v;
     }
     for (const k of Object.keys(COPY)) L[k] = COPY[k][l];
