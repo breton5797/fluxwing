@@ -2204,6 +2204,7 @@ const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_glide', 'fw27_stg', 'fw27_s
   'fw27_ptok',         // the iOS app's APNs device token (one per install)
   'fw27_ev_first',     // product events: this device's first launch was reported (an install is per device)
   'fw27_ref', 'fw27_refpaid', 'fw27_refnudge',   // friend invites: this device's pending link / reports, the payout ids it granted, the nudge day
+  'fw27_nonce', 'fw27_refnonce',   // claim nonces (claim block): per device on purpose, a synced nonce would let a second device grant the same reward
   'fw27_tutruns', 'fw27_dintro',   // tutorial runs started / daily intro card seen, on this device (the tutorial done flag fw27_tut itself syncs)
   'fw27_block']);   // report block: the players this device has blocked (the store copy says "on this device")
 const fsI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
@@ -6905,6 +6906,16 @@ $('frForm').addEventListener('submit', async e => {
   const v = fcNorm($('frIn').value); if (!fcOk(v)){ toast(t('frBad')); return; }
   if (await frAct('friend_request', {p_code: v}, 'frSent')) $('frIn').value = '';
 });
+/* claim:start */
+// Claim nonces (season rewards, friend-invite payouts): a random id per claim, kept on this device only (fw27_nonce / fw27_refnonce,
+// never synced) until the grant is saved. The server keeps the first claim's nonce and answers a repeat with same: true only for it,
+// so a reward is granted on one device, even when two devices claim it or an answer is lost on the way.
+const NONCE_RE = /^[0-9a-f]{32}$/;
+const rndNonce = () => { const a = new Uint8Array(16); crypto.getRandomValues(a); return Array.from(a, x => x.toString(16).padStart(2, '0')).join(''); };
+const nonceGet = (m, key, mk) => NONCE_RE.test(m[key]) ? m : Object.assign(Object.fromEntries(Object.keys(m).filter(k => k !== key && NONCE_RE.test(m[k])).slice(-8).map(k => [k, m[k]])), {[key]: mk()});
+const nonceDrop = (m, key) => Object.fromEntries(Object.entries(m).filter(([k]) => k !== key));
+const claimGrant = a => !!a && typeof a === 'object' && (a.already !== true || a.same === true);   // a first claim, or this device's own claim again
+/* claim:end */
 /* ---------- friend invites (referral block above). Server: referral_link / referral_progress (the invited friend's device),
    referral_me / referral_claim / referral_ack (the inviter's). The server decides every reward; this device only grants a payout id once.
    Without a server session the invite box and the nudge stay hidden. ---------- */
@@ -6939,8 +6950,10 @@ async function refLoad(){
   renderRef();
 }
 async function refClaim(){
-  const r = await socRpc('referral_claim'); if (r.error || !r.data) return;
-  const pays = (refView({code: REF.code, payouts: r.data.payouts}) || {payouts: []}).payouts, paid = store.get('fw27_refpaid', []), g = refToGrant(pays, paid);
+  let n = store.get('fw27_refnonce', ''); if (!NONCE_RE.test(n)){ n = rndNonce(); store.set('fw27_refnonce', n); }   // this device's id for payouts
+  const r = await socRpc('referral_claim', {p_nonce: n}); if (r.error || !r.data) return;
+  const mine = (Array.isArray(r.data.payouts) ? r.data.payouts : []).filter(p => p && p.same === true);   // stamped for this device: another device grants (and acks) its own
+  const pays = (refView({code: REF.code, payouts: mine}) || {payouts: []}).payouts, paid = store.get('fw27_refpaid', []), g = refToGrant(pays, paid);
   if (g.gems > 0){ W.gems += g.gems; saveW(); renderWallet(); toast(t('refGot', {n: g.gems})); SFX.fanfare(); }
   store.set('fw27_refpaid', refPaidAdd(paid, pays.map(p => p.id)));   // granted (now, or before an answer got lost): only then acknowledged
   for (const p of pays) await socRpc('referral_ack', {p_id: p.id});
@@ -7159,10 +7172,12 @@ function renderVsBadge(){
    whatever id it names goes into "owned", whether or not BIRDS knows it yet; a unit already owned becomes rw.unit_gems gems instead.
    Claim bookkeeping (fw27_vsclaim): g = "<season>:<player id>" keys already granted (or, for an unranked notice, seen) on this device,
    p = results a claim was sent for and not granted yet. The server marks a result claimed on the first call and answers every later
-   one with already: true, so what decides a grant is this device's record, never that flag:
+   one with already: true and same: whether it carries the first claim's nonce. A grant needs a first claim or same: true (claimGrant),
+   and a key not yet in this device's record:
      - the request never arrived: the server still lists the result; the next claim answers already: false -> granted, recorded;
      - the server claimed it but its answer was lost (also: the page was closed right then): the server no longer lists it, so the dialog
-       comes back from p; the retry answers already: true, the key is not in g -> granted once, recorded;
+       comes back from p; the retry sends the same nonce (fw27_nonce) and answers already: true, same: true -> granted once, recorded;
+     - another device claimed it first (p and g are synced, the nonce is not): already: true, same: false -> not granted here;
      - the answer arrived: wallet and record are saved in the same tick (wallet first), so later taps, reloads and retries find the key
        in g and grant nothing.
    The wallet and the owned units live on the device, like purchases: none of this stops someone from editing local storage. */
@@ -7195,6 +7210,7 @@ function seaQ(rec, id, results){
 function seaMark(rec, key){ const p = Object.assign({}, rec.p); delete p[key]; return {g: [...rec.g.filter(k => k !== key), key].slice(-24), p}; }
 function seaPend(rec, key, r){ const p = Object.assign({}, rec.p, {[key]: r}), ks = Object.keys(p); ks.slice(0, Math.max(0, ks.length - 6)).forEach(k => { delete p[k]; }); return {g: rec.g, p}; }
 let seaCur = null, seaBusy = false, seaDone = false;
+const ncMap = () => { const o = store.get('fw27_nonce', null); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; };   // claim nonces by result key (claim block)
 // Shown in the menu only (never over a run, a countdown or a search), one season at a time: called after every versus_me and on the way back to the menu.
 function seaCheck(){
   if (!sb || !uid || authAnon() || vsMeUid !== uid || state !== 'menu' || vs.phase !== 'idle' || !$('seaScr').hidden || !$('confScr').hidden) return;   // a guest is never offered a claim (the server refuses it)
@@ -7219,11 +7235,12 @@ function seaClose(){ seaCur = null; $('seaScr').hidden = true; lbOpen = !$('shop
 $('seaBtn').addEventListener('click', async e => {
   e.stopPropagation(); audioInit();
   const r = seaCur; if (!r || seaBusy) return;   // seaBusy: a second tap while the claim is on its way
-  const u0 = uid, key = seaKey(r.season, u0), drop = () => store.set('fw27_vsclaim', seaMark(seaRec(), key));
+  const u0 = uid, key = seaKey(r.season, u0), drop = () => { store.set('fw27_vsclaim', seaMark(seaRec(), key)); store.set('fw27_nonce', nonceDrop(ncMap(), key)); };
   if (seaDone || !r.reward){ if (!r.reward) drop(); seaClose(); return; }   // after the grant, or an unranked notice (remembered as seen): just close
   seaBusy = true; $('seaBtn').disabled = true; $('seaMsg').textContent = '';
   store.set('fw27_vsclaim', seaPend(seaRec(), key, r));
-  let a = sb ? await vsRpc('versus_claim', {p_season: r.season}) : {error: {}};
+  const nm = nonceGet(ncMap(), key, rndNonce), nc = nm[key]; store.set('fw27_nonce', nm);   // kept until the grant is saved: a retry sends the same nonce
+  let a = sb ? await vsRpc('versus_claim', {p_season: r.season, p_nonce: nc}) : {error: {}};
   if (a.error && sb && sbAuthErr(a)) await sbReauth();   // the session is gone: a new player, who has no result to claim
   seaBusy = false; $('seaBtn').disabled = false;
   if (seaCur !== r) return;
@@ -7234,6 +7251,7 @@ $('seaBtn').addEventListener('click', async e => {
     return;
   }
   if (seaRec().g.includes(key)){ seaClose(); return; }   // granted here before
+  if (!claimGrant(a.data)){ drop(); toast(t('seaGone')); seaClose(); return; }   // claimed with another nonce: another device has it
   const g = seaGive(d.reward, owned.has(d.reward.unit));
   W.dia += g.dia; W.gems += g.gems; if (g.unit) owned.add(g.unit);
   saveW(); drop();

@@ -334,7 +334,7 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 --   versus_report(match, result)                      'win' | 'lose' | 'draw' from the caller's TEAM's point of view
 --   versus_me()                                       the caller's RP row (creates nothing) + their latest match
 --                                                     + the season and the caller's unclaimed past results
---   versus_claim(season)                              the caller's result and reward for an ended season, once
+--   versus_claim(season, nonce)                       the caller's result and reward for an ended season, once
 -- and applies RP itself, once per match, inside these calls (no cron).
 --
 -- Match id (text), built identically by every participant:  <seed, base 36>.<team 0>.<team 1>
@@ -597,6 +597,8 @@ comment on table public.fw_vs_standing is 'Flux Wing versus ranking: final stand
 -- their first five floors and rewards are unchanged).
 alter table public.fw_vs_standing drop constraint if exists fw_vs_standing_tier_chk;
 alter table public.fw_vs_standing add constraint fw_vs_standing_tier_chk check (tier between 0 and 6);
+-- the claim nonce of the first versus_claim (private, like claimed_at): a repeat answers "same" only for that nonce
+alter table public.fw_vs_standing add column if not exists claim_nonce text;
 -- a season's ranks in order (the past-season board: rank <= 10); unique: no shared ranks
 create unique index if not exists fw_vs_standing_rank_idx on public.fw_vs_standing (season, rank) where rank is not null;
 -- one player's results (versus_me, and the cascade from auth.users)
@@ -1116,9 +1118,14 @@ begin
 end;
 $$;
 
--- The caller's result and reward for an ended season. The first call marks it claimed; any later one returns the same
--- answer with "already": true, so a client whose first answer was lost can ask again and decide for itself.
-create or replace function private.fw_versus_claim(p_season integer) returns jsonb
+-- The caller's result and reward for an ended season. The first call marks it claimed and keeps its nonce (a random id the device
+-- made for this claim and keeps until its grant is saved); any later one returns the same answer with "already": true and
+-- "same": whether it carries that nonce. So the device whose answer was lost grants on its retry, and a second device (another
+-- nonce) never does. p_nonce is optional for the installed 1.0.0 builds (they call versus_claim(p_season) and get "same": false
+-- on a repeat). The old one-argument function is dropped first: two versions would make a one-argument call ambiguous.
+drop function if exists public.versus_claim(integer);
+drop function if exists private.fw_versus_claim(integer);
+create or replace function private.fw_versus_claim(p_season integer, p_nonce text default null) returns jsonb
 language plpgsql
 security definer
 set search_path = ''
@@ -1128,13 +1135,14 @@ declare
   v_season integer;
   v_rank   integer;
   v_at     timestamptz;
+  v_nonce  text;
 begin
   if v_uid is null then
     raise exception 'fw_auth: sign-in required' using errcode = '28000';
   end if;
   perform private.fw_need_account(v_uid);   -- ranked play is for accounts: a guest plays versus unranked
-  if p_season is null or p_season < 200001 or p_season > 999912 then   -- before the season gate: a call refused here does no rollover
-    raise exception 'fw_bad_input: bad season' using errcode = '22023';
+  if p_season is null or p_season < 200001 or p_season > 999912 or p_nonce !~ '^[0-9a-f]{32}$' then   -- before the season gate: a call refused here does no rollover
+    raise exception 'fw_bad_input: bad season or nonce' using errcode = '22023';
   end if;
   -- The checks below need the database (which season is running, the caller's archived row) and so come after the gate:
   -- a well-formed claim that is refused may still have paid for a rollover that its error rolls back. Accepted.
@@ -1142,7 +1150,7 @@ begin
   if p_season >= v_season then
     raise exception 'fw_vs_season_open: this season has not ended' using errcode = 'P0001';
   end if;
-  select t.rank, t.claimed_at into v_rank, v_at from public.fw_vs_standing t
+  select t.rank, t.claimed_at, t.claim_nonce into v_rank, v_at, v_nonce from public.fw_vs_standing t
   where t.season = p_season and t.player_id = v_uid for update;   -- lock order f: a double tap waits here and then sees claimed_at
   if not found then
     raise exception 'fw_vs_no_result: no result for this player in that season' using errcode = 'P0001';
@@ -1151,9 +1159,10 @@ begin
     raise exception 'fw_vs_unranked: too few ranked matches in that season, no reward' using errcode = 'P0001';
   end if;
   if v_at is null then
-    update public.fw_vs_standing set claimed_at = now() where season = p_season and player_id = v_uid;
+    update public.fw_vs_standing set claimed_at = now(), claim_nonce = p_nonce where season = p_season and player_id = v_uid;
   end if;
-  return private.fw_vs_result(v_uid, p_season) || jsonb_build_object('already', v_at is not null);
+  return private.fw_vs_result(v_uid, p_season) || jsonb_build_object('already', v_at is not null,
+    'same', v_at is null or (p_nonce is not null and v_nonce = p_nonce));
 end;
 $$;
 
@@ -1180,12 +1189,12 @@ set search_path = ''
 as $$
   select private.fw_versus_me();
 $$;
-create or replace function public.versus_claim(p_season integer) returns jsonb
+create or replace function public.versus_claim(p_season integer, p_nonce text default null) returns jsonb
 language sql
 security invoker
 set search_path = ''
 as $$
-  select private.fw_versus_claim(p_season);
+  select private.fw_versus_claim(p_season, p_nonce);
 $$;
 
 revoke all on function private.fw_vs_cfg()                  from public, anon, authenticated;
@@ -1208,19 +1217,19 @@ revoke all on function private.fw_vs_state(uuid, text)      from public, anon, a
 revoke all on function private.fw_versus_start(text, text, integer, text, text, text)  from public, anon, authenticated;
 revoke all on function private.fw_versus_report(text, text) from public, anon, authenticated;
 revoke all on function private.fw_versus_me()               from public, anon, authenticated;
-revoke all on function private.fw_versus_claim(integer)     from public, anon, authenticated;
+revoke all on function private.fw_versus_claim(integer, text) from public, anon, authenticated;
 revoke all on function public.versus_start(text, text, integer, text, text, text)      from public, anon, authenticated;
 revoke all on function public.versus_report(text, text)     from public, anon, authenticated;
 revoke all on function public.versus_me()                   from public, anon, authenticated;
-revoke all on function public.versus_claim(integer)         from public, anon, authenticated;
+revoke all on function public.versus_claim(integer, text)   from public, anon, authenticated;
 grant execute on function private.fw_versus_start(text, text, integer, text, text, text) to authenticated, service_role;
 grant execute on function private.fw_versus_report(text, text) to authenticated, service_role;
 grant execute on function private.fw_versus_me()               to authenticated, service_role;
-grant execute on function private.fw_versus_claim(integer)     to authenticated, service_role;
+grant execute on function private.fw_versus_claim(integer, text) to authenticated, service_role;
 grant execute on function public.versus_start(text, text, integer, text, text, text)     to authenticated, service_role;
 grant execute on function public.versus_report(text, text)     to authenticated, service_role;
 grant execute on function public.versus_me()                   to authenticated, service_role;
-grant execute on function public.versus_claim(integer)         to authenticated, service_role;
+grant execute on function public.versus_claim(integer, text)   to authenticated, service_role;
 
 -- ---------- Realtime: versus rooms are PRIVATE channels ----------
 -- The game uses Broadcast + Presence only (no table changes), on topics
@@ -2078,6 +2087,8 @@ create table if not exists private.fw_ref_payouts (
   acked_at   timestamptz,                       -- the device said it granted the gems
   constraint fw_ref_payouts_chk check (gems > 0 and invites >= 0)
 );
+-- the nonce of the device whose referral_claim first returned this payout: only that device grants it ("same")
+alter table private.fw_ref_payouts add column if not exists nonce text;
 create index if not exists fw_ref_payouts_inviter_idx on private.fw_ref_payouts (inviter_id, at);
 alter table private.fw_ref_payouts enable row level security;
 revoke all on table private.fw_ref_payouts from public, anon, authenticated;
@@ -2160,10 +2171,12 @@ begin
   return jsonb_build_object('status', case when v_r.done_at is null then 'open' else 'done' end, 'days', v_r.days, 'stage', v_r.stage);
 end $$;
 
--- payouts not acknowledged yet, oldest first (helpers run inside the definer functions below: no privileges of their own)
-create or replace function private.fw_ref_unacked(p_uid uuid) returns jsonb
+-- payouts not acknowledged yet, oldest first (helpers run inside the definer functions below: no privileges of their own).
+-- same: the payout carries the caller's device nonce (null without one: referral_me, the 1.0.0 builds)
+drop function if exists private.fw_ref_unacked(uuid);
+create or replace function private.fw_ref_unacked(p_uid uuid, p_nonce text default null) returns jsonb
 language sql stable set search_path = '' as $$
-  select coalesce(jsonb_agg(jsonb_build_object('id', p.id, 'gems', p.gems, 'invites', p.invites, 'ms', to_jsonb(p.ms)) order by p.id), '[]'::jsonb)
+  select coalesce(jsonb_agg(jsonb_build_object('id', p.id, 'gems', p.gems, 'invites', p.invites, 'ms', to_jsonb(p.ms), 'same', p.nonce = p_nonce) order by p.id), '[]'::jsonb)
   from private.fw_ref_payouts p where p.inviter_id = p_uid and p.acked_at is null;
 $$;
 
@@ -2200,8 +2213,12 @@ begin
 end $$;
 
 -- Books one payout for every counted friend not paid yet (oldest goal first, within this month's room) plus the milestones that
--- crosses, then returns every payout not acknowledged yet. A second call books nothing new.
-create or replace function private.fw_referral_claim() returns jsonb
+-- crosses, then returns every payout not acknowledged yet. A second call books nothing new. p_nonce: the calling device's id; every
+-- unacknowledged payout no device has taken yet is stamped with it, and only payouts with "same": true are that device's to grant
+-- (two devices of one inviter cannot both grant one payout). Optional for the 1.0.0 builds, which stamp nothing.
+drop function if exists public.referral_claim();
+drop function if exists private.fw_referral_claim();
+create or replace function private.fw_referral_claim(p_nonce text default null) returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare
   c      record := private.fw_ref_cfg();
@@ -2215,6 +2232,7 @@ declare
   v_id   bigint;
 begin
   if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  if p_nonce !~ '^[0-9a-f]{32}$' then raise exception 'fw_bad_input: bad nonce' using errcode = '22023'; end if;
   perform pg_advisory_xact_lock(hashtextextended(v_me::text, 3));   -- a double tap waits here and then finds nothing left to book
   begin
     insert into private.fw_ref_inviter (player_id) values (v_me) on conflict (player_id) do nothing;
@@ -2235,7 +2253,10 @@ begin
     update private.fw_referrals r set payout_id = v_id where r.invitee_id = any (v_ids);
     update private.fw_ref_inviter i set paid = v_inv.paid + v_n, ms_paid = v_msp where i.player_id = v_me;
   end if;
-  return jsonb_build_object('booked', v_id, 'payouts', private.fw_ref_unacked(v_me));
+  if p_nonce is not null then
+    update private.fw_ref_payouts p set nonce = p_nonce where p.inviter_id = v_me and p.acked_at is null and p.nonce is null;
+  end if;
+  return jsonb_build_object('booked', v_id, 'payouts', private.fw_ref_unacked(v_me, p_nonce));
 end $$;
 
 -- the device granted payout p_id: it is not returned again. true when this call acknowledged it
@@ -2254,34 +2275,34 @@ create or replace function public.referral_progress(p_stage integer) returns jso
 language sql security invoker set search_path = '' as $$ select private.fw_referral_progress(p_stage); $$;
 create or replace function public.referral_me() returns jsonb
 language sql security invoker set search_path = '' as $$ select private.fw_referral_me(); $$;
-create or replace function public.referral_claim() returns jsonb
-language sql security invoker set search_path = '' as $$ select private.fw_referral_claim(); $$;
+create or replace function public.referral_claim(p_nonce text default null) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.fw_referral_claim(p_nonce); $$;
 create or replace function public.referral_ack(p_id bigint) returns boolean
 language sql security invoker set search_path = '' as $$ select private.fw_referral_ack(p_id); $$;
 
 revoke all on function private.fw_ref_cfg()                  from public, anon, authenticated;
-revoke all on function private.fw_ref_unacked(uuid)          from public, anon, authenticated;
+revoke all on function private.fw_ref_unacked(uuid, text)    from public, anon, authenticated;
 revoke all on function private.fw_ref_month(uuid)            from public, anon, authenticated;
 -- the invoker wrappers run their private function as the caller, so it needs execute (production answered 403 without it on 2026-10-20)
 revoke all on function private.fw_referral_link(text)        from public, anon;
 revoke all on function private.fw_referral_progress(integer) from public, anon;
 revoke all on function private.fw_referral_me()              from public, anon;
-revoke all on function private.fw_referral_claim()           from public, anon;
+revoke all on function private.fw_referral_claim(text)       from public, anon;
 revoke all on function private.fw_referral_ack(bigint)       from public, anon;
 grant execute on function private.fw_referral_link(text)        to authenticated, service_role;
 grant execute on function private.fw_referral_progress(integer) to authenticated, service_role;
 grant execute on function private.fw_referral_me()              to authenticated, service_role;
-grant execute on function private.fw_referral_claim()           to authenticated, service_role;
+grant execute on function private.fw_referral_claim(text)       to authenticated, service_role;
 grant execute on function private.fw_referral_ack(bigint)       to authenticated, service_role;
 revoke all on function public.referral_link(text)            from public, anon;
 revoke all on function public.referral_progress(integer)     from public, anon;
 revoke all on function public.referral_me()                  from public, anon;
-revoke all on function public.referral_claim()               from public, anon;
+revoke all on function public.referral_claim(text)           from public, anon;
 revoke all on function public.referral_ack(bigint)           from public, anon;
 grant execute on function public.referral_link(text)            to authenticated;
 grant execute on function public.referral_progress(integer)     to authenticated;
 grant execute on function public.referral_me()                  to authenticated;
-grant execute on function public.referral_claim()               to authenticated;
+grant execute on function public.referral_claim(text)           to authenticated;
 grant execute on function public.referral_ack(bigint)           to authenticated;
 -- =====================================================================================================
 -- REPORTS — report another player (store UGC rules: a way to report and to block). Blocking lives on the device only
