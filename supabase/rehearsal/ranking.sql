@@ -176,3 +176,18 @@ begin
   v := public.set_nick('Seven'); if v <> 'Seven' then raise exception 'no rows yet: the name still comes back: %', v; end if;
 end $$;
 reset role;
+
+\echo === 7. submit_score: no endless score without gates any more; a name-only call (0 / 0) still passes ===
+update auth.users set created_at = now() - interval '1 day' where id = pg_temp.u('6');
+set role authenticated;
+do $$
+declare r public.fw_scores;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u('6')::text, true);
+  begin perform public.submit_score(500, 0, 'endless', null, 'volt', 'Six', 'KR', 'en'); raise exception 'an endless score without gates must be refused';
+  exception when sqlstate '22023' then if sqlerrm !~ '^fw_implausible' then raise; end if; end;
+  r := public.submit_score(0, 0, 'endless', null, 'volt', 'Six', 'KR', 'en');
+  if r.nick <> 'Six' or r.best <> 0 then raise exception 'a 0 / 0 call (1.0.0 name change) still stores the name: %', r; end if;
+end $$;
+reset role;
+select 'PASS ranking.sql' as result;

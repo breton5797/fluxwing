@@ -195,7 +195,6 @@ declare
   c_gates_per_s constant numeric  := 6;
   c_gate_grace  constant integer  := 30;
   v_since timestamptz;
-  c_legacy_cap  constant integer  := 3000;             -- a best with no gate count (made before the board existed)
   c_min_gap     constant interval := interval '2 seconds';
   c_day_cap     constant integer  := 400;              -- accepted submits per player per UTC day
   c_birds       constant text[]   := private.fw_units();
@@ -221,11 +220,10 @@ begin
   end if;
 
   -- plausibility: score against gates (see the derivation above)
+  -- every mode: a score comes with its gates (2026-10: the endless back-fill of an old local best without a gate count, up to
+  -- 3,000, is closed; rows stored that way stay, see fw_scores.gates = 0)
   if p_gates = 0 and p_score > 0 then
-    -- only the one-off back-fill of an old local best has no gate count; capped well below what 30 claimed gates allow
-    if p_mode <> 'endless' or p_score > c_legacy_cap then
-      raise exception 'fw_implausible: score without a gate count' using errcode = '22023';
-    end if;
+    raise exception 'fw_implausible: score without a gate count' using errcode = '22023';
   else
     v_bound := case p_mode when 'daily' then p_gates::bigint * p_gates + 5 * p_gates
                            else ceil((3 * p_gates::bigint * p_gates + 75 * p_gates) * private.fw_bound_mul(p_bird))::bigint end;

@@ -183,3 +183,17 @@ test('drawn names are cut by code points and isolated from the text around them'
   assert.doesNotMatch(html, /nick \|\| t\('opp'\)\)\.slice\(/);
   assert.match(html, /\.lbrow \.nm\{[^}]*unicode-bidi:isolate/);
 });
+
+// ---------- 5. endless scores need their gates ----------
+test('server: no score without a gate count any more (the legacy back-fill is gone); client run ends send the gates', () => {
+  const b = body('private.fw_submit_score');
+  assert.doesNotMatch(b, /c_legacy_cap/);
+  assert.match(b, /if p_gates = 0 and p_score > 0 then\s+raise exception 'fw_implausible: score without a gate count'/);
+  assert.match(html, /submitScore\(score, gatesPassed, mode, runDay\)/);
+});
+
+test('the rehearsal walks guests, rivals, nonces and set_nick as the API role', () => {
+  const r = read('supabase/rehearsal/ranking.sql');
+  assert.match(r, /set role authenticated;/);
+  for (const s of ['fw_need_account', 'versus_claim', 'referral_claim', 'set_nick', 'rivals', 'fw_implausible']) assert.ok(r.includes(s), s);
+});
