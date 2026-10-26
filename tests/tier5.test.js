@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { readIndex } from './helpers/hitloop.js';
 import { loadI18NParts } from './helpers/i18n.js';
 
-// Rank 5 (celestial): SERAPH, VALKYRIE, LUMEN, HALCYON — complete, hidden until the rank is released, translated, wired.
+// Rank 5 (celestial): SERAPH, VALKYRIE, LUMEN, HALCYON — complete, released with the launch (TIER_OPEN = 5), translated, wired.
 const html = readIndex();
 const IDS = ['seraph', 'valkyrie', 'lumen', 'halcyon'];
 const birds = html.slice(html.indexOf('const BIRDS = ['), html.indexOf('BIRDS.sort('));
@@ -12,11 +12,11 @@ const block = (start, end) => { const a = html.indexOf(start); assert.ok(a >= 0,
 const tm = html.match(/\/\* tiers:start[\s\S]*?\/\* tiers:end \*\//);
 const T = new Function(`${tm[0]}\nreturn {TIER_IDS, skillBoost};`)();
 
-test('the four celestial units are the first four reserved ids, rank 5, hidden until release', () => {
+test('the four celestial units are the first four reserved ids, rank 5, released', () => {
   assert.deepEqual(T.TIER_IDS.slice(0, 4), IDS);
   for (const id of IDS){
     const r = row(id); assert.ok(r, id + ' row');
-    assert.match(r, /rarity:5,/); assert.match(r, /hidden:true/); assert.match(r, /stats:\[\d,\d,\d,\d\]/);
+    assert.match(r, /rarity:5,/); assert.doesNotMatch(r, /hidden:true/, 'released 2026-11-17'); assert.match(r, /stats:\[\d,\d,\d,\d\]/);
   }
 });
 

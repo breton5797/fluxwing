@@ -61,11 +61,12 @@ test('release: a unit above TIER_OPEN is hidden until its rank opens (boards, ab
   for (const row of birds.split('\n').filter(l => /^\s*\{ id:'/.test(l))){
     const r = +(row.match(/rarity:(\d+)/) || [0, 0])[1];
     if (r > T.TIER_OPEN) assert.match(row, /hidden:true/, row.slice(0, 40));
+    else if (r >= 5) assert.doesNotMatch(row, /hidden:true/, `${row.slice(0, 40)}: its rank is open`);
   }
 });
 
 test('release: only ranks up to TIER_OPEN are on sale; the 20 planned ids are reserved', () => {
-  assert.equal(T.TIER_OPEN, 4);
+  assert.equal(T.TIER_OPEN, 5, 'celestial is open (release 1 of 5, 2026-11-17)');
   assert.equal(T.TIER_IDS.length, 20);
   for (const id of T.TIER_IDS) assert.match(id, /^[a-z]{1,12}$/);
   assert.equal(new Set(T.TIER_IDS).size, 20);

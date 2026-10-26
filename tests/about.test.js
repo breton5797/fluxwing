@@ -38,7 +38,7 @@ test('every language of the game is on the page, with its own words for the page
     }
     if (l !== 'en') assert.notEqual(d.langs[l].h_units, d.langs.en.h_units, l + ' heading still English');
   }
-  assert.equal(d.units.length, 20, '20 visible units');
+  assert.equal(d.units.length, 24, '24 visible units (celestial released 2026-11-17)');
   assert.ok(d.units.every(u => u.stats.length === 4 && u.name && u.id), 'each unit has a name, id and 4 stats');
   assert.ok(!d.units.some(u => ['aurora', 'tempest', 'pleiad'].includes(u.id)), 'unreleased units stay hidden');
   assert.equal(d.tiers.length, 7);
