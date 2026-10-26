@@ -7,7 +7,8 @@ const html = readIndex();
 const m = html.match(/\/\* aura:start[\s\S]*?\/\* aura:end \*\//);
 const hsl = (c, a = 1, dl = 0) => `hsla(${c[0].toFixed(1)},${c[1].toFixed(1)}%,${Math.min(100, c[2] + dl).toFixed(1)}%,${a})`;   // the game's own hsl: a colour that is not a number array throws here too
 const A = m ? new Function('hsl', `${m[0]}\nreturn {AURA, AURA_BUDGET};`)(hsl) : {};
-const units = [...html.matchAll(/^\s*\{ id:'([a-z]+)'.*?rarity:(\d)/gm)].map(x => ({ id: x[1], rarity: +x[2] }));
+const birds = html.slice(html.indexOf('const BIRDS = ['), html.indexOf('BIRDS.sort('));
+const units = [...birds.matchAll(/^\s*\{ id:'([a-z]+)'.*?rarity:(\d+)/gm)].map(x => ({ id: x[1], rarity: +x[2] }));
 
 function stub(){
   let depth = 0, draws = 0, maxDepth = 0;
@@ -25,10 +26,11 @@ function stub(){
   return { c, get draws(){ return draws; }, get depth(){ return depth; } };
 }
 
-test('the aura block exists and the roster has 19 premium units', () => {
+test('the aura block exists; the premium roster is 4/6/4/5 up to ultra, then four units a rank above it', () => {
   assert.ok(m, 'aura block in index.html');
-  assert.equal(units.length, 19);
-  assert.deepEqual(units.reduce((n, u) => (n[u.rarity - 1]++, n), [0, 0, 0, 0]), [4, 6, 4, 5]);
+  const n = units.reduce((c, u) => (c[u.rarity - 1]++, c), Array(9).fill(0));
+  assert.deepEqual(n.slice(0, 4), [4, 6, 4, 5]);
+  for (let r = 5; r <= 9; r++) assert.ok([0, 4].includes(n[r - 1]), `rank ${r} has 0 or 4 units, not ${n[r - 1]}`);
 });
 
 test('every epic, legendary, mythic and ultra unit has an aura of its own', () => {
@@ -49,9 +51,9 @@ test('auras draw within their tier budget, at any time, with reduced motion and 
   }
 });
 
-test('a tier keeps its rank: budgets grow epic < legendary < mythic < ultra', () => {
+test('a tier keeps its rank: budgets grow with every rank, epic to genesis', () => {
   const b = A.AURA_BUDGET;
-  assert.ok(b[1] < b[2] && b[2] < b[3] && b[3] < b[4], JSON.stringify(b));
+  for (let r = 2; r <= 9; r++) assert.ok(b[r] > b[r - 1], `rank ${r}: ${JSON.stringify(b)}`);
 });
 
 test('wiring: drawAura draws the unit\'s own aura and keeps the tier motif only as a fallback', () => {
