@@ -704,6 +704,17 @@ create or replace function private.fw_vs_rivals(p_have uuid[], p_new uuid[]) ret
 language sql immutable set search_path = '' as $$
   select array(select distinct x from unnest(coalesce(p_have, '{}') || coalesce(p_new, '{}')) x where x is not null order by x limit 16);
 $$;
+-- RP for one ranked 1v1 / 2v2 result (owner's decision 2026-10-27; MIRRORS THE CLIENT'S rpDelta, index.html rp block): Elo by the two sides'
+-- average RP, scale 1000 RP: 50 at equal RP, more for beating a stronger side and less for losing to it, clamped to 20..80. p_rep: earlier
+-- ranked matches settled against the same rival within the pair window: the result counts x1, x0.5, then x0.25. A draw is 0. FFA keeps ffa_rp.
+create or replace function private.fw_vs_delta(p_me integer, p_opp integer, p_out text, p_rep integer) returns integer
+language sql immutable set search_path = '' as $$
+  select case when p_out not in ('win', 'lose') then 0 else
+    (case when p_out = 'win' then 1 else -1 end)
+    * round(least(80, greatest(20, 100 * (case when p_out = 'win' then 1 - e else e end)))
+            * (case least(2, greatest(0, coalesce(p_rep, 0))) when 0 then 1 when 1 then .5 else .25 end))::integer end
+  from (select 1 / (1 + power(10::numeric, (p_opp - p_me) / 1000.0)) as e) x;
+$$;
 
 -- Names stored before the filter existed are NOT renamed by this file: a rename cannot be undone, so it is a by-hand step.
 -- 1. Read what would change (a word list also catches innocent names):
@@ -820,6 +831,8 @@ declare
   v_d     integer;
   v_old   integer;
   v_riv   uuid[];    -- the other team: this player's rivals in the match
+  v_avg   numeric[]; -- each team's average RP before this match (Elo)
+  v_again integer;   -- earlier ranked matches against these rivals within the pair window
   r       record;
 begin
   select * into c from private.fw_vs_cfg();
@@ -852,8 +865,16 @@ begin
     return;
   end if;
 
+  v_avg := array(select coalesce(avg(coalesce(v.rp, 0)), 0) from generate_series(0, 1) g(k)
+    left join private.fw_vs_part p on p.match_id = p_match and p.team = g.k left join public.fw_versus v on v.player_id = p.player_id group by g.k order by g.k);
   for r in select p.player_id, p.team, p.nick, p.cc, p.bird from private.fw_vs_part p where p.match_id = p_match order by p.player_id loop
-    v_d := case when v_out = 2 then 0 when r.team = v_out then c.rp_win else -c.rp_loss end;
+    v_riv := array(select q.player_id from private.fw_vs_part q where q.match_id = p_match and q.team <> r.team);
+    select coalesce(max(z.n), 0)::integer into v_again from (select count(*) as n from private.fw_vs_part a
+      join private.fw_vs_part b on b.match_id = a.match_id and b.team <> a.team join private.fw_vs_match m on m.id = a.match_id
+      where a.player_id = r.player_id and b.player_id = any(v_riv) and m.id <> p_match and m.status = 'settled' and m.settled_at > v_now - c.pair_window
+      group by b.player_id) z;
+    v_d := case when v_out = 2 then 0 else private.fw_vs_delta(round(v_avg[r.team + 1])::integer, round(v_avg[2 - r.team])::integer,
+      case when r.team = v_out then 'win' else 'lose' end, v_again) end;   -- Elo by the sides' average RP, less for a rival met again
     insert into public.fw_versus (player_id, nick, cc, bird) values (r.player_id, r.nick, r.cc, r.bird)
     on conflict (player_id) do nothing;
     select v.rp into strict v_old from public.fw_versus v where v.player_id = r.player_id for update;
@@ -1208,6 +1229,7 @@ revoke all on function private.fw_vs_nick(text)             from public, anon, a
 revoke all on function private.fw_need_account(uuid)        from public, anon, authenticated;
 revoke all on function private.fw_vs_min_rivals(integer)    from public, anon, authenticated;
 revoke all on function private.fw_vs_rivals(uuid[], uuid[]) from public, anon, authenticated;
+revoke all on function private.fw_vs_delta(integer, integer, text, integer) from public, anon, authenticated;
 revoke all on function private.fw_vs_settle(text)           from public, anon, authenticated;
 revoke all on function private.fw_vs_sweep(uuid)            from public, anon, authenticated;
 revoke all on function private.fw_vs_row(uuid)              from public, anon, authenticated;
