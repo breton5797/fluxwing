@@ -130,3 +130,28 @@ test('client: both claims send a nonce kept on this device only and grant throug
   assert.match(ref, /socRpc\('referral_claim', \{p_nonce: n\}\)/);
   assert.match(ref, /p\.same === true/);
 });
+
+// ---------- 3. a name change: set_nick ----------
+test('server: set_nick cleans the name like every other path, writes the caller rows and has its own rate limit', () => {
+  const b = body('private.fw_set_nick');
+  assert.match(b, /security definer\s+set search_path = ''/);
+  assert.match(b, /v_nick := private\.fw_vs_nick\(p_nick\);/, 'the shared sanitiser + word filter');
+  assert.match(b, /update public\.fw_scores set nick = v_nick/);
+  assert.match(b, /update public\.fw_versus set nick = v_nick/);
+  assert.match(b, /raise exception 'fw_rate_limited/);
+  assert.match(sql, /create table if not exists private\.fw_nick_set \(/);
+  assert.match(sql, /function public\.set_nick\(p_nick text\) returns text\s+language sql\s+security invoker/);
+  assert.match(sql, /grant execute on function public\.set_nick\(text\)\s+to authenticated, service_role;/);
+  assert.match(sql, /grant execute on function private\.fw_set_nick\(text\)\s+to authenticated, service_role;/);
+  assert.match(sql, /revoke all on function public\.set_nick\(text\)\s+from public, anon, authenticated;/);
+});
+
+test('client: the name form says saved only after set_nick answers, and keeps the name the server stored', () => {
+  const f = js("$('nickForm').addEventListener('submit'", '\n});');
+  const call = f.indexOf("socRpc('set_nick', {p_nick: v})");
+  assert.ok(call > 0, 'set_nick');
+  assert.ok(f.indexOf("statusMsg = t('saved')", call) > call, 'saved after the answer');
+  assert.match(f, /nick = r\.data;/);
+  assert.equal(f.match(/submitScore\(0, 0/g).length, 1, 'no rate-limited score submit for a name on Supabase ...');
+  assert.match(f, /if \(myDoc && backend === 'artifact'\) submitScore\(0, 0/, '... only the claude.ai build (no set_nick there) posts it with a score');
+});

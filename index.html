@@ -6825,14 +6825,25 @@ $('oLbBtn').addEventListener('click', e => { e.stopPropagation(); openLB(mode ==
 $('lbClose').addEventListener('click', closeLB);
 $('lbScr').addEventListener('click', e => { if (e.target === $('lbScr')) closeLB(); });
 document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { nickMsg = ''; lbTab = b.dataset.tab; if (b.dataset.past) lbPast = b.dataset.past === '1'; renderLB(); if (lbTab === 'vs') refreshVsBoard(); }));
-$('nickForm').addEventListener('submit', e => {
+let nickBusy = false;
+$('nickForm').addEventListener('submit', async e => {
   e.preventDefault();
   const v = cleanNick($('nickIn').value);
   if (v.length < 2) { $('nickIn').value = nick; nickMsg = ''; renderLB(); return; }
   if (nickBad(v)) { $('nickIn').value = nick; nickMsg = t('nickNo'); renderLB(); return; }
-  nickMsg = ''; nick = v; store.set('fw27_nick', nick); $('nickIn').value = nick; statusMsg = t('saved');
-  if (myDoc) submitScore(0, 0, 'endless', dayKey());
-  renderLB();
+  nickMsg = '';
+  if (backend !== 'supa'){   // no server session: kept here, the next score submit carries it
+    nick = v; store.set('fw27_nick', nick); $('nickIn').value = nick; statusMsg = t('saved');
+    if (myDoc && backend === 'artifact') submitScore(0, 0, 'endless', dayKey());
+    renderLB(); return;
+  }
+  if (nickBusy) return;
+  nickBusy = true; statusMsg = t('loading'); renderLB();
+  const r = await socRpc('set_nick', {p_nick: v}); nickBusy = false;
+  if (r.error || typeof r.data !== 'string' || !r.data){ $('nickIn').value = nick; statusMsg = t('seaFail'); renderLB(); return; }   // not saved: the old name stays
+  nick = r.data; store.set('fw27_nick', nick); $('nickIn').value = nick;   // the server's name (a word its filter refuses comes back as Pilot)
+  if (myDoc) myDoc = Object.assign({}, myDoc, {nick});
+  statusMsg = t('saved'); refreshBoards(); renderLB();
 });
 
 /* ---------- friends (social): list, requests, codes. Server: social_me / friend_request / friend_respond / friend_remove ---------- */

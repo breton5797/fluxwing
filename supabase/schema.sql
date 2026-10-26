@@ -1231,6 +1231,70 @@ grant execute on function public.versus_report(text, text)     to authenticated,
 grant execute on function public.versus_me()                   to authenticated, service_role;
 grant execute on function public.versus_claim(integer, text)   to authenticated, service_role;
 
+-- ---------- name change: set_nick(name) ----------
+-- The name form calls this instead of a score submit (which cost a rate-limited submit, needed a score row and could be
+-- refused for an unrelated reason). The name is cleaned and filtered exactly as every other stored name (private.fw_vs_nick:
+-- control, zero-width and bidi characters and <> removed, 14 characters, a refused word becomes Pilot) and written to the
+-- caller's leaderboard row and versus row, where they exist. fw_vs_standing holds ended seasons only: an archived name stays
+-- as it was at the rollover. Returns the name stored, which the device keeps. Its own light limit: 2 s apart, 20 a UTC day.
+create table if not exists private.fw_nick_set (
+  player_id  uuid        primary key references auth.users (id) on delete cascade,
+  set_day    date        not null,
+  set_count  integer     not null default 0,
+  last_at    timestamptz not null default now()
+);
+alter table private.fw_nick_set enable row level security;   -- no policy: only private.fw_set_nick writes it
+revoke all on table private.fw_nick_set from public, anon, authenticated;
+grant select, insert, update, delete on table private.fw_nick_set to service_role;
+
+create or replace function private.fw_set_nick(p_nick text) returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  c_min_gap constant interval := interval '2 seconds';
+  c_day_cap constant integer  := 20;
+  v_uid   uuid := (select auth.uid());
+  v_today date := (now() at time zone 'utc')::date;
+  v_row   private.fw_nick_set%rowtype;
+  v_nick  text;
+begin
+  if v_uid is null then
+    raise exception 'fw_auth: sign-in required' using errcode = '28000';
+  end if;
+  if p_nick is null or char_length(p_nick) > 200 then
+    raise exception 'fw_bad_input: no name, or a name too long' using errcode = '22023';
+  end if;
+  begin
+    insert into private.fw_nick_set (player_id, set_day, last_at) values (v_uid, v_today, now() - interval '1 day') on conflict (player_id) do nothing;
+  exception when foreign_key_violation then
+    raise exception 'fw_auth: unknown player' using errcode = '28000';   -- token of a deleted user: the client signs in again
+  end;
+  select * into strict v_row from private.fw_nick_set where player_id = v_uid for update;
+  if v_row.set_day is distinct from v_today then v_row.set_day := v_today; v_row.set_count := 0; end if;
+  if now() - v_row.last_at < c_min_gap or v_row.set_count >= c_day_cap then
+    raise exception 'fw_rate_limited: too many name changes, try later' using errcode = 'P0001';
+  end if;
+  update private.fw_nick_set set set_day = v_row.set_day, set_count = v_row.set_count + 1, last_at = now() where player_id = v_uid;
+  v_nick := private.fw_vs_nick(p_nick);
+  update public.fw_scores set nick = v_nick, updated_at = now() where player_id = v_uid;
+  update public.fw_versus set nick = v_nick where player_id = v_uid;
+  return v_nick;
+end;
+$$;
+create or replace function public.set_nick(p_nick text) returns text
+language sql
+security invoker
+set search_path = ''
+as $$
+  select private.fw_set_nick(p_nick);
+$$;
+revoke all on function private.fw_set_nick(text) from public, anon, authenticated;
+revoke all on function public.set_nick(text)     from public, anon, authenticated;
+grant execute on function private.fw_set_nick(text) to authenticated, service_role;
+grant execute on function public.set_nick(text)     to authenticated, service_role;
+
 -- ---------- Realtime: versus rooms are PRIVATE channels ----------
 -- The game uses Broadcast + Presence only (no table changes), on topics
 --   fw-v<N>-fw-lobby            quick-match lobby (1v1)

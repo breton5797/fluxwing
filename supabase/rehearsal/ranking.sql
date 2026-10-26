@@ -144,3 +144,35 @@ begin
 end $$;
 reset role;
 select id, gems, nonce from private.fw_ref_payouts order by id;
+
+\echo === 6. set_nick: cleaned and filtered like every stored name, written to the caller rows, its own rate limit ===
+insert into public.fw_scores (player_id, nick, best, gates) values (pg_temp.u('9'), 'Old', 10, 5);
+set role authenticated;
+do $$
+declare v text;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u('9')::text, true);
+  v := public.set_nick(U&'  Neo\202E<b>\200B  wing  ');
+  if v <> 'Neob wing' then raise exception 'cleaned: %', v; end if;
+  begin perform public.set_nick('Again'); raise exception 'a second change within 2 s must be refused';
+  exception when sqlstate 'P0001' then if sqlerrm !~ '^fw_rate_limited' then raise; end if; end;
+  begin perform public.set_nick(repeat('x', 201)); raise exception 'a 201-character name must raise';
+  exception when sqlstate '22023' then null; end;
+end $$;
+reset role;
+do $$ begin
+  if (select nick from public.fw_scores where player_id = pg_temp.u('9')) <> 'Neob wing' then raise exception 'the leaderboard row follows'; end if;
+  if (select nick from public.fw_versus where player_id = pg_temp.u('9')) <> 'Neob wing' then raise exception 'the versus row follows'; end if;
+  if (select nick from public.fw_vs_standing where player_id = pg_temp.u('9') and season = 202609) <> 'Guest' then raise exception 'an archived season keeps its name'; end if;
+end $$;
+update private.fw_nick_set set last_at = now() - interval '1 minute';   -- time passes
+set role authenticated;
+do $$
+declare v text;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u('9')::text, true);
+  v := public.set_nick('fuck'); if v <> 'Pilot' then raise exception 'a refused word comes back as Pilot: %', v; end if;
+  perform set_config('request.jwt.claim.sub', pg_temp.u('7')::text, true);
+  v := public.set_nick('Seven'); if v <> 'Seven' then raise exception 'no rows yet: the name still comes back: %', v; end if;
+end $$;
+reset role;
