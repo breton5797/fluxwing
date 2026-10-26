@@ -142,11 +142,12 @@ test('private.fw_ref_cfg holds the client numbers (REF_CFG)', () => {
   assert.equal(v, `${C.days}, ${C.stage}, ${C.minBest}, ${C.gems}, array[${C.ms.join(',')}], array[${C.msGems.join(',')}], ${C.cap}, interval '24 hours', 5, interval '1 hour'`);
 });
 
-test('the stage goal: minBest is the gate goal of the stage before the target (a run that reached it scored at least that)', () => {
-  const g0 = html.match(/ST_G0 = \[(\d+),/)[1] | 0, first = html.match(/ST_FIRST = \[(\d+),(\d+),/);
+test('the stage goal: reaching the target stage took a cleared stage whose gate goal is at least minBest (a run that reached it scored at least that)', () => {
+  const blk = html.match(/\/\* stages:start[\s\S]*?\/\* stages:end \*\//)[0], S = new Function(blk + '\nreturn {STAGES, ST_FIRST};')();
   const i = R.REF_CFG.stage - 2;   // the 0-based index of the stage that must be cleared to reach the target
-  assert.ok(i < (first[2] | 0), 'still in the first tier');
-  assert.equal(R.REF_CFG.minBest, g0 + (i >> 1));   // stGoal(i) for tier 0
+  assert.ok(i < S.ST_FIRST[1], 'still in the first zone');
+  assert.ok(Math.max(...S.STAGES.slice(0, i + 1).map(r => r.goal)) >= R.REF_CFG.minBest, 'the server-held minBest never asks more than the stages before the target do');
+  assert.equal(R.REF_CFG.minBest, 14, 'mirrored by the server (fw_ref_cfg): unchanged');
 });
 
 test('referral tables reference auth.users on delete cascade (delete_me takes them along) and are not exposed', () => {
