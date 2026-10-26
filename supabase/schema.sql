@@ -374,11 +374,12 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 --     referee (server-side simulation or replay check) closes this.
 --   - Impersonate a rival inside a room (Realtime broadcasts are not signed): can make an honest player register a
 --     match against the impostor's id; the impostor gains only if that player then honestly reports a loss.
---   - Two accounts that agree on results (one person with two anonymous users) can trade wins: nothing here can
---     tell that from a real match, and the feeder account loses nothing once it sits at 0 RP. The brakes are the
---     anonymous sign-in rate limit (dashboard step 2), pair_cap matches per pair of rivals per pair_window,
---     starts_per_hour, and min_play between registering and reporting. CAPTCHA on sign-in (step 3) is the next
---     step up.
+--   - Two accounts that agree on results (one person with two accounts) can trade wins: nothing here can tell that
+--     from a real match, and the feeder account loses nothing once it sits at 0 RP. The brakes are: ranked play
+--     needs an account, not a guest (private.fw_need_account: versus_start / versus_report / versus_claim refuse
+--     with fw_need_account, a guest plays unranked), pair_cap matches per pair of rivals per pair_window,
+--     starts_per_hour, min_play between registering and reporting, and a season rank needs fw_vs_min_rivals()
+--     different rivals. CAPTCHA on sign-in (step 3) is the next step up.
 --   - Replay: a match id is registered once per player and settles once; reports after settlement change nothing.
 --   - Flooding: registrations are capped per player per hour, each adds one row (plus one per match), finished
 --     matches are deleted after "keep" when one of their participants next calls in. Both caps are counted under
@@ -394,10 +395,10 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 -- that row does the rollover, inside its own transaction, before it reads or writes anything else:
 --   1. every fw_versus row with at least one ranked match (wins + losses + draws > 0) is copied to
 --      public.fw_vs_standing under the season that ended, with its tier and, for players with at least
---      min_matches ranked matches, its rank: rp desc, wins desc, earlier updated_at, player_id — a total
---      order, so no two players share a rank. Players below min_matches are kept with their numbers but
---      without a rank (and without a reward);
---   2. rp, wins, losses and draws of every fw_versus row are set to 0 (the row, its nick / cc / bird stay);
+--      min_matches ranked matches against at least fw_vs_min_rivals() different rivals, on an account (not a
+--      guest), its rank: rp desc, wins desc, earlier updated_at, player_id — a total order, so no two players
+--      share a rank. The others are kept with their numbers but without a rank (and without a reward);
+--   2. rp, wins, losses, draws and rivals of every fw_versus row are reset (the row, its nick / cc / bird stay);
 --   3. the state row moves to the current month and remembers the season just closed ("prev").
 -- Exactly once: step 3 is in the same transaction, and the whole of it runs under the season lock (below).
 -- A match that straddles the boundary belongs to the NEW season: RP is applied when a match settles, not when
@@ -435,11 +436,13 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 --          x.rp, private.fw_vs_tier(x.rp), x.wins, x.losses, x.draws, x.n, x.nick, x.cc, x.bird
 --   from (select s.season, v.player_id, v.rp, v.wins, v.losses, v.draws, v.updated_at, v.nick, v.cc, v.bird,
 --                v.wins + v.losses + v.draws as n,
---                v.wins + v.losses + v.draws >= (select c.min_matches from private.fw_vs_season_cfg() c) and not v.hidden as ok
+--                v.wins + v.losses + v.draws >= (select c.min_matches from private.fw_vs_season_cfg() c) and not v.hidden
+--                  and cardinality(v.rivals) >= private.fw_vs_min_rivals(s.season)
+--                  and coalesce((select to_jsonb(u) ->> 'is_anonymous' from auth.users u where u.id = v.player_id), 'false') <> 'true' as ok
 --         from public.fw_versus v cross join private.fw_vs_season s
 --         where v.wins + v.losses + v.draws > 0 and s.season < private.fw_vs_season_of(now())
 --           and not exists (select 1 from public.fw_vs_standing t where t.season = s.season)) x;
---   update public.fw_versus set rp = 0, wins = 0, losses = 0, draws = 0
+--   update public.fw_versus set rp = 0, wins = 0, losses = 0, draws = 0, rivals = '{}'
 --   where (rp <> 0 or wins <> 0 or losses <> 0 or draws <> 0)
 --     and (select s.season from private.fw_vs_season s) < private.fw_vs_season_of(now());
 --   update private.fw_vs_season set prev = season, season = private.fw_vs_season_of(now()), rolled_at = now()
@@ -503,6 +506,8 @@ create index if not exists fw_versus_rp_idx on public.fw_versus (rp desc, player
 create index if not exists fw_versus_live_idx on public.fw_versus (rp desc, player_id) where wins > 0 or losses > 0 or draws > 0;
 
 alter table public.fw_versus add column if not exists hidden boolean not null default false;   -- moderation: see fw_scores
+-- distinct rivals of the running season (private.fw_vs_rivals); not readable by clients (the grant below lists the columns)
+alter table public.fw_versus add column if not exists rivals uuid[] not null default '{}';
 alter table public.fw_versus enable row level security;
 drop policy if exists fw_versus_read on public.fw_versus;
 create policy fw_versus_read on public.fw_versus for select to authenticated
@@ -673,6 +678,33 @@ language sql immutable set search_path = '' as $$
           '\s+', ' ', 'g')), 14)) as n) s;
 $$;
 
+-- Ranked play and season rewards need an account: a guest (anonymous sign-in, free and only IP-rate-limited) could otherwise feed
+-- wins to another guest and farm a top-10 rank and its unit. Both the token claim and the auth.users row are read (as fw_admin_gate):
+-- a guest who links a provider keeps auth.uid() and passes once the new token arrives. Guests still play versus, unranked.
+create or replace function private.fw_need_account(p_uid uuid) returns void
+language plpgsql stable set search_path = '' as $$
+begin
+  if coalesce((select auth.jwt()) ->> 'is_anonymous', 'false') = 'true'
+     or coalesce((select to_jsonb(u) ->> 'is_anonymous' from auth.users u where u.id = p_uid), 'false') = 'true' then
+    raise exception 'fw_need_account: ranked play and season rewards need a signed-in account' using errcode = '42501';
+  end if;
+end;
+$$;
+-- A season rank also needs this many different rivals in ranked matches (as well as min_matches matches): a pair of accounts
+-- trading wins with each other alone stays unranked. From season 202611 on: the rivals are counted from the release of this rule,
+-- so the season running then (202610) could not have them all and is ranked as before.
+create or replace function private.fw_vs_min_rivals(p_season integer) returns integer
+language sql immutable set search_path = '' as $$
+  select case when p_season >= 202611 then 3 else 0 end;
+$$;
+-- The rivals of the running season, kept on the player's fw_versus row (fw_vs_part rows are deleted after "keep", 3 days, so
+-- they cannot be counted at the rollover): the distinct ids met in settled ranked matches, at most 16 (only "at least
+-- fw_vs_min_rivals()" is ever asked, so a full list stops growing). Emptied by the rollover with rp / wins / losses / draws.
+create or replace function private.fw_vs_rivals(p_have uuid[], p_new uuid[]) returns uuid[]
+language sql immutable set search_path = '' as $$
+  select array(select distinct x from unnest(coalesce(p_have, '{}') || coalesce(p_new, '{}')) x where x is not null order by x limit 16);
+$$;
+
 -- Names stored before the filter existed are NOT renamed by this file: a rename cannot be undone, so it is a by-hand step.
 -- 1. Read what would change (a word list also catches innocent names):
 --      select 'scores' as t, nick, count(*) from public.fw_scores      where private.fw_nick_bad(nick) group by nick
@@ -728,6 +760,7 @@ declare
   v_now integer := private.fw_vs_season_of(now());
   v_cur integer;
   v_min integer;
+  v_riv integer;
 begin
   select s.season into v_cur from private.fw_vs_season s;
   if v_cur >= v_now then            -- the usual case (also a call whose clock is still in the month before a rollover already done)
@@ -750,15 +783,20 @@ begin
   -- would stop the rollover, and with it every versus call, for good.
   if not exists (select 1 from public.fw_vs_standing t where t.season = v_cur) then
     select c.min_matches into v_min from private.fw_vs_season_cfg() c;
+    v_riv := private.fw_vs_min_rivals(v_cur);
+    -- a rank needs min_matches matches, fw_vs_min_rivals() different rivals and an account (a guest row is archived without a rank);
+    -- hidden: archived, no rank
     insert into public.fw_vs_standing (season, player_id, rank, rp, tier, wins, losses, draws, matches, nick, cc, bird)
     select v_cur, x.player_id,
            case when x.ok then (row_number() over (partition by x.ok order by x.rp desc, x.wins desc, x.updated_at, x.player_id))::integer end,
            x.rp, private.fw_vs_tier(x.rp), x.wins, x.losses, x.draws, x.n, x.nick, x.cc, x.bird
     from (select v.player_id, v.rp, v.wins, v.losses, v.draws, v.updated_at, v.nick, v.cc, v.bird,
-                 v.wins + v.losses + v.draws as n, v.wins + v.losses + v.draws >= v_min and not v.hidden as ok   -- hidden: archived, no rank
+                 v.wins + v.losses + v.draws as n,
+                 v.wins + v.losses + v.draws >= v_min and cardinality(v.rivals) >= v_riv and not v.hidden
+                   and coalesce((select to_jsonb(u) ->> 'is_anonymous' from auth.users u where u.id = v.player_id), 'false') <> 'true' as ok
           from public.fw_versus v where v.wins + v.losses + v.draws > 0) x;
   end if;
-  update public.fw_versus set rp = 0, wins = 0, losses = 0, draws = 0 where rp <> 0 or wins <> 0 or losses <> 0 or draws <> 0;
+  update public.fw_versus set rp = 0, wins = 0, losses = 0, draws = 0, rivals = '{}' where rp <> 0 or wins <> 0 or losses <> 0 or draws <> 0;
   update private.fw_vs_season set season = v_now, prev = v_cur, rolled_at = now() where one;   -- "where": the API roles run with pg_safeupdate, which refuses an UPDATE without one
   return v_now;
 end;
@@ -781,6 +819,7 @@ declare
   v_why   text;
   v_d     integer;
   v_old   integer;
+  v_riv   uuid[];    -- the other team: this player's rivals in the match
   r       record;
 begin
   select * into c from private.fw_vs_cfg();
@@ -818,8 +857,9 @@ begin
     insert into public.fw_versus (player_id, nick, cc, bird) values (r.player_id, r.nick, r.cc, r.bird)
     on conflict (player_id) do nothing;
     select v.rp into strict v_old from public.fw_versus v where v.player_id = r.player_id for update;
+    v_riv := array(select q.player_id from private.fw_vs_part q where q.match_id = p_match and q.team <> r.team);
     update public.fw_versus set
-      nick = r.nick, cc = r.cc, bird = r.bird,
+      nick = r.nick, cc = r.cc, bird = r.bird, rivals = private.fw_vs_rivals(rivals, v_riv),
       rp     = greatest(0, v_old + v_d),
       wins   = wins   + (v_d > 0)::integer,
       losses = losses + (v_d < 0)::integer,
@@ -908,6 +948,7 @@ begin
   if v_uid is null then
     raise exception 'fw_auth: sign-in required' using errcode = '28000';
   end if;
+  perform private.fw_need_account(v_uid);   -- ranked play is for accounts: a guest plays versus unranked
   -- Everything that depends only on the arguments and the caller's id is checked BEFORE the season gate: these checks
   -- read no table and take no lock, so a call refused here can never do (and then roll back) a rollover.
   if p_match is null or char_length(p_match) > 160   -- length first: nothing longer reaches the regular expressions
@@ -1007,6 +1048,7 @@ begin
   if v_uid is null then
     raise exception 'fw_auth: sign-in required' using errcode = '28000';
   end if;
+  perform private.fw_need_account(v_uid);   -- ranked play is for accounts: a guest plays versus unranked
   if p_match is null or char_length(p_match) > 160 or p_result is null
      or not (p_result in ('win', 'lose', 'draw') or private.fw_vs_ffa_vec_ok(p_result)) then
     raise exception 'fw_bad_input: unknown result' using errcode = '22023';
@@ -1064,6 +1106,7 @@ begin
              where p.player_id = v_uid order by p.joined_at desc limit 1),
     'season', v_season, 'season_end', private.fw_vs_season_end(v_season), 'prev', v_prev,
     'need', (select c.min_matches from private.fw_vs_season_cfg() c),
+    'need_rivals', private.fw_vs_min_rivals(v_season),
     -- past results not claimed yet, oldest first: every ranked one, and the unranked one of the season just closed
     -- (that one carries no reward and cannot be claimed; the client shows it once)
     'results', (select coalesce(jsonb_agg(private.fw_vs_result(v_uid, x.season) order by x.season), '[]'::jsonb)
@@ -1089,6 +1132,7 @@ begin
   if v_uid is null then
     raise exception 'fw_auth: sign-in required' using errcode = '28000';
   end if;
+  perform private.fw_need_account(v_uid);   -- ranked play is for accounts: a guest plays versus unranked
   if p_season is null or p_season < 200001 or p_season > 999912 then   -- before the season gate: a call refused here does no rollover
     raise exception 'fw_bad_input: bad season' using errcode = '22023';
   end if;
@@ -1154,6 +1198,9 @@ revoke all on function private.fw_vs_result(uuid, integer)  from public, anon, a
 revoke all on function private.fw_vs_tick()                 from public, anon, authenticated;
 revoke all on function private.fw_vs_roster(text)           from public, anon, authenticated;
 revoke all on function private.fw_vs_nick(text)             from public, anon, authenticated;
+revoke all on function private.fw_need_account(uuid)        from public, anon, authenticated;
+revoke all on function private.fw_vs_min_rivals(integer)    from public, anon, authenticated;
+revoke all on function private.fw_vs_rivals(uuid[], uuid[]) from public, anon, authenticated;
 revoke all on function private.fw_vs_settle(text)           from public, anon, authenticated;
 revoke all on function private.fw_vs_sweep(uuid)            from public, anon, authenticated;
 revoke all on function private.fw_vs_row(uuid)              from public, anon, authenticated;
@@ -1653,6 +1700,7 @@ declare
   v_sum  integer;
   v_d    integer;
   v_old  integer;
+  v_riv  uuid[];     -- every other seat: this player's rivals in the match
   v_why  text;
   r      record;
 begin
@@ -1694,8 +1742,9 @@ begin
     insert into public.fw_versus (player_id, nick, cc, bird) values (r.player_id, r.nick, r.cc, r.bird)
     on conflict (player_id) do nothing;
     select v.rp into strict v_old from public.fw_versus v where v.player_id = r.player_id for update;
+    v_riv := array(select q.player_id from private.fw_vs_part q where q.match_id = p_match and q.team <> r.team);
     update public.fw_versus set
-      nick = r.nick, cc = r.cc, bird = r.bird,
+      nick = r.nick, cc = r.cc, bird = r.bird, rivals = private.fw_vs_rivals(rivals, v_riv),
       rp     = greatest(0, v_old + v_d),
       wins   = wins   + (v_d > 0)::integer,
       losses = losses + (v_d < 0)::integer,
