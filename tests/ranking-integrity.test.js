@@ -155,3 +155,31 @@ test('client: the name form says saved only after set_nick answers, and keeps th
   assert.equal(f.match(/submitScore\(0, 0/g).length, 1, 'no rate-limited score submit for a name on Supabase ...');
   assert.match(f, /if \(myDoc && backend === 'artifact'\) submitScore\(0, 0/, '... only the claude.ai build (no set_nick there) posts it with a score');
 });
+
+// ---------- 4. names: the server's character class, code points, isolated bidi ----------
+const cpM = html.match(/const cpCut = [^\n]*\n/), cnM = html.match(/const cleanNick = [^\n]*\n/);
+const N = cpM && cnM ? new Function(`${cpM[0]}${cnM[0]}\nreturn {cpCut, cleanNick};`)() : {};
+
+test('cleanNick strips exactly what the server strips (control, zero-width, bidi, <>), by code point', () => {
+  const cls = body('private.fw_vs_nick').match(/'(\[\\u0001[^']*\])'/)[1];
+  const srv = new RegExp(cls, 'u');
+  const diff = [];
+  for (let c = 1; c < 0x10000; c++) {
+    if (c >= 0xd800 && c <= 0xdfff) continue;
+    const ch = String.fromCharCode(c), out = N.cleanNick('a' + ch + 'b');
+    if (srv.test(ch) !== (out === 'ab')) diff.push(c.toString(16));
+  }
+  assert.deepEqual(diff, []);
+  assert.equal(N.cleanNick('‮evil⁦x​'), 'evilx');
+  assert.equal(N.cleanNick('😀'.repeat(20)), '😀'.repeat(14), '14 code points, no broken pair');
+  assert.equal(N.cleanNick('abcdefghijklm 😀'), 'abcdefghijklm', 'cut, then trimmed');
+  assert.equal(N.cpCut('a😀b', 2), 'a😀');
+  assert.equal(N.cpCut('😀😀😀', 1), '😀');
+});
+
+test('drawn names are cut by code points and isolated from the text around them', () => {
+  assert.match(html, /cpCut\(r\.nick \|\| t\('opp'\), 12\)/);
+  assert.match(html, /cpCut\(p\.nick \|\| t\('opp'\), 8\)/);
+  assert.doesNotMatch(html, /nick \|\| t\('opp'\)\)\.slice\(/);
+  assert.match(html, /\.lbrow \.nm\{[^}]*unicode-bidi:isolate/);
+});

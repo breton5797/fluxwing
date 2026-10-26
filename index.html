@@ -100,7 +100,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .lbrow:nth-child(odd){background:rgba(243,238,252,.04)}
 .lbrow .n{font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums}
 .lbrow.top .n{color:var(--gold)}
-.lbrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;unicode-bidi:isolate}
 .lbrow .sc{font-family:"Bungee",Impact,sans-serif;font-variant-numeric:tabular-nums}
 .lbrow.me{background:rgba(79,240,255,.14);box-shadow:inset 0 0 0 1px rgba(79,240,255,.5)}
 .lbrow .me-tag{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--cool);margin-left:6px}
@@ -2331,7 +2331,9 @@ const rookieOn = () => rookieRun(mode, curStage, rookieRuns());
 const challenge = readChallenge(location.search, dayKey());
 let nick = store.get('fw27_nick', null);
 if (!nick || nickBad(nick)){ nick = 'Pilot-' + String(Math.floor(1000 + Math.random()*9000)); store.set('fw27_nick', nick); }
-const cleanNick = s => String(s).replace(/[\u0000-\u001f\u007f<>]/g,'').replace(/\s+/g,' ').trim().slice(0,14);
+const cpCut = (s, n) => Array.from(String(s)).slice(0, n).join('');   // the first n code points: never half of a surrogate pair (emoji)
+// the server's class (private.fw_vs_nick): control, zero-width and bidi characters and <>; 14 code points as char_length counts them
+const cleanNick = s => cpCut(String(s).replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2060-\u2069\ufeff<>]/g,'').replace(/\s+/g,' ').trim(), 14).trim();
 const showNick = s => { const v = cleanNick(s); return nickBad(v) ? 'Pilot' : v; };   // somebody else's name, about to be drawn: lobby and room names never pass the server
 let blocked = blkNorm(store.get('fw27_block', []));   // players this device has blocked (report block): off the boards, Pilot in a match
 
@@ -7693,7 +7695,7 @@ function vsTick(dt){
   }
   if (vs.ai || score !== vs.sc0){ vs.sc0 = score; vsResolve(); }
 }
-function vsBurst(p){ const x = bird.x + p.dx; for (let i=0;i<24;i++){ const a = Math.random()*6.28, s = 60 + Math.random()*200; part(x, p.vis, Math.cos(a)*s, Math.sin(a)*s, .7, p.tm ? [0,100,62] : [190,100,62], 3); } pop((vs.sz === 2 ? (p.nick || t('opp')).slice(0, 8) : t('opp')) + ' ✕', x, p.vis - 30, p.tm ? [0,100,70] : [190,100,72], true); }
+function vsBurst(p){ const x = bird.x + p.dx; for (let i=0;i<24;i++){ const a = Math.random()*6.28, s = 60 + Math.random()*200; part(x, p.vis, Math.cos(a)*s, Math.sin(a)*s, .7, p.tm ? [0,100,62] : [190,100,62], 3); } pop((vs.sz === 2 ? cpCut(p.nick || t('opp'), 8) : t('opp')) + ' ✕', x, p.vis - 30, p.tm ? [0,100,70] : [190,100,72], true); }
 function vsOnMyDeath(){
   if (mode !== 'versus') return;
   vs.myFinal = score;
@@ -7796,7 +7798,7 @@ function vsFillOverFfa(){
   const sig = JSON.stringify([rows, lang]); if (box.dataset.sig === sig) return; box.dataset.sig = sig; box.textContent = '';
   const col = document.createElement('div'); col.className = 'vsteam';
   for (const r of rows){ const row = document.createElement('span'), nm = document.createElement('i'), sc = document.createElement('em');
-    nm.textContent = `#${r.pl} ${(r.nick || t('opp')).slice(0, 12)}${r.al ? ' …' : ''}`; sc.textContent = r.sc; row.append(nm, sc); col.appendChild(row); }
+    nm.textContent = `#${r.pl} ${cpCut(r.nick || t('opp'), 12)}${r.al ? ' …' : ''}`; sc.textContent = r.sc; row.append(nm, sc); col.appendChild(row); }
   box.appendChild(col);
 }
 // Ghosts of the other players (lite bodies, no shadowBlur). 1v1: the rival, a red ring. 2v2: the teammate behind me in a solid double ring with
@@ -7814,7 +7816,7 @@ function drawRival(){
     if (duo && !p.tm){ ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0,0,d.r*1.7 + 4,0,6.28); ctx.stroke(); }
     drawShape(ctx, d, (Math.sin(T*12)+1)/2, [hue,100,62], OL); ctx.restore();
     ctx.save(); ctx.font = `700 11px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = `hsla(${hue},100%,72%,.95)`;
-    ctx.fillText(duo ? `${p.tm ? '' : t('vsMate') + ' '}${(p.nick || t('opp')).slice(0, 8)} · ${p.sc}` : `${p.nick || t('opp')} · ${p.sc}`, x, up ? y - d.r*2 - 6 : y + d.r*2 + 14); ctx.restore();
+    ctx.fillText(duo ? `${p.tm ? '' : t('vsMate') + ' '}${cpCut(p.nick || t('opp'), 8)} · ${p.sc}` : `${p.nick || t('opp')} · ${p.sc}`, x, up ? y - d.r*2 - 6 : y + d.r*2 + 14); ctx.restore();
   }
   if (!seen) return;
   ctx.save(); ctx.font = `700 11px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = 'hsla(200,100%,72%,.95)';
