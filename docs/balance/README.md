@@ -155,3 +155,12 @@ The ladder, rank means at form I / V:
 - void: 204 / 627
 - divine: 242 / 710
 - **genesis: 309 / 844**
+
+**COSMOS: a constellation is now four stars** (`STAR_SET`, was five). Playtests on stage 48 found the payoff almost never came: the bot caught about a third of the stars and finished 2 constellations in 8 runs, even when chasing them.
+
+Re-measured (stage 20, 60 runs):
+- form I: 300;
+- form V: 1017 and 908 in two batches;
+- best bound ratio: 0.142 or less.
+
+Earlier form-V batches ranged from 691 to 895, so the shift is within the bot's noise.
