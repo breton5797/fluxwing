@@ -23,7 +23,13 @@ node scripts/balance.mjs --units seraph,lumen --runs 30   # just a few units
 Highest bound ratio: aurora 0.104. Everything else stays at or below 0.051.
 
 Notes:
-- **AURORA is an outlier.** Its lane skill turns gates into sure Perfects, which this bot exploits fully. It is hidden today. Retune it before it is released.
+- **AURORA was an outlier.** Its lane skill turns gates into sure Perfects, which this bot exploits fully. It is still hidden.
+  - **Retuned on 2026-10-26** (stage 20, 30 runs):
+    - the skill went from 8 gates every 12 s to 3 gates every 16 s;
+    - the ultimate went from 6 s to 4 s.
+  - **Before:** 1283 at form I.
+  - **After:** form I 243 (TEMPEST 189, PULSAR 333) and form V 492 (TEMPEST 257, PULSAR 404). Best bound ratio 0.044.
+  - It now sits at the top of the ultras instead of at 4–7 times them.
 - **ORACLE** (mythic, 222) is already above the open ultras' mean. Its foresight saves runs, so it gets more gates and a longer combo.
 - Each rank's mean rises by about x1.3 to x1.9 on the way up to ultra. Within a rank, the spread is wide (legendary 37 to 109).
 
