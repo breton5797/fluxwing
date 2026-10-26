@@ -1,0 +1,44 @@
+{
+ "stage": 20,
+ "runs": 60,
+ "form": 4,
+ "aim": 6,
+ "rows": [
+  {
+   "id": "archon",
+   "rarity": 8,
+   "mean": 947,
+   "median": 785,
+   "p90": 1848,
+   "gates": 36,
+   "bound": 0.202
+  },
+  {
+   "id": "ouroboros",
+   "rarity": 8,
+   "mean": 939,
+   "median": 854,
+   "p90": 1794,
+   "gates": 37.3,
+   "bound": 0.179
+  },
+  {
+   "id": "kirin",
+   "rarity": 8,
+   "mean": 469,
+   "median": 426,
+   "p90": 786,
+   "gates": 39.1,
+   "bound": 0.068
+  },
+  {
+   "id": "garuda",
+   "rarity": 8,
+   "mean": 487,
+   "median": 505,
+   "p90": 759,
+   "gates": 109.9,
+   "bound": 0.011
+  }
+ ]
+}

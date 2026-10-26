@@ -102,3 +102,27 @@ The open ultras at form V, for reference: solaris 182, pulsar 444 (mean ~313).
   - fog Perfects ×2.
 
   Before `TIER_OPEN` reaches 7, re-derive the bound from a hand worst case, not from these bot numbers.
+
+## Rank 8 · divine (P4), 2026-10-26 (stage 20, 60 runs): `tier8-s20-f0.json`, `tier8-s20-f4.json`
+
+| Unit | Form I | Form V | Best bound ratio (V, rank share) |
+|---|---|---|---|
+| archon | 257 | 947 | 0.202 |
+| ouroboros | 240 | 939 | 0.179 |
+| kirin | 198 | 469 | 0.068 |
+| garuda | 274 | 487 | 0.011 |
+| **rank mean** | **242** (target ~226) | **710** (target ~700) | |
+
+**The server bound is now per rank** (owner's decision, 2026-10-26). A run flown with a unit above ultra gets `3g² + 75g` times its rank's share (`private.fw_bound_mul`): 1.4 for celestial, rising through 1.5, 1.6 and 1.75 to 1.9 for genesis. Every other unit stays at ×1, and daily is unchanged.
+
+**Why:** under the old shared bound, rank 8 stalled at void's level (199 / 561). Its multipliers stack on mastery ×1.6 and ran into the bound.
+
+**Result:** with ARCHON back at ×1.6 and OUROBOROS's loops at +20%, divine is about 19% above void at form I and 13% above at form V.
+
+`scripts/balance.mjs` reports the ratio against the unit's own share. The rank 5–7 tables above were measured against the old shared bound, so their ratios read high by 1.4–1.6×.
+
+The ladder so far, rank means at form I / V:
+- celestial: 148 / 422
+- nebula: 178 / 575
+- void: 204 / 627
+- divine: 242 / 710
