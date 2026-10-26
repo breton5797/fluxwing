@@ -66,7 +66,7 @@ test('release: a unit above TIER_OPEN is hidden until its rank opens (boards, ab
 });
 
 test('release: only ranks up to TIER_OPEN are on sale; the 20 planned ids are reserved', () => {
-  assert.equal(T.TIER_OPEN, 5, 'celestial is open (release 1 of 5, 2026-11-17)');
+  assert.equal(T.TIER_OPEN, 5, 'celestial is open (release 1 of 5, 2027-01-01)');
   assert.equal(T.TIER_IDS.length, 20);
   for (const id of T.TIER_IDS) assert.match(id, /^[a-z]{1,12}$/);
   assert.equal(new Set(T.TIER_IDS).size, 20);

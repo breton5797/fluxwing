@@ -187,16 +187,16 @@ For each unit above epic, every factor was taken at its largest: form V mastery,
 
 **Conclusion:** the per-rank shares (×1.4 to ×1.9) need no change before any release. The bot's best runs (0.02–0.27 of share) agree.
 
-### Schedule (recommended)
-One rank every two weeks from the launch, each on a Tuesday:
+### Schedule (owner's decision, 2026-10-27)
+One rank a month, on the first day of the month:
 
 | Release | Rank | Date |
 |---|---|---|
-| 1 | celestial (TIER_OPEN = 5) | 2026-11-17, with the launch |
-| 2 | nebula (6) | 2026-12-01 |
-| 3 | void (7) | 2026-12-15 |
-| 4 | divine (8) | 2026-12-29 |
-| 5 | genesis (9) | 2027-01-12 |
+| 1 | celestial (TIER_OPEN = 5) | 2027-01-01 (Fri) |
+| 2 | nebula (6) | 2027-02-01 (Mon) |
+| 3 | void (7) | 2027-03-01 (Mon) |
+| 4 | divine (8) | 2027-04-01 (Thu) |
+| 5 | genesis (9) | 2027-05-01 (Sat) |
 
 Releases are code changes, never device-date switches: there is no trusted server clock in the client, and a device clock can be moved.
 

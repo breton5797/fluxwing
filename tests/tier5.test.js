@@ -16,7 +16,7 @@ test('the four celestial units are the first four reserved ids, rank 5, released
   assert.deepEqual(T.TIER_IDS.slice(0, 4), IDS);
   for (const id of IDS){
     const r = row(id); assert.ok(r, id + ' row');
-    assert.match(r, /rarity:5,/); assert.doesNotMatch(r, /hidden:true/, 'released 2026-11-17'); assert.match(r, /stats:\[\d,\d,\d,\d\]/);
+    assert.match(r, /rarity:5,/); assert.doesNotMatch(r, /hidden:true/, 'released 2027-01-01'); assert.match(r, /stats:\[\d,\d,\d,\d\]/);
   }
 });
 
