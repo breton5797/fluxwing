@@ -1,0 +1,44 @@
+{
+ "stage": 20,
+ "runs": 60,
+ "form": 4,
+ "aim": 6,
+ "rows": [
+  {
+   "id": "singular",
+   "rarity": 7,
+   "mean": 449,
+   "median": 385,
+   "p90": 822,
+   "gates": 46.2,
+   "bound": 0.077
+  },
+  {
+   "id": "rift",
+   "rarity": 7,
+   "mean": 910,
+   "median": 601,
+   "p90": 2044,
+   "gates": 52.6,
+   "bound": 0.132
+  },
+  {
+   "id": "nyx",
+   "rarity": 7,
+   "mean": 526,
+   "median": 440,
+   "p90": 920,
+   "gates": 35.5,
+   "bound": 0.145
+  },
+  {
+   "id": "entropy",
+   "rarity": 7,
+   "mean": 622,
+   "median": 464,
+   "p90": 1158,
+   "gates": 36.5,
+   "bound": 0.161
+  }
+ ]
+}

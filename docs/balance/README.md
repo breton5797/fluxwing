@@ -80,3 +80,25 @@ The open ultras at form V, for reference: solaris 182, pulsar 444 (mean ~313).
 
   Measure again after any change to them.
 - **ZODIAC is the strongest unit at both forms**; ECLIPSE is the weakest at form I.
+
+## Rank 7 · void (P3), 2026-10-26 (stage 20, 60 runs): `tier7-s20-f0.json`, `tier7-s20-f4.json`
+
+| Unit | Form I | Form V | Best bound ratio (V) |
+|---|---|---|---|
+| singular | 204 | 449 | 0.077 |
+| rift | 270 | 910 | 0.132 |
+| nyx | 174 | 526 | 0.145 |
+| entropy | 166 | 622 | 0.161 |
+| **rank mean** | **204** (target ~198) | **627** (target ~640) | |
+
+- **Both forms are on target.** The ladder so far, rank means at form I / V:
+  - celestial: 148 / 422
+  - nebula: 178 / 575
+  - void: 204 / 627
+- **RIFT is the noisiest unit.** Its form V was 700 and 910 in two batches; it ghosts through walls, so a run either ends early or goes very long.
+- **The bot underrates units that chain Perfects.** The review showed NYX could pass the server bound on a long all-Perfect run: fog up about 80% of the time, ×3, sure gates. It was fixed by:
+  - no skill charge from Perfects while NYX's fog or ENTROPY's chaos runs;
+  - longer cooldowns;
+  - fog Perfects ×2.
+
+  Before `TIER_OPEN` reaches 7, re-derive the bound from a hand worst case, not from these bot numbers.
