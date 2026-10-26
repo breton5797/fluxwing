@@ -2193,7 +2193,7 @@ const FS_CFG = Object.freeze({ v: 1, maxBytes: 16384, stN: 50, owned0: Object.fr
 // Synced to the account (public.fw_saves). Every other fw27_ key stays on this device: FS_LOCAL ("_" at the end = a prefix)
 const FS_KEYS = Object.freeze(['fw27_wallet2', 'fw27_owned', 'fw27_pass', 'fw27_starter', 'fw27_best', 'fw27_bestg', 'fw27_stg2', 'fw27_stage2',
   'fw27_bird', 'fw27_nick', 'fw27_tut', 'fw27_rookie_runs', 'fw27_dstreak', 'fw27_dbonus', 'fw27_vsclaim', 'fw27_evo']);
-const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_glide', 'fw27_stg', 'fw27_stage', 'fw27_lang', 'fw27_mute', 'fw27_vib', 'fw27_ads', 'fw27_trial', 'fw27_rp2',
+const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_bestu', 'fw27_glide', 'fw27_stg', 'fw27_stage', 'fw27_lang', 'fw27_mute', 'fw27_vib', 'fw27_ads', 'fw27_trial', 'fw27_rp2',
   'fw27_rej', 'fw27_vsmode', 'fw27_dg', 'fw27_daily_', 'fw27_sync',
   'fw27_fxq', 'fw27_fxshake', 'fw27_fxflash',   // fx quality and accessibility: per-device hardware/comfort choices
   'fw27_push', 'fw27_pushk', 'fw27_feed2',     // friend alerts: the toggle follows this device's Notification permission; feed2 is this device's read cursor
@@ -2903,7 +2903,7 @@ addEventListener('keydown', e => {
   const tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' && (e.code === 'Space' || e.code === 'Enter')) return;
   if (!$('plScr').hidden){ if (e.code === 'Escape') plClose(); return; }   // the report menu sits over everything: no game key goes through it
-  if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else if (!$('frScr').hidden) frClose(); else if (!$('dIntro').hidden) dIntroClose(); else closeLB(); } return; }
+  if (lbOpen){ if (e.code === 'Escape' && $('seaScr').hidden){ if (!$('fxScr').hidden) $('fxClose').click(); else if (!$('helpScr').hidden) $('helpClose').click(); else if (!$('vsScr').hidden) $('vsClose').click(); else if (!$('confScr').hidden) confClose(); else if (!$('shopScr').hidden) closeShop(); else if (!$('frScr').hidden) frClose(); else if (!$('dIntro').hidden) dIntroClose(); else closeLB(); } return; }
   if (state === 'menu' && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')){ e.preventDefault(); pickBird(ROSTER.indexOf(B) + (e.code === 'ArrowRight' ? 1 : -1)); return; }
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){ e.preventDefault(); pressed = true; if (state==='paused') togglePause(); else flap(); }
   else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyD' || e.code === 'KeyE'){ e.preventDefault(); dash(); }
@@ -3226,7 +3226,7 @@ function beamMark(n){ for (const q of gates) if (n > 0 && !q.scored && !q.broken
 // KIRIN: n coin orbs dropped ahead, spread so they meet the bird's column on the way down (SOLARIS's rain, one burst)
 function coinRain(n){ for (let i = 0; i < n; i++) orbs.push({x: bird.x + 150 + i*45 + Math.random()*60, y: -12 - i*24, k:'orb', got:false, t:Math.random()*6, vy:380}); }
 // Rank 8: a hit (a shield broken, a ground bounce, a revive, a continue) clears ARCHON's unhit stack and OUROBOROS's loops
-const hitReset = () => { FX.arch = 0; FX.loops = 0; };
+const hitReset = () => { FX.arch = 0; FX.loops = 0; FX.loopsWas = -1; };
 // COSMOS: a star orb riding the centre of a gap (the next one not yet close when none is given). One star per gate, never on a power-up's gate;
 // with no gate free yet the star waits in FX.starLeft for the next gate spawned. starMark(n): stars in the next n free gaps, the rest wait the same way
 const STAR_SET = 4;   // COSMOS: stars to a constellation (its body shows how many are in hand)
@@ -3803,12 +3803,12 @@ function showOver(){
   } else if (mode === 'versus'){
     nb = false; shownBest = best; $('oBestLbl').textContent = t('best');
   } else {
-    nb = score > best; if (nb){ best = score; store.set('fw27_best', best); }
+    nb = score > best; if (nb){ best = score; store.set('fw27_best', best); store.set('fw27_bestg', gatesPassed); store.set('fw27_bestu', B.id); }   // gates and unit too: a resend without them is refused as implausible
     shownBest = best;
     $('oBestLbl').textContent = t('best');
     $('oMode').textContent = B.name + ' · ' + t('modeEndless');
   }
-  if (score > best && mode !== 'versus'){ best = score; store.set('fw27_best', best); store.set('fw27_bestg', gatesPassed); }
+  if (score > best && mode !== 'versus'){ best = score; store.set('fw27_best', best); store.set('fw27_bestg', gatesPassed); store.set('fw27_bestu', B.id); }
   if (mode === 'endless'){ stg.gates[curStage] = Math.max(stg.gates[curStage], gatesPassed); stg.score[curStage] = Math.max(stg.score[curStage], score); store.set('fw27_stg2', stg); $('oMode').textContent = B.name + ' · ' + t('stage', {n: curStage + 1}) + ' ' + ZONES[stTier(curStage)].name; if (curStage === 0) store.set('fw27_rookie_runs', rookieRuns() + 1); }
   const why = $('oWhy'); why.textContent = t(deathHint(deathWhy, gatesPassed)); why.hidden = false;
   const dailyLine = $('oDaily'); dailyLine.hidden = mode !== 'daily'; if (mode === 'daily') dailyLine.textContent = t('oDailyLine', {d: fmtDay(runDay), t: fmtLeft(msToNextDay())});
@@ -6360,11 +6360,13 @@ async function refreshVsBoard(){
   } catch(e){}
 }
 function sbOff(){ sb = null; backend = 'none'; uid = null; lbState = 'offline'; clearInterval(lbPoll); lbPoll = 0; renderLB(); }
-// The stored session is gone or was refused: start a fresh anonymous player (a new leaderboard identity). Single flight.
+// The stored session is gone or was refused: refresh it; failing that, a guest starts a fresh anonymous player (a new leaderboard identity). Single flight.
 function sbReauth(){
   if (reauthP) return reauthP;
   return reauthP = (async () => {
     try {
+      try { const rs = await sbC.auth.refreshSession(); if (rs.data && rs.data.session){ sbUser = rs.data.session.user; uid = sbUser.id; return true; } } catch(e){}   // a stale token: the same player again
+      if (!authAnon()){ sbOff(); return false; }   // a signed-in account is never swapped for a new guest (offline until the next start)
       try { await sbC.auth.signOut({scope: 'local'}); } catch(e){}
       const r = await sbC.auth.signInAnonymously({ options: await capOpts() }); if (r.error || !r.data || !r.data.session) throw r.error || new Error('session');
       sbUser = r.data.session.user; uid = r.data.session.user.id; myDoc = null; needSync = true; return true;
@@ -6676,7 +6678,7 @@ document.addEventListener('visibilitychange', async () => {
 function syncLocal(){
   needSync = false; if (backend !== 'supa' || !uid) return;
   const k = dayKey(), dl = dailyBestLocal(k), dg = store.get('fw27_dg', null);
-  if (best > ((myDoc && myDoc.best) || 0) && best !== store.get('fw27_rej', 0)) submitScore(best, store.get('fw27_bestg', 0), 'endless', k);
+  if (best > ((myDoc && myDoc.best) || 0) && best !== store.get('fw27_rej', 0)) submitScore(best, store.get('fw27_bestg', 0), 'endless', k, store.get('fw27_bestu', B.id));
   if (dg && dg.k === k && dl > ((myDoc && myDoc.dailyKey === k && myDoc.dailyScore) || 0)) submitScore(dl, dg.g, 'daily', k);
   const y = prevDay(k), dly = dailyBestLocal(y);   // a run that ended after UTC midnight, if its post was dropped or failed
   if (dg && dg.k === y && dly > 0 && !(myDoc && myDoc.dailyKey === k) && dly > ((myDoc && myDoc.dailyKey === y && myDoc.dailyScore) || 0)) submitScore(dly, dg.g, 'daily', y);
@@ -6708,21 +6710,21 @@ function online(){
   dbBusy = true; dbAt = Date.now();
   return dbP = initDB().catch(() => {}).then(() => { dbBusy = false; });
 }
-function submitScore(sc, gp, m, key){
+function submitScore(sc, gp, m, key, bird = B.id){   // bird: the unit that flew the score (a resend may come while another is selected)
   if (backend === 'none' || !uid || readOnly){ if (supaCfg()) needSync = true; return; }   // not signed in yet: syncLocal() sends it later
   writeQ = writeQ.then(async () => {
     const doc = Object.assign({nick, cc:CC, lang, best:0, gates:0, at:0, dailyKey:'', dailyScore:0}, myDoc || {});
     let changed = false;
-    if (sc > (doc.best||0)){ doc.best = sc; if (gp) doc.gates = gp; doc.at = Date.now(); doc.bird = B.id; changed = true; }
+    if (sc > (doc.best||0)){ doc.best = sc; if (gp) doc.gates = gp; doc.at = Date.now(); doc.bird = bird; changed = true; }
     if (m === 'daily' && dailyKeyOk(key, dayKey(), doc.dailyKey || '')){
       if (doc.dailyKey !== key){ doc.dailyKey = key; doc.dailyScore = 0; }
-      if (sc > (doc.dailyScore||0)){ doc.dailyScore = sc; doc.dailyBird = B.id; changed = true; }
+      if (sc > (doc.dailyScore||0)){ doc.dailyScore = sc; doc.dailyBird = bird; changed = true; }
     }
     if (doc.nick !== nick || doc.cc !== CC){ doc.nick = nick; doc.cc = CC; changed = true; }
     doc.lang = lang;
     if (!changed || (doc.best <= 0 && doc.dailyScore <= 0)) return;
     if (backend === 'supa'){
-      const args = { p_score: sc, p_gates: gp || 0, p_mode: m, p_day: key, p_bird: B.id, p_nick: nick, p_cc: CC, p_lang: lang }, sent = {nick, cc: CC};
+      const args = { p_score: sc, p_gates: gp || 0, p_mode: m, p_day: key, p_bird: bird, p_nick: nick, p_cc: CC, p_lang: lang }, sent = {nick, cc: CC};
       const gap = 2300 - (Date.now() - lastRpc); if (gap > 0) await new Promise(r => setTimeout(r, gap));   // the server wants 2 s between submits
       let r = await sbRpc(args);
       if (r.error && sbAuthErr(r) && await sbReauth()) r = await sbRpc(args);
@@ -7124,11 +7126,11 @@ function tutTick(dt){
   else if (tutStep === 3){ tutT -= dt; if (tutT <= 0){ tutStep = 0; hideTip(); store.set('fw27_tut', 1); evTrack('tutorial_done', { how: 'tips' }); } }
 }
 function startFromMenu(){
-  if (!tutDone(store.get('fw27_tut', 0), 0, store.get('fw27_tutruns', 0))){ store.set('fw27_tutruns', store.get('fw27_tutruns', 0) + 1); curStage = 0; startGame('endless'); tutStep = 1; tutFlaps = 0; showTip(t('tut1')); }
+  if (!tutDone(store.get('fw27_tut', 0), 0, store.get('fw27_tutruns', 0))){ const prev = curStage; curStage = 0; startGame('endless'); if (state !== 'play'){ curStage = prev; return; } store.set('fw27_tutruns', store.get('fw27_tutruns', 0) + 1); tutStep = 1; tutFlaps = 0; showTip(t('tut1')); }
   else openStages();
 }
-$('helpBtn').addEventListener('click', e => { e.stopPropagation(); SFX.click(); $('helpScr').hidden = false; });
-$('helpClose').addEventListener('click', e => { e.stopPropagation(); $('helpScr').hidden = true; });
+$('helpBtn').addEventListener('click', e => { e.stopPropagation(); SFX.click(); $('helpScr').hidden = false; lbOpen = true; });
+$('helpClose').addEventListener('click', e => { e.stopPropagation(); $('helpScr').hidden = true; lbOpen = !$('shopScr').hidden || !$('lbScr').hidden; });
 $('helpScr').addEventListener('click', e => { if (e.target === $('helpScr')) $('helpScr').hidden = true; });
 
 /* ---------- versus, 1v1 or 2v2: same seeded course, the other players shown as ghosts ---------- */
@@ -7692,7 +7694,7 @@ function vsFinish(res, forfeit){
   else if (res === 'lose'){ banner(t('youLose'), [0,100,62], 1.4); }
   if (state === 'play'){ vs.myFinal = score; if (vs.room) vs.room.set({al: 0, sc: score}); state = 'dying'; deathT = .6; $('dashBtn').hidden = $('skillBtn').hidden = $('pauseBtn').hidden = true; }
   vsFillOver();
-  setTimeout(() => vsLeave(), 1500);
+  { const tok = vs.tok; setTimeout(() => { if (tok === vs.tok) vsLeave(); }, 1500); }   // not if a new search started meanwhile
 }
 // FFA: the match ends when nobody is flying; places by score (ties share), RP by placement (server-settled).
 function vsResolveFfa(){
@@ -7719,7 +7721,7 @@ function vsFinishFfa(){
   else banner('#' + vs.place, [190,80,66], 1.3);
   if (state === 'play'){ vs.myFinal = score; if (vs.room) vs.room.set({al: 0, sc: score}); state = 'dying'; deathT = .6; $('dashBtn').hidden = $('skillBtn').hidden = $('pauseBtn').hidden = true; }
   vsFillOver();
-  setTimeout(() => vsLeave(), 1500);
+  { const tok = vs.tok; setTimeout(() => { if (tok === vs.tok) vsLeave(); }, 1500); }   // not if a new search started meanwhile
 }
 function vsFillOver(){
   $('oRpt').hidden = mode !== 'versus' || !sb || !rptCands(vs.pl, uid).length;   // only people with a player id: never an AI
