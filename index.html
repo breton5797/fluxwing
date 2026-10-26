@@ -5213,7 +5213,7 @@ function renderHangar(){
   $('hgCount').textContent = `${i+1} / ${ROSTER.length}`;
   $('hgName').textContent = B.name; $('hgName').style.color = hsl(B.rarity ? rarCol(B) : B.col, 1, 6);
   $('hgName').parentElement.classList.toggle('ultra', (B.rarity || 0) >= 4);
-  const rar = $('hgRar'); rar.hidden = !B.rarity; rar.classList.toggle('ultra', B.rarity === 4);   // above ultra the badge wears its rank's own colour if (B.rarity){ rar.textContent = t(rarKey(B)); rar.style.background = hsl(rarCol(B)); }
+  const rar = $('hgRar'); rar.hidden = !B.rarity; rar.classList.toggle('ultra', B.rarity === 4); if (B.rarity){ rar.textContent = t(rarKey(B)); rar.style.background = hsl(rarCol(B)); }   // above ultra the badge wears its rank's own colour
   $('hangar').classList.toggle('premium', !!B.rarity);
   const lk = $('hgLock'); lk.textContent = '';
   if (!isOwned(B) && B.season){ const n = document.createElement('div'); n.className = 'note season'; n.textContent = t('seaOnly'); lk.appendChild(n); }   // the season unit: one line where the trial, the price and Buy would be
