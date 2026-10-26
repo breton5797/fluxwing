@@ -3023,13 +3023,185 @@ function ultEnd(){   // an ultimate is over: its state goes back to nothing; one
   FX.ultT = FX.ultN = FX.ultS = FX.ultSlow = 0; ring(bird.x, bird.y, 220, B.uiCol || B.col, .6, 5); ring(bird.x, bird.y, 110, [0,0,100], .4, 3); tone(660,.4,'sine',.09,-330); haptic('ready');
 }
 // Aura behind each unit. The glow scales with rank; the motif follows the tier's name: common glow → epic sparkles → legendary flames → mythic runes → ultra prism
+/* aura:start — per-unit auras for the premium units; tests/aura.test.js runs this block (hsl comes in) against a counting canvas stub.
+   drawAura paints the rarity glow, then the unit's own motif from here in place of its tier's shared one. A tier keeps its rank by size and layers:
+   epic one motif (to ~1.8 r), legendary two (~1.9 r), mythic three (~2.05 r), ultra four (~2.5 r); AURA_BUDGET caps fills/strokes per frame.
+   Each entry: (c, d, R, k, lo) at the unit's centre, not rotated. k = the clock (0 with reduced motion: a still pose), lo = low fx quality (fewer pieces). */
+const AURA_BUDGET = Object.freeze({1: 16, 2: 20, 3: 26, 4: 32});
+const auraPoly = (c, pts) => { c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); };
+const AURA = {
+  // ---- epic: one motif ----
+  mochi(c, d, R, k, lo){   // soft pink soap bubbles drift up and pop, then come again
+    for (let i = 0; i < (lo ? 3 : 5); i++){
+      const p = (k*.35 + i/5) % 1, sd = i % 2 ? 1 : -1, x = sd*R*(1.15 + .35*Math.sin(i*2.3 + k*1.5)), y = R*1.1 - p*R*2.6, pop = p > .85 ? (p - .85)/.15 : 0, r = R*(.24 + .08*Math.sin(i*1.7))*(1 + pop*.6);
+      c.beginPath(); c.arc(x, y, r, 0, 6.28); c.fillStyle = hsl([330,100,85], .18*(1 - pop)); c.fill(); c.strokeStyle = hsl([340,100,86], .95*(1 - pop)); c.lineWidth = 1.6; c.stroke();
+      c.fillStyle = hsl([0,0,100], .55*(1 - pop)); c.beginPath(); c.arc(x - r*.35, y - r*.35, r*.22, 0, 6.28); c.fill();
+    }
+  },
+  pixel(c, d, R, k, lo){   // 8-bit marquee: pixel blocks round a square, three lit at a time, now and then a coin glint
+    const s = R*1.55, n = 12, on = Math.floor(k*10) % n;
+    for (let i = 0; i < n; i++){
+      const t = i/n*4, e = Math.floor(t), f = t - e, p = [[-1 + 2*f, -1], [1, -1 + 2*f], [1 - 2*f, 1], [-1, 1 - 2*f]][e], lit = (on - i + n) % n;
+      c.fillStyle = lit < 3 ? hsl([48,100,62], 1 - lit*.3) : hsl([20,100,58], .28); c.fillRect(Math.round(p[0]*s) - 2.5, Math.round(p[1]*s) - 2.5, 5, 5);
+    }
+    if (!lo && Math.sin(k*2.2) > .85){ c.fillStyle = hsl([48,100,82], .9); c.fillRect(s*.6 - 1, -s - 7, 2, 9); c.fillRect(s*.6 - 4.5, -s - 3.5, 9, 2); }
+  },
+  neko(c, d, R, k, lo){   // nine lives: nine dots twinkling round the cat, and one paw print stepping round
+    for (let i = 0; i < 9; i++){ const a = i*.698 - k*.4; c.fillStyle = hsl([300,80,82], .55*(.45 + .55*Math.max(0, Math.sin(k*2 - i*.7)))); c.beginPath(); c.arc(Math.cos(a)*R*1.7, Math.sin(a)*R*1.7, 1.8, 0, 6.28); c.fill(); }   // the twinkle rides in the colour, so a dimmed (unowned) hangar unit stays dimmed
+    if (lo) return;
+    const st = Math.floor(k*1.4), ph = k*1.4 - st, a = st*1.1;
+    c.save(); c.translate(Math.cos(a)*R*1.45, Math.sin(a)*R*1.45); c.rotate(a + 1.57); c.scale(1.25, 1.25); c.fillStyle = hsl([330,90,86], .9*(1 - ph*.7));
+    c.beginPath(); c.ellipse(0, 1.5, 3, 2.4, 0, 0, 6.28); for (let j = -1; j <= 1; j++){ c.moveTo(j*2.6 + 1.1, -2.2 - (j ? 0 : .8)); c.arc(j*2.6, -2.2 - (j ? 0 : .8), 1.1, 0, 6.28); } c.fill(); c.restore();
+  },
+  buzz(c, d, R, k, lo){   // lucky bee: a faint honeycomb ring, two bees flying figure eights
+    c.strokeStyle = hsl([46,100,60], .25); c.lineWidth = 1; c.beginPath();
+    for (let h = 0; h < 6; h++){ const cx = Math.cos(h*1.047 + .52)*R*1.45, cy = Math.sin(h*1.047 + .52)*R*1.45; for (let i = 0; i <= 6; i++){ const a = i*1.047; c[i ? 'lineTo' : 'moveTo'](cx + Math.cos(a)*R*.4, cy + Math.sin(a)*R*.4); } }
+    c.stroke();
+    for (let b = 0; b < (lo ? 1 : 2); b++){
+      const t = k*1.8 + b*3.14, x = Math.sin(t)*R*1.75, y = Math.sin(t*2)*R*.7;
+      c.fillStyle = hsl([46,100,55]); c.beginPath(); c.ellipse(x, y, 2.8, 1.9, 0, 0, 6.28); c.fill();
+      c.fillStyle = hsl([200,60,94], .5 + .4*Math.sin(k*40 + b)); c.beginPath(); c.ellipse(x, y - 2.2, 1.9, 1.1, 0, 0, 6.28); c.fill();
+    }
+  },
+  // ---- legendary: motif + ring ----
+  phoenix(c, d, R, k, lo){   // fire feathers licking upward all round, embers rising, a thin ember ring
+    const n = lo ? 5 : 8;
+    for (let i = 0; i < n; i++){
+      const a = i/n*6.283 + k*.3, bx = Math.cos(a)*R*1.5, by = Math.sin(a)*R*1.5, L = R*(.9 + .35*Math.sin(k*7 + i*1.3)), tx = bx + Math.cos(a)*L*.5, ty = by + Math.sin(a)*L*.5 - L*.8, nx = -Math.sin(a)*3, ny = Math.cos(a)*3;
+      c.fillStyle = hsl([18 + (i%3)*12,100,60], .65); c.beginPath(); c.moveTo(bx + nx, by + ny); c.quadraticCurveTo(bx + nx*1.6, (by + ty)/2, tx, ty); c.quadraticCurveTo(bx - nx*1.6, (by + ty)/2, bx - nx, by - ny); c.fill();
+    }
+    for (let i = 0; i < (lo ? 2 : 4); i++){ const p = (k*.8 + i/4) % 1; c.fillStyle = hsl([40,100,66], 1 - p); c.beginPath(); c.arc(Math.sin(i*2.1 + p*3)*R*1.3, R - p*R*3.2, 1.6, 0, 6.28); c.fill(); }
+    c.strokeStyle = hsl([28,100,60], .3); c.lineWidth = 1.5; c.beginPath(); c.arc(0, 0, R*1.9, 0, 6.28); c.stroke();
+  },
+  zero(c, d, R, k, lo){   // shadow blades: three violet-edged crescents circling, a broken smoke ring, an afterimage every two seconds
+    for (let i = 0; i < 3; i++){
+      const a = k*2.2 + i*2.094, m = a + .45;
+      c.beginPath(); c.arc(0, 0, R*1.8, a, a + .9); c.arc(Math.cos(m)*R*.3, Math.sin(m)*R*.3, R*1.5, a + .9, a, true); c.closePath();
+      c.fillStyle = hsl([268,35,14], .85); c.fill(); c.strokeStyle = hsl([288,100,66], .8); c.lineWidth = 1.2; c.stroke();
+    }
+    c.save(); c.setLineDash([3, 7]); c.lineDashOffset = -k*20; c.strokeStyle = hsl([268,40,30], .55); c.lineWidth = 3; c.beginPath(); c.arc(0, 0, R*1.95, 0, 6.28); c.stroke(); c.restore();
+    const g = (k*.5) % 1; if (!lo && g < .25){ c.strokeStyle = hsl([288,100,70], .5*(1 - g*4)); c.lineWidth = 1; c.beginPath(); c.arc(-R*(.4 + g*3), 0, R*1.05, 0, 6.28); c.stroke(); }
+  },
+  raijin(c, d, R, k, lo){   // the thunder god's ring of six drums, a bolt jumping drum to drum
+    const ps = Array.from({length: 6}, (_, i) => { const a = i*1.047 + k*.7; return [Math.cos(a)*R*1.6, Math.sin(a)*R*1.6]; });
+    c.strokeStyle = hsl([205,100,70], .35); c.lineWidth = 1; auraPoly(c, [...ps, ps[0]]); c.stroke();
+    ps.forEach(([x, y]) => { c.beginPath(); c.arc(x, y, R*.24, 0, 6.28); c.fillStyle = hsl([205,100,40], .85); c.fill(); c.strokeStyle = hsl([55,100,62], .9); c.lineWidth = 1.2; c.stroke(); });
+    if (lo) return;
+    const j = Math.floor(k*7) % 6, [x0, y0] = ps[j], [x1, y1] = ps[(j + 1) % 6];
+    c.strokeStyle = hsl([55,100,80], .95); c.lineWidth = 1.6;
+    auraPoly(c, [0, 1, 2, 3, 4].map(s => { const t = s/4, w = s % 4 ? (s % 2 ? 4 : -4) : 0; return [x0 + (x1 - x0)*t + (y1 - y0)/R*w*.25, y0 + (y1 - y0)*t - (x1 - x0)/R*w*.25]; })); c.stroke();
+  },
+  chrono(c, d, R, k, lo){   // clockwork: a big gear and a small one turning against it, two hands sweeping (the second tick ring is CHRONO's own fx)
+    const gear = (cx, cy, r, n, a) => { c.beginPath(); for (let i = 0; i < n*2; i++){ const t = a + i/(n*2)*6.283, rr = i % 2 ? r : r*1.13; c.lineTo(cx + Math.cos(t)*rr, cy + Math.sin(t)*rr); } c.closePath(); };
+    c.strokeStyle = hsl([40,85,62], .45); c.lineWidth = 1.4; gear(0, 0, R*1.62, 16, k*.25); c.stroke();
+    if (!lo){ c.strokeStyle = hsl([32,60,60], .5); gear(R*1.55, -R*1.25, R*.42, 8, -k*1); c.stroke(); }
+    c.strokeStyle = hsl([40,85,72], .75); c.lineWidth = 1.8; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(k*.5 - 1.57)*R*1.25, Math.sin(k*.5 - 1.57)*R*1.25); c.moveTo(0, 0); c.lineTo(Math.cos(k*3 - 1.57)*R*1.5, Math.sin(k*3 - 1.57)*R*1.5); c.stroke(); c.lineCap = 'butt';
+  },
+  goliath(c, d, R, k, lo){   // four rock chunks circling heavily, a quake ring thumping out every 1.2s
+    for (let i = 0; i < (lo ? 2 : 4); i++){
+      const a = i*1.571 + k*.6, x = Math.cos(a)*R*1.7, y = Math.sin(a)*R*1.7 + Math.sin(k*3 + i)*2;
+      c.fillStyle = hsl([220,12,48]); c.strokeStyle = hsl([25,100,55], .7); c.lineWidth = 1;
+      auraPoly(c, [0, 1, 2, 3, 4].map(j => { const t = j*1.257 + i, r = R*(.24 + .08*Math.sin(j*2.7 + i)); return [x + Math.cos(t)*r, y + Math.sin(t)*r]; })); c.closePath(); c.fill(); c.stroke();
+    }
+    const p = (k/1.2) % 1; c.strokeStyle = hsl([25,100,55], .55*(1 - p)); c.lineWidth = 3*(1 - p) + .5; c.beginPath(); c.arc(0, 0, R*(1.1 + p*.9), 0, 6.28); c.stroke();
+  },
+  monarch(c, d, R, k, lo){   // royal seal: a double gold ring with studs, three gems hovering in an arc above, gold dust (the wreath and crown are the skill's)
+    c.strokeStyle = hsl([46,100,60], .45); c.lineWidth = 1; c.beginPath(); c.arc(0, 0, R*1.75, 0, 6.28); c.moveTo(R*1.95, 0); c.arc(0, 0, R*1.95, 0, 6.28); c.stroke();
+    c.fillStyle = hsl([46,100,70], .7); c.beginPath(); for (let i = 0; i < 12; i++){ const a = i*.524 + k*.15, x = Math.cos(a)*R*1.85, y = Math.sin(a)*R*1.85; c.moveTo(x + 1.2, y); c.arc(x, y, 1.2, 0, 6.28); } c.fill();
+    [[-.55, [350,90,62]], [0, [200,100,66]], [.55, [140,80,55]]].forEach(([o, col], i) => {
+      const a = -1.57 + o, x = Math.cos(a)*R*1.45, y = Math.sin(a)*R*1.45 + Math.sin(k*2 + i)*1.5, s = R*.2;
+      c.fillStyle = hsl(col, .95); auraPoly(c, [[x, y - s*1.3], [x + s, y], [x, y + s*1.3], [x - s, y]]); c.closePath(); c.fill();
+    });
+    if (!lo) for (let i = 0; i < 3; i++){ const p = (k*.6 + i/3) % 1, a = i*2.1 + k*.2; c.fillStyle = hsl([48,100,80], 1 - p); c.fillRect(Math.cos(a)*R*(1.2 + p), Math.sin(a)*R*(1.2 + p) - p*6, 1.6, 1.6); }
+  },
+  // ---- mythic: three layers turning against each other ----
+  aegis(c, d, R, k, lo){   // four kite-shield shards on guard, a steel gleam sweeping round, a slow dashed outer ward (the hex dome is the skill's)
+    for (let i = 0; i < 4; i++){
+      const a = i*1.571 + k*.5; c.save(); c.rotate(a); c.translate(R*1.75, 0);
+      auraPoly(c, [[-R*.18, 0], [0, -R*.28], [R*.3, 0], [0, R*.28]]); c.closePath(); c.fillStyle = hsl([210,25,70], .8); c.fill(); c.strokeStyle = hsl([44,90,60], .9); c.lineWidth = 1.2; c.stroke(); c.restore();
+    }
+    const g = k*1.6; c.strokeStyle = hsl([210,40,92], .55); c.lineWidth = 2.5; c.beginPath(); c.arc(0, 0, R*1.42, g, g + .7); c.stroke();
+    if (!lo){ c.save(); c.setLineDash([8, 5]); c.lineDashOffset = k*12; c.strokeStyle = hsl([44,90,56], .35); c.lineWidth = 1.4; c.beginPath(); c.arc(0, 0, R*2.05, 0, 6.28); c.stroke(); c.restore(); }
+  },
+  kraken(c, d, R, k, lo){   // the deep: four tentacles curling out from behind, bubbles rising, an ink shadow round the rim
+    const g = c.createRadialGradient(0, 0, R*1.3, 0, 0, R*2.1); g.addColorStop(0, hsl([285,65,20], 0)); g.addColorStop(1, hsl([285,65,18], .45)); c.fillStyle = g; c.beginPath(); c.arc(0, 0, R*2.1, 0, 6.28); c.fill();
+    c.lineCap = 'round';
+    for (let i = 0; i < 4; i++){
+      const a0 = 2.2 + i*.62; c.strokeStyle = hsl([320,80,62], .55); c.lineWidth = 3 - i*.3;
+      const n = lo ? 4 : 7; auraPoly(c, Array.from({length: n}, (_, j) => { const t = j/(n - 1), r = R*(.8 + t*1.2), a = a0 + Math.sin(k*2.4 + i + t*3.5)*.35*t; return [Math.cos(a)*r, Math.sin(a)*r]; })); c.stroke();
+    }
+    c.lineCap = 'butt';
+    if (!lo) for (let i = 0; i < 3; i++){ const p = (k*.5 + i/3) % 1; c.strokeStyle = hsl([190,80,80], .7*(1 - p)); c.lineWidth = 1; c.beginPath(); c.arc(R*(.9 + .3*i) + Math.sin(k*3 + i)*2, R - p*R*2.8, 1.5 + i*.4, 0, 6.28); c.stroke(); }
+  },
+  specter(c, d, R, k, lo){   // will-o'-wisps: three cold flames circling with fading tails, a rim that flickers in and out of phase
+    const tail = lo ? 2 : 4;
+    for (let i = 0; i < 3; i++) for (let j = tail; j >= 0; j--){
+      const a = k*1.7 + i*2.094 - j*.18, r = R*(1.75 + .12*Math.sin(k*3 + i));
+      c.fillStyle = hsl(j ? [185,100,70] : [185,60,95], (1 - j/(tail + 1))*.85); c.beginPath(); c.arc(Math.cos(a)*r, Math.sin(a)*r*.85, (j ? 2.6 - j*.4 : 3.2), 0, 6.28); c.fill();
+    }
+    c.strokeStyle = hsl([185,100,80], .2 + .35*Math.abs(Math.sin(k*2.5))); c.lineWidth = 1.2; c.beginPath(); c.arc(0, 0, R*2.05, 0, 6.28); c.stroke();
+  },
+  oracle(c, d, R, k, lo){   // the seeing eye opening and closing round the bird, eight runes turning, a short constellation
+    const o = .25 + .75*Math.abs(Math.sin(k*.6)), w = R*2.05, h = R*1.15*o;
+    c.strokeStyle = hsl([55,100,66], .6); c.lineWidth = 1.3; c.beginPath(); c.moveTo(-w, 0); c.quadraticCurveTo(0, -h*2, w, 0); c.quadraticCurveTo(0, h*2, -w, 0); c.stroke();
+    if (o > .5){ c.strokeStyle = hsl([170,70,55], .5); c.beginPath(); c.arc(0, 0, R*1.25, 0, 6.28); c.stroke(); }
+    c.save(); c.rotate(-k*.35); c.strokeStyle = hsl([170,80,70], .7); c.lineWidth = 1.1; c.beginPath();
+    for (let i = 0; i < 8; i++){ const a = i*.785, x = Math.cos(a)*R*1.75, y = Math.sin(a)*R*1.75, s = 2.6; c.moveTo(x, y - s); c.lineTo(x, y + s); if (i % 2) { c.moveTo(x - s, y - s*.4); c.lineTo(x + s*.6, y + s*.6); } else { c.moveTo(x, y - s); c.lineTo(x + s, y - s*.2); } }
+    c.stroke(); c.restore();
+    if (!lo){ const st = [[-1.9, -.9], [-1.2, -1.6], [-.3, -1.95], [.8, -1.7], [1.7, -1.1]].map(([x, y]) => [x*R, y*R]); c.strokeStyle = hsl([55,100,80], .3); c.lineWidth = .8; auraPoly(c, st); c.stroke(); c.fillStyle = hsl([55,100,85], .8); c.beginPath(); st.forEach(([x, y]) => { c.moveTo(x + 1.3, y); c.arc(x, y, 1.3, 0, 6.28); }); c.fill(); }
+  },
+  // ---- ultra: four layers, many hues, pulsing ----
+  solaris(c, d, R, k, lo){   // the sun: a corona of sixteen rays, three prominence loops rising and sinking, a hot rim and an outer halo
+    c.save(); c.rotate(k*.3); c.strokeStyle = hsl([45,100,62], .45); c.lineWidth = 1.6; c.beginPath();
+    for (let i = 0; i < 16; i++){ const a = i*.393, L = R*(1.9 + .35*Math.sin(k*5 + i*1.7)); c.moveTo(Math.cos(a)*R*1.35, Math.sin(a)*R*1.35); c.lineTo(Math.cos(a)*L, Math.sin(a)*L); } c.stroke(); c.restore();
+    for (let i = 0; i < (lo ? 1 : 3); i++){ const a = i*2.094 + k*.2, h = .5 + .5*Math.sin(k*1.3 + i*2); c.save(); c.rotate(a); c.strokeStyle = hsl([18,100,60], .65); c.lineWidth = 2.2; c.beginPath(); c.ellipse(R*1.3, 0, R*.35*(.6 + h), R*.3, 0, -1.57, 1.57); c.stroke(); c.restore(); }
+    c.strokeStyle = hsl([30,100,65], .55 + .2*Math.sin(k*4)); c.lineWidth = 2; c.beginPath(); c.arc(0, 0, R*1.3, 0, 6.28); c.stroke();
+    c.strokeStyle = hsl([45,100,70], .2); c.lineWidth = 1.5; c.beginPath(); c.arc(0, 0, R*2.5, 0, 6.28); c.stroke();
+  },
+  pulsar(c, d, R, k, lo){   // a beating star: rings pulsing out on the beat, twin lighthouse beams turning, magenta and cyan in turn
+    for (let i = 0; i < (lo ? 2 : 3); i++){ const p = (k*.9 + i/3) % 1; c.strokeStyle = hsl(i % 2 ? [180,100,66] : [320,100,62], .6*(1 - p)); c.lineWidth = 2.2*(1 - p) + .4; c.beginPath(); c.arc(0, 0, R*(1.1 + p*1.4), 0, 6.28); c.stroke(); }
+    c.save(); c.rotate(k*2.6);
+    for (const [s, col] of [[1, [320,100,66]], [-1, [180,100,70]]]){ const g = c.createLinearGradient(0, 0, s*R*2.5, 0); g.addColorStop(0, hsl(col, .55)); g.addColorStop(1, hsl(col, 0)); c.fillStyle = g; auraPoly(c, [[0, 0], [s*R*2.5, -R*.32], [s*R*2.5, R*.32]]); c.closePath(); c.fill(); }
+    c.restore();
+    c.fillStyle = hsl([0,0,100], .5 + .5*Math.max(0, Math.sin(k*5.65))); c.beginPath(); c.arc(0, 0, R*.25, 0, 6.28); c.fill();
+  },
+  aurora(c, d, R, k, lo){   // northern lights: curtains of light rippling green to violet behind the bird, a faint halo
+    const n = lo ? 3 : 5;
+    for (let i = 0; i < n; i++){
+      const x = (i/(n - 1) - .5)*R*3.6, top = -R*2.4, bot = R*.5, sw = Math.sin(k*1.6 + i*1.3)*R*.5, w = R*.32, g = c.createLinearGradient(0, top, 0, bot);
+      g.addColorStop(0, hsl([140 + i*35,90,62], 0)); g.addColorStop(.5, hsl([140 + i*35,90,62], .32)); g.addColorStop(1, hsl([140 + i*35,90,62], 0)); c.fillStyle = g;
+      c.beginPath(); c.moveTo(x - w, top); c.quadraticCurveTo(x - w + sw, (top + bot)/2, x - w, bot); c.lineTo(x + w, bot); c.quadraticCurveTo(x + w + sw, (top + bot)/2, x + w, top); c.closePath(); c.fill();
+    }
+    c.strokeStyle = hsl([280,90,72], .2); c.lineWidth = 1.5; c.beginPath(); c.arc(0, 0, R*2.5, 0, 6.28); c.stroke();
+  },
+  tempest(c, d, R, k, lo){   // the storm's eye: three spiral arms whirling, rain slanting through, an eye-wall ring
+    c.save(); c.rotate(-k*2.4); c.lineWidth = 2; c.lineCap = 'round';
+    for (let i = 0; i < 3; i++){ c.strokeStyle = hsl([195 + i*10,90,68], .55); const n = lo ? 5 : 9; auraPoly(c, Array.from({length: n}, (_, j) => { const t = j/(n - 1), a = i*2.094 + t*2.6, r = R*(1.05 + t*1.4); return [Math.cos(a)*r, Math.sin(a)*r]; })); c.stroke(); }
+    c.restore(); c.lineCap = 'butt';
+    c.strokeStyle = hsl([185,100,80], .45); c.lineWidth = 1; c.beginPath();
+    for (let i = 0; i < (lo ? 3 : 6); i++){ const p = (k*1.4 + i/6) % 1, x = (i/5 - .5)*R*4 + p*R*1.2, y = -R*2.3 + p*R*4.6; c.moveTo(x, y); c.lineTo(x - R*.25, y + R*.55); } c.stroke();
+    c.strokeStyle = hsl([215,75,62], .5); c.lineWidth = 2; c.beginPath(); c.arc(0, 0, R*1.15, 0, 6.28); c.stroke();
+  },
+  pleiad(c, d, R, k, lo){   // the seven sisters: seven stars joined by thin lines, the cluster turning slowly, each star twinkling
+    const P = [[-1.6, -.6], [-.9, -1.4], [0, -1.1], [.8, -1.7], [1.5, -.8], [1, .3], [-.4, .5]];
+    c.save(); c.rotate(k*.18); const st = P.map(([x, y]) => [x*R*1.4, y*R*1.4 + R*.6]);
+    c.strokeStyle = hsl([232,65,75], .35); c.lineWidth = .9; auraPoly(c, [...st, st[0]]); c.stroke();
+    st.forEach(([x, y], i) => { if (lo && i % 2) return; const s = 2 + 1.4*Math.max(0, Math.sin(k*3 + i*1.9)); c.fillStyle = hsl([50,100,80], .95); auraPoly(c, [[x, y - s*1.6], [x + s*.4, y - s*.4], [x + s*1.6, y], [x + s*.4, y + s*.4], [x, y + s*1.6], [x - s*.4, y + s*.4], [x - s*1.6, y], [x - s*.4, y - s*.4]]); c.closePath(); c.fill(); });
+    c.restore();
+    c.strokeStyle = hsl([232,65,70], .25); c.lineWidth = 1.5; c.beginPath(); c.arc(0, 0, R*2.5, 0, 6.28); c.stroke();
+  },
+};
+/* aura:end */
 function drawAura(c, d, R, tt){
   const rar = d.rarity || 0, tn = unitTier(d), col = d.uiCol || d.col, rc = RARITY_COL[rar] || col;
   c.save();
   const glowC = rar ? rc : col, pul = .5 + .5*Math.sin(tt*3), RR = R*(2 + rar*.25);
   const g = c.createRadialGradient(0,0,R*.3,0,0,RR); g.addColorStop(0, hsl(glowC, .16 + .06*pul + rar*.03)); g.addColorStop(1, hsl(glowC, 0));
   c.fillStyle = g; c.beginPath(); c.arc(0,0,RR,0,6.28); c.fill();
-  if (tn === 'epic'){
+  const au = AURA[d.id];   // the unit's own motif (aura block); the tier motifs below stay for any premium unit without one
+  if (au) au(c, d, R, RM ? 0 : tt, !!(IMP && IMP.q === 'low'));
+  else if (tn === 'epic'){
     for (let i=0;i<6;i++){ const a = tt*2 + i*1.047, rr = R*1.8; c.save(); c.translate(Math.cos(a)*rr, Math.sin(a)*rr*.7); c.rotate(.785); c.fillStyle = hsl(rc, .55 + .45*Math.sin(tt*6 + i)); c.fillRect(-2,-2,4,4); c.restore(); }
   } else if (tn === 'mythic'){
     c.strokeStyle = hsl(rc, .55); c.lineWidth = 1.6; c.setLineDash([6,5]);
