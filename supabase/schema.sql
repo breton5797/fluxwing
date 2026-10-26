@@ -118,8 +118,10 @@ grant select, insert, update, delete on table public.fw_scores to service_role; 
 --   plain gate          1
 -- combo grows by 1 per perfect, so at the k-th gate combo <= k, or <= k + 10 for SOLARIS whose skill lifts the
 -- combo to the fever threshold (10) once. Worst units: SOLARIS (bonus 1, feverMul 3): 3 * (k + 12);
--- PULSAR (bonus 2, feverMul 2, Resonance x2, no combo lift): 4 * (k + 3). Both are <= 4 * (k + 12), so
---   endless: score <= sum(k = 1..g) 4 * (k + 12) = 2*g^2 + 50*g
+-- PULSAR (bonus 2, feverMul 2, Resonance x3, no combo lift): 6 * (k + 3). Both are <= 6 * (k + 12), so
+--   endless: score <= sum(k = 1..g) 6 * (k + 12) = 3*g^2 + 75*g
+-- (2026-10: was 2*g^2 + 50*g, which PULSAR's Resonance x3 could pass on a long all-Perfect run.) The ranks above ultra add score
+-- mastery (x1.1 .. x1.7 on a Perfect); re-derive this bound from scripts/balance.mjs before the first of those ranks is released.
 -- Daily runs are "fair mode" (bonus <= 1, feverMul 2, dashPts 1, Resonance x1, no combo lift): <= 2 * (k + 2) per gate, so
 --   daily:   score <= sum(k = 1..g) 2 * (k + 2) = g^2 + 5*g
 -- Both assume every single gate is a perfect in fever, i.e. they are generous by a wide margin.
@@ -128,7 +130,10 @@ create or replace function private.fw_units() returns text[]
 language sql immutable set search_path = '' as $$
   select array['volt','blitz','nimbus','titan','mochi','aegis','phoenix','zero','pixel','neko','buzz',
                'kraken','specter','oracle','raijin','chrono','goliath','solaris','aurora','tempest','pleiad','pulsar',
-               'monarch'];   -- monarch: the season reward unit (private.fw_vs_season_cfg().top_unit)
+               'monarch',    -- monarch: the season reward unit (private.fw_vs_season_cfg().top_unit)
+               -- ranks above ultra (TIER_IDS in index.html), reserved before release: celestial, nebula, void, divine, genesis
+               'seraph','valkyrie','lumen','halcyon','quasar','comet','zodiac','eclipse','singular','rift','nyx','entropy',
+               'archon','ouroboros','kirin','garuda','aeon','cosmos','infinity','omega'];
 $$;
 revoke all on function private.fw_units() from public, anon, authenticated;
 
@@ -210,7 +215,7 @@ begin
     end if;
   else
     v_bound := case p_mode when 'daily' then p_gates::bigint * p_gates + 5 * p_gates
-                           else 2 * p_gates::bigint * p_gates + 50 * p_gates end;
+                           else 3 * p_gates::bigint * p_gates + 75 * p_gates end;
     if p_score > v_bound then
       raise exception 'fw_implausible: score too high for the gates passed' using errcode = '22023';
     end if;
