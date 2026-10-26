@@ -33,7 +33,7 @@ async function run(){
   await page.evaluate(i => { FW.hold = true; document.getElementById('startBtn').click(); document.querySelectorAll('#stageScr .stc')[i].click(); }, STAGE);   // hold: no real-time frames before the bot takes over
   await page.waitForFunction(() => FW.state === 'play');
   return page.evaluate(aim => {
-    const key = code => dispatchEvent(new KeyboardEvent('keydown', { code }));
+    const key = code => { dispatchEvent(new KeyboardEvent('keydown', { code })); dispatchEvent(new KeyboardEvent('keyup', { code })); };   // a tap, not a hold: the bot never glides
     const g0 = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2*Math.log(u)) * Math.cos(6.283*v); };
     let err = g0() * aim, last = null;
     for (let i = 0; i < 120 * 240 && FW.state === 'play'; i++){
