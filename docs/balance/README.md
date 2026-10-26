@@ -126,3 +126,32 @@ The ladder so far, rank means at form I / V:
 - nebula: 178 / 575
 - void: 204 / 627
 - divine: 242 / 710
+
+## Rank 9 · genesis (P5), 2026-10-26 (stage 20, 60 runs): `tier9-s20-f0.json`, `tier9-s20-f4.json`
+
+| Unit | Form I | Form V | Best bound ratio (V, rank share) |
+|---|---|---|---|
+| aeon | 240 | 777 | 0.154 |
+| cosmos | 338 | 806 | 0.145 |
+| infinity | 338 | 835 | 0.104 |
+| omega | 321 | 956 | 0.124 |
+| **rank mean** | **309** (target ~251, ladder ~270) | **844** (ladder ~790) | |
+
+Genesis is about 28% above divine at form I and 19% above at form V. Every best run stays at or below 0.154 of rank 9's ×1.9 share.
+
+AEON reads low at form I (0.78 of the rank mean). Its Perfects grow with the time a run lasts, so the bot's short form-I runs undersell it. At form V it sits at 0.92.
+
+The tuning went through five rounds. Only the levers not printed in the texts were moved:
+- the scroll speed of all four (0.97–1.00);
+- the skill and ultimate multiples, which reach the texts through `{m}`;
+- COSMOS's window and cooldown;
+- OMEGA's skill charge per Perfect.
+
+AEON's first form-V best run hit 0.27 of its share, from its time bonus stacking on a ×2.5 skill. Its skill went back to ×2.25 and its ultimate to ×2.5.
+
+The ladder, rank means at form I / V:
+- celestial: 148 / 422
+- nebula: 178 / 575
+- void: 204 / 627
+- divine: 242 / 710
+- **genesis: 309 / 844**
