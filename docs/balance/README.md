@@ -102,3 +102,19 @@ The open ultras at form V, for reference: solaris 182, pulsar 444 (mean ~313).
   - fog Perfects ×2.
 
   Before `TIER_OPEN` reaches 7, re-derive the bound from a hand worst case, not from these bot numbers.
+
+## Rank 8 · divine (P4), 2026-10-26 (stage 20, 60 runs): `tier8-s20-f0.json`, `tier8-s20-f4.json`
+
+| Unit | Form I | Form V | Best bound ratio (V) |
+|---|---|---|---|
+| archon | 187 | 600 | 0.200 |
+| ouroboros | 160 | 682 | 0.303 |
+| kirin | 200 | 533 | 0.138 |
+| garuda | 250 | 429 | 0.020 |
+| **rank mean** | **199** (target ~226) | **561** (target ~700) | |
+
+**The ladder stalls at rank 8.** Divine scores about the same as void (204 / 627), not 11% more. Two reasons:
+1. **The server bound** (`3g² + 75g`) caps a run's score per gate. Rank 8 multipliers stack on mastery ×1.6, so ARCHON (unhit ×1.6) and OUROBOROS (loops) went past 0.3 of the bound with the bot. Reviews then estimated a strong player passing it after about 140 gates. Both were capped (ARCHON ×1.3, loops +15%, loops lent only for the ultimate), and that took the rank's edge away.
+2. **The bot rarely chains Perfects**, so most of a high-rank unit's strength never shows in these numbers. Survival levers (window, shield, skill uptime) move bot scores more than multipliers do.
+
+Before ranks 8 and 9 can climb as designed, the server bound has to be raised. Derive it by hand from the worst case for each rank: `6(k+12)` per gate today, about ×1.6–1.7 at ranks 8–9. Otherwise these ranks have to grow through survival instead of score.
