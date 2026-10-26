@@ -1,0 +1,44 @@
+{
+ "stage": 20,
+ "runs": 60,
+ "form": 0,
+ "aim": 6,
+ "rows": [
+  {
+   "id": "quasar",
+   "rarity": 6,
+   "mean": 169,
+   "median": 141,
+   "p90": 310,
+   "gates": 29.3,
+   "bound": 0.077
+  },
+  {
+   "id": "comet",
+   "rarity": 6,
+   "mean": 172,
+   "median": 158,
+   "p90": 405,
+   "gates": 33.9,
+   "bound": 0.073
+  },
+  {
+   "id": "zodiac",
+   "rarity": 6,
+   "mean": 235,
+   "median": 154,
+   "p90": 396,
+   "gates": 60,
+   "bound": 0.039
+  },
+  {
+   "id": "eclipse",
+   "rarity": 6,
+   "mean": 137,
+   "median": 138,
+   "p90": 316,
+   "gates": 53.9,
+   "bound": 0.016
+  }
+ ]
+}

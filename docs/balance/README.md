@@ -58,3 +58,25 @@ The open ultras at form V, for reference: solaris 182, pulsar 444 (mean ~313).
 - **Run-to-run noise is about ±20–25% at 60 runs.** The same settings gave seraph 161 and 122 at form I in two batches. Do not tune on one batch, and compare rank means rather than single units.
 - **LUMEN scales the most** (form I ~113–138, form V ~410–550). Its combo-keep passive turns longer runs into much longer combos. Re-check it with players before rank 5 is released.
 - **All runs stay at or below 0.18 of the server bound** (3g² + 75g). Re-derive the bound with the next ranks' numbers before the first rank above ultra is released.
+
+## Rank 6 · nebula (P2), 2026-10-26 (stage 20, 60 runs): `tier6-s20-f0.json`, `tier6-s20-f4.json`
+
+| Unit | Form I | Form V | Best bound ratio (V) |
+|---|---|---|---|
+| quasar | 169 | 610 | 0.159 |
+| comet | 172 | 513 | 0.226 |
+| zodiac | 235 | 674 | 0.072 |
+| eclipse | 137 | 503 | 0.047 |
+| **rank mean** | **178** (target ~165–185) | **575** (target ~470) | |
+
+- **Form I is on target**, about 20% above celestial's measured 148.
+- **Form V overshoots by about 22%**: 575 against celestial's 422, about +36%.
+  - Nebula grows more with form, through mastery ×1.20 → ×1.40, `formBonus` on all four, and the skills' +10%/+10%.
+  - That fits "higher ranks gain more as the unit levels", but it is steeper than the 11% rung.
+  - If rank 7 repeats the pattern, re-check the server bound (`3g² + 75g`) with these numbers first. The best run so far is 0.226 of it.
+- **Two review fixes moved the numbers a lot:**
+  - QUASAR's beam now carries over to gates not spawned yet, so it marks its full count on a narrow screen as well.
+  - QUASAR and ZODIAC keep a wider window.
+
+  Measure again after any change to them.
+- **ZODIAC is the strongest unit at both forms**; ECLIPSE is the weakest at form I.
