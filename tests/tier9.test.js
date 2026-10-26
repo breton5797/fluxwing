@@ -49,7 +49,7 @@ test('the new passives are stage mode only and wired into the gate, orb and Perf
   assert.match(html, /\(PK\.aeonRate \? 1 \+ Math\.min\(PK\.aeonMax, FX\.runT \* PK\.aeonRate\) : 1\)/, 'AEON: time');
   assert.match(html, /\(PK\.infStep && tier === 2 \? 1 \+ Math\.min\(PK\.infMax, Math\.floor\(Math\.max\(0, combo - PK\.feverAt\)\/10\) \* PK\.infStep\) : 1\)/, 'INFINITY: fever climbs');
   assert.match(html, /if \(PK\.starEvery && gatesPassed % PK\.starEvery === 0\) starOrb\(\);/, 'COSMOS: a star appears');
-  assert.match(html, /if \(o\.star\)\{ if \(\+\+FX\.stars >= 5\)\{ FX\.stars = 0; addScore\(PK\.starPts\);/, 'COSMOS: five stars make a constellation');
+  assert.match(html, /if \(o\.star\)\{ if \(\+\+FX\.stars >= STAR_SET\)\{ FX\.stars = 0; addScore\(PK\.starPts\);/, 'COSMOS: STAR_SET stars make a constellation');
   assert.match(html, /arch:0, loops:0, loopsWas:-1, runT:0, stars:0,/, 'per-run state');
   assert.match(html, /if \(FX\.runT >= 0\) FX\.runT \+= dt;/, 'AEON\'s clock runs with play');
   for (const [id, k] of [['aeon', 'aeonRate:.005'], ['cosmos', 'starEvery:8'], ['infinity', 'infStep:.1'], ['omega', 'bonus:2']]) assert.match(row(id), new RegExp(k), id);
@@ -81,4 +81,14 @@ test('review: stars are not coins, AEON\'s clock restarts after a continue, ever
   assert.match(html, /contUsed = true; hitReset\(\); FX\.runT = 0;/);
   assert.match(html, /if \(B\.id === 'cosmos' && FX\.ultT > 0 && starOk\(g\)\) starOrb\(g\); else if \(FX\.starLeft > 0 && starOk\(g\)\)\{ FX\.starLeft--; starOrb\(g\); \}/);
   assert.match(html, /runT:0, stars:0, starLeft:0,/);
+});
+
+test('a constellation is four stars, the body counts them, and every language says four', () => {
+  assert.match(html, /\nconst STAR_SET = 4;/);
+  const fx = block('const UNIT_FX = {', '\n};'), own = fx.slice(fx.indexOf('\n  cosmos: {')); 
+  assert.match(own.slice(0, own.indexOf('\n  },')), /opt\(o\)\{ o\.stars = state !== 'menu' && PK\.starEvery \? FX\.stars : null; \}/, 'the run hands the count to the body');
+  const art = block('const UNIT_ART = {', '\n};'), body = art.slice(art.indexOf('\n  cosmos(c, d, w, glow, o){'));
+  assert.match(body.slice(0, body.indexOf('\n  },')), /o\.stars != null/, 'the body draws the count when there is one');
+  const P = loadI18NParts();
+  for (const [l, tb] of Object.entries(P.I18N)){ assert.match(tb.p_cosmos, /4/, `${l} p_cosmos says four`); assert.doesNotMatch(tb.p_cosmos, /5/, `${l} p_cosmos: no five left`); }
 });
