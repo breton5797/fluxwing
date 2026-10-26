@@ -170,3 +170,49 @@ Re-measured (stage 20, 60 runs):
 - best bound ratio: 0.142 or less.
 
 Earlier form-V batches ranged from 691 to 895, so the shift is within the bot's noise.
+
+## Release of the ranks above ultra
+
+### The server bound, derived by hand (2026-10-26)
+A Perfect scores `(1 + combo + bonus) × fever × resonance × unitMul × mastery`.
+
+With every gate a Perfect, combo grows by one per gate. So a run's score grows like `M·g²/2`, where `M = fever × resonance × unitMul × mastery`. The server allows `(3g² + 75g) × share`.
+
+**A stage run does not end at its goal**; after the clear it carries on. So the limit that matters is the long-run ratio `M / (6 × share)`. It must stay under 1.
+
+For each unit above epic, every factor was taken at its largest: form V mastery, the bonus +2 from forms, fever from the first gate, and every unit multiple maxed (COMET ×1.5, ECLIPSE's Corona ×3.5, NYX ×2, ENTROPY's roll ×3, ARCHON ×1.6, OUROBOROS ×1.6, AEON ×1.6, INFINITY ×2). Two cases:
+- **Absolute:** the highest skill or ultimate multiple is on for the whole run, which no unit can do.
+  - Over 1 in the long run: AEON 1.19, ECLIPSE 1.09, PULSAR 1.00 (an open ultra, live today).
+  - Everyone else is under 1: ARCHON 0.98 is next, and the rest are 0.94 or lower.
+  - Up to the longest stage goal (41 gates), every unit stays under 0.87.
+- **Reachable:**
+  - The skill multiple counts only while it can be up: its duration out of duration plus about 12 s of Perfects to recharge, since Perfects charge nothing during resonance.
+  - The ultimate counts about once per 30 s.
+  - ECLIPSE is taken with its skill's dark ×2 for the whole run, plus the Corona's ×3.5 for 8 s of every 30.
+  - Result: every unit is at or below 0.75 in the long run (ECLIPSE 0.75, AEON 0.65).
+
+**Conclusion:** the per-rank shares (×1.4 to ×1.9) need no change before any release. The bot's best runs (0.02–0.27 of share) agree.
+
+### Schedule (owner's decision, 2026-10-27)
+One rank a month, on the first day of the month:
+
+| Release | Rank | Date |
+|---|---|---|
+| 1 | celestial (TIER_OPEN = 5) | 2027-01-01 (Fri) |
+| 2 | nebula (6) | 2027-02-01 (Mon) |
+| 3 | void (7) | 2027-03-01 (Mon) |
+| 4 | divine (8) | 2027-04-01 (Thu) |
+| 5 | genesis (9) | 2027-05-01 (Sat) |
+
+Releases are code changes, never device-date switches: there is no trusted server clock in the client, and a device clock can be moved.
+
+### Checklist for one release (rank R)
+1. Raise `TIER_OPEN` to R.
+2. Remove `hidden:true` from rank R's four rows in `BIRDS`.
+3. Drop the four ids from the self-test's `hiddenU` list.
+4. In the tests:
+   - raise `tests/tiers.test.js`'s `TIER_OPEN`;
+   - in `tests/tierR.test.js`, expect the units visible;
+   - in `tests/about.test.js`, add 4 to the visible-unit count.
+5. Run `node scripts/about-build.mjs`, then `npm test` and `FW.selfTest()`.
+6. Production needs nothing: `private.fw_units()` already lists all 20 ids, and `fw_bound_mul` already holds every rank's share.
