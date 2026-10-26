@@ -163,7 +163,7 @@ test('referral tables reference auth.users on delete cascade (delete_me takes th
 
 test('referral RPCs: definer functions pin search_path; the invoker wrappers and their private targets are granted to authenticated', () => {
   const fns = [['fw_referral_link', 'referral_link', 'text'], ['fw_referral_progress', 'referral_progress', 'integer'],
-    ['fw_referral_me', 'referral_me', ''], ['fw_referral_claim', 'referral_claim', ''], ['fw_referral_ack', 'referral_ack', 'bigint']];
+    ['fw_referral_me', 'referral_me', ''], ['fw_referral_claim', 'referral_claim', 'text'], ['fw_referral_ack', 'referral_ack', 'bigint']];
   for (const [p, w, a] of fns) {
     assert.match(sql, new RegExp(`function private\\.${p}\\([^)]*\\)[\\s\\S]*?security definer set search_path = ''`), p);
     assert.match(sql, new RegExp(`function public\\.${w}\\([^)]*\\)[\\s\\S]*?security invoker set search_path = ''`), w);
