@@ -7,38 +7,38 @@
   {
    "id": "archon",
    "rarity": 8,
-   "mean": 187,
-   "median": 157,
-   "p90": 405,
-   "gates": 25.2,
-   "bound": 0.105
+   "mean": 257,
+   "median": 195,
+   "p90": 505,
+   "gates": 26.4,
+   "bound": 0.068
   },
   {
    "id": "ouroboros",
    "rarity": 8,
-   "mean": 160,
-   "median": 119,
-   "p90": 361,
+   "mean": 240,
+   "median": 196,
+   "p90": 481,
    "gates": 23.9,
-   "bound": 0.085
+   "bound": 0.099
   },
   {
    "id": "kirin",
    "rarity": 8,
-   "mean": 200,
-   "median": 185,
-   "p90": 353,
-   "gates": 32.6,
-   "bound": 0.057
+   "mean": 198,
+   "median": 206,
+   "p90": 339,
+   "gates": 33.3,
+   "bound": 0.031
   },
   {
    "id": "garuda",
    "rarity": 8,
-   "mean": 250,
-   "median": 270,
-   "p90": 472,
-   "gates": 70.9,
-   "bound": 0.022
+   "mean": 274,
+   "median": 149,
+   "p90": 615,
+   "gates": 73.8,
+   "bound": 0.013
   }
  ]
 }

@@ -120,8 +120,10 @@ grant select, insert, update, delete on table public.fw_scores to service_role; 
 -- combo to the fever threshold (10) once. Worst units: SOLARIS (bonus 1, feverMul 3): 3 * (k + 12);
 -- PULSAR (bonus 2, feverMul 2, Resonance x3, no combo lift): 6 * (k + 3). Both are <= 6 * (k + 12), so
 --   endless: score <= sum(k = 1..g) 6 * (k + 12) = 3*g^2 + 75*g
--- (2026-10: was 2*g^2 + 50*g, which PULSAR's Resonance x3 could pass on a long all-Perfect run.) The ranks above ultra add score
--- mastery (x1.1 .. x1.7 on a Perfect); re-derive this bound from scripts/balance.mjs before the first of those ranks is released.
+-- (2026-10: was 2*g^2 + 50*g, which PULSAR's Resonance x3 could pass on a long all-Perfect run.)
+-- Ranks above ultra multiply a Perfect by score mastery (form V: x1.3 celestial .. x1.7 genesis) and grow their skills with the
+-- form, so a run flown with one of them gets that rank's share of the bound (private.fw_bound_mul, below): its form-V mastery
+-- plus room for the form growth. Every other unit keeps x1, so the check stays as tight as before for them; daily is unchanged.
 -- Daily runs are "fair mode" (bonus <= 1, feverMul 2, dashPts 1, Resonance x1, no combo lift): <= 2 * (k + 2) per gate, so
 --   daily:   score <= sum(k = 1..g) 2 * (k + 2) = g^2 + 5*g
 -- Both assume every single gate is a perfect in fever, i.e. they are generous by a wide margin.
@@ -136,6 +138,17 @@ language sql immutable set search_path = '' as $$
                'archon','ouroboros','kirin','garuda','aeon','cosmos','infinity','omega'];
 $$;
 revoke all on function private.fw_units() from public, anon, authenticated;
+-- A unit's share of the endless score bound (see the derivation above fw_units): x1 up to ultra, then by rank (TIER_IDS order)
+create or replace function private.fw_bound_mul(p_bird text) returns numeric
+language sql immutable set search_path = '' as $$
+  select case when p_bird = any (array['seraph','valkyrie','lumen','halcyon']) then 1.4
+              when p_bird = any (array['quasar','comet','zodiac','eclipse']) then 1.5
+              when p_bird = any (array['singular','rift','nyx','entropy']) then 1.6
+              when p_bird = any (array['archon','ouroboros','kirin','garuda']) then 1.75
+              when p_bird = any (array['aeon','cosmos','infinity','omega']) then 1.9
+              else 1 end;
+$$;
+revoke all on function private.fw_bound_mul(text) from public, anon, authenticated;
 
 -- Names nobody may carry (profanity, slurs, sexual terms; ko en ja zh es pt fr de id vi). GENERATED from the lists in
 -- index.html: do not edit by hand, run  node scripts/nick-filter-sql.mjs  and paste the output over this function.
@@ -215,7 +228,7 @@ begin
     end if;
   else
     v_bound := case p_mode when 'daily' then p_gates::bigint * p_gates + 5 * p_gates
-                           else 3 * p_gates::bigint * p_gates + 75 * p_gates end;
+                           else ceil((3 * p_gates::bigint * p_gates + 75 * p_gates) * private.fw_bound_mul(p_bird))::bigint end;
     if p_score > v_bound then
       raise exception 'fw_implausible: score too high for the gates passed' using errcode = '22023';
     end if;

@@ -4,7 +4,7 @@
 // The bot: flaps when it sinks below the next gap's centre plus an aim error (--aim px, Gaussian), dashes when the meter is full,
 // casts the skill / ultimate when ready. Same bot for every unit, so the numbers compare units, not players.
 // Reports per unit: mean / median / p90 score, mean gates, and the highest score/bound ratio against the server's endless bound
-// (3g^2 + 75g, supabase/schema.sql fw_submit_score): above 1 the server would refuse that run.
+// (3g^2 + 75g times the unit's rank share, supabase/schema.sql fw_submit_score / fw_bound_mul): above 1 the server would refuse that run.
 import { chromium } from 'playwright';
 import { writeFileSync } from 'node:fs';
 
@@ -12,6 +12,7 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
 const STAGE = +arg('stage', 20) - 1, RUNS = +arg('runs', 12), FORM = +arg('form', 0), AIM = +arg('aim', 6), OUT = arg('out', '');
 const base = `http://127.0.0.1:${process.env.PORT || 5173}/index.html#dev`;
 const EVO_AT = [0, 3, 10, 20, 35];
+const BOUND_MUL = { 5: 1.4, 6: 1.5, 7: 1.6, 8: 1.75, 9: 1.9 };   // = private.fw_bound_mul by rank
 
 const b = await chromium.launch(), page = await (await b.newContext({ viewport: { width: 390, height: 844 } })).newPage();
 const errors = []; page.on('pageerror', e => errors.push(e.message));
@@ -57,7 +58,7 @@ for (const u of units){
   const res = [];
   for (let i = 0; i < RUNS; i++){ res.push(await run()); await page.waitForFunction(() => FW.state !== 'play', null, { timeout: 15000 }).catch(() => {}); await menu(); }
   const sc = res.map(r => r.score), mean = sc.reduce((a, c) => a + c, 0) / sc.length;
-  const bound = Math.max(...res.map(r => r.gates ? r.score / (3*r.gates*r.gates + 75*r.gates) : 0));
+  const bound = Math.max(...res.map(r => r.gates ? r.score / ((3*r.gates*r.gates + 75*r.gates) * (BOUND_MUL[u.rarity] || 1)) : 0));
   rows.push({ id: u.id, rarity: u.rarity, mean: Math.round(mean), median: q(sc, .5), p90: q(sc, .9), gates: +(res.reduce((a, r) => a + r.gates, 0) / res.length).toFixed(1), bound: +bound.toFixed(3) });
   console.log(`${u.id.padEnd(10)} r${u.rarity} mean ${String(Math.round(mean)).padStart(6)} p90 ${String(q(sc, .9)).padStart(6)} gates ${rows.at(-1).gates} bound ${rows.at(-1).bound}`);
 }

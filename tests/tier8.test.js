@@ -47,7 +47,7 @@ test('the new passives are stage mode only and wired into the gate, Perfect and 
   const perks = html.slice(html.indexOf('function perks(){'), html.indexOf('const I18N_C = {'));
   for (const k of ['archStep', 'archMax', 'ouroAt', 'coinEvery', 'stormEvery', 'stormN']) assert.match(perks, new RegExp(`${k}: d \\? 0 : \\(B\\.${k} \\|\\| 0\\)`), `${k} is 0 in fair modes`);
   assert.match(html, /\(PK\.archStep \? 1 \+ Math\.min\(PK\.archMax, FX\.arch\) : 1\)/, 'ARCHON multiplies a Perfect');
-  assert.match(html, /\(PK\.ouroAt \? 1 \+ \.15\*FX\.loops : 1\)/, 'OUROBOROS multiplies a Perfect');
+  assert.match(html, /\(PK\.ouroAt \? 1 \+ \.2\*FX\.loops : 1\)/, 'OUROBOROS multiplies a Perfect');
   assert.match(html, /if \(PK\.archStep\) FX\.arch = Math\.min\(PK\.archMax, FX\.arch \+ PK\.archStep\);/, 'ARCHON stacks per gate');
   assert.match(html, /const hitReset = \(\) => \{ FX\.arch = 0; FX\.loops = 0; \};/, 'one rule: a hit clears ARCHON\'s stack and OUROBOROS\'s loops');
   assert.match(html, /function breakShield\(dirY\)\{ hitReset\(\);/); assert.match(html, /bounceLeft--; hitReset\(\);/); assert.match(html, /reviveLeft--; hitReset\(\);/);
@@ -66,7 +66,7 @@ test('review: OUROBOROS\'s ultimate lends the loops and gives them back; KIRIN\'
   assert.match(sk, /kirin:\{[^}]*rain:8[^}]*f:\{[^}]*rain:0/);
   assert.match(us, /if \(id === 'kirin' && skv\('rain'\)\)\{ if \(magnetT < skv\('dur'\)\) magnetT = TMAX\.magnet = skv\('dur'\); coinRain\(skv\('rain'\)\); \}/);
   assert.match(us, /if \(id === 'ouroboros' && skv\('coil'\)\)\{ combo \+= skv\('coil'\); maxCombo = Math\.max\(maxCombo, combo\); \}/);
-  assert.match(row('archon'), /archMax:\.3/); assert.match(row('kirin'), /shieldStart:1/);
+  assert.match(row('archon'), /archMax:\.6/); assert.match(row('kirin'), /shieldStart:1/);
 });
 
 test('fair rows switch the stage-only parts off', () => {

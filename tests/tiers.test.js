@@ -84,7 +84,18 @@ test('server: every unit id (current and reserved) is on the whitelist; the boun
   assert.ok(ids.length >= 23, 'read the BIRDS table');
   const fn = sql.slice(sql.indexOf('create or replace function private.fw_units()'), sql.indexOf('$$;', sql.indexOf('create or replace function private.fw_units()')));
   for (const id of [...ids, ...T.TIER_IDS]) assert.match(fn, new RegExp(`'${id}'`), `${id} on fw_units()`);
-  assert.match(sql, /else 3 \* p_gates::bigint \* p_gates \+ 75 \* p_gates end;/, 'sum of 6(k+12): the worst open unit (PULSAR Resonance x3)');
+  assert.match(sql, /else ceil\(\(3 \* p_gates::bigint \* p_gates \+ 75 \* p_gates\) \* private\.fw_bound_mul\(p_bird\)\)::bigint end;/, 'sum of 6(k+12) (PULSAR Resonance x3), times the rank\'s share');
+  // the rank's share of the bound: ranks up to ultra x1; each rank above its form-V mastery plus room for form growth, and never less
+  const bm = sql.slice(sql.indexOf('create or replace function private.fw_bound_mul('), sql.indexOf('$$;', sql.indexOf('create or replace function private.fw_bound_mul(')));
+  assert.ok(bm.length > 50, 'private.fw_bound_mul exists');
+  const groups = [...bm.matchAll(/array\[([^\]]*)\]\) then ([\d.]+)/g)].map(x => ({ ids: x[1].match(/'([a-z]+)'/g).map(s => s.slice(1, -1)), mul: +x[2] }));
+  assert.equal(groups.length, 5);
+  groups.forEach((g, i) => {
+    assert.deepEqual(g.ids, T.TIER_IDS.slice(i*4, i*4 + 4), `rank ${i + 5} ids`);
+    assert.ok(g.mul >= T.TIER_MUL[i + 5] + 4*T.MASTERY, `rank ${i + 5}: x${g.mul} covers form V mastery`);
+    if (i) assert.ok(g.mul > groups[i - 1].mul, 'rises with the rank');
+  });
+  assert.match(bm, /else 1 end/);
   assert.match(sql, /daily'\s*then p_gates::bigint \* p_gates \+ 5 \* p_gates/, 'daily (fair mode) bound unchanged');
 });
 

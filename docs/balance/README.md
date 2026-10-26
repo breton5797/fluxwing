@@ -105,16 +105,24 @@ The open ultras at form V, for reference: solaris 182, pulsar 444 (mean ~313).
 
 ## Rank 8 · divine (P4), 2026-10-26 (stage 20, 60 runs): `tier8-s20-f0.json`, `tier8-s20-f4.json`
 
-| Unit | Form I | Form V | Best bound ratio (V) |
+| Unit | Form I | Form V | Best bound ratio (V, rank share) |
 |---|---|---|---|
-| archon | 187 | 600 | 0.200 |
-| ouroboros | 160 | 682 | 0.303 |
-| kirin | 200 | 533 | 0.138 |
-| garuda | 250 | 429 | 0.020 |
-| **rank mean** | **199** (target ~226) | **561** (target ~700) | |
+| archon | 257 | 947 | 0.202 |
+| ouroboros | 240 | 939 | 0.179 |
+| kirin | 198 | 469 | 0.068 |
+| garuda | 274 | 487 | 0.011 |
+| **rank mean** | **242** (target ~226) | **710** (target ~700) | |
 
-**The ladder stalls at rank 8.** Divine scores about the same as void (204 / 627), not 11% more. Two reasons:
-1. **The server bound** (`3g² + 75g`) caps a run's score per gate. Rank 8 multipliers stack on mastery ×1.6, so ARCHON (unhit ×1.6) and OUROBOROS (loops) went past 0.3 of the bound with the bot. Reviews then estimated a strong player passing it after about 140 gates. Both were capped (ARCHON ×1.3, loops +15%, loops lent only for the ultimate), and that took the rank's edge away.
-2. **The bot rarely chains Perfects**, so most of a high-rank unit's strength never shows in these numbers. Survival levers (window, shield, skill uptime) move bot scores more than multipliers do.
+**The server bound is now per rank** (owner's decision, 2026-10-26). A run flown with a unit above ultra gets `3g² + 75g` times its rank's share (`private.fw_bound_mul`): 1.4 for celestial, rising through 1.5, 1.6 and 1.75 to 1.9 for genesis. Every other unit stays at ×1, and daily is unchanged.
 
-Before ranks 8 and 9 can climb as designed, the server bound has to be raised. Derive it by hand from the worst case for each rank: `6(k+12)` per gate today, about ×1.6–1.7 at ranks 8–9. Otherwise these ranks have to grow through survival instead of score.
+**Why:** under the old shared bound, rank 8 stalled at void's level (199 / 561). Its multipliers stack on mastery ×1.6 and ran into the bound.
+
+**Result:** with ARCHON back at ×1.6 and OUROBOROS's loops at +20%, divine is about 19% above void at form I and 13% above at form V.
+
+`scripts/balance.mjs` reports the ratio against the unit's own share. The rank 5–7 tables above were measured against the old shared bound, so their ratios read high by 1.4–1.6×.
+
+The ladder so far, rank means at form I / V:
+- celestial: 148 / 422
+- nebula: 178 / 575
+- void: 204 / 627
+- divine: 242 / 710
