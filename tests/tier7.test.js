@@ -46,7 +46,7 @@ test('every language has the six unit strings ({n} in skill and ultimate texts, 
 test('the new passives are stage mode only and wired into the gap, orb, fog and Perfect code', () => {
   const perks = html.slice(html.indexOf('function perks(){'), html.indexOf('const I18N_C = {'));
   for (const k of ['gapAdd', 'orbPts', 'nyxFog', 'entropy']) assert.match(perks, new RegExp(`${k}: d \\? 0 : \\(B\\.${k} \\|\\| 0\\)`), `${k} is 0 in fair modes`);
-  assert.match(html, /const gGap = g => [^\n]*\+ \(PK\.gapAdd \? g\.gap\*PK\.gapAdd : 0\) \+ \(FX\.holeT > 0 \? g\.gap\*FX\.holeGap : 0\);/, 'SINGULAR widens gaps');
+  assert.match(html, /const gGap = g => [^\n]*\+ \(PK\.gapAdd \? g\.gap\*PK\.gapAdd : 0\) \+ \(FX\.holeT > 0 \? g\.gap\*FX\.holeGap : 0\)( - \(g\.brK \? g\.sg\.drop \* g\.brK : 0\))?;/, 'SINGULAR widens gaps (a dropped NEON GROVE branch narrows them after)');
   assert.match(html, /if \(PK\.orbPts\) addScore\(PK\.orbPts\);/, 'SINGULAR: orbs score');
   assert.match(html, /\(PK\.nyxFog && FX\.fogT > 0 \? PK\.nyxFog : 1\)/, 'NYX: fog Perfects');
   assert.match(html, /const entRoll = \(\) =>/); assert.match(html, /\* entRoll\(\)/, 'ENTROPY: the roll is part of a Perfect');
