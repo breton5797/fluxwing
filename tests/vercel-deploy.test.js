@@ -16,7 +16,7 @@ test('repo-only folders stay off the public site', () => {
 test('every page and file the site serves is still deployed', () => {
   for (const p of ['index.html', 'admin.html', 'about/index.html', 'privacy.html', 'terms.html', 'delete-account.html', 'manifest.webmanifest',
     'icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'logo-swishby.png', 'og-swishby.png', 'fx-config.json', 'sw.js',
-    '.well-known/assetlinks.json', 'v2.html', 'src/main.js', 'styles.css']){
+    '.well-known/assetlinks.json', 'v2.html', 'src/main.js', 'styles.css', 'guide/index.html', 'guide/img/combo.jpg']){
     assert.ok(existsSync(new URL(p, root)), `${p} exists`);
     assert.ok(!ignored(p), `${p} must be deployed`);
   }
