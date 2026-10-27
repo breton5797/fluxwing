@@ -184,6 +184,16 @@ test('wind gust: weaker than any gravity, drawn with its direction', () => {
   for (const g of course(23, 60).filter(g => g.sg)) assert.ok(g.sg.dir === 1 || g.sg.dir === -1);
 });
 
+test('wind gust: an up-gust never sits before a gate far below the one before (light units could not get down in time)', () => {
+  assert.ok(S.SIG.gust.fall > 0 && S.SIG.gust.fall <= 60);
+  let ups = 0;
+  for (let i = 19; i < 25; i++) for (const seed of ['stage:' + i + ':v2', 'any:' + i]){
+    const C = course(i, 60, seed);
+    for (const [k, g] of C.entries()) if (g.sg && g.sg.k === 'gust' && g.sg.dir < 0){ ups++; assert.ok(g.base - C[k - 1].base <= S.SIG.gust.fall, `stage ${i + 1} gate ${k + 1} (${seed})`); }
+  }
+  assert.ok(ups >= 10, 'up-gusts still show up');
+});
+
 test('no signature obstacle ever scores, and a hit takes the gate-hit path', () => {
   const tick = html.slice(html.indexOf('function sigTick('), html.indexOf('\n}\n', html.indexOf('function sigTick(')));
   const hit = html.slice(html.indexOf('function sigHit('), html.indexOf('\n}\n', html.indexOf('function sigHit(')));
