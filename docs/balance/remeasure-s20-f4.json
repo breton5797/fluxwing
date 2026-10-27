@@ -1,0 +1,395 @@
+{
+ "stage": 20,
+ "runs": 60,
+ "form": 4,
+ "aim": 6,
+ "rows": [
+  {
+   "id": "volt",
+   "rarity": 0,
+   "mean": 76,
+   "median": 70,
+   "p90": 129,
+   "gates": 56.3,
+   "bound": 0.011
+  },
+  {
+   "id": "blitz",
+   "rarity": 0,
+   "mean": 94,
+   "median": 94,
+   "p90": 133,
+   "gates": 68.2,
+   "bound": 0.007
+  },
+  {
+   "id": "nimbus",
+   "rarity": 0,
+   "mean": 26,
+   "median": 25,
+   "p90": 48,
+   "gates": 21.7,
+   "bound": 0.013
+  },
+  {
+   "id": "titan",
+   "rarity": 0,
+   "mean": 96,
+   "median": 94,
+   "p90": 145,
+   "gates": 40.8,
+   "bound": 0.033
+  },
+  {
+   "id": "mochi",
+   "rarity": 1,
+   "mean": 84,
+   "median": 85,
+   "p90": 128,
+   "gates": 64.8,
+   "bound": 0.007
+  },
+  {
+   "id": "pixel",
+   "rarity": 1,
+   "mean": 106,
+   "median": 103,
+   "p90": 172,
+   "gates": 78.3,
+   "bound": 0.008
+  },
+  {
+   "id": "neko",
+   "rarity": 1,
+   "mean": 78,
+   "median": 80,
+   "p90": 113,
+   "gates": 61.6,
+   "bound": 0.008
+  },
+  {
+   "id": "buzz",
+   "rarity": 1,
+   "mean": 78,
+   "median": 76,
+   "p90": 130,
+   "gates": 61.8,
+   "bound": 0.008
+  },
+  {
+   "id": "phoenix",
+   "rarity": 2,
+   "mean": 125,
+   "median": 115,
+   "p90": 216,
+   "gates": 79.3,
+   "bound": 0.007
+  },
+  {
+   "id": "zero",
+   "rarity": 2,
+   "mean": 186,
+   "median": 178,
+   "p90": 285,
+   "gates": 89.1,
+   "bound": 0.01
+  },
+  {
+   "id": "raijin",
+   "rarity": 2,
+   "mean": 72,
+   "median": 58,
+   "p90": 139,
+   "gates": 51.8,
+   "bound": 0.01
+  },
+  {
+   "id": "chrono",
+   "rarity": 2,
+   "mean": 127,
+   "median": 125,
+   "p90": 186,
+   "gates": 89.5,
+   "bound": 0.005
+  },
+  {
+   "id": "goliath",
+   "rarity": 2,
+   "mean": 127,
+   "median": 128,
+   "p90": 204,
+   "gates": 64.3,
+   "bound": 0.011
+  },
+  {
+   "id": "monarch",
+   "rarity": 2,
+   "mean": 113,
+   "median": 110,
+   "p90": 177,
+   "gates": 72.9,
+   "bound": 0.008
+  },
+  {
+   "id": "aegis",
+   "rarity": 3,
+   "mean": 229,
+   "median": 216,
+   "p90": 346,
+   "gates": 135.7,
+   "bound": 0.006
+  },
+  {
+   "id": "kraken",
+   "rarity": 3,
+   "mean": 121,
+   "median": 117,
+   "p90": 166,
+   "gates": 93.5,
+   "bound": 0.006
+  },
+  {
+   "id": "specter",
+   "rarity": 3,
+   "mean": 569,
+   "median": 339,
+   "p90": 1364,
+   "gates": 84.7,
+   "bound": 0.034
+  },
+  {
+   "id": "oracle",
+   "rarity": 3,
+   "mean": 463,
+   "median": 421,
+   "p90": 915,
+   "gates": 102,
+   "bound": 0.027
+  },
+  {
+   "id": "solaris",
+   "rarity": 4,
+   "mean": 218,
+   "median": 175,
+   "p90": 421,
+   "gates": 75.4,
+   "bound": 0.017
+  },
+  {
+   "id": "aurora",
+   "rarity": 4,
+   "mean": 569,
+   "median": 431,
+   "p90": 1268,
+   "gates": 74.5,
+   "bound": 0.041
+  },
+  {
+   "id": "tempest",
+   "rarity": 4,
+   "mean": 334,
+   "median": 299,
+   "p90": 526,
+   "gates": 109.7,
+   "bound": 0.014
+  },
+  {
+   "id": "pleiad",
+   "rarity": 4,
+   "mean": 186,
+   "median": 181,
+   "p90": 274,
+   "gates": 107.2,
+   "bound": 0.008
+  },
+  {
+   "id": "pulsar",
+   "rarity": 4,
+   "mean": 708,
+   "median": 500,
+   "p90": 1640,
+   "gates": 65.9,
+   "bound": 0.067
+  },
+  {
+   "id": "seraph",
+   "rarity": 5,
+   "mean": 602,
+   "median": 448,
+   "p90": 1363,
+   "gates": 58.8,
+   "bound": 0.055
+  },
+  {
+   "id": "valkyrie",
+   "rarity": 5,
+   "mean": 444,
+   "median": 379,
+   "p90": 587,
+   "gates": 93.1,
+   "bound": 0.015
+  },
+  {
+   "id": "lumen",
+   "rarity": 5,
+   "mean": 613,
+   "median": 441,
+   "p90": 1032,
+   "gates": 47.7,
+   "bound": 0.071
+  },
+  {
+   "id": "halcyon",
+   "rarity": 5,
+   "mean": 466,
+   "median": 416,
+   "p90": 810,
+   "gates": 54.9,
+   "bound": 0.051
+  },
+  {
+   "id": "quasar",
+   "rarity": 6,
+   "mean": 698,
+   "median": 581,
+   "p90": 1462,
+   "gates": 53.6,
+   "bound": 0.077
+  },
+  {
+   "id": "comet",
+   "rarity": 6,
+   "mean": 559,
+   "median": 412,
+   "p90": 1362,
+   "gates": 62.2,
+   "bound": 0.05
+  },
+  {
+   "id": "zodiac",
+   "rarity": 6,
+   "mean": 874,
+   "median": 763,
+   "p90": 1686,
+   "gates": 104.8,
+   "bound": 0.029
+  },
+  {
+   "id": "eclipse",
+   "rarity": 6,
+   "mean": 682,
+   "median": 690,
+   "p90": 1024,
+   "gates": 108.5,
+   "bound": 0.015
+  },
+  {
+   "id": "singular",
+   "rarity": 7,
+   "mean": 825,
+   "median": 681,
+   "p90": 1674,
+   "gates": 71.8,
+   "bound": 0.043
+  },
+  {
+   "id": "rift",
+   "rarity": 7,
+   "mean": 1751,
+   "median": 912,
+   "p90": 5425,
+   "gates": 75,
+   "bound": 0.076
+  },
+  {
+   "id": "nyx",
+   "rarity": 7,
+   "mean": 644,
+   "median": 623,
+   "p90": 1115,
+   "gates": 45.2,
+   "bound": 0.073
+  },
+  {
+   "id": "entropy",
+   "rarity": 7,
+   "mean": 829,
+   "median": 720,
+   "p90": 1585,
+   "gates": 47.7,
+   "bound": 0.091
+  },
+  {
+   "id": "archon",
+   "rarity": 8,
+   "mean": 909,
+   "median": 790,
+   "p90": 1566,
+   "gates": 37,
+   "bound": 0.13
+  },
+  {
+   "id": "ouroboros",
+   "rarity": 8,
+   "mean": 820,
+   "median": 617,
+   "p90": 1535,
+   "gates": 40.8,
+   "bound": 0.106
+  },
+  {
+   "id": "kirin",
+   "rarity": 8,
+   "mean": 495,
+   "median": 439,
+   "p90": 783,
+   "gates": 49.6,
+   "bound": 0.047
+  },
+  {
+   "id": "garuda",
+   "rarity": 8,
+   "mean": 793,
+   "median": 736,
+   "p90": 1377,
+   "gates": 177.2,
+   "bound": 0.008
+  },
+  {
+   "id": "aeon",
+   "rarity": 9,
+   "mean": 969,
+   "median": 838,
+   "p90": 1624,
+   "gates": 54.3,
+   "bound": 0.063
+  },
+  {
+   "id": "cosmos",
+   "rarity": 9,
+   "mean": 963,
+   "median": 891,
+   "p90": 1656,
+   "gates": 50.2,
+   "bound": 0.086
+  },
+  {
+   "id": "infinity",
+   "rarity": 9,
+   "mean": 985,
+   "median": 917,
+   "p90": 1469,
+   "gates": 42.8,
+   "bound": 0.108
+  },
+  {
+   "id": "omega",
+   "rarity": 9,
+   "mean": 1138,
+   "median": 1062,
+   "p90": 2007,
+   "gates": 44.4,
+   "bound": 0.126
+  }
+ ]
+}

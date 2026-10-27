@@ -165,3 +165,15 @@ test('fsNorm clamps the wallet to the server caps and drops units nobody can ear
   assert.deepEqual(n.w, { xp: 0, lvl: 1e5, coins: 5e7, dia: 1e7, gems: 1e5 });
   assert.ok(!n.owned.includes('aurora')); assert.ok(n.owned.includes('mochi'));
 });
+
+test('unit evolution syncs: normalized, written as fw27_evo, merged as a union per unit', () => {
+  const s = S({ evo: { volt: [3, 1, 1, 99], BAD: [1] } });
+  assert.deepEqual(s.evo, { volt: [1, 3] });
+  assert.deepEqual(S({}).evo, {});
+  const m = { fw27_evo: { zero: [0, 2] } };
+  assert.deepEqual(C.fsSnap(getOf(m)).evo, { zero: [0, 2] });
+  assert.deepEqual(Object.fromEntries(C.fsWrites(C.fsSnap(getOf(m)), getOf(m))).fw27_evo, { zero: [0, 2] });
+  const l = S({ evo: { volt: [0, 1] } }), r = S({ evo: { volt: [1, 5], pixel: [2] } });
+  assert.deepEqual(C.fsMerge(l, r, null).evo, { pixel: [2], volt: [0, 1, 5] });
+  assert.deepEqual(C.fsMerge(l, r, S({})).evo, { pixel: [2], volt: [0, 1, 5] });
+});

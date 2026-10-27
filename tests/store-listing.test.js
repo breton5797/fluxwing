@@ -57,3 +57,12 @@ test('release notes (Play What is new, 1.0.0) promise nothing the game does not 
   assert.match(L.en.play.notes, /50 stages/);
   assert.match(L.en.play.notes, /daily/i);
 });
+
+// Trademarks of other games stay out of every store field: "Flappy Bird" is a registered mark (Flappy Bird Foundation), and App Store
+// review rejects other apps' names in keywords (2.3.7). Covers the Latin spelling and the transliterations once used in the keyword lists.
+test('no other game\'s trademark in any store field, any language', () => {
+  const MARKS = /flapp|플래피|フラッピー|флаппи|فلابي|פלאפי|flappybird|dong nguyen|\.gears/i;
+  for (const l of LANGS) for (const store of ['play', 'apple']) for (const [k, v] of Object.entries(L[l][store] || {})) {
+    if (typeof v === 'string') assert.doesNotMatch(v, MARKS, `${l} ${store}.${k} names another game`);
+  }
+});

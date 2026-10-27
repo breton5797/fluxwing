@@ -1,0 +1,44 @@
+{
+ "stage": 20,
+ "runs": 60,
+ "form": 4,
+ "aim": 6,
+ "rows": [
+  {
+   "id": "aeon",
+   "rarity": 9,
+   "mean": 777,
+   "median": 661,
+   "p90": 1393,
+   "gates": 40,
+   "bound": 0.154
+  },
+  {
+   "id": "cosmos",
+   "rarity": 9,
+   "mean": 806,
+   "median": 675,
+   "p90": 1449,
+   "gates": 38.2,
+   "bound": 0.145
+  },
+  {
+   "id": "infinity",
+   "rarity": 9,
+   "mean": 835,
+   "median": 862,
+   "p90": 1305,
+   "gates": 34.6,
+   "bound": 0.104
+  },
+  {
+   "id": "omega",
+   "rarity": 9,
+   "mean": 956,
+   "median": 888,
+   "p90": 1698,
+   "gates": 36.7,
+   "bound": 0.124
+  }
+ ]
+}

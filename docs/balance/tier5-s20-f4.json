@@ -1,0 +1,44 @@
+{
+ "stage": 20,
+ "runs": 60,
+ "form": 4,
+ "aim": 6,
+ "rows": [
+  {
+   "id": "seraph",
+   "rarity": 5,
+   "mean": 369,
+   "median": 308,
+   "p90": 628,
+   "gates": 39.6,
+   "bound": 0.09
+  },
+  {
+   "id": "valkyrie",
+   "rarity": 5,
+   "mean": 336,
+   "median": 354,
+   "p90": 519,
+   "gates": 68.3,
+   "bound": 0.029
+  },
+  {
+   "id": "lumen",
+   "rarity": 5,
+   "mean": 527,
+   "median": 495,
+   "p90": 1043,
+   "gates": 37.8,
+   "bound": 0.115
+  },
+  {
+   "id": "halcyon",
+   "rarity": 5,
+   "mean": 454,
+   "median": 396,
+   "p90": 741,
+   "gates": 39.6,
+   "bound": 0.178
+  }
+ ]
+}

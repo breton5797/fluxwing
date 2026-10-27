@@ -41,6 +41,7 @@ test('a death is told by its cause', () => {
   assert.equal(deathHint('bot', 9), 'whyBot');
   assert.equal(deathHint('', 3), 'whyGate');
   assert.equal(deathHint(undefined, 0), 'whyGate');
+  assert.deepEqual(['branch', 'wind', 'geyser', 'blade'].map(w => deathHint(w, 5)), ['whyBranch', 'whyWind', 'whyGeyser', 'whyBlade'], 'each zone obstacle has its own hint');
 });
 
 test('every death hint has a Korean and an English line', () => {
@@ -48,6 +49,15 @@ test('every death hint has a Korean and an English line', () => {
   for (const key of ['whyGround0', 'whyGround', 'whyTop', 'whyBot', 'whyGate']) {
     assert.equal((html.match(new RegExp(`\\b${key}:'`, 'g')) || []).length >= 2, true, key);
   }
+});
+
+test('the zone obstacles\' hints and names are in all 23 languages, each its own words', async () => {
+  const { loadI18NParts } = await import('./helpers/i18n.js');
+  const P = loadI18NParts(), I = P.I18N, keys = ['whyBranch', 'whyWind', 'whyGeyser', 'whyBlade', 'sg_branch', 'sg_gust', 'sg_geyser', 'sg_blade'];
+  assert.equal(Object.keys(I).length, 23);
+  for (const l of Object.keys(I)) for (const k of keys) assert.ok(typeof I[l][k] === 'string' && I[l][k].trim(), `${l}.${k}`);
+  for (const l of Object.keys(P.I18N_W)) for (const k of keys) assert.ok(P.I18N_W[l][k], `world table ${l} has ${k} itself`);
+  for (const l of Object.keys(I).filter(l => l !== 'en')) assert.ok(keys.filter(k => I[l][k] === I.en[k]).length <= 1, l + ' is translated');
 });
 
 test('a share line carries the score and a link back to the game', () => {

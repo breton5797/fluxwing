@@ -34,12 +34,12 @@ test('every vsCap string (23 languages) tells the player 5 a day', () => {
   for (const t of [...base, ...l10n]) assert.ok(/5/.test(t), t);
 });
 
-test('every vsRules string tells the player -50, not -45', () => {
+test('every vsRules string tells the player the 20..80 range (Elo by the rival\'s RP, tests/rp-elo.test.js), not a fixed 50', () => {
   const rules = [...html.matchAll(/vsRules:'([^']+)'/g)].map(x => x[1]);
   const l10n = [...html.matchAll(/"vsRules":"([^"]+)"/g)].map(x => x[1]);
   assert.equal(rules.length, 4, 'ko/en/ja/zh vsRules');
   assert.equal(l10n.length, 19, 'the other 19 languages (I18N_L10N + I18N_W)');
-  for (const r of [...rules, ...l10n]){ assert.ok(/\+50/.test(r), r); assert.ok(/[−-]50/.test(r), r); assert.ok(!/45/.test(r), r); }
+  for (const r of [...rules, ...l10n]){ assert.ok(/\+20~80 RP/.test(r), r); assert.ok(/[−-]20~80 RP/.test(r), r); assert.ok(!/50/.test(r), r); }
 });
 
 test('FFA placement RP: client FFA_RP mirrors server fw_vs_cfg().ffa_rp', () => {
