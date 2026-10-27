@@ -1,0 +1,233 @@
+{
+ "stage": 20,
+ "runs": 120,
+ "form": 0,
+ "aim": 6,
+ "rows": [
+  {
+   "id": "solaris",
+   "rarity": 4,
+   "mean": 218,
+   "median": 154,
+   "p90": 493,
+   "gates": 83.1,
+   "bound": 0.014
+  },
+  {
+   "id": "aurora",
+   "rarity": 4,
+   "mean": 500,
+   "median": 375,
+   "p90": 1035,
+   "gates": 73.8,
+   "bound": 0.043
+  },
+  {
+   "id": "tempest",
+   "rarity": 4,
+   "mean": 240,
+   "median": 275,
+   "p90": 527,
+   "gates": 80.9,
+   "bound": 0.018
+  },
+  {
+   "id": "pleiad",
+   "rarity": 4,
+   "mean": 191,
+   "median": 183,
+   "p90": 284,
+   "gates": 115.9,
+   "bound": 0.011
+  },
+  {
+   "id": "pulsar",
+   "rarity": 4,
+   "mean": 250,
+   "median": 189,
+   "p90": 488,
+   "gates": 47.4,
+   "bound": 0.05
+  },
+  {
+   "id": "seraph",
+   "rarity": 5,
+   "mean": 306,
+   "median": 283,
+   "p90": 540,
+   "gates": 71.1,
+   "bound": 0.018
+  },
+  {
+   "id": "valkyrie",
+   "rarity": 5,
+   "mean": 403,
+   "median": 460,
+   "p90": 734,
+   "gates": 79.1,
+   "bound": 0.037
+  },
+  {
+   "id": "lumen",
+   "rarity": 5,
+   "mean": 239,
+   "median": 219,
+   "p90": 416,
+   "gates": 71,
+   "bound": 0.013
+  },
+  {
+   "id": "halcyon",
+   "rarity": 5,
+   "mean": 400,
+   "median": 355,
+   "p90": 691,
+   "gates": 71.1,
+   "bound": 0.023
+  },
+  {
+   "id": "quasar",
+   "rarity": 6,
+   "mean": 364,
+   "median": 340,
+   "p90": 581,
+   "gates": 63.1,
+   "bound": 0.032
+  },
+  {
+   "id": "comet",
+   "rarity": 6,
+   "mean": 408,
+   "median": 363,
+   "p90": 816,
+   "gates": 91.4,
+   "bound": 0.018
+  },
+  {
+   "id": "zodiac",
+   "rarity": 6,
+   "mean": 371,
+   "median": 310,
+   "p90": 716,
+   "gates": 116.7,
+   "bound": 0.015
+  },
+  {
+   "id": "eclipse",
+   "rarity": 6,
+   "mean": 326,
+   "median": 278,
+   "p90": 568,
+   "gates": 124.9,
+   "bound": 0.006
+  },
+  {
+   "id": "singular",
+   "rarity": 7,
+   "mean": 551,
+   "median": 396,
+   "p90": 1166,
+   "gates": 74,
+   "bound": 0.029
+  },
+  {
+   "id": "rift",
+   "rarity": 7,
+   "mean": 401,
+   "median": 342,
+   "p90": 703,
+   "gates": 70.9,
+   "bound": 0.017
+  },
+  {
+   "id": "nyx",
+   "rarity": 7,
+   "mean": 472,
+   "median": 401,
+   "p90": 820,
+   "gates": 72.4,
+   "bound": 0.023
+  },
+  {
+   "id": "entropy",
+   "rarity": 7,
+   "mean": 486,
+   "median": 423,
+   "p90": 942,
+   "gates": 55.8,
+   "bound": 0.033
+  },
+  {
+   "id": "archon",
+   "rarity": 8,
+   "mean": 545,
+   "median": 449,
+   "p90": 1033,
+   "gates": 58.2,
+   "bound": 0.04
+  },
+  {
+   "id": "ouroboros",
+   "rarity": 8,
+   "mean": 536,
+   "median": 496,
+   "p90": 922,
+   "gates": 56.2,
+   "bound": 0.038
+  },
+  {
+   "id": "kirin",
+   "rarity": 8,
+   "mean": 458,
+   "median": 430,
+   "p90": 743,
+   "gates": 54.6,
+   "bound": 0.047
+  },
+  {
+   "id": "garuda",
+   "rarity": 8,
+   "mean": 571,
+   "median": 535,
+   "p90": 1333,
+   "gates": 142.3,
+   "bound": 0.009
+  },
+  {
+   "id": "aeon",
+   "rarity": 9,
+   "mean": 475,
+   "median": 468,
+   "p90": 759,
+   "gates": 76.6,
+   "bound": 0.026
+  },
+  {
+   "id": "cosmos",
+   "rarity": 9,
+   "mean": 566,
+   "median": 529,
+   "p90": 865,
+   "gates": 63,
+   "bound": 0.033
+  },
+  {
+   "id": "infinity",
+   "rarity": 9,
+   "mean": 518,
+   "median": 532,
+   "p90": 868,
+   "gates": 84.2,
+   "bound": 0.016
+  },
+  {
+   "id": "omega",
+   "rarity": 9,
+   "mean": 536,
+   "median": 506,
+   "p90": 828,
+   "gates": 69.6,
+   "bound": 0.023
+  }
+ ]
+}

@@ -49,9 +49,9 @@ test('tier gates: a rank above ultra needs a unit of the rank below and its stag
 
 test('score mastery: Perfect multiplier by rank, +5%p per evolution form, stage mode only', () => {
   assert.equal(T.scoreMul(4, 4, true), 1, 'ultra and below: no mastery');
-  assert.equal(T.scoreMul(5, 0, true), 1.1); assert.equal(T.scoreMul(5, 4, true), 1.3);
-  assert.equal(T.scoreMul(9, 0, true), 1.5); assert.equal(T.scoreMul(9, 4, true), 1.7);
-  assert.equal(T.scoreMul(9, 99, true), 1.7, 'form is clamped to V');
+  assert.equal(T.scoreMul(5, 0, true), 1.2); assert.equal(T.scoreMul(5, 4, true), 1.4);
+  assert.equal(T.scoreMul(9, 0, true), 1.7); assert.equal(T.scoreMul(9, 4, true), 1.9);
+  assert.equal(T.scoreMul(9, 99, true), 1.9, 'form is clamped to V');
   assert.equal(T.scoreMul(9, 4, false), 1, 'daily / versus: none');
   for (let r = 6; r <= 9; r++) assert.ok(T.scoreMul(r, 0, true) > T.scoreMul(r - 1, 0, true));
 });

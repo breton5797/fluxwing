@@ -788,34 +788,34 @@ const BIRDS = [
   { id:'pulsar',  name:'PULSAR',  rarity:4, col:[320,100,62], wingCol:[180,100,66], speed:1.06, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:19, bonus:2, nose:19, h:12, span:28, stats:[4,3,3,3], perfCharge:.08, feverAt:8, ping:.34 },
   // ---- season reward: never sold, never the free trial (season). Legendary rank for power, cast scale and hangar order; its own label and badge colour ----
   // rank 5 · celestial (hidden until TIER_OPEN = 5). formBonus: +1 Perfect bonus at forms II and IV; formKeep: +2% combo kept per form (stage mode)
-  { id:'seraph',  name:'SERAPH',  rarity:5, hidden:true, col:[48,40,94], wingCol:[45,100,70], uiCol:[45,100,68], speed:1.04, flap:470, grav:1480, maxFall:720, dash:1.10, r:13, window:21, bonus:1, nose:17, h:13, span:30, stats:[4,3,3,3], formBonus:1, feverAt:9, perfCharge:.08 },
-  { id:'valkyrie', name:'VALKYRIE', rarity:5, hidden:true, col:[210,20,82], wingCol:[200,100,62], uiCol:[200,100,68], speed:1.08, flap:480, grav:1520, maxFall:740, dash:1.5, r:13, window:18, bonus:0, nose:19, h:12, span:30, stats:[4,4,3,5], dashFull:true, dashPts:3, dashLen:1.2, formBonus:1 },
-  { id:'lumen',   name:'LUMEN',   rarity:5, hidden:true, col:[52,100,74], wingCol:[38,100,66], uiCol:[50,100,66], speed:1.00, flap:460, grav:1450, maxFall:700, dash:1.00, r:12.5, window:22, bonus:0, nose:14, h:13, span:24, stats:[3,3,4,3], comboKeep:.6, formKeep:1, magnet:80 },
-  { id:'halcyon', name:'HALCYON', rarity:5, hidden:true, col:[188,80,48], wingCol:[24,100,60], uiCol:[188,90,62], speed:0.96, flap:455, grav:1400, maxFall:680, dash:1.00, r:12.5, window:21, bonus:0, nose:22, h:11, span:28, stats:[3,3,5,3], feverAt:9 },
+  { id:'seraph',  name:'SERAPH',  rarity:5, hidden:true, col:[48,40,94], wingCol:[45,100,70], uiCol:[45,100,68], speed:0.83, flap:470, grav:1480, maxFall:720, dash:1.10, r:13, window:17, bonus:1, nose:17, h:13, span:30, stats:[4,3,3,3], formBonus:1, feverAt:9, perfCharge:.08 },
+  { id:'valkyrie', name:'VALKYRIE', rarity:5, hidden:true, col:[210,20,82], wingCol:[200,100,62], uiCol:[200,100,68], speed:1.00, flap:480, grav:1520, maxFall:740, dash:1.5, r:13, window:32, bonus:0, nose:19, h:12, span:30, stats:[4,4,3,5], dashFull:true, dashPts:3, dashLen:1.2, formBonus:1 },
+  { id:'lumen',   name:'LUMEN',   rarity:5, hidden:true, col:[52,100,74], wingCol:[38,100,66], uiCol:[50,100,66], speed:0.80, flap:460, grav:1450, maxFall:700, dash:1.00, r:12.5, window:15, bonus:0, nose:14, h:13, span:24, stats:[3,3,4,3], comboKeep:.6, formKeep:1, magnet:80 },
+  { id:'halcyon', name:'HALCYON', rarity:5, hidden:true, col:[188,80,48], wingCol:[24,100,60], uiCol:[188,90,62], speed:0.83, flap:455, grav:1400, maxFall:680, dash:1.00, r:12.5, window:20, bonus:0, nose:22, h:11, span:28, stats:[3,3,5,3], feverAt:9 },
   // rank 6 · nebula (hidden until TIER_OPEN = 6). beamEvery/beamN: every N gates the next beamN gates are sure Perfects; cometStep/cometMax: a Perfect x (1 + combo*step), up to +max;
   // zodEvery: every N Perfects a sign gives its gift; eclEvery/eclDark: light and dark swap every N gates, dark Perfects x eclDark, light brings a shield back (all stage mode)
-  { id:'quasar',  name:'QUASAR',  rarity:6, hidden:true, col:[265,90,72], wingCol:[190,100,66], uiCol:[265,100,74], speed:1.00, flap:470, grav:1480, maxFall:720, dash:1.15, r:13, window:22, bonus:1, nose:18, h:12, span:28, stats:[4,3,3,4], beamEvery:10, beamN:2, formBonus:1 },
-  { id:'comet',   name:'COMET',   rarity:6, hidden:true, col:[200,30,94], wingCol:[195,100,66], uiCol:[195,100,70], speed:1.02, flap:480, grav:1520, maxFall:740, dash:1.20, r:12.5, window:22, bonus:0, nose:20, h:11, span:26, stats:[4,3,3,4], cometStep:.02, cometMax:.5, formBonus:1 },
-  { id:'zodiac',  name:'ZODIAC',  rarity:6, hidden:true, col:[45,90,68], wingCol:[230,80,58], uiCol:[45,100,66], speed:1.00, flap:465, grav:1480, maxFall:710, dash:1.05, r:13, window:20, bonus:0, nose:16, h:13, span:28, stats:[3,3,4,4], zodEvery:10, shieldMax:2, formBonus:1 },
-  { id:'eclipse', name:'ECLIPSE', rarity:6, hidden:true, col:[270,40,26], wingCol:[40,100,62], uiCol:[40,100,64], speed:1.04, flap:470, grav:1500, maxFall:720, dash:1.10, r:13, window:24, bonus:0, nose:17, h:13, span:28, stats:[4,3,3,3], eclEvery:8, eclDark:1.5, shieldMax:2, formBonus:1 },
+  { id:'quasar',  name:'QUASAR',  rarity:6, hidden:true, col:[265,90,72], wingCol:[190,100,66], uiCol:[265,100,74], speed:0.83, flap:470, grav:1480, maxFall:720, dash:1.15, r:13, window:11, bonus:1, nose:18, h:12, span:28, stats:[4,3,3,4], beamEvery:10, beamN:2, formBonus:1 },
+  { id:'comet',   name:'COMET',   rarity:6, hidden:true, col:[200,30,94], wingCol:[195,100,66], uiCol:[195,100,70], speed:0.70, flap:480, grav:1520, maxFall:740, dash:1.20, r:12.5, window:13, bonus:0, nose:20, h:11, span:26, stats:[4,3,3,4], cometStep:.02, cometMax:.5, formBonus:1 },
+  { id:'zodiac',  name:'ZODIAC',  rarity:6, hidden:true, col:[45,90,68], wingCol:[230,80,58], uiCol:[45,100,66], speed:0.85, flap:465, grav:1480, maxFall:710, dash:1.05, r:13, window:14, bonus:0, nose:16, h:13, span:28, stats:[3,3,4,4], zodEvery:10, shieldMax:2, formBonus:1 },
+  { id:'eclipse', name:'ECLIPSE', rarity:6, hidden:true, col:[270,40,26], wingCol:[40,100,62], uiCol:[40,100,64], speed:0.86, flap:470, grav:1500, maxFall:720, dash:1.10, r:13, window:19, bonus:0, nose:17, h:13, span:28, stats:[4,3,3,3], eclEvery:8, eclDark:1.5, shieldMax:2, formBonus:1 },
   // rank 7 · void (hidden until TIER_OPEN = 7). gapAdd: every gap wider by that share; orbPts: points per coin orb; nyxFog: fog Perfects x that (and no fog in the eyes);
   // entropy: a Perfect x a roll from 1 to 1 + entropy (all stage mode)
-  { id:'singular', name:'SINGULAR', rarity:7, hidden:true, col:[280,60,18], wingCol:[300,100,70], uiCol:[290,100,72], speed:1.00, flap:470, grav:1500, maxFall:720, dash:1.10, r:13, window:20, bonus:1, nose:16, h:13, span:28, stats:[3,3,4,4], gapAdd:.06, orbPts:1, magnet:130, formBonus:1 },
-  { id:'rift',    name:'RIFT',    rarity:7, hidden:true, col:[175,100,58], wingCol:[300,100,70], uiCol:[175,100,64], speed:1.04, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:20, bonus:1, nose:19, h:12, span:28, stats:[4,3,3,4], phaseEvery:15, formBonus:1 },
-  { id:'nyx',     name:'NYX',     rarity:7, hidden:true, col:[240,50,24], wingCol:[220,100,82], uiCol:[225,100,78], speed:1.00, flap:465, grav:1460, maxFall:700, dash:1.05, r:13, window:22, bonus:1, nose:16, h:13, span:30, stats:[3,3,4,3], nyxFog:2, formBonus:1 },
-  { id:'entropy', name:'ENTROPY', rarity:7, hidden:true, col:[0,0,82], wingCol:[330,100,65], uiCol:[300,100,72], speed:1.02, flap:470, grav:1500, maxFall:720, dash:1.10, r:13, window:22, bonus:0, nose:17, h:13, span:28, stats:[4,3,3,3], entropy:1, formBonus:1 },
+  { id:'singular', name:'SINGULAR', rarity:7, hidden:true, col:[280,60,18], wingCol:[300,100,70], uiCol:[290,100,72], speed:0.98, flap:470, grav:1500, maxFall:720, dash:1.10, r:13, window:28, bonus:1, nose:16, h:13, span:28, stats:[3,3,4,4], gapAdd:.06, orbPts:1, magnet:130, formBonus:1 },
+  { id:'rift',    name:'RIFT',    rarity:7, hidden:true, col:[175,100,58], wingCol:[300,100,70], uiCol:[175,100,64], speed:0.91, flap:470, grav:1500, maxFall:720, dash:1.15, r:12.5, window:20, bonus:1, nose:19, h:12, span:28, stats:[4,3,3,4], phaseEvery:15, formBonus:1 },
+  { id:'nyx',     name:'NYX',     rarity:7, hidden:true, col:[240,50,24], wingCol:[220,100,82], uiCol:[225,100,78], speed:0.80, flap:465, grav:1460, maxFall:700, dash:1.05, r:13, window:19, bonus:1, nose:16, h:13, span:30, stats:[3,3,4,3], nyxFog:2, formBonus:1 },
+  { id:'entropy', name:'ENTROPY', rarity:7, hidden:true, col:[0,0,82], wingCol:[330,100,65], uiCol:[300,100,72], speed:0.94, flap:470, grav:1500, maxFall:720, dash:1.10, r:13, window:21, bonus:0, nose:17, h:13, span:28, stats:[4,3,3,3], entropy:1, formBonus:1 },
   // rank 8 · divine (hidden until TIER_OPEN = 8). archStep/archMax: every gate passed unhit adds to a Perfect multiple (a hit clears it); ouroAt: at that combo the combo drops to
   // fever and Perfects gain +20% (up to three loops); coinEvery: every N combo a shower of coins; stormEvery/stormN: every N gates N bolts break the gates ahead (all stage mode)
-  { id:'archon',  name:'ARCHON',  rarity:8, hidden:true, col:[45,100,62], wingCol:[0,0,96], uiCol:[45,100,66], speed:1.02, flap:470, grav:1500, maxFall:720, dash:1.10, r:13, window:23, bonus:1, nose:17, h:13, span:30, stats:[4,3,3,4], archStep:.05, archMax:.6, formBonus:1 },
-  { id:'ouroboros', name:'OUROBOROS', rarity:8, hidden:true, col:[140,70,40], wingCol:[45,100,60], uiCol:[140,80,56], speed:1.02, flap:470, grav:1500, maxFall:720, dash:1.10, r:13, window:21, bonus:1, nose:18, h:12, span:26, stats:[3,3,4,4], ouroAt:30, formBonus:1 },
-  { id:'kirin',   name:'KIRIN',   rarity:8, hidden:true, col:[20,90,62], wingCol:[170,80,55], uiCol:[25,100,64], speed:1.00, flap:470, grav:1480, maxFall:710, dash:1.05, r:13, window:23, bonus:2, nose:19, h:13, span:28, stats:[3,4,4,3], coinEvery:5, gemMul:3, shieldStart:1, formBonus:1 },
-  { id:'garuda',  name:'GARUDA',  rarity:8, hidden:true, col:[35,100,55], wingCol:[10,100,55], uiCol:[35,100,62], speed:1.05, flap:480, grav:1520, maxFall:740, dash:1.20, r:13.5, window:20, bonus:1, nose:20, h:13, span:34, stats:[4,4,3,4], dashPts:2, stormEvery:15, stormN:3, formBonus:1 },
+  { id:'archon',  name:'ARCHON',  rarity:8, hidden:true, col:[45,100,62], wingCol:[0,0,96], uiCol:[45,100,66], speed:0.91, flap:470, grav:1500, maxFall:720, dash:1.10, r:13, window:17, bonus:1, nose:17, h:13, span:30, stats:[4,3,3,4], archStep:.05, archMax:.6, formBonus:1 },
+  { id:'ouroboros', name:'OUROBOROS', rarity:8, hidden:true, col:[140,70,40], wingCol:[45,100,60], uiCol:[140,80,56], speed:0.90, flap:470, grav:1500, maxFall:720, dash:1.10, r:13, window:19, bonus:1, nose:18, h:12, span:26, stats:[3,3,4,4], ouroAt:30, formBonus:1 },
+  { id:'kirin',   name:'KIRIN',   rarity:8, hidden:true, col:[20,90,62], wingCol:[170,80,55], uiCol:[25,100,64], speed:0.87, flap:470, grav:1480, maxFall:710, dash:1.05, r:13, window:27, bonus:2, nose:19, h:13, span:28, stats:[3,4,4,3], coinEvery:5, gemMul:3, shieldStart:1, formBonus:1 },
+  { id:'garuda',  name:'GARUDA',  rarity:8, hidden:true, col:[35,100,55], wingCol:[10,100,55], uiCol:[35,100,62], speed:1.14, flap:480, grav:1520, maxFall:740, dash:1.20, r:13.5, window:20, bonus:1, nose:20, h:13, span:34, stats:[4,4,3,4], dashPts:2, stormEvery:15, stormN:3, formBonus:1 },
   // rank 9 · genesis (hidden until TIER_OPEN = 9). aeonRate/aeonMax: Perfects x (1 + seconds survived x rate), up to +max; starEvery/starPts: every N gates a star orb
   // waits in the next gap, five make a constellation worth starPts; infStep/infMax: in fever, every 10 combo over the fever line adds infStep to the multiple, up to +max (stage mode)
-  { id:'aeon',    name:'AEON',    rarity:9, hidden:true, col:[200,60,80], wingCol:[45,100,70], uiCol:[200,90,74], speed:.97, flap:465, grav:1460, maxFall:700, dash:1.05, r:13, window:22, bonus:1, nose:17, h:13, span:30, stats:[3,3,4,4], aeonRate:.005, aeonMax:.6, formBonus:1 },
-  { id:'cosmos',  name:'COSMOS',  rarity:9, hidden:true, col:[260,80,30], wingCol:[310,100,70], uiCol:[270,100,74], speed:.97, flap:470, grav:1490, maxFall:715, dash:1.10, r:13, window:23, bonus:1, nose:16, h:13, span:28, stats:[4,3,4,3], starEvery:8, starPts:30, formBonus:1 },
-  { id:'infinity', name:'INFINITY', rarity:9, hidden:true, col:[0,0,96], wingCol:[180,100,70], uiCol:[180,100,72], speed:1.00, flap:470, grav:1500, maxFall:720, dash:1.10, r:13, window:22, bonus:1, nose:18, h:12, span:30, stats:[4,3,3,4], infStep:.1, infMax:1, formBonus:1 },
-  { id:'omega',   name:'OMEGA',   rarity:9, hidden:true, col:[0,0,12], wingCol:[0,100,60], uiCol:[355,100,64], speed:1.00, flap:480, grav:1520, maxFall:740, dash:1.20, r:13, window:21, bonus:2, nose:19, h:13, span:32, stats:[4,4,3,4], perfCharge:.08, formBonus:1 },
+  { id:'aeon',    name:'AEON',    rarity:9, hidden:true, col:[200,60,80], wingCol:[45,100,70], uiCol:[200,90,74], speed:0.77, flap:465, grav:1460, maxFall:700, dash:1.05, r:13, window:10, bonus:1, nose:17, h:13, span:30, stats:[3,3,4,4], aeonRate:.005, aeonMax:.6, formBonus:1 },
+  { id:'cosmos',  name:'COSMOS',  rarity:9, hidden:true, col:[260,80,30], wingCol:[310,100,70], uiCol:[270,100,74], speed:0.83, flap:470, grav:1490, maxFall:715, dash:1.10, r:13, window:13, bonus:1, nose:16, h:13, span:28, stats:[4,3,4,3], starEvery:8, starPts:30, formBonus:1 },
+  { id:'infinity', name:'INFINITY', rarity:9, hidden:true, col:[0,0,96], wingCol:[180,100,70], uiCol:[180,100,72], speed:0.68, flap:470, grav:1500, maxFall:720, dash:1.10, r:13, window:9, bonus:1, nose:18, h:12, span:30, stats:[4,3,3,4], infStep:.1, infMax:1, formBonus:1 },
+  { id:'omega',   name:'OMEGA',   rarity:9, hidden:true, col:[0,0,12], wingCol:[0,100,60], uiCol:[355,100,64], speed:0.83, flap:480, grav:1520, maxFall:740, dash:1.20, r:13, window:7, bonus:2, nose:19, h:13, span:32, stats:[4,4,3,4], perfCharge:.08, formBonus:1 },
   { id:'monarch', name:'MONARCH', rarity:2, season:true, col:[48,70,93], wingCol:[46,100,58], uiCol:[46,100,60], speed:1.00, flap:480, grav:1500, maxFall:720, dash:1.10, r:13.5, window:17, bonus:0, nose:19, h:13, span:32, stats:[3,3,3,3], shieldStart:1, shieldRegen:25 }
 ];
 BIRDS.sort((a, b) => (a.rarity || 0) - (b.rarity || 0));   // stable: basics first, then by rarity rank: common 0 < epic 1 < legendary 2 < mythic 3 < ultra 4 < celestial 5 < nebula 6 < void 7 < divine 8 < genesis 9
@@ -832,7 +832,7 @@ const TIER_OPEN = 4;   // the highest rank on sale and in the hangar. A unit abo
 // To buy a unit of rank r: own a unit of rank r-1 and have cleared stage TIER_REQ[r].stage (1-based): a ladder, one rung at a time
 const TIER_REQ = Object.freeze({5: {stage: 30}, 6: {stage: 35}, 7: {stage: 40}, 8: {stage: 45}, 9: {stage: 50}});
 // Score mastery: a Perfect's points times TIER_MUL[r], plus MASTERY for each evolution form above I. Stage mode only (fair modes: x1)
-const TIER_MUL = Object.freeze({5: 1.10, 6: 1.20, 7: 1.30, 8: 1.40, 9: 1.50}), MASTERY = .05;
+const TIER_MUL = Object.freeze({5: 1.20, 6: 1.30, 7: 1.40, 8: 1.53, 9: 1.70}), MASTERY = .05;
 // The 20 units planned for ranks 5-9 (four a rank, in rank order). Reserved here so the server whitelist (private.fw_units) is set once
 const TIER_IDS = Object.freeze(['seraph','valkyrie','lumen','halcyon', 'quasar','comet','zodiac','eclipse', 'singular','rift','nyx','entropy',
   'archon','ouroboros','kirin','garuda', 'aeon','cosmos','infinity','omega']);
@@ -3322,20 +3322,20 @@ const SK = {
  pleiad:{cd:24,n:4,sh:1,f:{cd:18,n:1,sh:0}}, pulsar:{cd:16,dur:4,mul:3,brk:2,f:{cd:18,dur:2,mul:1,brk:0}},
  monarch:{cd:26,dur:1,win:4,f:{cd:18,dur:1,win:0}},   // dur: seconds invincible; win: seconds of the wide Perfect window (VOLT's +10px), none in fair modes
  // rank 5 · celestial. mul: Perfect multiple while the skill runs (the Resonance slot PULSAR uses); n / len / inv / arm (VALKYRIE): TEMPEST's storm chain
- seraph:{cd:16,dur:3,mul:1.5,f:{cd:18,dur:2,mul:1}}, valkyrie:{cd:12,len:1.4,n:4,inv:1,arm:0,f:{cd:18,len:1,n:0,inv:0,arm:0}},
- lumen:{cd:12,dur:6,mul:1.5,keep:1,f:{cd:18,dur:2,mul:1,keep:0}}, halcyon:{cd:12,dur:6,mul:2.25,f:{cd:18,dur:2,mul:1}},
+ seraph:{cd:10,dur:3,mul:1.5,f:{cd:18,dur:2,mul:1}}, valkyrie:{cd:14,len:1.4,n:4,inv:1,arm:0,f:{cd:18,len:1,n:0,inv:0,arm:0}},
+ lumen:{cd:9,dur:6,mul:1.5,keep:1,f:{cd:18,dur:2,mul:1,keep:0}}, halcyon:{cd:9,dur:6,mul:2.25,f:{cd:18,dur:2,mul:1}},
  // rank 6 · nebula. n (QUASAR): gates the jet makes sure Perfects; fever (COMET): the combo jumps to fever; n / gap (ZODIAC): ORACLE's lane; god (ECLIPSE): seconds invincible, dur: forced dark
  quasar:{cd:10,dur:6,n:3,mul:1.75,f:{cd:18,dur:2,n:0,mul:1}}, comet:{cd:7,dur:6,fever:1,f:{cd:18,dur:2,fever:0}},
  zodiac:{cd:14,dur:6,n:4,gap:0,mul:1.25,f:{cd:18,dur:2,n:0,gap:0,mul:1}}, eclipse:{cd:9,dur:9,god:1,f:{cd:18,dur:1,god:.8}},
  // rank 7 · void. gap (SINGULAR): extra share of every gap; perf (RIFT): SPECTER's ghosting makes the gates Perfects; ent (ENTROPY): extra roll range
- singular:{cd:10,dur:5,gap:.15,mul:2,f:{cd:18,dur:2,gap:0,mul:1}}, rift:{cd:14,dur:2,perf:1,mul:1.5,f:{cd:18,dur:1.2,perf:0,mul:1}},
+ singular:{cd:10,dur:5,gap:.15,mul:2,f:{cd:18,dur:2,gap:0,mul:1}}, rift:{cd:16,dur:2,perf:1,mul:1.5,f:{cd:18,dur:1.2,perf:0,mul:1}},
  nyx:{cd:14,dur:5,f:{cd:18,dur:2}}, entropy:{cd:13,dur:6,ent:2,f:{cd:18,dur:2,ent:0}},
  // rank 8 · divine. stack (ARCHON): added to the unhit multiple; coil (OUROBOROS): combo added; n (GARUDA): bolts on the gates ahead. Every one opens the wide window
- archon:{cd:12,dur:5,stack:.25,mul:2,f:{cd:18,dur:2,stack:0,mul:1}}, ouroboros:{cd:12,dur:5,coil:3,mul:1.75,f:{cd:18,dur:2,coil:0,mul:1}},
- kirin:{cd:10,dur:6,mul:2.5,rain:8,f:{cd:18,dur:2,mul:1,rain:0}}, garuda:{cd:10,dur:4,n:4,mul:2.5,f:{cd:18,dur:2,n:0,mul:1}},
+ archon:{cd:13,dur:5,stack:.25,mul:2,f:{cd:18,dur:2,stack:0,mul:1}}, ouroboros:{cd:14,dur:5,coil:3,mul:1.75,f:{cd:18,dur:2,coil:0,mul:1}},
+ kirin:{cd:8,dur:6,mul:2.5,rain:8,f:{cd:18,dur:2,mul:1,rain:0}}, garuda:{cd:13,dur:4,n:4,mul:2.5,f:{cd:18,dur:2,n:0,mul:1}},
  // rank 9 · genesis. stars (COSMOS): star orbs set in the next gaps; keep (INFINITY): no combo break (LUMEN's lantern); god (OMEGA): seconds invincible. Every one opens the wide window
- aeon:{cd:11,dur:5,mul:2.25,f:{cd:18,dur:2,mul:1}}, cosmos:{cd:10,dur:5,stars:5,mul:2,f:{cd:18,dur:2,stars:0,mul:1}},
- infinity:{cd:12,dur:6,keep:1,mul:1.25,f:{cd:18,dur:2,keep:0,mul:1}}, omega:{cd:11,dur:5,god:1,mul:1.75,f:{cd:18,dur:2,god:.8,mul:1}}
+ aeon:{cd:10,dur:5,mul:2.25,f:{cd:18,dur:2,mul:1}}, cosmos:{cd:9,dur:5,stars:5,mul:2,f:{cd:18,dur:2,stars:0,mul:1}},
+ infinity:{cd:9,dur:6,keep:1,mul:1.25,f:{cd:18,dur:2,keep:0,mul:1}}, omega:{cd:10,dur:5,god:1,mul:1.75,f:{cd:18,dur:2,god:.8,mul:1}}
 };
 const fairMode = () => mode === 'daily' || mode === 'versus';
 const skv = k => { const s = SK[B.id]; if (fairMode() && s.f && s.f[k] != null) return s.f[k];
@@ -3463,13 +3463,13 @@ const ULT = { gate:.045, perf:.03, start:.33, inv:1,
   pleiad:{n:6, rate:.75},
   pulsar:{dur:7, slow:.55, mul:3},
   // rank 5 · celestial (ultRow: forms III and V lengthen dur / n)
-  seraph:{dur:3, gap:40, mul:1.25, out:2}, valkyrie:{n:11, inv:1.5, arm:0}, lumen:{dur:5, mul:1.25, sure:1}, halcyon:{dur:8, slow:.6, mul:3},
+  seraph:{dur:3, gap:40, mul:1.25, out:2}, valkyrie:{n:22, inv:1.5, arm:0}, lumen:{dur:5, mul:1.25, sure:1}, halcyon:{dur:8, slow:.6, mul:3},
   // rank 6 · nebula. every: seconds between QUASAR's beams; god (COMET, as SOLARIS's Genesis); stop (ECLIPSE): seconds of stopped time before the dark
   quasar:{dur:4, every:.3}, comet:{dur:5, god:5, rate:1.4}, zodiac:{dur:6, mul:2, rate:1.1}, eclipse:{dur:8, stop:2, mul:3.5, rate:2.2},
   // rank 7 · void. sure:1 — ultTick makes every gate ahead a Perfect while it runs (LUMEN's Everlight too)
-  singular:{dur:5, gap:.35, sure:1, rate:1.6}, rift:{dur:4, mul:2}, nyx:{dur:6, sure:1, rate:1.4}, entropy:{dur:6, ent:3, sure:1, rate:1.4},
+  singular:{dur:5, gap:.35, sure:1, rate:1.6}, rift:{dur:2.5, mul:2}, nyx:{dur:6, sure:1, rate:1.4}, entropy:{dur:6, ent:3, sure:1, rate:1.4},
   // rank 8 · divine. coin (KIRIN): seconds between falling coins; GARUDA rides TEMPEST's carry
-  archon:{dur:6, sure:1, rate:1.4}, ouroboros:{dur:6, sure:1, rate:1.4}, kirin:{dur:6, mul:2.5, coin:.12, rate:1.4}, garuda:{n:22, inv:1.5, arm:0, rate:1.3},
+  archon:{dur:6, sure:1, rate:1.4}, ouroboros:{dur:6, sure:1, rate:1.4}, kirin:{dur:6, mul:2.5, coin:.12, rate:1.4}, garuda:{n:48, inv:1.5, arm:0, rate:1.3},
   // rank 9 · genesis. AEON rides PULSAR's slow time (u.slow, u.mul); COSMOS sets a star in every gap; OMEGA: every gate a Perfect x u.mul
   aeon:{dur:7, slow:.4, mul:2.5}, cosmos:{dur:6, sure:1}, infinity:{dur:6, sure:1}, omega:{dur:5, mul:2.5, sure:1} };
 // The cast sits one step above TIER_FX.ultra everywhere; its shake still stays under the death shake (18). sky: seconds of FX.ultC for the unit's ultSky

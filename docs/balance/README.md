@@ -204,3 +204,58 @@ Notes (noise is still about ±20–25% per unit at 60 runs, so these are flags, 
   - genesis (361) is below divine (406) at form I.
 - **PULSAR** (open ultra) at 527/708 is 4× SOLARIS. The open ultras' mean (~330 form I) is now above celestial's form I.
 - Re-check the hidden ranks against this table, not the stage-20 numbers above, before each release PR.
+
+## Ladder tune for the hidden ranks 5–9, 2026-10-28 (stage 20, 120 runs): `ladder-s20-f0.json`, `ladder-s20-f4.json`
+
+The goal was a ladder that rises at both forms (mythic < ultra < celestial < nebula < void < divine < genesis, each step about 8% or more), with every unit within ±25% of its rank mean. Only ranks 5–9 and `TIER_MUL` moved. The open-ultra commit before this one (859ca10) is included. Mythic is shown for reference.
+
+| Rank | Form I mean | Form V mean | Units, form I / V |
+|---|---|---|---|
+| mythic | 257 | 335 | aegis 228/221 · kraken 107/110 · specter 259/520 · oracle 432/490 |
+| ultra | 280 | 380 | solaris 218/368 · pulsar 250/332 · tempest 240/341 · pleiad 191/202 · aurora 500/659 (hidden) |
+| celestial | 337 | 809 | seraph 306/743 · valkyrie 403/727 · **lumen 239/1018** · halcyon 400/746 |
+| nebula | 367 | 940 | **quasar 364/1351** · comet 408/951 · zodiac 371/839 · **eclipse 326/620** |
+| void | 478 | 979 | singular 551/950 · rift 401/887 · nyx 472/1085 · entropy 486/995 |
+| divine | 528 | 1107 | archon 545/1229 · ouroboros 536/1223 · kirin 458/1128 · garuda 571/849 |
+| genesis | **524** | 1258 | aeon 475/1243 · cosmos 566/1183 · infinity 518/1379 · omega 536/1226 |
+
+Highest bound ratio: 0.138 (quasar, form V). Every run stays under 0.25.
+
+Steps, form I: +9% (mythic → ultra), +20%, +9%, +30%, +10%, **−1%** (divine → genesis). Form V: +13%, +113%, +16%, **+4%** (nebula → void), +13%, +14%.
+
+**Not reached.** Genesis is level with divine at form I, void is only 4% above nebula at form V, and LUMEN (−29% / +26%), QUASAR (+44% at V) and ECLIPSE (−34% at V) sit outside ±25%. Form V is about 2.2–2.5× form I for every hidden rank, so celestial and nebula end well above the rough form-V targets (560–620, 680–760).
+
+What blocks it:
+- **`TIER_MUL` has a ceiling.** The server bound `private.fw_bound_mul` (1.4 / 1.5 / 1.6 / 1.75 / 1.9) must cover `TIER_MUL + 4 × MASTERY` (`tests/tiers.test.js`), and `TIER_MUL` must rise with the rank. So `TIER_MUL` can go no higher than 1.20 / 1.30 / 1.40 / 1.55 / 1.70, and celestial / nebula cannot be lifted as a whole rank. The values here are at or near that ceiling.
+- **Form V over form I is set by levers that may not move.** `formBonus` (+2 a Perfect at V), `skillBoost` and `EVO_BUFF` give about 2.2–2.5×. Speed, cooldowns and `TIER_MUL` scale both forms about evenly. Window is the only lever that shifts the ratio, and a wider window helps form V more. So the form-V numbers follow form I up.
+- **Very slow scroll stops paying.** Going slower lifts form I down to about 0.80. Below that, some units fall again (COMET 0.70 → 0.68: 349 → 285; LUMEN 0.80 → 0.76: 282 → 200).
+- **Noise.** One rank mean moved ±7–10% between repeat 120-run batches (nebula form I: 356, 328, 367 with the same values), the same size as the 8% step. LUMEN, QUASAR and RIFT have long tails (p90 two to four times the median). An 8% step needs more runs, or a gap designed at about 15%.
+
+Levers moved (old → new). Skill `cd` is not printed in any text; skill/ultimate `dur`/`n` are the `{n}` in `sd_`/`ud_`; `TIER_MUL` is the `{m}` in `scoreMulL`:
+
+| Unit | speed | window | other |
+|---|---|---|---|
+| SERAPH | 1.04 → 0.83 | 21 → 17 | skill cd 16 → 10 |
+| VALKYRIE | 1.08 → 1.00 | 18 → 32 | skill cd 12 → 14; ultimate n 11 → 22 |
+| LUMEN | 1.00 → 0.80 | 22 → 15 | skill cd 12 → 9 |
+| HALCYON | 0.96 → 0.83 | 21 → 20 | skill cd 12 → 9 |
+| QUASAR | 1.00 → 0.83 | 22 → 11 | |
+| COMET | 1.02 → 0.70 | 22 → 13 | |
+| ZODIAC | 1.00 → 0.85 | 20 → 14 | |
+| ECLIPSE | 1.04 → 0.86 | 24 → 19 | |
+| SINGULAR | 1.00 → 0.98 | 20 → 28 | |
+| RIFT | 1.04 → 0.91 | 20 | skill cd 14 → 16; ultimate dur 4 → 2.5 |
+| NYX | 1.00 → 0.80 | 22 → 19 | |
+| ENTROPY | 1.02 → 0.94 | 22 → 21 | |
+| ARCHON | 1.02 → 0.91 | 23 → 17 | skill cd 12 → 13 |
+| OUROBOROS | 1.02 → 0.90 | 21 → 19 | skill cd 12 → 14 |
+| KIRIN | 1.00 → 0.87 | 23 → 27 | skill cd 10 → 8 |
+| GARUDA | 1.05 → 1.14 | 20 | skill cd 10 → 13; ultimate n 22 → 48 |
+| AEON | 0.97 → 0.77 | 22 → 10 | skill cd 11 → 10 |
+| COSMOS | 0.97 → 0.83 | 23 → 13 | skill cd 10 → 9 |
+| INFINITY | 1.00 → 0.68 | 22 → 9 | skill cd 12 → 9 |
+| OMEGA | 1.00 → 0.83 | 21 → 7 | skill cd 11 → 10 |
+
+`TIER_MUL` 1.10 / 1.20 / 1.30 / 1.40 / 1.50 → 1.20 / 1.30 / 1.40 / 1.53 / 1.70. `tests/tiers.test.js` pinned the old ends (`scoreMul(5, ·)` 1.1 / 1.3, `scoreMul(9, ·)` 1.5 / 1.7). Those are now 1.2 / 1.4 and 1.7 / 1.9. Only the tuning numbers changed, not what the test checks.
+
+Before this tune (same stage, 60 runs): celestial 200/531, nebula 280/703, void 358/1012, divine 406/754, genesis 361/1014. Celestial is now above mythic and ultra at both forms, and RIFT's form-V spike is gone (1751 → 887).
