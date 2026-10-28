@@ -12,22 +12,25 @@ const body = name => { const at = html.indexOf(name); assert.ok(at >= 0, name); 
 const GROUND = 584, X0 = 390 - 95;
 const seeded = (i, salt = '') => R.mulberry32(R.hashStr(S.bossSeed(i, salt)));
 
-test('a pure boss block with the agreed table: stages 10/20/30/40/50, HP 5/7/9/12/15, pools growing per boss', () => {
+// HP, the meter refill and the pause: the 100-gate curve tune 2026-10-29 (docs/balance/README.md, "Tune to the 100-gate curve, 2026-10-29"):
+// HP 5/7/9/12/15 -> 4/8/9/10/11, meter 2.6 -> 2.4 s, pause 2.2-1.5 -> 2.8-1.8 s
+test('a pure boss block with the agreed table: stages 10/20/30/40/50, HP 4/8/9/10/11 (never falling), pools growing per boss', () => {
   assert.ok(bb, 'boss block');
   assert.ok(Object.isFrozen(S.BOSS) && Object.isFrozen(S.BOSS.list) && Object.isFrozen(S.BOSS.atk) && Object.isFrozen(S.BOSS.pause));
-  assert.deepEqual(S.BOSS.list.map(b => [b.st, b.name, b.hp]), [[9, 'MAWBLOOM', 5], [19, 'DUNEHULK', 7], [29, 'CINDERWYRM', 9], [39, 'MOLTEN KING', 12], [49, 'STORMCROWN', 15]]);
+  assert.deepEqual(S.BOSS.list.map(b => [b.st, b.name, b.hp]), [[9, 'MAWBLOOM', 4], [19, 'DUNEHULK', 8], [29, 'CINDERWYRM', 9], [39, 'MOLTEN KING', 10], [49, 'STORMCROWN', 11]]);
+  assert.ok(S.BOSS.list.every((b, k) => !k || b.hp >= S.BOSS.list[k - 1].hp), 'boss HP never falls from stage to stage');
   assert.deepEqual(S.BOSS.list.map(b => [...b.pool]), [['volley', 'wall'], ['volley', 'wall', 'charge'], ['volley', 'wall', 'charge', 'beam'],
     ['volley', 'wall', 'charge', 'beam', 'minion'], ['volley', 'wall', 'charge', 'beam', 'minion']]);
   assert.deepEqual(S.BOSS.list.map(b => b.zone), [0, 1, 2, 2, 3], 'each boss is themed to its stage\'s zone');
   assert.deepEqual(S.BOSS.list.map(b => b.id), ['mawbloom', 'dunehulk', 'cinderwyrm', 'moltenking', 'stormcrown'], 'ids match the art files (art/boss-<id>.webp)');
   assert.deepEqual(S.STAGES.map((r, i) => r.boss ? i : -1).filter(i => i >= 0), S.BOSS.list.map(b => b.st), 'a boss for every boss row, none elsewhere');
   for (let i = 0; i < 50; i++) assert.equal(S.bossOf(i), S.BOSS.list.find(b => b.st === i) || null, 'bossOf ' + i);
-  assert.deepEqual([S.BOSS.r, S.BOSS.off, S.BOSS.lunge, S.BOSS.miss, S.BOSS.back, S.BOSS.inv, S.BOSS.charge], [58, 95, 1500, 150, .35, .6, 2.6]);
+  assert.deepEqual([S.BOSS.r, S.BOSS.off, S.BOSS.lunge, S.BOSS.miss, S.BOSS.back, S.BOSS.inv, S.BOSS.charge], [58, 95, 1500, 150, .35, .6, 2.4]);
 });
 
-test('the pause between attacks goes from 2.2 s down to 1.5 s across the bosses, and x0.75 when enraged (HP at half or below)', () => {
+test('the pause between attacks goes from 2.8 s down to 1.8 s across the bosses (tune 2026-10-29), and x0.75 when enraged (HP at half or below)', () => {
   const p = [0, 1, 2, 3, 4].map(k => S.bossPause(k, false));
-  assert.equal(p[0], 2.2); assert.ok(Math.abs(p[4] - 1.5) < 1e-9);
+  assert.equal(p[0], 2.8); assert.ok(Math.abs(p[4] - 1.8) < 1e-9);
   for (let k = 1; k < 5; k++) assert.ok(p[k] < p[k - 1], 'boss ' + k + ' attacks sooner');
   for (let k = 0; k < 5; k++) assert.ok(Math.abs(S.bossPause(k, true) - p[k] * .75) < 1e-9);
   assert.equal(S.BOSS.rage, .75);
@@ -113,8 +116,8 @@ test('charge and beam geometry: the rush to x = 40 at 900 px/s and back; the bea
   assert.equal(S.actLen('beam', X0), .5);
 });
 
-test('the dash meter refills by itself in the fight: full in 2.6 s / B.dash; the lunge comes back to its home in .35 s', () => {
-  for (const d of [1, 1.2, .8]){ let m = 0, t = 0; while (m < 1){ m += S.meterGain(1/120, d); t += 1/120; } assert.ok(Math.abs(t - 2.6 / d) < 1/60, d + ': ' + t); }
+test('the dash meter refills by itself in the fight: full in 2.4 s / B.dash (tune 2026-10-29); the lunge comes back to its home in .35 s', () => {
+  for (const d of [1, 1.2, .8]){ let m = 0, t = 0; while (m < 1){ m += S.meterGain(1/120, d); t += 1/120; } assert.ok(Math.abs(t - 2.4 / d) < 1/60, d + ': ' + t); }
   assert.equal(S.ramBack(260, 120, 0), 260);
   assert.equal(S.ramBack(260, 120, .35), 120);
   assert.equal(S.ramBack(260, 120, 1), 120);

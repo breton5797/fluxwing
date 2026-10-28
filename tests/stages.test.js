@@ -8,7 +8,7 @@ import { readIndex } from './helpers/hitloop.js';
 // old zone finales keep their tighter numbers as row.fin.
 const html = readIndex();
 const m = html.match(/\/\* stages:start[\s\S]*?\/\* stages:end \*\//);
-const S = m ? new Function(`${m[0]}\nreturn {ST_GOAL, ST_N, ST_FIRST, ST_CNT, ST_BAND, ST_PLAN, ST_SIG, STAGES, stElems, stDGoal, stGapGoal, PAT, PAT_EVERY, TWIN, SIG, branchK, geyserAt, bladeAt, stLay};`)() : {};
+const S = m ? new Function(`${m[0]}\nreturn {ST_GOAL, ST_RAMP, ST_N, ST_FIRST, ST_CNT, ST_BAND, ST_PLAN, ST_SIG, STAGES, stElems, stDGoal, stGapGoal, PAT, PAT_EVERY, TWIN, SIG, branchK, geyserAt, bladeAt, stLay};`)() : {};
 const R = new Function(`${html.match(/function hashStr\(s\)\{[^\n]+/)[0]}\n${html.match(/function mulberry32\(a\)\{[^\n]+/)[0]}\nreturn {hashStr, mulberry32};`)();
 const ROWS = S.STAGES || [];
 const reg = ROWS.map((r, i) => i).filter(i => !ROWS[i].rest);   // every stage but the breathers
@@ -56,16 +56,21 @@ test('finales close each zone, bosses fight on every 10th stage, breathers sit i
   for (const z of [0, 1, 2, 3]) assert.ok(rests.some(s => s - 1 >= S.ST_FIRST[z] && s - 1 < S.ST_FIRST[z] + S.ST_CNT[z]), 'zone ' + z);
 });
 
-test('goals: every stage is a 100-gate mission (owner 2026-10-29)', () => {
+// The 100-gate curve tune 2026-10-29 (docs/balance/README.md, "Tune to the 100-gate curve, 2026-10-29"): SKY PALACE (stages 41-50) flies 70-gate
+// missions, the plateau of the 45-gate ramp is d0 + .20 (was + .35), the gaps and finale cuts moved (table in the README)
+test('goals: stages 1-40 are 100-gate missions (owner 2026-10-29), SKY PALACE 41-50 flies 70 gates (tune 2026-10-29)', () => {
   assert.equal(S.ST_GOAL, 100);
-  ROWS.forEach((r, i) => assert.equal(r.goal, 100, 'stage ' + (i + 1)));
+  ROWS.forEach((r, i) => assert.equal(r.goal, i < 40 ? 100 : 70, 'stage ' + (i + 1)));
+  S.ST_BAND.forEach((B, z) => assert.equal(B.goal, z < 3 ? S.ST_GOAL : 70, 'zone ' + z));
+  ROWS.forEach((r, i) => assert.ok(r.goal >= 45, 'every goal sits past the 45-gate ramp: ' + (i + 1)));
 });
 
-test('difficulty at the goal (the top of the 45-gate ramp) climbs from .35 to about .70 and only breathers and finales break the climb', () => {
+test('difficulty at the goal (the top of the 45-gate ramp) climbs from .20 to about .56 and only breathers and finales break the climb (plateau tune 2026-10-29)', () => {
   const D = ROWS.map(S.stDGoal), G = ROWS.map(S.stGapGoal);
-  assert.ok(Math.abs(D[0] - .35) < 1e-9, 'stage 1 ' + D[0]);
-  ROWS.forEach((r, i) => assert.ok(Math.abs(D[i] - Math.min(1, r.d0 + .35)) < 1e-9, 'a 100-gate goal sits on the plateau: ' + (i + 1)));
-  assert.ok(D[49] > .65 && D[49] < .75, 'stage 50 ' + D[49]);
+  assert.equal(S.ST_RAMP, .20);
+  assert.ok(Math.abs(D[0] - .20) < 1e-9, 'stage 1 ' + D[0]);
+  ROWS.forEach((r, i) => assert.ok(Math.abs(D[i] - Math.min(1, r.d0 + S.ST_RAMP)) < 1e-9, 'every goal sits on the plateau: ' + (i + 1)));
+  assert.ok(D[49] > .50 && D[49] < .60, 'stage 50 ' + D[49]);
   const plain = ROWS.map((r, i) => i).filter(i => !ROWS[i].rest && !ROWS[i].fin);
   for (let k = 1; k < plain.length; k++){
     const a = plain[k - 1], b = plain[k];
@@ -104,7 +109,7 @@ test('hazards: one kind at a time from stage 11, never in zone 1; fog and the st
   assert.deepEqual([...new Set(ROWS.map(r => r.fogDur))].sort(), [0, .5, 1, 2]);
 });
 
-const dAt = (row, k) => { const cap = Math.min(1, row.d0 + .35); return k <= 45 ? row.d0 + (k / 45) * (cap - row.d0) : cap; };   // runD in stage mode: the 45-gate ramp, then the stage's top difficulty
+const dAt = (row, k) => { const cap = Math.min(1, row.d0 + S.ST_RAMP); return k <= 45 ? row.d0 + (k / 45) * (cap - row.d0) : cap; };   // runD in stage mode: the 45-gate ramp, then the stage's top difficulty
 function course(i, n, seed = 'stage:' + i + ':v2'){
   const row = ROWS[i], rng = R.mulberry32(R.hashStr(seed)), srng = R.mulberry32(R.hashStr(seed + ':x')), out = [];
   let prev = null;
