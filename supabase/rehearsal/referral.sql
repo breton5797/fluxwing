@@ -93,7 +93,8 @@ begin
   r := public.referral_me();
   if (r ->> 'ready')::int <> 1 or (r ->> 'paid')::int <> 0 or (r -> 'friends' -> 0 ->> 'done')::boolean is not true then raise exception 'me before the claim: %', r; end if;
   r := public.referral_claim(); id := (r ->> 'booked')::bigint;
-  if id is null or jsonb_array_length(r -> 'payouts') <> 1 or (r -> 'payouts' -> 0 ->> 'gems')::int <> 30 then raise exception 'the first claim pays 30 gems: %', r; end if;
+  if id is null or jsonb_array_length(r -> 'payouts') <> 1 or (r -> 'payouts' -> 0 ->> 'gems')::int <> 15
+     or (r -> 'payouts' -> 0 ->> 'coins')::int <> 10000 then raise exception 'the first claim pays 15 gems and 10,000 coins: %', r; end if;
   r2 := public.referral_claim();
   if r2 -> 'booked' <> 'null'::jsonb or (r2 -> 'payouts' -> 0 ->> 'id')::bigint <> id then raise exception 'before the ack a claim books nothing new and repeats the payout: %', r2; end if;
   perform set_config('request.jwt.claim.sub', pg_temp.u('b')::text, true);
@@ -107,14 +108,14 @@ begin
 end $$;
 reset role;
 
-\echo === milestone 3: two more friends of a (made done by hand), one claim pays 2 x 30 + 50 ===
+\echo === milestone 3: two more friends of a (made done by hand), one claim pays 2 x 15 + 50 gems and 2 x 10,000 coins ===
 insert into private.fw_referrals (invitee_id, inviter_id, days, stage, done_at) values
   (pg_temp.u('c'), pg_temp.u('a'), 3, 10, now()), (pg_temp.u('d'), pg_temp.u('a'), 3, 10, now());
 set role authenticated;
 do $$ declare r jsonb; begin
   perform set_config('request.jwt.claim.sub', pg_temp.u('a')::text, true);
   r := public.referral_claim();
-  if (r -> 'payouts' -> 0 ->> 'gems')::int <> 110 or r -> 'payouts' -> 0 -> 'ms' <> '[3]'::jsonb then raise exception 'milestone 3: %', r; end if;
+  if (r -> 'payouts' -> 0 ->> 'gems')::int <> 80 or (r -> 'payouts' -> 0 ->> 'coins')::int <> 20000 or r -> 'payouts' -> 0 -> 'ms' <> '[3]'::jsonb then raise exception 'milestone 3: %', r; end if;
   perform public.referral_ack((r ->> 'booked')::bigint);
   r := public.referral_me(); if (r ->> 'paid')::int <> 3 or (r ->> 'ms_paid')::int <> 1 then raise exception 'me after milestone 3: %', r; end if;
 end $$;
@@ -145,7 +146,7 @@ update private.fw_referrals set held = false where inviter_id = pg_temp.u('e') a
 set role authenticated;
 do $$ declare r jsonb; begin
   perform set_config('request.jwt.claim.sub', pg_temp.u('e')::text, true);
-  r := public.referral_claim(); if (r -> 'payouts' -> 0 ->> 'gems')::int <> 6 * 30 + 50 then raise exception 'released burst: %', r; end if;
+  r := public.referral_claim(); if (r -> 'payouts' -> 0 ->> 'gems')::int <> 6 * 15 + 50 or (r -> 'payouts' -> 0 ->> 'coins')::int <> 6 * 10000 then raise exception 'released burst: %', r; end if;
 end $$;
 reset role;
 
@@ -156,7 +157,7 @@ set role authenticated;
 do $$ declare r jsonb; begin
   perform set_config('request.jwt.claim.sub', pg_temp.u('f')::text, true);
   r := public.referral_claim();
-  if (r -> 'payouts' -> 0 ->> 'invites')::int <> 25 or (r -> 'payouts' -> 0 ->> 'gems')::int <> 25 * 30 + 50 + 150 + 500
+  if (r -> 'payouts' -> 0 ->> 'invites')::int <> 25 or (r -> 'payouts' -> 0 ->> 'gems')::int <> 25 * 15 + 50 + 150 + 500 or (r -> 'payouts' -> 0 ->> 'coins')::int <> 25 * 10000
      or r -> 'payouts' -> 0 -> 'ms' <> '[3, 10, 25]'::jsonb then raise exception 'the month pays 25 friends and every milestone: %', r; end if;
   perform public.referral_ack((r ->> 'booked')::bigint);
   r := public.referral_claim(); if r -> 'booked' <> 'null'::jsonb then raise exception 'the monthly cap is reached: %', r; end if;
@@ -168,7 +169,7 @@ set role authenticated;
 do $$ declare r jsonb; begin
   perform set_config('request.jwt.claim.sub', pg_temp.u('f')::text, true);
   r := public.referral_claim();
-  if (r -> 'payouts' -> 0 ->> 'invites')::int <> 2 or (r -> 'payouts' -> 0 ->> 'gems')::int <> 60 then raise exception 'next month: the two that waited, no milestone again: %', r; end if;
+  if (r -> 'payouts' -> 0 ->> 'invites')::int <> 2 or (r -> 'payouts' -> 0 ->> 'gems')::int <> 30 or (r -> 'payouts' -> 0 ->> 'coins')::int <> 20000 then raise exception 'next month: the two that waited, no milestone again: %', r; end if;
 end $$;
 reset role;
 

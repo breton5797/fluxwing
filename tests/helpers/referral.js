@@ -7,5 +7,5 @@ export function loadReferral(html = readIndex()) {
   const m = html.match(/\/\* referral:start[\s\S]*?\/\* referral:end \*\//);
   if (!s || !m) throw new Error('social-core or referral block not found in index.html');
   return new Function(`${s[0]}\n${m[0]}\nreturn {REF_CFG, refParse, refStrip, refUrl, refNorm, refSeen, refLinkDue, refLinked, refReportDue, refReported,
-    refView, refMs, refPayGems, refToGrant, refPaidAdd, refNudgeDue};`)();
+    refView, refMs, refPayGems, refPayCoins, refToGrant, refPaidAdd, refNudgeDue};`)();
 }
