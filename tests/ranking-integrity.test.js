@@ -50,8 +50,8 @@ test('client: a guest plays versus as practice, sees why, and is never offered a
   assert.ok(st.indexOf("why: 'guest'") > 0 && st.indexOf("why: 'guest'") < st.indexOf("vsRpc('versus_start'"), 'no versus_start call for a guest');
   assert.match(js('function vsRpNote(', '\nfunction vsBegin('), /rk\.why === 'guest' \? 'vsGuest'/);
   assert.match(js('function seaCheck(', '\nfunction seaPills('), /authAnon\(\)/);
-  assert.match(html, /<div class="vsseason" id="vsGuest" data-i18n="vsGuest" hidden><\/div>/);
-  assert.match(js('function renderVsBadge(', '\n}'), /\$\('vsGuest'\)\.hidden = !vsGuest\(\);/);
+  assert.match(html, /<div class="vsguest" id="vsGuestRow" hidden><span class="vsseason" id="vsGuest" data-i18n="vsGuest"><\/span><button class="ghost primary" id="vsGuestGo" data-i18n="signIn"><\/button><\/div>/);
+  assert.match(js('function renderVsBadge(', '\n}'), /\$\('vsGuestRow'\)\.hidden = !vsGuest\(\);/);
   assert.match(html, /const vsGuest = \(\) => backend === 'supa' && !!sb && authAnon\(\);/);
   assert.match(js('function renderLB(', '\nfunction openLB('), /vsGuest\(\) \? t\('vsGuest'\)/);
   assert.match(js('function seaOpen(', '\nfunction seaClose('), /t\('seaRiv', \{n: \(vsMe && vsMe\.need_rivals\) \| 0 \|\| 3\}\)/);
