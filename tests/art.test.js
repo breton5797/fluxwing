@@ -73,7 +73,9 @@ test('the fits: every anchor sits inside its sprite, and the sprites come out at
 });
 
 // The obstacle fits against the measured alpha. A piece is a stem (drawn sw px wide, its column scx on the gate's centre line) and a tip (tw px wide,
-// its column tcx on the centre line, pad transparent rows on the gap side, join transparent rows on the stem side)
+// its column tcx on the centre line, pad transparent rows on the gap side, join transparent rows on the stem side). A tip is drawn at its stem's px
+// scale, except CANYON RUN's hoodoo cap (CAP): its 192 px cap rock is scaled down to the stem's width.
+const CAP = 'canyon bot';
 const obPieces = () => A.ART_Z.flatMap((z, i) => [0, 1].map(e => { const f = A.ART_FIT.ob[i][e], o = A.ART_OB[i];
   return {z, end: e ? 'top' : 'bot', f, stem: OBM[o[e*2]], tip: OBM[o[e*2 + 1]], ks: f[0] / OBM[o[e*2]].w, kt: f[2] / OBM[o[e*2 + 1]].w}; }));
 // The share of the 68 px hit width the stem's opaque pixels cover, averaged down the stem
@@ -86,19 +88,26 @@ test('the obstacle metrics are fresh: one per ob-* file, at its byte size and pi
 });
 
 test('fairness: each stem covers at least 85 % of the hit width, each tip ends within 3 px of the gap edge and meets its stem', () => {
+  const hit = 68;
   assert.equal(A.ART_FIT.ob.length, 4);
   for (const p of obPieces()){
     const at = `${p.z} ${p.end}`, [sw, scx, tw, tcx, pad, join] = p.f;
     assert.equal(p.f.length, 6, at); assert.ok(Object.isFrozen(p.f), at);
     assert.ok(sw >= 68 && sw <= 110, `${at}: the stem is ${sw} px wide`);
     assert.ok(cover(p.stem, sw, scx) >= .85, `${at}: the stem covers ${(cover(p.stem, sw, scx)*100).toFixed(1)} % of the hit width`);
+    const [min, p10, mid] = p.stem.solid.map(v => v * p.ks);
+    assert.ok(p10 >= hit * .85, `${at}: the 10th-percentile row is ${p10.toFixed(1)} px solid, under 85 % of the hit width`);
+    assert.ok(min >= hit * .8, `${at}: the narrowest row is ${min.toFixed(1)} px solid, under 80 % of the hit width`);
+    assert.ok((mid - hit) / 2 <= 6, `${at}: the median row's solid overshoots the hit width by ${((mid - hit) / 2).toFixed(1)} px a side`);
     assert.ok(Math.abs(scx - p.stem.cx) * p.ks <= 3, `${at}: the stem is centred on the gate`);
     assert.ok(Math.abs(tcx - p.tip.cx) * p.kt <= 3, `${at}: the tip is centred on its base`);
     assert.ok(Math.abs(pad - p.tip.pad) * p.kt <= 3, `${at}: the tip ends ${((pad - p.tip.pad) * p.kt).toFixed(1)} px off the gap edge`);
     assert.ok(Math.abs(join - p.tip.join) * p.kt <= 3, `${at}: the stem starts where the tip's base is`);
+    assert.ok(tw <= sw && p.tip.h * p.kt <= 200, `${at}: the tip stays a tip, no wider than its stem`);
+    if (at === CAP) continue;
+    assert.ok(Math.abs(p.kt - p.ks) < .005, `${at}: the tip is drawn at its stem's scale`);
     const base = (p.tip.base[1] - p.tip.base[0]) * p.kt, core = (p.stem.core[1] - p.stem.core[0]) * p.ks;
     assert.ok(base > core * .7 && base < core * 1.5, `${at}: the tip's base (${base.toFixed(0)} px) meets the stem (${core.toFixed(0)} px)`);
-    assert.ok(tw <= 140 && p.tip.h * p.kt <= 200, `${at}: the tip stays a tip`);
   }
 });
 

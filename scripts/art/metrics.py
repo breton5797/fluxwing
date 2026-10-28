@@ -4,11 +4,12 @@ Usage: metrics.py  -> writes scripts/art/ob-metrics.json. Rerun it whenever an o
 
 A pixel is opaque at alpha >= 128. Per file: w, h, bytes, and
   stem: cols (the opaque fraction of each column over all rows), cx (the opacity-weighted centre column), core ([l, r], the columns opaque in at
-        least half the rows);
+        least half the rows), solid ([min, 10th percentile, median] over the rows of the row's count of solid pixels, alpha > 200);
   tip:  pad (transparent rows on the gap side: the top for a bot tip, the bottom for a top tip), join (transparent rows on the stem side),
         base ([l, r], the opaque extent averaged over the 8 rows next to the join), cx (the base's centre), end ([l, r], the opaque extent over
         the 12 rows next to the gap end)."""
 import json
+from statistics import median
 from pathlib import Path
 from PIL import Image
 
@@ -17,6 +18,7 @@ ART = ROOT / 'art'
 OUT = Path(__file__).resolve().parent / 'ob-metrics.json'
 ZONES = ('grove', 'canyon', 'magma', 'palace')
 OPAQUE = 128
+SOLID = 200
 
 
 def rows_of(im):
@@ -44,7 +46,10 @@ def stem(im):
     tot = sum(cols)
     on = [x for x, c in enumerate(cols) if c >= .5]
     cx = sum((x + .5) * c for x, c in enumerate(cols)) / tot if tot else w / 2
-    return {'cols': [round(c, 3) for c in cols], 'cx': round(cx, 1), 'core': [on[0], on[-1] + 1] if on else [0, 0]}
+    px = im.getchannel('A').load()
+    solid = sorted(sum(px[x, y] > SOLID for x in range(w)) for y in range(h))
+    return {'cols': [round(c, 3) for c in cols], 'cx': round(cx, 1), 'core': [on[0], on[-1] + 1] if on else [0, 0],
+            'solid': [solid[0], solid[int(.1 * (h - 1))], int(median(solid))]}
 
 
 def tip(im, pos):
