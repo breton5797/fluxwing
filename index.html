@@ -780,7 +780,7 @@ const BIRDS = [
     rewind:2 },
   { id:'goliath', name:'GOLIATH', rarity:2, col:[220,15,58],  wingCol:[25,100,55],  speed:0.95, flap:560, grav:1800, maxFall:780, dash:1.30, r:15,   window:16, bonus:0, nose:17, h:16, span:26, stats:[2,5,1,5],
     giantEvery:20 },
-  { id:'solaris', name:'SOLARIS', rarity:4, col:[45,100,62],  wingCol:[18,100,60],  speed:1.08, flap:490, grav:1550, maxFall:740, dash:1.20, r:13.5, window:18, bonus:1, nose:18, h:13, span:32, stats:[4,4,3,4],
+  { id:'solaris', name:'SOLARIS', rarity:4, col:[45,100,62],  wingCol:[18,100,60],  speed:0.98, flap:490, grav:1550, maxFall:740, dash:1.20, r:13.5, window:20, bonus:1, nose:18, h:13, span:32, stats:[4,4,3,4],
     shieldStart:1, feverMul:3, comboGuard:true, coinMul:2, xpMul:2, gemMul:2 },
   { id:'aurora',  name:'AURORA',  rarity:4, hidden:true, col:[160,90,58],  wingCol:[280,90,72],  speed:1.04, flap:470, grav:1420, maxFall:680, dash:1.10, r:13,   window:20, bonus:1, nose:17, h:12, span:34, stats:[3,3,4,3], comboKeep:.5, veil:3, veilStart:3 },
   { id:'tempest', name:'TEMPEST', rarity:4, hidden:true, col:[215,75,52],  wingCol:[185,100,70], speed:1.15, flap:490, grav:1600, maxFall:760, dash:1.40, r:13,   window:16, bonus:0, nose:22, h:11, span:30, stats:[5,3,2,5], dashPts:2, dashRefund:.3, gust:.33, gustLock:16 },
@@ -3319,8 +3319,8 @@ const SK = {
  mochi:{cd:16,dur:2,f:{cd:18,dur:1.5}}, pixel:{cd:16,dur:5,f:{cd:18,dur:3}}, neko:{cd:16,dur:3,f:{cd:18,dur:2}}, buzz:{cd:16,n:2,f:{cd:18,n:1}},
  aegis:{cd:28,dur:4,sh:1,f:{cd:18,dur:1,sh:0}}, kraken:{cd:10,dur:6,still:1,arm:1,f:{cd:18,dur:2,still:0,arm:0}}, specter:{cd:12,dur:5,perf:1,f:{cd:18,dur:1.2,perf:0}}, oracle:{cd:10,dur:6,n:4,gap:0,win:30,f:{cd:18,dur:3,n:0,gap:0,win:20}},
  phoenix:{cd:20,dur:4,f:{cd:18,dur:1}}, zero:{cd:11,dur:8,f:{cd:18,dur:4}}, raijin:{cd:16,n:3,f:{cd:18,n:1}}, chrono:{cd:20,dur:3,f:{cd:18,dur:1.2}}, goliath:{cd:13,dur:5,f:{cd:18,dur:1.5}},
- solaris:{cd:15,dur:6,fever:1,mag:1,f:{cd:18,dur:1,fever:0,mag:0}}, aurora:{cd:16,n:3,gap:40,perf:1,f:{cd:18,n:1,gap:0,perf:0}}, tempest:{cd:12,len:1.5,n:5,inv:1,arm:1,f:{cd:18,len:1,n:0,inv:0,arm:0}},
- pleiad:{cd:24,n:4,sh:1,f:{cd:18,n:1,sh:0}}, pulsar:{cd:11,dur:6,mul:3,brk:2,f:{cd:18,dur:2,mul:1,brk:0}},
+ solaris:{cd:12,dur:6,fever:1,mag:1,f:{cd:18,dur:1,fever:0,mag:0}}, aurora:{cd:16,n:3,gap:40,perf:1,f:{cd:18,n:1,gap:0,perf:0}}, tempest:{cd:12,len:1.5,n:5,inv:1,arm:1,f:{cd:18,len:1,n:0,inv:0,arm:0}},
+ pleiad:{cd:24,n:4,sh:1,f:{cd:18,n:1,sh:0}}, pulsar:{cd:16,dur:4,mul:3,brk:2,f:{cd:18,dur:2,mul:1,brk:0}},
  monarch:{cd:26,dur:1,win:4,f:{cd:18,dur:1,win:0}},   // dur: seconds invincible; win: seconds of the wide Perfect window (VOLT's +10px), none in fair modes
  // rank 5 · celestial. mul: Perfect multiple while the skill runs (the Resonance slot PULSAR uses); n / len / inv / arm (VALKYRIE): TEMPEST's storm chain
  seraph:{cd:16,dur:3,mul:1.5,f:{cd:18,dur:2,mul:1}}, valkyrie:{cd:12,len:1.4,n:4,inv:1,arm:0,f:{cd:18,len:1,n:0,inv:0,arm:0}},
@@ -3462,7 +3462,7 @@ const ULT = { gate:.045, perf:.03, start:.33, inv:1,
   aurora:{dur:4, gap:70, out:3},
   tempest:{n:7, inv:1.5, arm:1},
   pleiad:{n:6, rate:.75},
-  pulsar:{dur:9, slow:.55, mul:3},
+  pulsar:{dur:7, slow:.55, mul:3},
   // rank 5 · celestial (ultRow: forms III and V lengthen dur / n)
   seraph:{dur:3, gap:40, mul:1.25, out:2}, valkyrie:{n:11, inv:1.5, arm:0}, lumen:{dur:5, mul:1.25, sure:1}, halcyon:{dur:8, slow:.6, mul:3},
   // rank 6 · nebula. every: seconds between QUASAR's beams; god (COMET, as SOLARIS's Genesis); stop (ECLIPSE): seconds of stopped time before the dark

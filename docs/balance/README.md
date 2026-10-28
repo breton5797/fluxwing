@@ -204,3 +204,23 @@ Notes (noise is still about ±20–25% per unit at 60 runs, so these are flags, 
   - genesis (361) is below divine (406) at form I.
 - **PULSAR** (open ultra) at 527/708 is 4× SOLARIS. The open ultras' mean (~330 form I) is now above celestial's form I.
 - Re-check the hidden ranks against this table, not the stage-20 numbers above, before each release PR.
+
+## Open ultras: PULSAR / SOLARIS gap closed, 2026-10-28 (stage 20)
+
+Only levers the texts do not print were moved:
+- **PULSAR:** skill cd 11 → 16 s, skill 6 → 4 s, ultimate 9 → 7 s (both durations reach the texts through `{n}`). The ×3 stays.
+- **SOLARIS:** skill cd 15 → 12 s, scroll speed 1.08 → 0.98, window 18 → 20.
+
+| Unit | Before, form I / V | After, 60 runs | After, 120 runs |
+|---|---|---|---|
+| solaris | 128 / 218 | 262 / 365 | 218 / 368 |
+| pulsar | 527 / 708 | 300 / 408 | 250 / 332 |
+
+- The gap went from 4.1× (form I) and 3.2× (form V) to about 1.15×.
+- The open ultras now sit above mythic at both forms (60 runs: 311 / 372 against 264 / 346).
+
+**The hidden ranks 5–9 are left for their release PRs** (owner's decision 2026-10-28). A tuning pass on branch `feat/ladder-tune` (commit f603764, not merged) shows why:
+- Speed, window, cooldowns and TIER_MUL lift form I and form V by about the same factor. The ranks above ultra grow about 2.2–2.5× from form I to V (formBonus, skillBoost, EVO_BUFF), so fixing form I overshoots form V.
+- TIER_MUL is already near its cap: it must stay at least 0.2 under the server's `fw_bound_mul`.
+- The pass reached a partly rising ladder only with extreme values: OMEGA window 7, INFINITY scroll 0.68 and window 9. SERAPH's "wide Perfect window" text no longer held.
+- Each release PR should re-design that rank's form growth (formBonus and its texts in 23 languages, or the server bound) instead. Start from the tables in that commit.
