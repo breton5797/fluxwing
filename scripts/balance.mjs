@@ -1,6 +1,7 @@
 // Balance harness: one bot of fixed skill flies the same stage with every unit, many runs each, and reports score per unit.
 //   node scripts/balance.mjs [--stage 20] [--runs 12] [--form 0] [--units volt,zero] [--aim 6] [--out file.json]
-//   node scripts/balance.mjs --clear 10,25,40,50 --units volt --runs 30   (clear rate and mean gates per stage, each run stopped at the goal)
+//   node scripts/balance.mjs --clear 10,25,40,50 --units volt [--runs 60]   (clear rate with its 95% Wilson interval and mean gates per stage, each run
+//   stopped at the goal; the profile is re-seeded before every run, so the unit stays at --form and clears in the batch never evolve it)
 //   add --anyseed to fly a different course of the same stage each run (the table's expected clear rate, not one seeded course's)
 // Needs the dev server (npm run dev, 127.0.0.1:5173). Supabase is blocked; nothing leaves the machine.
 // The bot: flaps when it sinks below the next gap's centre plus an aim error (--aim px, Gaussian), dashes when the meter is full,
@@ -12,7 +13,7 @@ import { writeFileSync } from 'node:fs';
 
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const ANY = process.argv.includes('--anyseed'), CLEAR = arg('clear', '') ? arg('clear', '').split(',').map(n => +n - 1) : null;
-const STAGE = +arg('stage', 20) - 1, RUNS = +arg('runs', 12), FORM = +arg('form', 0), AIM = +arg('aim', 6), OUT = arg('out', '');
+const STAGE = +arg('stage', 20) - 1, RUNS = +arg('runs', CLEAR ? 60 : 12), FORM = +arg('form', 0), AIM = +arg('aim', 6), OUT = arg('out', '');
 const base = `http://127.0.0.1:${process.env.PORT || 5173}/index.html#dev`;
 const EVO_AT = [0, 3, 10, 20, 35];
 const BOUND_MUL = { 5: 1.4, 6: 1.5, 7: 1.6, 8: 1.75, 9: 1.9 };   // = private.fw_bound_mul by rank
@@ -57,16 +58,17 @@ async function run(stage = STAGE, stop = false){
 
 // a reload that hangs (seen once in a 160-run batch) is retried rather than ending the batch
 const menu = async () => { for (let i = 0; ; i++){ try { await page.reload({ timeout: 30000 }); await page.waitForFunction(() => window.FW && FW.state === 'menu'); return; } catch (e){ if (i >= 2) throw e; } } };
+const wilson = (k, n, z = 1.96) => { const p = k / n, d = 1 + z*z/n, c = (p + z*z/(2*n)) / d, h = z * Math.sqrt(p*(1 - p)/n + z*z/(4*n*n)) / d; return [Math.max(0, c - h), Math.min(1, c + h)]; };   // 95% interval of a clear rate
 const q = (a, p) => { const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(p * s.length))]; };
 const rows = [];
 if (CLEAR) for (const u of units){   // clear rates: the bot flies each stage RUNS times and stops at the goal
   await seed(u.id); await menu();
   for (const st of CLEAR){
     const res = [];
-    for (let i = 0; i < RUNS; i++){ res.push(await run(st, true)); await page.evaluate(() => { if (FW.state === 'play') FW.kill(); }); await menu(); }
-    const clr = res.filter(r => r.clear).length / res.length, g = res.reduce((a, r) => a + r.gates, 0) / res.length;
-    rows.push({ id: u.id, stage: st + 1, runs: RUNS, clear: +clr.toFixed(3), gates: +g.toFixed(1) });
-    console.log(`${u.id.padEnd(10)} stage ${String(st + 1).padStart(2)}  clear ${(clr*100).toFixed(0).padStart(3)}%  mean gates ${g.toFixed(1)}  (${RUNS} runs)`);
+    for (let i = 0; i < RUNS; i++){ res.push(await run(st, true)); await page.evaluate(() => { if (FW.state === 'play') FW.kill(); }); await seed(u.id); await menu(); }   // re-seeded: a clear in the batch would evolve the unit (evoClear)
+    const k = res.filter(r => r.clear).length, clr = k / res.length, g = res.reduce((a, r) => a + r.gates, 0) / res.length, [lo, hi] = wilson(k, res.length);
+    rows.push({ id: u.id, stage: st + 1, runs: RUNS, form: FORM, clear: +clr.toFixed(3), lo: +lo.toFixed(3), hi: +hi.toFixed(3), gates: +g.toFixed(1) });
+    console.log(`${u.id.padEnd(10)} stage ${String(st + 1).padStart(2)}  clear ${(clr*100).toFixed(0).padStart(3)}%  [95% ${(lo*100).toFixed(0)}-${(hi*100).toFixed(0)}]  mean gates ${g.toFixed(1)}  (${RUNS} runs, form ${FORM})`);
   }
 }
 for (const u of CLEAR ? [] : units){
