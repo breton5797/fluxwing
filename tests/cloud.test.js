@@ -177,3 +177,11 @@ test('unit evolution syncs: normalized, written as fw27_evo, merged as a union p
   assert.deepEqual(C.fsMerge(l, r, null).evo, { pixel: [2], volt: [0, 1, 5] });
   assert.deepEqual(C.fsMerge(l, r, S({})).evo, { pixel: [2], volt: [0, 1, 5] });
 });
+
+test('fsNorm drops units nobody can own yet; MONARCH stays only with a season claim granted on the save (owner 2026-10-28)', () => {
+  const base = { v: 1, w: {}, owned: ['volt', 'seraph', 'omega', 'aurora', 'monarch', 'zero'] };
+  assert.deepEqual(C.fsNorm(base).owned, ['blitz', 'nimbus', 'titan', 'volt', 'zero'], 'unreleased ranks, the hidden three and an unearned MONARCH go');
+  const won = C.fsNorm({ ...base, vsg: ['202611:00000000-0000-4000-8000-000000000001'] });
+  assert.deepEqual(won.owned, ['blitz', 'monarch', 'nimbus', 'titan', 'volt', 'zero'], 'a granted season claim keeps MONARCH (the server checks the rank itself)');
+  assert.ok(!won.owned.includes('seraph'));
+});

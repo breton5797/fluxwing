@@ -98,25 +98,35 @@ test('refMs / refPayGems: milestones at 3, 10 and 25 friends, each paid once, on
   assert.equal(R.refPayGems(5, 25), 5 * C.gems);
 });
 
+test('the per-friend reward (owner 2026-10-28): 15 gems plus coins worth a quarter of an epic unit\'s coin price; milestones stay gems', () => {
+  const C = R.REF_CFG, epic = Number(html.match(/const PRICE = \[null, \{coin:(\d+),/)[1]);
+  assert.equal(C.gems, 15);
+  assert.equal(epic, 40000, 'the epic coin price (PRICE[1])');
+  assert.equal(C.coins, epic / 4, '25% of an epic: 10,000 coins');
+  assert.deepEqual([...C.msGems], [50, 150, 500]);
+  assert.equal(R.refPayCoins(0), 0); assert.equal(R.refPayCoins(3), 3 * C.coins); assert.equal(R.refPayCoins(-2), 0);
+});
+
 test('refView: the referral_me answer, normalised for the friends screen', () => {
   const v = R.refView({ code: '7k3m9qxz', paid: 4, month: 2, cap: 25, ready: 1, held: 2, open: 3,
     friends: [{ nick: 'Mina', days: 2, stage: 7, done: false }, { nick: '<b>', days: 9, stage: 77, done: true }, 'junk'],
-    payouts: [{ id: 12, gems: 80, invites: 1, ms: [3] }, { id: 'x', gems: 5 }, { id: 13, gems: -4 }] });
+    payouts: [{ id: 12, gems: 80, coins: 10000, invites: 1, ms: [3] }, { id: 'x', gems: 5 }, { id: 13, gems: -4 }, { id: 14, gems: 30 }, { id: 15, gems: 15, coins: -3 }] });
   assert.equal(v.code, CODE);
   assert.deepEqual([v.paid, v.month, v.cap, v.ready, v.held, v.open], [4, 2, 25, 1, 2, 3]);
   assert.deepEqual(v.friends, [{ nick: 'Mina', days: 2, stage: 7, done: false }, { nick: '<b>', days: 3, stage: 10, done: true }],
     'progress is shown against the goal (n/3 days, n/10 stage), never past it');
-  assert.deepEqual(v.payouts, [{ id: 12, gems: 80 }], 'a payout needs an integer id and a positive amount');
+  assert.deepEqual(v.payouts, [{ id: 12, gems: 80, coins: 10000 }, { id: 14, gems: 30, coins: 0 }, { id: 15, gems: 15, coins: 0 }],
+    'a payout needs an integer id and a positive amount; one booked before coins were paid (or junk) carries no coins');
   assert.equal(R.refView(null), null);
   assert.equal(R.refView({ code: 'bad' }), null, 'no code: the server answer is not usable');
 });
 
 test('refToGrant / refPaidAdd: a payout is granted on this device once, whatever the server repeats', () => {
-  const pays = [{ id: 5, gems: 30 }, { id: 6, gems: 80 }];
-  assert.deepEqual(R.refToGrant(pays, []), { gems: 110, ids: [5, 6] });
-  assert.deepEqual(R.refToGrant(pays, [5]), { gems: 80, ids: [6] }, 'an answer lost before the ack: only the new one');
-  assert.deepEqual(R.refToGrant(pays, [5, 6]), { gems: 0, ids: [] });
-  assert.deepEqual(R.refToGrant(null, null), { gems: 0, ids: [] });
+  const pays = [{ id: 5, gems: 30, coins: 0 }, { id: 6, gems: 65, coins: 10000 }];
+  assert.deepEqual(R.refToGrant(pays, []), { gems: 95, coins: 10000, ids: [5, 6] });
+  assert.deepEqual(R.refToGrant(pays, [5]), { gems: 65, coins: 10000, ids: [6] }, 'an answer lost before the ack: only the new one');
+  assert.deepEqual(R.refToGrant(pays, [5, 6]), { gems: 0, coins: 0, ids: [] });
+  assert.deepEqual(R.refToGrant(null, null), { gems: 0, coins: 0, ids: [] });
   assert.deepEqual(R.refPaidAdd([1, 2], [2, 3]), [1, 2, 3]);
   const many = Array.from({ length: 80 }, (_, i) => i);
   assert.equal(R.refPaidAdd(many, [100]).length, R.REF_CFG.paidMax, 'bounded');
@@ -139,7 +149,27 @@ test('private.fw_ref_cfg holds the client numbers (REF_CFG)', () => {
   assert.ok(m, 'fw_ref_cfg with a single select');
   const v = m[1].replace(/\s+/g, ' ');
   const C = R.REF_CFG;
-  assert.equal(v, `${C.days}, ${C.stage}, ${C.minBest}, ${C.gems}, array[${C.ms.join(',')}], array[${C.msGems.join(',')}], ${C.cap}, interval '24 hours', 5, interval '1 hour'`);
+  assert.equal(v, `${C.days}, ${C.stage}, ${C.minBest}, ${C.gems}, ${C.coins}, array[${C.ms.join(',')}], array[${C.msGems.join(',')}], ${C.cap}, interval '24 hours', 5, interval '1 hour'`);
+  assert.match(sql, /drop function if exists private\.fw_ref_cfg\(\);\ncreate or replace function private\.fw_ref_cfg\(/, 'a new out column needs the old function dropped first');
+});
+
+test('the server books and returns the coins with each payout; the device grants them once', () => {
+  const body = n => sql.match(new RegExp(`function ${n.replace('.', '\\.')}\\([\\s\\S]*?\\$\\$;|function ${n.replace('.', '\\.')}\\([\\s\\S]*?end \\$\\$;`))[0];
+  assert.match(sql, /alter table private\.fw_ref_payouts add column if not exists coins integer not null default 0;/);
+  assert.match(sql, /fw_ref_payouts_coins_chk check \(coins >= 0\)/);
+  const claim = body('private.fw_referral_claim');
+  assert.match(claim, /v_coins := v_n \* c\.coins;/);
+  assert.match(claim, /insert into private\.fw_ref_payouts \(inviter_id, gems, coins, invites, ms\) values \(v_me, v_gems, v_coins, v_n, v_ms\)/);
+  assert.match(body('private.fw_ref_unacked'), /'coins', p\.coins/);
+  assert.match(html, /if \(g\.coins > 0\) W\.coins \+= g\.coins;/);
+  assert.match(html, /toast\(g\.coins > 0 \? t\('refGotC', \{n: g\.gems, c: g\.coins\.toLocaleString\(numLoc\(lang\)\)\}\) : t\('refGot', \{n: g\.gems\}\)\)/);
+  assert.match(html, /t\('refRule', \{d: REF_CFG\.days, s: REF_CFG\.stage, g: REF_CFG\.gems, c: REF_CFG\.coins\.toLocaleString\(numLoc\(lang\)\)\}\)/);
+  const I = loadI18N();
+  for (const [l, tb] of Object.entries(I)){
+    assert.match(tb.refRule, /\{g\}[\s\S]*\{c\}|\{c\}[\s\S]*\{g\}/, `${l} refRule names both`);
+    assert.match(tb.refGotC, /\{n\}/, `${l} refGotC`); assert.match(tb.refGotC, /\{c\}/, `${l} refGotC`);
+  }
+  assert.match(read('guide/index.html'), /젬 15개와 코인 10,000개/, 'the Korean guide says the new reward');
 });
 
 test('the stage goal: reaching the target stage took a cleared stage whose gate goal is at least minBest (a run that reached it scored at least that)', () => {

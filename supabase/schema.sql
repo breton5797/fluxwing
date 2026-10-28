@@ -1437,7 +1437,13 @@ declare
   c_cap_dia   constant bigint := 10000000;
   c_cap_gems  constant bigint := 100000;
   c_cap_lvl   constant bigint := 100000;   -- a skilled player gains ~1 level a run
-  c_never_owned constant text[] := array['aurora','tempest','pleiad'];   -- units with no earning path (monarch is a season grant)
+  -- Units with no earning path: the hidden three, the season unit and every unit of a rank above private.fw_tier_open() (owner
+  -- 2026-10-28; a rank's four ids leave this list in the PR that releases it). The season unit (monarch) is allowed for a player this
+  -- server ranked in a season's top_n (public.fw_vs_standing): the client grants it after versus_claim.
+  c_never_owned constant text[] := array['aurora','tempest','pleiad','monarch',
+    'seraph','valkyrie','lumen','halcyon','quasar','comet','zodiac','eclipse','singular','rift','nyx','entropy',
+    'archon','ouroboros','kirin','garuda','aeon','cosmos','infinity','omega'];
+  c_season_unit constant text := (select c.top_unit from private.fw_vs_season_cfg() c);
   v_uid   uuid := private.fw_save_me();
   v_today date := (now() at time zone 'utc')::date;
   v_row   public.fw_saves%rowtype;
@@ -1456,7 +1462,11 @@ begin
     raise exception 'fw_bad_input: save out of range' using errcode = '22023';
   end if;
   if jsonb_typeof(p_data -> 'owned') = 'array' and exists (
-       select 1 from jsonb_array_elements_text(p_data -> 'owned') o(id) where o.id = any (c_never_owned)) then
+       select 1 from jsonb_array_elements_text(p_data -> 'owned') o(id)
+       where o.id = any (c_never_owned)
+         and not (o.id = c_season_unit and exists (
+           select 1 from public.fw_vs_standing t, private.fw_vs_season_cfg() c
+           where t.player_id = v_uid and t.rank <= c.top_n))) then
     raise exception 'fw_bad_input: save owns a unit nobody can earn' using errcode = '22023';
   end if;
   select * into v_row from public.fw_saves where player_id = v_uid for update;
@@ -2176,7 +2186,8 @@ $do$;
 -- the friend has reported on fw_ref_cfg().days distinct UTC days (server clock), reached STAGE fw_ref_cfg().stage, and holds a
 -- server-checked best (public.fw_scores, written only by fw_submit_score) of at least min_best: a run that reached STAGE 10 cleared
 -- STAGE 9 and so scored at least its gate goal. The stage number itself is the device's word; the days and the best are not.
--- The inviter is paid in gems (the shop's premium currency, never an unlock): `gems` per counted friend, plus ms_gems at 3, 10 and
+-- The inviter is paid `gems` and `coins` per counted friend (owner 2026-10-28: was 30 gems; the coins are 25% of an epic unit's
+-- 40,000-coin price, so the reward is in the currency that limits progress), plus ms_gems at 3, 10 and
 -- 25 counted friends (each milestone once; the game has no skin system, so the plan's limited skin / shield slot is a bigger gem
 -- bundle), at most month_cap friends per calendar month (Asia/Seoul, as the versus seasons): the rest wait for the next month.
 -- The invited friend gets nothing for joining (store rules refuse install incentives), only the normal welcome. Both become friends.
@@ -2231,6 +2242,10 @@ create table if not exists private.fw_ref_payouts (
   acked_at   timestamptz,                       -- the device said it granted the gems
   constraint fw_ref_payouts_chk check (gems > 0 and invites >= 0)
 );
+-- the coins paid with it (invites x fw_ref_cfg().coins; 0 on payouts booked before coins were paid)
+alter table private.fw_ref_payouts add column if not exists coins integer not null default 0;
+alter table private.fw_ref_payouts drop constraint if exists fw_ref_payouts_coins_chk;
+alter table private.fw_ref_payouts add constraint fw_ref_payouts_coins_chk check (coins >= 0);
 -- the nonce of the device whose referral_claim first returned this payout: only that device grants it ("same")
 alter table private.fw_ref_payouts add column if not exists nonce text;
 create index if not exists fw_ref_payouts_inviter_idx on private.fw_ref_payouts (inviter_id, at);
@@ -2238,12 +2253,14 @@ alter table private.fw_ref_payouts enable row level security;
 revoke all on table private.fw_ref_payouts from public, anon, authenticated;
 grant select, insert, update, delete on table private.fw_ref_payouts to service_role;
 
--- the numbers, in one place (REF_CFG in index.html holds the same; tests/referral.test.js keeps them equal)
+-- the numbers, in one place (REF_CFG in index.html holds the same; tests/referral.test.js keeps them equal). Dropped first: a new out
+-- column changes the row type, which "create or replace" cannot do (the callers read it into a record, so nothing depends on it)
+drop function if exists private.fw_ref_cfg();
 create or replace function private.fw_ref_cfg(
-  out days integer, out stage integer, out min_best integer, out gems integer, out ms integer[], out ms_gems integer[],
+  out days integer, out stage integer, out min_best integer, out gems integer, out coins integer, out ms integer[], out ms_gems integer[],
   out month_cap integer, out new_window interval, out burst_n integer, out burst_window interval
 ) language sql immutable set search_path = '' as $$
-  select 3, 10, 14, 30, array[3,10,25], array[50,150,500], 25, interval '24 hours', 5, interval '1 hour';
+  select 3, 10, 14, 15, 10000, array[3,10,25], array[50,150,500], 25, interval '24 hours', 5, interval '1 hour';
 $$;
 
 -- The invited friend's device sends the code from ?r= once. Answers a status instead of raising, so the spent request quota
@@ -2320,7 +2337,7 @@ end $$;
 drop function if exists private.fw_ref_unacked(uuid);
 create or replace function private.fw_ref_unacked(p_uid uuid, p_nonce text default null) returns jsonb
 language sql stable set search_path = '' as $$
-  select coalesce(jsonb_agg(jsonb_build_object('id', p.id, 'gems', p.gems, 'invites', p.invites, 'ms', to_jsonb(p.ms), 'same', p.nonce = p_nonce) order by p.id), '[]'::jsonb)
+  select coalesce(jsonb_agg(jsonb_build_object('id', p.id, 'gems', p.gems, 'coins', p.coins, 'invites', p.invites, 'ms', to_jsonb(p.ms), 'same', p.nonce = p_nonce) order by p.id), '[]'::jsonb)
   from private.fw_ref_payouts p where p.inviter_id = p_uid and p.acked_at is null;
 $$;
 
@@ -2371,6 +2388,7 @@ declare
   v_ids  uuid[];
   v_n    integer;
   v_gems integer;
+  v_coins integer;
   v_ms   integer[] := '{}';
   v_msp  integer;
   v_id   bigint;
@@ -2389,11 +2407,11 @@ begin
     order by r.done_at, r.invitee_id limit greatest(0, c.month_cap - private.fw_ref_month(v_me))) x;
   v_n := coalesce(cardinality(v_ids), 0);
   if v_n > 0 then
-    v_gems := v_n * c.gems; v_msp := v_inv.ms_paid;
+    v_gems := v_n * c.gems; v_coins := v_n * c.coins; v_msp := v_inv.ms_paid;
     for i in 1 .. cardinality(c.ms) loop
       if i > v_msp and v_inv.paid + v_n >= c.ms[i] then v_gems := v_gems + c.ms_gems[i]; v_ms := v_ms || c.ms[i]; v_msp := i; end if;
     end loop;
-    insert into private.fw_ref_payouts (inviter_id, gems, invites, ms) values (v_me, v_gems, v_n, v_ms) returning id into v_id;
+    insert into private.fw_ref_payouts (inviter_id, gems, coins, invites, ms) values (v_me, v_gems, v_coins, v_n, v_ms) returning id into v_id;
     update private.fw_referrals r set payout_id = v_id where r.invitee_id = any (v_ids);
     update private.fw_ref_inviter i set paid = v_inv.paid + v_n, ms_paid = v_msp where i.player_id = v_me;
   end if;

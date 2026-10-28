@@ -224,3 +224,25 @@ Only levers the texts do not print were moved:
 - TIER_MUL is already near its cap: it must stay at least 0.2 under the server's `fw_bound_mul`.
 - The pass reached a partly rising ladder only with extreme values: OMEGA window 7, INFINITY scroll 0.68 and window 9. SERAPH's "wide Perfect window" text no longer held.
 - Each release PR should re-design that rank's form growth (formBonus and its texts in 23 languages, or the server bound) instead. Start from the tables in that commit.
+
+## Economy: replay cap, failed-run floor, invites, ads (owner's decisions 2026-10-28)
+
+Prices are unchanged. Numbers live in `REPLAY` and `REF_CFG` (index.html) and `private.fw_ref_cfg` (supabase/schema.sql).
+
+- **Daily replay bonus:** `REPLAY.dayN` 5 → 10 stages a day.
+- **Failed-run floor:** a failed run on a stage not cleared yet is topped up to `failK` 0.35 × the stage's first-clear coins × (gates flown / goal). It shows as a "Distance bonus" pill.
+  - It never pays on a stage cleared before. Past the replay cap, a clear there pays only its score coins, so a fail must not beat it.
+  - Coin x2 doubles the run's field and score coins, not the floor.
+- **Invite reward:** 30 gems → 15 gems + 10,000 coins per counted friend (25% of an epic unit's 40,000 coins). The 3/10/25 milestones still pay 50/150/500 gems.
+- **Ads:** coin x2 is capped at `REPLAY.ad2xDay` = 5 a day. Daily x2 (ad) doubles the daily reward's coins and diamonds, never gems. Gems come only from clears (stars, evolution), invites and purchases.
+
+Measured with a fresh-player bot (stages 1-2 cleared, VOLT, empty wallet, flying the highest open stage until STAGE 10 is cleared; 3 courses per aim):
+
+| Bot aim | Runs (failed) | Coins / game-min before → after | Coins per failed run before → after |
+|---|---|---|---|
+| 16 px | 31 (7) | 1,305 → 1,337 (+2%) | 105 → 241 |
+| 24 px | 54 (30) | 1,392 → 1,558 (+12%) | 94 → 232 |
+| 32 px | 80 (56) | 1,391 → 1,651 (+19%) | 53 → 157 |
+| 40 px | 164 (140) | 1,144 → 1,544 (+35%) | 41 → 119 |
+
+The before and after numbers come from the same runs: each run read its "Distance bonus" pill. A clear on stages 3-10 paid 900–2,300 coins in the same runs. The largest failed run paid 543 coins (STAGE 8, 13 of 14 gates).
