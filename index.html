@@ -720,7 +720,8 @@ window.FW_CONFIG = { ads: 'none', supabaseUrl: 'https://ecjeyelgcqbliavwltbc.sup
 'use strict';
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 const $ = id => document.getElementById(id);
-const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+try { matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', e => { RM = e.matches; }); } catch(e){}   // follows the OS setting while the game is open
 const LH = 640, GROUND = 584;
 const SYS = 'system-ui, "Apple SD Gothic Neo", "Noto Sans KR", "Hiragino Sans", "PingFang SC", sans-serif';
 let dpr = 1, scale = 1, LW = 360;
@@ -1689,7 +1690,7 @@ const FX_DEFAULTS = Object.freeze({
   pop: { from: 1.6, dur: .35 },
   near: { closeFrac: .33, flashHue: 205 },
   events: {
-    flap: { haptic: 'flap' }, gate: { haptic: null }, near: { haptic: 'near' },
+    flap: { haptic: 'flap' }, gate: { haptic: null }, near: { haptic: null },
     shieldHit: { haptic: 'shieldHit' }, shieldMulti: { haptic: null }, speed: { haptic: null },
     death: { haptic: 'deathHeavy' }, record: { haptic: 'record' }, coin: { haptic: null },
     comboBreak: { haptic: 'shatter' }, overdrive: { haptic: 'overdrive' }
@@ -2034,9 +2035,16 @@ function natExternal(href){
   try { const u = new URL(href, NAT_SITE); return /^https?:$/.test(u.protocol) ? u.href : null; } catch(e){ return null; }
 }
 function natHapticStyle(p){
-  if (Array.isArray(p)) return p.length ? 'HEAVY' : null;
   if (typeof p !== 'number' || !(p > 0)) return null;
   return p <= 8 ? 'LIGHT' : p <= 20 ? 'MEDIUM' : 'HEAVY';
+}
+// A web vibration pattern ([on, off, on, ...] ms) as timed native impacts, so a death, a fever and a new best each keep their own shape
+// (one impact a pulse, its strength from how long it is on, at most 6). A single number is one impact.
+function natHapticPulses(p){
+  if (!Array.isArray(p)){ const st = natHapticStyle(p); return st ? [{at: 0, style: st}] : []; }
+  const out = []; let at = 0;
+  for (let i = 0; i < p.length && out.length < 6; i += 2){ const on = p[i]; if (on > 0) out.push({at, style: on >= 60 ? 'HEAVY' : on >= 25 ? 'MEDIUM' : 'LIGHT'}); at += (on || 0) + (p[i + 1] || 0); }
+  return out;
 }
 // Game Center boards (created in App Store Connect with these ids): the all-time best of endless and stage runs, and the daily course
 const NAT_GC = { best: 'swishby.best', daily: 'swishby.daily' };
@@ -2482,7 +2490,7 @@ let vibOn = store.get('fw27_vib', true);
 const HAPTIC = { flap:6, perfect:14, combo5:[20,30,40], fever:[30,40,30,40,90], power:[25,30,45], shieldBreak:[90,30,40],
   dash:[35,15,60], shatter:18, ready:[12,40,12], zone:[40,60,40,60,120], newBest:[80,40,80,40,200], death:[60,30,150], stamp:35,
   shieldHit:[40,20,70], deathHeavy:[80,30,120,40,200], record:[60,40,60,40,60,40,250], near:10, overdrive:[20,20,20,20,120] };
-function haptic(k){ if (!vibOn) return; const p = typeof k === 'string' ? HAPTIC[k] : k; try { if (NAT){ const st = natHapticStyle(p), h = natPlug('Haptics'); if (st && h) h.impact({style: st}); } else if (navigator.vibrate) navigator.vibrate(p); } catch(e){} }
+function haptic(k){ if (!vibOn) return; const p = typeof k === 'string' ? HAPTIC[k] : k; try { if (NAT){ const h = natPlug('Haptics'); if (h) for (const q of natHapticPulses(p)){ if (q.at) setTimeout(() => { try { h.impact({style: q.style}); } catch(e){} }, q.at); else h.impact({style: q.style}); } } else if (navigator.vibrate) navigator.vibrate(p); } catch(e){} }
 /* fx sound hook: per-event route — a loaded sample in SFX_FILES wins, else the synth; single-file build ships none */
 const SFX_FILES = {};
 const SFX_EV = { flap: 'flap', gate: 'pass', near: 'perfect', shieldHit: 'shield', death: 'die', record: 'fanfare', coin: 'orb', comboBreak: 'shatter', overdrive: 'fever' };
@@ -2549,7 +2557,7 @@ let skillCharge = 0, skillWasReady = false, boostT = 0, lowGravT = 0, autoT = 0,
 let bounceLeft = 0, rewindLeft = 0, perfCount = 0, phaseT = 0, giantT = 0, inkT = 0, guardUsed = false, travel = 0, hist = [], bolts = [];
 let score, gatesPassed, combo, maxCombo, perfects, speed, dashMeter, dashT, invuln, magnetT, slowT, zoneIdx, zoneBanner, deathT, spawnIdx, runDay, deathWhy, lastShare = '';
 // Per-run state for stage rules and the newer skills; TMAX remembers each timer's value when it was set (render/HUD read it).
-const newFx = () => ({ windAt:-9, fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:0, clearDone:false, clearCoin:0, clearDia:0, gemsRun:0, adSeen:false, hit:false, flawless:false, bonusCoin:0, bonusDia:0, bonusGem:0, replayCoin:0, evoCoin:0,
+const newFx = () => ({ flapBuf:false, windAt:-9, fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:0, clearDone:false, clearCoin:0, clearDia:0, gemsRun:0, adSeen:false, hit:false, flawless:false, bonusCoin:0, bonusDia:0, bonusGem:0, replayCoin:0, evoCoin:0,
   laneN:0, laneY:0, strikeN:0, strikeT:0, stormDash:false, dashHit:false, resoT:0, resoMul:1, keepT:0, dark:false, darkT:0, darkMul:0, zod:0, zodP:0, beamLeft:0, holeT:0, holeGap:0, entT:0, entAdd:0, entLast:1, arch:0, loops:0, loopsWas:-1, runT:0, stars:0, starLeft:0, glide:0, gliding:false,
   castT:0, castMax:0, sigT:0, sigK:'', perfT:0,   // unit fx timers (s): cast sky event and its length, passive moment and its kind, perfect flourish
   gustLock:0,   // TEMPEST: scored gates left before the gust reflex can arm again
@@ -2875,7 +2883,7 @@ function stLay(row, idx, d, prev, G, rng, srng, ease){
   if (idx > 5 && !tw2){ if (row.mv && !inPat && r < row.mv + d*.1) type = 'move'; else if (row.pu && r < row.mv + row.pu + d*.12) type = 'pulse'; }   // the table's share, plus a little more as the run goes on; a pattern's gates never move
   const amp = type === 'move' ? 30 + d*36 : 0, lo = 70 + amp + gap/2, hi = G - lo, pb = prev ? prev.base : 300;
   let base = lo + rng() * (hi - lo);
-  const mj = tw2 ? 50 : type === 'move' ? 60 : (170 + d*60) * row.sw, md = tw2 ? 0 : type === 'move' ? 60 : (90 - d*30) * row.sw;   // a climb of up to mj, a fall of up to md (a fall right after a flap takes longer, and the run gets faster); a moving gate stays near the gate before, a twin's second gate is never lower
+  const mj = tw2 ? 50 : type === 'move' ? 60 : (170 + d*60) * row.sw, md = tw2 ? 0 : type === 'move' ? 60 : (90 - d*30) * row.sw * (prev && !inPat && (prev.pat || prev.type === 'pulse') ? .6 : 1);   // a climb of up to mj, a fall of up to md (a fall right after a flap takes longer, and the run gets faster); a moving gate stays near the gate before, a twin's second gate is never lower. After a pattern's last step or a pulse gate the fall is .6 of that: the bird comes out of either high (the stage 44 gate 24 trap)
   base = Math.max(pb - mj, Math.min(pb + md, base));
   base = base * ease.pull + 300 * (1 - ease.pull);
   base = Math.max(lo, Math.min(hi, base));
@@ -3202,14 +3210,15 @@ function flap(){
   audioInit();
   if (state === 'menu' && vs.phase !== 'idle') return;   // versus search / room / countdown runs over the menu state: no tap may start a run until vsBegin() does
   if (state === 'menu' || state === 'over'){ if (adBusy) return; if (state === 'over' && (performance.now() - overAt < 450 || mode === 'versus')) return; if (state === 'menu'){ startFromMenu(); return; } startGame(mode); return; }
-  if (state !== 'play' || dashT > 0) return;
+  if (state !== 'play') return;
+  if (dashT > 0){ if (dashT < DASH_BUF && !(FX.stormN > 0)) FX.flapBuf = true; return; }   // a tap at the very end of a dash is kept: the dash end flies it (not during a TEMPEST storm chain, which holds the dash open)
   bird.vy = -B.flap; bird.wing = 1; squash = 1; SFX.flap(); haptic('flap'); tutFlaps++; FX.idleT = 0; FX.idleWarn = false;
   for (let i=0;i<5;i++) part(bird.x-6, bird.y+6, -60-Math.random()*80, 40+Math.random()*80, .35, B.wingCol, 2);
   impFx('flap'); if (IMP.q !== 'low') ghosts.push({x: bird.x, y: bird.y, rot: bird.rot, life: .12});
 }
 function dash(){
   if (state !== 'play' || dashMeter < 1 || dashT > 0) return;
-  dashMeter = 0; dashT = .55 * PK.dashLen; bird.vy = 0; invuln = Math.max(invuln, .5); SFX.dash(); haptic('dash'); FX.idleT = 0; FX.idleWarn = false;   // the half-second of invincibility outlives a short dash, covering the exit
+  dashMeter = 0; dashT = .55 * PK.dashLen; bird.vy = 0; invuln = dashCover(invuln, dashT); SFX.dash(); haptic('dash'); FX.idleT = 0; FX.idleWarn = false;   // invincibility outlives the dash by DASH_COVER, covering the exit
   shake = Math.max(shake, 8); flash = .35;
   ring(bird.x, bird.y, 210, B.wingCol, .45, 6); cam.z = Math.max(cam.z, 1.06);
   for (let i=0;i<24;i++) part(bird.x, bird.y, -200-Math.random()*300, (Math.random()-.5)*200, .5, pal.b, 3);
@@ -4066,6 +4075,27 @@ function addScore(p){
   }
 }
 
+/* run-fair:start — pure rules that keep a run fair to the player (tests/run.test.js runs this block as it stands).
+   DASH_COVER: the invincibility a dash leaves after it ends, so its exit is covered; DASH_BUF: a tap this close to a dash's end is kept and
+   flown when it ends. contOk: the continue card opens only when an ad or the coins can pay for it. popX: a pop's centre kept so its widest
+   frame stays on screen, popFit: its scale capped to the screen's width. bannerFit: the largest font (down to 12px) that fits a banner, then two lines at a space. dangerPz: the danger
+   vignette's pulse, steady with reduced motion or screen flash off, about 1.3 Hz otherwise. */
+const DASH_COVER = .3, DASH_BUF = .15;
+const dashCover = (inv, dashT) => Math.max(inv, dashT + DASH_COVER);
+const contOk = (mode, used, score, offers, coins, cost) => mode === 'endless' && !used && score >= 3 && (!!offers.revive || coins >= cost);
+const popX = (x, hw, lw) => Math.max(hw + 6, Math.min(lw - hw - 6, x));
+const popFit = (s, w, lw) => Math.min(s, (lw - 12) / w);   // the pop-in scale, capped so the text is never wider than the screen
+function bannerFit(measure, text, px, maxW){
+  let s = px; while (s > 12 && measure(s, text) > maxW) s--;
+  if (measure(s, text) <= maxW) return {px: s, lines: [text]};
+  const sp = [...text.matchAll(/ /g)].map(q => q.index);
+  if (!sp.length) return {px: 12, lines: [text]};
+  const mid = text.length / 2, at = sp.reduce((a, b) => Math.abs(b - mid) < Math.abs(a - mid) ? b : a), lines = [text.slice(0, at), text.slice(at + 1)];
+  s = Math.min(px, 18); while (s > 12 && lines.some(l => measure(s, l) > maxW)) s--;
+  return {px: s, lines};
+}
+const dangerPz = (t, rm, flashOn) => rm || !flashOn ? .5 : .5 + .5*Math.sin(t*8);
+/* run-fair:end */
 function die(why = 'gate'){
   if (state !== 'play') return;
   deathWhy = T - FX.windAt < .6 && (why === 'top' || why === 'bot' || why === 'ground') ? 'wind' : why;   // a crash right after a gust (CANYON RUN) gets the gust's hint
@@ -4095,7 +4125,7 @@ function die(why = 'gate'){
 /* ---------- continue (rewarded ad or coins), once per run, stage mode only ---------- */
 let contTimer = 0, contLeft = 0;
 const CONT_COST = 200;
-function canContinue(){ return mode === 'endless' && !contUsed && score >= 3; }
+function canContinue(){ return contOk(mode, contUsed, score, adOffers(ADS.ready(), { coinBonus: 0, dailyBonus: null, claimed: {} }), W.coins, CONT_COST); }   // no card when nothing on it can be used: a fresh profile with no ads goes straight to the result
 function openCont(){
   state = 'cont'; contLeft = 5; $('contScr').hidden = false; $('contAdMsg').hidden = true;
   $('contAd').hidden = !adOffers(ADS.ready(), { coinBonus: 0, dailyBonus: null, claimed: {} }).revive;
@@ -4281,7 +4311,7 @@ function update(rdt){
 
   if (FX.stormN > 0 && dashT < .15) dashT = .15;   // TEMPEST storm chain: the dash does not run out between its gates
   if (dashT > 0){ dashT -= dt; ghostT -= dt; if (ghostT <= 0){ ghostT = .035; ghosts.push({x:bird.x, y:bird.y, rot:bird.rot, life:.32}); }
-    if (dashT <= 0){ if (PK.dashRefund && FX.dashHit && !FX.stormDash){ dashMeter = Math.min(1, dashMeter + PK.dashRefund); sigFx(B.id, 'refund'); } FX.dashHit = false; FX.stormDash = false; sigFx(B.id, 'dashEnd'); } }
+    if (dashT <= 0){ if (PK.dashRefund && FX.dashHit && !FX.stormDash){ dashMeter = Math.min(1, dashMeter + PK.dashRefund); sigFx(B.id, 'refund'); } FX.dashHit = false; FX.stormDash = false; sigFx(B.id, 'dashEnd'); if (FX.flapBuf){ FX.flapBuf = false; flap(); } } }
   if (invuln > 0) invuln -= dt;
   if (boostT > 0) boostT -= dt; if (lowGravT > 0) lowGravT -= dt; if (autoT > 0) autoT -= dt; if (cloneT > 0) cloneT -= dt;
   if (rushT > 0) rushT -= dt; if (foreT > 0) foreT -= dt; if (potionT > 0) potionT -= dt; if (godT > 0) godT -= dt; if (freezeT > 0) freezeT -= rdt;
@@ -4371,7 +4401,7 @@ function update(rdt){
           else if (FX.resoBrk > 0 && FX.resoT > 0 && FX.pingT <= 0){   // PULSAR resonant break: while Resonance is on, a gate hit too deep for an echo shatters the gate instead, SK.pulsar.brk times a cast. It belongs to the skill (it used to cost a full, unspent charge, which made pressing the skill worse than keeping it). The gate is scored as a broken gate (never a Perfect) and the combo is lost
             FX.resoBrk--; g.broken = g.pinged = true; g.flash = 1; invuln = .6; FX.pingT = .5; combo = 0; tier = 0;
             hitstop = Math.max(hitstop, .12); banner(t('fx_break'), [320,100,70], 1, false); haptic('shatter'); sigFx(B.id, 'break', g); }
-          else { die(bird.y - hr < top ? (g.brK > 0 ? 'branch' : 'top') : 'bot'); if (state !== 'play') return; }
+          else { g.flash = 1; g.hitSide = bird.y - hr < top ? 'top' : 'bot'; die(bird.y - hr < top ? (g.brK > 0 ? 'branch' : 'top') : 'bot'); if (state !== 'play') return; }   // the wall that killed is marked while the bird falls
         }
       }
     }
@@ -4646,15 +4676,15 @@ function render(){
     ctx.restore();
   }
 
-  if (state !== 'dying' && state !== 'over' && state !== 'cont') drawBird();
+  if (state !== 'dying' && state !== 'over' && state !== 'cont'){ const ra = RM && invuln > 0 && godT <= 0; if (ra){ ctx.save(); ctx.globalAlpha = .5; } drawBird(); if (ra) ctx.restore(); }
   if (state === 'play' && PK.glide && (FX.gliding || FX.glide < PK.glide)) drawGlide();
   if (IMP.comboLvl >= 3 && state === 'play' && !RM){ ctx.save(); ctx.strokeStyle = hsl([(T*200)%360,100,66], .5); ctx.lineWidth = 2; ctx.setLineDash([10, 14]); ctx.lineDashOffset = -T*80; ctx.beginPath(); ctx.arc(bird.x, bird.y, bird.r*2.6, 0, 6.283); ctx.stroke(); ctx.restore(); }
   drawRival();
 
   for (const p of pops){
     const a = 1 - Math.max(0,(p.t-.6)/.5), s = p.big ? popScale(Math.min(1, p.t / FXCFG.pop.dur), FXCFG.pop.from) : 1;
-    ctx.save(); ctx.globalAlpha = a; ctx.translate(p.x, p.y); ctx.scale(s,s);
-    ctx.font = `${p.big?18:14}px Bungee, ${SYS}`; ctx.textAlign = 'center';
+    ctx.save(); ctx.globalAlpha = a; ctx.font = `${p.big?18:14}px Bungee, ${SYS}`; ctx.textAlign = 'center';
+    const pw = ctx.measureText(p.text).width, ps = popFit(s, pw, LW); ctx.translate(popX(p.x, pw * ps / 2, LW), p.y); ctx.scale(ps,ps);   // kept on screen at its widest (a Perfect pops in at 1.6x, long languages)
     ctx.fillStyle = hsl(p.col); ctx.shadowColor = hsl(p.col); ctx.shadowBlur = glowPx(10); ctx.fillText(p.text, 0, 0);
     ctx.restore();
   }
@@ -4673,7 +4703,7 @@ function render(){
     ctx.fillStyle = vg; ctx.fillRect(0,0,LW,LH);
   }
   if (danger > .05 && state === 'play'){
-    const pz = .5 + .5*Math.sin(T*18), vd = ctx.createRadialGradient(LW/2,LH/2,LH*.28,LW/2,LH/2,LH*.78);
+    const pz = dangerPz(T, RM, IMP.feat.flash), vd = ctx.createRadialGradient(LW/2,LH/2,LH*.28,LW/2,LH/2,LH*.78);
     vd.addColorStop(0,'rgba(0,0,0,0)'); vd.addColorStop(1, `rgba(255,40,70,${danger*(.25 + .2*pz)})`); ctx.fillStyle = vd; ctx.fillRect(0,0,LW,LH);
     if (danger > .4){ ctx.save(); ctx.font = `22px Bungee, ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(255,70,90,${.6 + .4*pz})`; ctx.shadowColor = 'rgba(255,40,70,.9)'; ctx.shadowBlur = 14; ctx.fillText('!', bird.x, bird.y - bird.r*2.4); ctx.restore(); }
   }
@@ -4699,8 +4729,11 @@ function render(){
       ctx.font = `36px Bungee, ${SYS}`; ctx.shadowColor = hsl(b.col); ctx.shadowBlur = 20; ctx.fillStyle = '#fff'; ctx.fillText(b.text, 0, 14, LW - 30); ctx.restore(); continue; }
     ctx.fillStyle = 'rgba(7,5,15,.55)'; ctx.fillRect(-LW, -26, LW*2, 44);
     ctx.fillStyle = hsl(b.col); ctx.fillRect(-LW, -26, LW*2, 2); ctx.fillRect(-LW, 16, LW*2, 2);
-    ctx.font = `${b.big ? 28 : 18}px Bungee, ${SYS}`; ctx.textAlign = 'center'; ctx.shadowColor = hsl(b.col); ctx.shadowBlur = 20;
-    ctx.fillStyle = '#fff'; ctx.fillText(b.text, 0, b.big ? 4 : 0); ctx.restore();
+    const bf = bannerFit((px, s) => { ctx.font = `${px}px Bungee, ${SYS}`; return ctx.measureText(s).width; }, b.text, b.big ? 28 : 18, LW - 24);   // shrunk to the screen, then two lines
+    ctx.font = `${bf.px}px Bungee, ${SYS}`; ctx.textAlign = 'center'; ctx.shadowColor = hsl(b.col); ctx.shadowBlur = 20; ctx.fillStyle = '#fff';
+    if (bf.lines.length > 1){ ctx.fillText(bf.lines[0], 0, -bf.px*.55 + 2, LW - 24); ctx.fillText(bf.lines[1], 0, bf.px*.55 + 2, LW - 24); }
+    else ctx.fillText(bf.lines[0], 0, b.big ? 4 : 0, LW - 24);
+    ctx.restore();
   }
   if (state === 'menu' && best > 0 && bestRoom){
     ctx.font = `600 13px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(243,238,252,.7)';
@@ -4729,6 +4762,7 @@ function drawGate(g){
   ctx.fillStyle = hsl(pal.a, .07); ctx.fillRect(g.x, top, g.w, 14); ctx.fillRect(g.x, bot-14, g.w, 14);
   if (g.broken) ctx.restore();
   if (g.flash > 0){ ctx.fillStyle = `rgba(255,255,255,${g.flash*.55})`; ctx.fillRect(g.x-6, top-10, g.w+12, 10); ctx.fillRect(g.x-6, bot, g.w+12, 10); ctx.fillStyle = `rgba(255,255,255,${g.flash*.18})`; ctx.fillRect(g.x, -10, g.w, top+10); ctx.fillRect(g.x, bot, g.w, GROUND-bot); }
+  if (state === 'dying' && g.hitSide){ ctx.save(); ctx.fillStyle = 'rgba(255,40,60,.9)'; ctx.shadowColor = 'rgb(255,40,60)'; ctx.shadowBlur = glowPx(16); if (g.hitSide === 'top') ctx.fillRect(g.x-6, top-10, g.w+12, 10); else ctx.fillRect(g.x-6, bot, g.w+12, 10); ctx.restore(); }   // the edge the bird hit, in red
 }
 // NEON GROVE's falling branch: leaves tucked under the top pillar's cap (shaking before the drop), then a log the pillar's width reaching br px
 // into the gap: exactly what hits, so the art never lies about the gap
@@ -5514,7 +5548,7 @@ function drawGlide(){ const f = FX.glide / PK.glide, r = bird.r + 24; ctx.save()
   ctx.lineWidth = 7; ctx.strokeStyle = 'rgba(8,4,24,.55)'; ctx.beginPath(); ctx.arc(bird.x, bird.y, r, .55, 2.59); ctx.stroke();   // a dark track, so the gauge reads over any aura
   if (f > 0){ ctx.lineWidth = 4.5; ctx.strokeStyle = FX.gliding ? 'hsl(190,100%,74%)' : 'hsla(190,100%,74%,.7)'; ctx.shadowColor = 'hsl(190,100%,70%)'; ctx.shadowBlur = FX.gliding ? glowPx(10) : 0; ctx.beginPath(); ctx.arc(bird.x, bird.y, r, 2.59 - 2.04*f, 2.59); ctx.stroke(); } ctx.restore(); }
 function drawBird(){
-  if (invuln > 0 && godT <= 0 && Math.floor(T*20)%2 === 0) return;
+  if (invuln > 0 && godT <= 0 && !RM && Math.floor(T*20)%2 === 0) return;   // the 10 Hz blink; with reduced motion the bird is drawn at half alpha instead (render)
   // Shield pickup: pops to 2x, then settles to 1.15x with an elastic wobble (visual only; hitbox unchanged)
   let vs = shields > 0 ? 1.15 : 1;
   if (popT >= 0){ const p = popT; vs = p < .14 ? 1 + p/.14 : p < 1 ? 1.15 + .85*Math.exp(-(p-.14)*5.5)*Math.cos((p-.14)*17) : vs; if (p >= 1) popT = -1; }
@@ -6572,7 +6606,7 @@ function drawHUD(){
   ctx.textAlign = 'center';
   ctx.font = '54px Bungee, Impact, sans-serif'; ctx.fillStyle = '#fff';
   ctx.shadowColor = hsl(pal.a); ctx.shadowBlur = 16;
-  { const sp = 1 + scorePunch*.38; ctx.save(); ctx.translate(LW/2, 68); ctx.scale(sp, sp); ctx.fillText(score, 0, 18); ctx.restore(); }
+  { const sp = 1 + scorePunch*.38; ctx.save(); ctx.globalAlpha = state === 'dying' ? .35 : 1; ctx.translate(LW/2, 68); ctx.scale(sp, sp); ctx.fillText(score, 0, 18); ctx.restore(); }   // faded while dying: a crash at the top reads through it
   ctx.shadowBlur = 0;
   { const cs = 1 + IMP.coinPulse*.35; ctx.save(); ctx.translate(LW/2, 96); ctx.scale(cs, cs);
     ctx.font = `700 12px "Chakra Petch", ${SYS}`; ctx.fillStyle = 'hsl(48,100%,62%)';
@@ -8269,6 +8303,7 @@ if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)
   haz(k, dx, dy){ const h = {x: bird.x + (dx || 0), y: bird.y + (dy || 0), k, got:false, t:0}; if (dx == null) hazHit(h); else hazs.push(h); },   // QA only: a hazard as if touched right now, or one placed dx / dy from the bird
   get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, set salt(v){ stSalt = String(v || ''); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
   setFxQuality(q){ fxSettings.q = q; IMP = impNew(q); }, comboLevelOf: (c, tr) => comboLevel(c, tr, FXCFG), get imp(){ return IMP; }, fx: impFx, get fxEvents(){ return FX_EVENTS.slice(); },
+  pop: (s, x, y) => pop(s, x ?? bird.x + 10, y ?? bird.y - 30, pal.a, true), banner: (s, big) => banner(s, [45,100,64], 1.6, big !== false), get LW(){ return LW; },   // QA only: a pop / banner on screen now (tests that they stay inside 0..LW)
   hold: false, press(on){ pressed = !!on; }, step(dt, n){ for (let i = 0; i < (n || 1); i++) update(dt); },
   selfTest(){
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b), S = [0,9,10,24,25,39,40,49], fails = [];
