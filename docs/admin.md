@@ -35,7 +35,7 @@
 | `admin_errors` | mod | `p_limit int` (1..200, 기본 50) | `[{id, at, player_id, build, msg, stack(앞 500자), url, ua}]` 최근순 |
 | `admin_referrals_held` | owner | — | `[{invitee, inviter, inviter_nick, invitee_nick, invitee_best, linked_at, days, stage}]` (held = true) |
 | `admin_referral_release` | owner | `p_inviter uuid` | `{released: int}` — 그 초대자의 held 해제. 로그 `ref_release` |
-| `admin_season` | mod | — | `{season, prev, rolled_at, top:[{rank, nick, rp, tier, claimed_at}] (지난 시즌 상위 10), live:[{nick, rp, wins, losses}] (이번 시즌 RP 상위 10, 숨김 제외)}` |
+| `admin_season` | mod | — | `{season, prev, rolled_at, top:[{rank, nick, rp, tier, claimed_at, beat, foes, top2, flag}] (지난 시즌 상위 10), live:[{id, nick, rp, wins, losses, ai, beat, foes, top2, flag}] (이번 시즌 RP 상위 10, 숨김 제외)}` — `beat` 사람에게 거둔 랭크 승수(2v2 승리는 이긴 상대마다 1), `foes` 이긴 서로 다른 상대 수, `top2` 가장 많이 이긴 상대 2명의 비중(0..1, 승리가 없으면 null), `flag` 담합 검토 대상(6장), `ai` 첫 시즌에 반영된 AI 1v1 수 |
 | `admin_season_tick` | owner | — | `{season}` — `private.fw_vs_tick()` 호출(정산이 필요하면 실행, 아니면 아무 일 없음). 로그 `season_tick` |
 | `admin_delete_player` | owner | `p_id uuid, p_confirm text` | `{deleted: bool}` — `p_confirm <> p_id::text`면 `fw_bad_input`. 자기 자신·다른 관리자는 삭제 불가(`fw_bad_input`). `auth.users` 삭제(연결 데이터는 cascade). 로그 `delete_player` (detail에 닉네임) |
 | `admin_log` | owner | `p_limit int` (1..200, 기본 100) | `[{at, admin_id, admin_nick, action, target, detail}]` 최근순 |
@@ -67,3 +67,20 @@
 5. 인증기를 잃어버리면: 데이터베이스 소유자가 `delete from auth.mfa_factors where user_id = '<owner id>';` 후 3번을 다시 한다.
 
 Supabase 설정: Authentication › Multi-Factor에서 TOTP가 켜져 있어야 하고(2026-10-22 켜짐 확인), Redirect URLs에 `https://swishby.com/**`가 있어야 한다(있음). "AAL1 세션 제한"은 게임 플레이어 세션에도 걸리므로 켜지 않는다.
+
+## 6. 첫 시즌 정산 전 상위 10명 수동 검토
+
+첫 공개 시즌(202611)은 **12-01 00:00 KST**에 pg_cron(`fw_vs_tick`)이 정산한다. 정산 순간의 순위로 상위 10명에게 MONARCH와 다이아가 정해지고, 정산된 기록(`fw_vs_standing`)은 숨겨도 순위가 바뀌지 않는다. 그래서 담합(한 사람이 여러 계정으로 승리를 주고받기) 검토는 **정산 전에** 끝낸다. (11-01 정산은 테스터 시즌 202610이다.)
+
+- 언제: 11-30(월) 낮에 한 번, 23:00 KST에 한 번 더. 23:59 KST까지 숨김을 마친다.
+- 어디서: 관리자 페이지 › 시즌 › "이번 시즌 RP 상위 10" 표. 열: AI전, 이긴 상대, 상위 2명 비중, 검토.
+- 검토 표시(`flag`)의 기준 (`private.fw_vs_collude_cfg`: 5, 2, 0.66): 이번 시즌 사람에게 거둔 승리가 5승 이상이고, 그중 2/3 이상이 가장 많이 이긴 상대 2명에게서 나왔다. 즉 "승리 대부분이 3명 미만의 상대에게서" 나온 플레이어. 표시는 판정이 아니라 확인하라는 뜻이다: 출시 직후에는 접속자가 적어 정직한 플레이어도 같은 상대를 자주 만난다.
+- 표시된 플레이어마다 (닉네임을 눌러 플레이어 화면으로):
+  1. 가입일: 이긴 상대들의 계정이 이 플레이어와 하루 안에 만들어졌는가.
+  2. 상대 계정의 기록: 상대가 거의 지기만 하고(0 RP 근처) 다른 상대와는 거의 붙지 않았는가.
+  3. 신고: 받은 신고(`reports_received`)가 있는가.
+  4. 국가·닉네임·이벤트 기록이 상대 계정과 같은 패턴인가.
+- 둘 이상 해당하면 담합으로 보고 **이긴 플레이어와 상대 계정 모두** `admin_set_hidden`(플레이어 화면의 숨기기)으로 숨긴다. 숨긴 행은 정산 때 순위 없이 보관되고(보상 없음), 그 자리는 다음 순위가 받는다. 조치는 감사 로그(`hide`)에 남는다.
+- 애매하면 숨기지 않고, 플레이어 id와 근거를 기록해 둔다. 정산 뒤에는 "지난 시즌 상위 10" 표에도 같은 열이 있어 다시 볼 수 있다(승리 집계 `private.fw_vs_wins`는 정산한 시즌까지 남고 그 이전 시즌은 지워진다).
+- SQL로 볼 때 (데이터베이스 소유자, 이번 시즌 전체):
+  `select v.nick, v.rp, v.wins, v.ai, private.fw_vs_collusion(s.season, v.player_id) from public.fw_versus v cross join private.fw_vs_season s where v.wins > 0 and not v.hidden order by v.rp desc limit 50;`

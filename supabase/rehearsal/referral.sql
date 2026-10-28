@@ -79,13 +79,29 @@ do $$ declare r jsonb; begin
   r := public.referral_progress(10);
   if (r ->> 'days')::int <> 3 or r ->> 'status' <> 'open' then raise exception 'three days and STAGE 10 but no best on the board: still open, got %', r; end if;
   perform public.submit_score(14, 14, 'endless', '2026-10-21', 'volt', 'Friend', 'KR', 'ko');   -- the run that reached STAGE 10
+  r := public.referral_progress(10); if r ->> 'status' <> 'open' then raise exception 'a best of 14 is below min_best (30): still open, got %', r; end if;
+end $$;
+reset role;
+update public.fw_scores set last_submit_at = last_submit_at - interval '1 minute' where player_id = pg_temp.u('b');   -- a minute of play later
+set role authenticated;
+do $$ declare r jsonb; begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u('b')::text, true);
+  perform public.submit_score(34, 24, 'endless', '2026-10-21', 'volt', 'Friend', 'KR', 'ko');   -- a real-play best
   r := public.referral_progress(10); if r ->> 'status' <> 'done' then raise exception 'the goal is met: %', r; end if;
   r := public.referral_progress(10); if r ->> 'status' <> 'done' then raise exception 'done stays done: %', r; end if;
   -- the invited friend gets nothing for joining: nothing to claim
   r := public.referral_claim(); if r -> 'booked' <> 'null'::jsonb or jsonb_array_length(r -> 'payouts') <> 0 then raise exception 'the invitee must have no reward: %', r; end if;
 end $$;
 
-\echo === claim: once, acknowledged, and a second claim returns nothing ===
+\echo === claim: nothing within 24 h of the link; then once, acknowledged, and a second claim returns nothing ===
+do $$ declare r jsonb; begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u('a')::text, true);
+  r := public.referral_me(); if (r ->> 'ready')::int <> 0 then raise exception 'linked minutes ago: not ready yet (24-hour hold): %', r; end if;
+  r := public.referral_claim(); if r -> 'booked' <> 'null'::jsonb then raise exception 'the 24-hour hold: nothing is booked yet: %', r; end if;
+end $$;
+reset role;
+update private.fw_referrals set linked_at = linked_at - interval '25 hours' where invitee_id = pg_temp.u('b');   -- a day after the link
+set role authenticated;
 do $$
 declare r jsonb; r2 jsonb; id bigint; A uuid := pg_temp.u('a');
 begin
@@ -109,8 +125,8 @@ end $$;
 reset role;
 
 \echo === milestone 3: two more friends of a (made done by hand), one claim pays 2 x 15 + 50 gems and 2 x 10,000 coins ===
-insert into private.fw_referrals (invitee_id, inviter_id, days, stage, done_at) values
-  (pg_temp.u('c'), pg_temp.u('a'), 3, 10, now()), (pg_temp.u('d'), pg_temp.u('a'), 3, 10, now());
+insert into private.fw_referrals (invitee_id, inviter_id, linked_at, days, stage, done_at) values
+  (pg_temp.u('c'), pg_temp.u('a'), now() - interval '2 days', 3, 10, now()), (pg_temp.u('d'), pg_temp.u('a'), now() - interval '2 days', 3, 10, now());
 set role authenticated;
 do $$ declare r jsonb; begin
   perform set_config('request.jwt.claim.sub', pg_temp.u('a')::text, true);
@@ -142,7 +158,7 @@ do $$ declare r jsonb; begin
   r := public.referral_claim(); if r -> 'booked' <> 'null'::jsonb then raise exception 'held invites are not paid: %', r; end if;
 end $$;
 reset role;
-update private.fw_referrals set held = false where inviter_id = pg_temp.u('e') and held;   -- the review releases them
+update private.fw_referrals set held = false, linked_at = linked_at - interval '25 hours' where inviter_id = pg_temp.u('e') and held;   -- the review releases them (a day later)
 set role authenticated;
 do $$ declare r jsonb; begin
   perform set_config('request.jwt.claim.sub', pg_temp.u('e')::text, true);

@@ -172,12 +172,14 @@ test('the server books and returns the coins with each payout; the device grants
   assert.match(read('guide/index.html'), /젬 15개와 코인 10,000개/, 'the Korean guide says the new reward');
 });
 
-test('the stage goal: reaching the target stage took a cleared stage whose gate goal is at least minBest (a run that reached it scored at least that)', () => {
+test('the stage goal and min_best: the target stage is in the first zone, and minBest asks for real play beyond its goals', () => {
   const blk = html.match(/\/\* stages:start[\s\S]*?\/\* stages:end \*\//)[0], S = new Function(blk + '\nreturn {STAGES, ST_FIRST};')();
   const i = R.REF_CFG.stage - 2;   // the 0-based index of the stage that must be cleared to reach the target
   assert.ok(i < S.ST_FIRST[1], 'still in the first zone');
-  assert.ok(Math.max(...S.STAGES.slice(0, i + 1).map(r => r.goal)) >= R.REF_CFG.minBest, 'the server-held minBest never asks more than the stages before the target do');
-  assert.equal(R.REF_CFG.minBest, 14, 'mirrored by the server (fw_ref_cfg): unchanged');
+  // owner's decision 2026-10-28 (referral farming): not just the lowest score a run that reached the target needed, but a best a
+  // genuine new player reaches in a few runs (fw_ref_cfg: measured with scripts/balance.mjs), so a forged minimal run is not enough
+  assert.ok(R.REF_CFG.minBest > Math.max(...S.STAGES.slice(0, i + 1).map(r => r.goal)), 'above every goal before the target');
+  assert.equal(R.REF_CFG.minBest, 30, 'mirrored by the server (fw_ref_cfg)');
 });
 
 test('referral tables reference auth.users on delete cascade (delete_me takes them along) and are not exposed', () => {

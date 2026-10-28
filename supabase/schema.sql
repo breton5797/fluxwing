@@ -466,14 +466,16 @@ grant execute on function public.submit_score(integer, integer, text, text, text
 --          x.rp, private.fw_vs_tier(x.rp), x.wins, x.losses, x.draws, x.n, x.nick, x.cc, x.bird
 --   from (select s.season, v.player_id, v.rp, v.wins, v.losses, v.draws, v.updated_at, v.nick, v.cc, v.bird,
 --                v.wins + v.losses + v.draws as n,
---                v.wins + v.losses + v.draws >= (select c.min_matches from private.fw_vs_season_cfg() c) and not v.hidden
+--                v.wins + v.losses + v.draws >= private.fw_vs_min_matches(s.season) and not v.hidden
 --                  and cardinality(v.rivals) >= private.fw_vs_min_rivals(s.season)
 --                  and coalesce((select to_jsonb(u) ->> 'is_anonymous' from auth.users u where u.id = v.player_id), 'false') <> 'true' as ok
 --         from public.fw_versus v cross join private.fw_vs_season s
 --         where v.wins + v.losses + v.draws > 0 and s.season < private.fw_vs_season_of(now())
 --           and not exists (select 1 from public.fw_vs_standing t where t.season = s.season)) x;
---   update public.fw_versus set rp = 0, wins = 0, losses = 0, draws = 0, rivals = '{}'
---   where (rp <> 0 or wins <> 0 or losses <> 0 or draws <> 0)
+--   update public.fw_versus set rp = 0, wins = 0, losses = 0, draws = 0, rivals = '{}', ai = 0
+--   where (rp <> 0 or wins <> 0 or losses <> 0 or draws <> 0 or ai <> 0)
+--     and (select s.season from private.fw_vs_season s) < private.fw_vs_season_of(now());
+--   delete from private.fw_vs_wins w where w.season < (select s.season from private.fw_vs_season s)
 --     and (select s.season from private.fw_vs_season s) < private.fw_vs_season_of(now());
 --   update private.fw_vs_season set prev = season, season = private.fw_vs_season_of(now()), rolled_at = now()
 --   where one and season < private.fw_vs_season_of(now());
@@ -538,6 +540,8 @@ create index if not exists fw_versus_live_idx on public.fw_versus (rp desc, play
 alter table public.fw_versus add column if not exists hidden boolean not null default false;   -- moderation: see fw_scores
 -- distinct rivals of the running season (private.fw_vs_rivals); not readable by clients (the grant below lists the columns)
 alter table public.fw_versus add column if not exists rivals uuid[] not null default '{}';
+-- 1v1 matches against the AI counted this season (private.fw_versus_ai, first season only); private as rivals, reset by the rollover
+alter table public.fw_versus add column if not exists ai integer not null default 0;
 alter table public.fw_versus enable row level security;
 drop policy if exists fw_versus_read on public.fw_versus;
 create policy fw_versus_read on public.fw_versus for select to authenticated
@@ -600,6 +604,37 @@ create table if not exists private.fw_vs_season (
 alter table private.fw_vs_season enable row level security;   -- no policy, as for the match bookkeeping
 revoke all on table private.fw_vs_season from public, anon, authenticated;
 grant select, insert, update, delete on table private.fw_vs_season to service_role;
+
+-- Wins per rival and season (the collusion check of the admin season view, private.fw_vs_collusion): one row per player and
+-- beaten rival, written by settlement (fw_vs_tally) for every ranked win; a 2v2 win counts against both rivals, an FFA win
+-- (a positive delta) against the three others. The rollover keeps the season it closes (for the review of its top 10) and
+-- deletes older ones. Not readable by clients.
+create table if not exists private.fw_vs_wins (
+  season    integer not null,
+  player_id uuid    not null references auth.users (id) on delete cascade,
+  rival_id  uuid    not null references auth.users (id) on delete cascade,
+  n         integer not null default 0,
+  primary key (season, player_id, rival_id),
+  constraint fw_vs_wins_n_chk check (n >= 0)
+);
+alter table private.fw_vs_wins enable row level security;   -- no policy, as for the match bookkeeping
+revoke all on table private.fw_vs_wins from public, anon, authenticated;
+grant select, insert, update, delete on table private.fw_vs_wins to service_role;
+
+-- 1v1 matches against the AI that counted (private.fw_versus_ai, the first season only): the daily cap and the gap are read from
+-- here. A player's rows older than 2 days are deleted by that player's next call.
+create table if not exists private.fw_vs_ai_log (
+  id        bigint      generated always as identity primary key,
+  player_id uuid        not null references auth.users (id) on delete cascade,
+  at        timestamptz not null default now(),
+  result    text        not null,
+  delta     integer     not null,
+  constraint fw_vs_ai_log_result_chk check (result in ('win', 'lose', 'draw'))
+);
+create index if not exists fw_vs_ai_log_player_idx on private.fw_vs_ai_log (player_id, at desc);
+alter table private.fw_vs_ai_log enable row level security;
+revoke all on table private.fw_vs_ai_log from public, anon, authenticated;
+grant select, insert, update, delete on table private.fw_vs_ai_log to service_role;
 
 create table if not exists public.fw_vs_standing (
   season     integer     not null,
@@ -729,6 +764,68 @@ create or replace function private.fw_vs_min_rivals(p_season integer) returns in
 language sql immutable set search_path = '' as $$
   select case when p_season >= 202611 then 3 else 0 end;
 $$;
+-- The first season (owner's decision 2026-10-28: at launch few players are online at once, and 10 ranked matches against
+-- people were out of reach for most). It is a season id, not a date: every season up to and including first_season (202611,
+-- the launch month; 202610 before it is the testers' month) is a "first season". There:
+--   - a rank needs min_matches settled matches (instead of fw_vs_season_cfg().min_matches), still against fw_vs_min_rivals()
+--     different rivals and on an account;
+--   - a 1v1 against the AI counts (public.versus_ai): ai_pct percent of rp_win / rp_loss (50 -> +25 / -25, a draw 0, never below
+--     0 RP), as a win / loss / draw of the season, but never as a rival. At most ai_per_day of them per day (Asia/Seoul), at
+--     least ai_gap apart, and at most ai_per_season in the season: AI RP alone tops out at ai_per_season x 25 = 1,000 RP, the
+--     Gold floor, so the AI cannot carry anyone into the top tiers or the top 10.
+-- The client's rule line (vsRulesS1, every language) prints the per-match RP and ai_per_day: tests/server-integrity.test.js.
+create or replace function private.fw_vs_first_cfg(
+  out first_season integer, out min_matches integer, out ai_pct integer, out ai_per_day integer, out ai_per_season integer, out ai_gap interval
+) language sql immutable set search_path = '' as $$
+  select 202611, 3, 50, 5, 40, interval '20 seconds';
+$$;
+-- settled matches a rank needs in season p_season
+create or replace function private.fw_vs_min_matches(p_season integer) returns integer
+language sql immutable set search_path = '' as $$
+  select case when p_season <= f.first_season then f.min_matches else c.min_matches end
+  from private.fw_vs_first_cfg() f, private.fw_vs_season_cfg() c;
+$$;
+-- What versus_me tells the client about counting a match against the AI in season p_season: null outside the first season, else
+-- the RP of a win (rp), the daily cap (per_day) and how many may still count today (left; 0 once today's or the season's are used)
+create or replace function private.fw_vs_ai_state(p_uid uuid, p_season integer) returns jsonb
+language sql stable set search_path = '' as $$
+  select case when p_season <= f.first_season then jsonb_build_object(
+      'rp', round(c.rp_win * f.ai_pct / 100.0)::integer, 'per_day', f.ai_per_day,
+      'left', greatest(0, least(
+        f.ai_per_day - (select count(*) from private.fw_vs_ai_log l
+                        where l.player_id = p_uid and l.at >= (date_trunc('day', now() at time zone s.tz) at time zone s.tz))::integer,
+        f.ai_per_season - coalesce((select v.ai from public.fw_versus v where v.player_id = p_uid), 0)))) end
+  from private.fw_vs_first_cfg() f, private.fw_vs_cfg() c, private.fw_vs_season_cfg() s;
+$$;
+-- One settled ranked win of p_uid over p_rivals, in the running season (settlement runs under the season lock, so the state row
+-- is the season the match belongs to)
+create or replace function private.fw_vs_tally(p_uid uuid, p_rivals uuid[]) returns void
+language sql set search_path = '' as $$
+  insert into private.fw_vs_wins as w (season, player_id, rival_id, n)
+  select s.season, p_uid, x.id, 1 from private.fw_vs_season s, (select distinct r as id from unnest(p_rivals) r) x
+  where x.id is not null and x.id <> p_uid
+  on conflict (season, player_id, rival_id) do update set n = w.n + 1;
+$$;
+-- Collusion check (owner's decision 2026-10-28, for the review of the top 10 before a rollover): a player is flagged when they
+-- have at least min_wins ranked wins in the season and at least `share` of them came from their max_foes most-beaten rivals,
+-- i.e. the wins come mostly from fewer than 3 different rivals. A flag is a reason to look, not a verdict: at launch, with few
+-- players online, honest players meet the same rivals too. The admin hides a colluder (admin_set_hidden) before the rollover.
+create or replace function private.fw_vs_collude_cfg(out min_wins integer, out max_foes integer, out share numeric)
+language sql immutable set search_path = '' as $$
+  select 5, 2, 0.66;
+$$;
+-- beat: ranked wins over people in the season (a 2v2 win counts once per beaten rival), foes: different rivals beaten,
+-- top2: the share of the max_foes most-beaten rivals (null without a win), flag: see fw_vs_collude_cfg
+create or replace function private.fw_vs_collusion(p_season integer, p_uid uuid) returns jsonb
+language sql stable set search_path = '' as $$
+  select jsonb_build_object('beat', coalesce(sum(w.n), 0), 'foes', count(w.n),
+           'top2', case when coalesce(sum(w.n), 0) > 0 then round(coalesce(sum(w.n) filter (where w.rk <= k.max_foes), 0)::numeric / sum(w.n), 2) end,
+           'flag', coalesce(sum(w.n), 0) >= k.min_wins and coalesce(sum(w.n) filter (where w.rk <= k.max_foes), 0) >= k.share * sum(w.n))
+  from private.fw_vs_collude_cfg() k
+  left join (select x.n, row_number() over (order by x.n desc, x.rival_id) as rk
+             from private.fw_vs_wins x where x.season = p_season and x.player_id = p_uid) w on true
+  group by k.min_wins, k.max_foes, k.share;
+$$;
 -- The rivals of the running season, kept on the player's fw_versus row (fw_vs_part rows are deleted after "keep", 3 days, so
 -- they cannot be counted at the rollover): the distinct ids met in settled ranked matches, at most 16 (only "at least
 -- fw_vs_min_rivals()" is ever asked, so a full list stops growing). Emptied by the rollover with rp / wins / losses / draws.
@@ -825,7 +922,7 @@ begin
   -- unique (season, rank) index on every call ("on conflict (season, player_id)" does not cover that index), which
   -- would stop the rollover, and with it every versus call, for good.
   if not exists (select 1 from public.fw_vs_standing t where t.season = v_cur) then
-    select c.min_matches into v_min from private.fw_vs_season_cfg() c;
+    v_min := private.fw_vs_min_matches(v_cur);   -- 3 in the first season, else fw_vs_season_cfg().min_matches
     v_riv := private.fw_vs_min_rivals(v_cur);
     -- a rank needs min_matches matches, fw_vs_min_rivals() different rivals and an account (a guest row is archived without a rank);
     -- hidden: archived, no rank
@@ -839,7 +936,8 @@ begin
                    and coalesce((select to_jsonb(u) ->> 'is_anonymous' from auth.users u where u.id = v.player_id), 'false') <> 'true' as ok
           from public.fw_versus v where v.wins + v.losses + v.draws > 0) x;
   end if;
-  update public.fw_versus set rp = 0, wins = 0, losses = 0, draws = 0, rivals = '{}' where rp <> 0 or wins <> 0 or losses <> 0 or draws <> 0;
+  update public.fw_versus set rp = 0, wins = 0, losses = 0, draws = 0, rivals = '{}', ai = 0 where rp <> 0 or wins <> 0 or losses <> 0 or draws <> 0 or ai <> 0;
+  delete from private.fw_vs_wins w where w.season < v_cur;   -- the season just closed stays for the admin review of its top 10 (fw_vs_collusion)
   update private.fw_vs_season set season = v_now, prev = v_cur, rolled_at = now() where one;   -- "where": the API roles run with pg_safeupdate, which refuses an UPDATE without one
   return v_now;
 end;
@@ -919,6 +1017,7 @@ begin
       draws  = draws  + (v_d = 0)::integer,
       updated_at = v_now
     where player_id = r.player_id;
+    if v_d > 0 then perform private.fw_vs_tally(r.player_id, v_riv); end if;   -- wins per rival, for the collusion check
     update private.fw_vs_part set
       final = case when v_d > 0 then 'win' when v_d < 0 then 'lose' else 'draw' end,
       delta = greatest(0, v_old + v_d) - v_old
@@ -1158,7 +1257,8 @@ begin
     'last', (select private.fw_vs_state(v_uid, p.match_id) from private.fw_vs_part p
              where p.player_id = v_uid order by p.joined_at desc limit 1),
     'season', v_season, 'season_end', private.fw_vs_season_end(v_season), 'prev', v_prev,
-    'need', (select c.min_matches from private.fw_vs_season_cfg() c),
+    'need', private.fw_vs_min_matches(v_season),
+    'ai', private.fw_vs_ai_state(v_uid, v_season),   -- first season: what a 1v1 against the AI counts (versus_ai), else null
     'need_rivals', private.fw_vs_min_rivals(v_season),
     -- past results not claimed yet, oldest first: every ranked one, and the unranked one of the season just closed
     -- (that one carries no reward and cannot be claimed; the client shows it once)
@@ -1217,6 +1317,86 @@ begin
 end;
 $$;
 
+-- A finished 1v1 against the AI, in the first season only (private.fw_vs_first_cfg). The device reports its own result: nobody
+-- referees an AI match, so a modified client can always report a win. The caps bound what that buys (ai_per_day, ai_gap,
+-- ai_per_season: at most 1,000 RP a season), and the AI is never a rival, so it never helps toward the fw_vs_min_rivals() a
+-- rank needs. Answers {counted: false, why: season | cap | soon | full} without raising (the client shows the match as
+-- practice), or {counted: true, delta, left, me}. A win / loss / draw of the season, as a ranked one.
+create or replace function private.fw_versus_ai(p_result text, p_nick text, p_cc text, p_bird text) returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  c        record;
+  f        record;
+  v_uid    uuid        := (select auth.uid());
+  v_now    timestamptz := now();
+  v_tz     text        := (select s.tz from private.fw_vs_season_cfg() s);
+  v_season integer;
+  v_n      integer;
+  v_last   timestamptz;
+  v_old    integer;
+  v_ai     integer;
+  v_d      integer;
+  v_cc     text;
+begin
+  if v_uid is null then
+    raise exception 'fw_auth: sign-in required' using errcode = '28000';
+  end if;
+  perform private.fw_need_account(v_uid);   -- ranked play is for accounts: a guest plays the AI as practice
+  if p_result is null or p_result not in ('win', 'lose', 'draw')
+     or p_bird is null or not (p_bird = any (private.fw_units()))
+     or char_length(coalesce(p_nick, '')) > 200 or char_length(coalesce(p_cc, '')) > 8 then   -- before the season gate, as versus_start
+    raise exception 'fw_bad_input: unknown result or unit, or a field too long' using errcode = '22023';
+  end if;
+  v_season := private.fw_vs_tick();   -- lock order 0
+  select * into f from private.fw_vs_first_cfg();
+  if v_season > f.first_season then
+    return jsonb_build_object('counted', false, 'why', 'season');
+  end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_uid::text, 0));   -- lock order d: the caller's settle lock, then its fw_versus row (e.)
+  select * into c from private.fw_vs_cfg();
+  select count(*) into v_n from private.fw_vs_ai_log l
+  where l.player_id = v_uid and l.at >= (date_trunc('day', v_now at time zone v_tz) at time zone v_tz);
+  select max(l.at) into v_last from private.fw_vs_ai_log l where l.player_id = v_uid;   -- the gap holds across midnight too
+  if v_n >= f.ai_per_day then return jsonb_build_object('counted', false, 'why', 'cap'); end if;
+  if v_last > v_now - f.ai_gap then return jsonb_build_object('counted', false, 'why', 'soon'); end if;
+  v_cc := case when coalesce(p_cc, '') ~ '^[A-Za-z]{2}$' then upper(p_cc) else '' end;
+  begin
+    insert into public.fw_versus (player_id, nick, cc, bird) values (v_uid, private.fw_vs_nick(p_nick), v_cc, p_bird)
+    on conflict (player_id) do nothing;
+  exception when foreign_key_violation then
+    raise exception 'fw_auth: unknown player' using errcode = '28000';   -- token of a deleted user: the client signs in again
+  end;
+  select v.rp, v.ai into strict v_old, v_ai from public.fw_versus v where v.player_id = v_uid for update;
+  if v_ai >= f.ai_per_season then return jsonb_build_object('counted', false, 'why', 'full'); end if;
+  v_d := case p_result when 'win' then round(c.rp_win * f.ai_pct / 100.0)::integer
+                       when 'lose' then -round(c.rp_loss * f.ai_pct / 100.0)::integer else 0 end;
+  update public.fw_versus set
+    nick = private.fw_vs_nick(p_nick), cc = v_cc, bird = p_bird,
+    rp     = greatest(0, v_old + v_d),
+    wins   = wins   + (p_result = 'win')::integer,
+    losses = losses + (p_result = 'lose')::integer,
+    draws  = draws  + (p_result = 'draw')::integer,
+    ai     = ai + 1,
+    updated_at = v_now
+  where player_id = v_uid;
+  insert into private.fw_vs_ai_log (player_id, result, delta) values (v_uid, p_result, greatest(0, v_old + v_d) - v_old);
+  delete from private.fw_vs_ai_log l where l.player_id = v_uid and l.at < v_now - interval '2 days';
+  return jsonb_build_object('counted', true, 'delta', greatest(0, v_old + v_d) - v_old,
+    'left', least(f.ai_per_day - v_n, f.ai_per_season - v_ai) - 1, 'me', private.fw_vs_row(v_uid));
+end;
+$$;
+
+create or replace function public.versus_ai(p_result text, p_nick text, p_cc text, p_bird text) returns jsonb
+language sql
+security invoker
+set search_path = ''
+as $$
+  select private.fw_versus_ai(p_result, p_nick, p_cc, p_bird);
+$$;
+
 create or replace function public.versus_start(
   p_match text, p_mode text, p_team integer, p_nick text, p_cc text, p_bird text
 ) returns jsonb
@@ -1260,6 +1440,12 @@ revoke all on function private.fw_vs_roster(text)           from public, anon, a
 revoke all on function private.fw_vs_nick(text)             from public, anon, authenticated;
 revoke all on function private.fw_need_account(uuid)        from public, anon, authenticated;
 revoke all on function private.fw_vs_min_rivals(integer)    from public, anon, authenticated;
+revoke all on function private.fw_vs_first_cfg()            from public, anon, authenticated;
+revoke all on function private.fw_vs_min_matches(integer)   from public, anon, authenticated;
+revoke all on function private.fw_vs_ai_state(uuid, integer) from public, anon, authenticated;
+revoke all on function private.fw_vs_tally(uuid, uuid[])    from public, anon, authenticated;
+revoke all on function private.fw_vs_collude_cfg()          from public, anon, authenticated;
+revoke all on function private.fw_vs_collusion(integer, uuid) from public, anon, authenticated;
 revoke all on function private.fw_vs_rivals(uuid[], uuid[]) from public, anon, authenticated;
 revoke all on function private.fw_vs_delta(integer, integer, text, integer) from public, anon, authenticated;
 revoke all on function private.fw_vs_settle(text)           from public, anon, authenticated;
@@ -1274,6 +1460,8 @@ revoke all on function public.versus_start(text, text, integer, text, text, text
 revoke all on function public.versus_report(text, text)     from public, anon, authenticated;
 revoke all on function public.versus_me()                   from public, anon, authenticated;
 revoke all on function public.versus_claim(integer, text)   from public, anon, authenticated;
+revoke all on function private.fw_versus_ai(text, text, text, text) from public, anon, authenticated;
+revoke all on function public.versus_ai(text, text, text, text)      from public, anon, authenticated;
 grant execute on function private.fw_versus_start(text, text, integer, text, text, text) to authenticated, service_role;
 grant execute on function private.fw_versus_report(text, text) to authenticated, service_role;
 grant execute on function private.fw_versus_me()               to authenticated, service_role;
@@ -1282,6 +1470,8 @@ grant execute on function public.versus_start(text, text, integer, text, text, t
 grant execute on function public.versus_report(text, text)     to authenticated, service_role;
 grant execute on function public.versus_me()                   to authenticated, service_role;
 grant execute on function public.versus_claim(integer, text)   to authenticated, service_role;
+grant execute on function private.fw_versus_ai(text, text, text, text) to authenticated, service_role;
+grant execute on function public.versus_ai(text, text, text, text)      to authenticated, service_role;
 
 -- ---------- name change: set_nick(name) ----------
 -- The name form calls this instead of a score submit (which cost a rate-limited submit, needed a score row and could be
@@ -1886,6 +2076,7 @@ begin
       draws  = draws  + (v_d = 0)::integer,
       updated_at = v_now
     where player_id = r.player_id;
+    if v_d > 0 then perform private.fw_vs_tally(r.player_id, v_riv); end if;   -- wins per rival, for the collusion check
     update private.fw_vs_part set
       final = v_vec,
       delta = greatest(0, v_old + v_d) - v_old
@@ -2196,7 +2387,11 @@ $do$;
 -- lost on the way is returned again by the next claim, and an acknowledged payout is never returned again.
 -- Anti-abuse: one inviter per invitee (primary key), no self-invite (check) and no invite cycle, the invitee's auth user must be
 -- younger than new_window (a fresh player, not an old account opening a link), and when more than burst_n friends link to one
--- inviter within burst_window, every unpaid invite of that inviter from the window is held for review. Review by hand:
+-- inviter within burst_window, every unpaid invite of that inviter from the window is held for review. Since 2026-10-28 (owner's
+-- decision, audit: scripted guest invitees): the invitee must be a signed-in account, not a guest (private.fw_need_account in
+-- referral_link and referral_progress), min_best is a real-play score (fw_ref_cfg), and a counted friend is paid no sooner than
+-- fw_ref_hold() (24 h) after the link. A guest who signs in later than new_window after its first start is an 'old' account then.
+-- Review by hand:
 --   select r.*, s.nick, s.best from private.fw_referrals r left join public.fw_scores s on s.player_id = r.invitee_id
 --   where r.held order by r.inviter_id, r.linked_at;
 --   update private.fw_referrals set held = false where inviter_id = '<uuid>' and held;   -- release after review
@@ -2255,12 +2450,24 @@ grant select, insert, update, delete on table private.fw_ref_payouts to service_
 
 -- the numbers, in one place (REF_CFG in index.html holds the same; tests/referral.test.js keeps them equal). Dropped first: a new out
 -- column changes the row type, which "create or replace" cannot do (the callers read it into a record, so nothing depends on it)
+-- min_best 30 (was 14, owner's decision 2026-10-28): a score of real play, not the lowest goal a run that reached STAGE 10 needed.
+-- Measured with scripts/balance.mjs (VOLT, form I, STAGE 9, 20 runs each, 2026-10-28): a weak bot (--aim 40, clears STAGE 9 in 30%
+-- of its runs) scores 30 or more in about one run in ten (p90 30); a middling one (--aim 25, 65% clears) in most runs (mean 48).
+-- A friend who reached STAGE 10 over 3 days of play has flown dozens of runs, so a genuine new player has it; 14 was within
+-- reach of the first runs of stage 1.
 drop function if exists private.fw_ref_cfg();
 create or replace function private.fw_ref_cfg(
   out days integer, out stage integer, out min_best integer, out gems integer, out coins integer, out ms integer[], out ms_gems integer[],
   out month_cap integer, out new_window interval, out burst_n integer, out burst_window interval
 ) language sql immutable set search_path = '' as $$
-  select 3, 10, 14, 15, 10000, array[3,10,25], array[50,150,500], 25, interval '24 hours', 5, interval '1 hour';
+  select 3, 10, 30, 15, 10000, array[3,10,25], array[50,150,500], 25, interval '24 hours', 5, interval '1 hour';
+$$;
+-- A counted friend is paid only this long after the link (owner's decision 2026-10-28, burst protection): a burst of links found
+-- later (fw_referral_link holds every unpaid invite of a burst) still catches invites that met their goal quickly. Its own
+-- function, so fw_ref_cfg keeps its OUT columns (changing them needs a drop).
+create or replace function private.fw_ref_hold() returns interval
+language sql immutable set search_path = '' as $$
+  select interval '24 hours';
 $$;
 
 -- The invited friend's device sends the code from ?r= once. Answers a status instead of raising, so the spent request quota
@@ -2278,6 +2485,10 @@ declare
   v_burst integer;
 begin
   if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  -- the invited player needs a real account (owner's decision 2026-10-28): guests are free and only IP-rate-limited, so scripted
+  -- guests could otherwise be invitees by the dozen. Raised, not answered, so the client keeps the code and sends it again after
+  -- its sign-in (the quota below is not spent: the error rolls the call back)
+  perform private.fw_need_account(v_me);
   if p_code is null or upper(p_code) !~ '^[0-9A-HJKMNP-TV-Z]{8}$' then raise exception 'fw_bad_input: bad code' using errcode = '22023'; end if;
   perform pg_advisory_xact_lock(hashtextextended(v_me::text, 2));   -- the caller's friend writes (fw_friend_request takes the same lock)
   v_row := private.fw_social_row(v_me, true);
@@ -2320,6 +2531,7 @@ declare
   v_best integer;
 begin
   if v_me is null then raise exception 'fw_auth: sign-in required' using errcode = '28000'; end if;
+  perform private.fw_need_account(v_me);   -- as fw_referral_link: a guest's progress does not count (the client sends none)
   if p_stage is null or p_stage < 1 or p_stage > 50 then raise exception 'fw_bad_input: bad stage' using errcode = '22023'; end if;
   select * into v_r from private.fw_referrals r where r.invitee_id = v_me for update;
   if not found then return jsonb_build_object('status', 'none'); end if;
@@ -2363,7 +2575,8 @@ begin
   select * into v_inv from private.fw_ref_inviter i where i.player_id = v_me;
   return jsonb_build_object('code', v_row.code, 'paid', coalesce(v_inv.paid, 0), 'ms_paid', coalesce(v_inv.ms_paid, 0),
     'month', private.fw_ref_month(v_me), 'cap', c.month_cap,
-    'ready', (select count(*) from private.fw_referrals r where r.inviter_id = v_me and r.done_at is not null and not r.held and r.payout_id is null),
+    'ready', (select count(*) from private.fw_referrals r where r.inviter_id = v_me and r.done_at is not null and not r.held and r.payout_id is null
+                and r.linked_at <= now() - private.fw_ref_hold()),   -- what a claim would pay now (a friend done within 24 h of the link waits)
     'held',  (select count(*) from private.fw_referrals r where r.inviter_id = v_me and r.held and r.payout_id is null),
     'open',  (select count(*) from private.fw_referrals r where r.inviter_id = v_me and r.done_at is null),
     'friends', (select coalesce(jsonb_agg(jsonb_build_object('nick', coalesce(sc.nick, 'Pilot'), 'days', x.days, 'stage', x.stage,
@@ -2404,6 +2617,7 @@ begin
   select array_agg(x.invitee_id) into v_ids from (
     select r.invitee_id from private.fw_referrals r
     where r.inviter_id = v_me and r.done_at is not null and not r.held and r.payout_id is null
+      and r.linked_at <= now() - private.fw_ref_hold()   -- the 24-hour hold after the link
     order by r.done_at, r.invitee_id limit greatest(0, c.month_cap - private.fw_ref_month(v_me))) x;
   v_n := coalesce(cardinality(v_ids), 0);
   if v_n > 0 then
@@ -2443,6 +2657,7 @@ create or replace function public.referral_ack(p_id bigint) returns boolean
 language sql security invoker set search_path = '' as $$ select private.fw_referral_ack(p_id); $$;
 
 revoke all on function private.fw_ref_cfg()                  from public, anon, authenticated;
+revoke all on function private.fw_ref_hold()                 from public, anon, authenticated;
 revoke all on function private.fw_ref_unacked(uuid, text)    from public, anon, authenticated;
 revoke all on function private.fw_ref_month(uuid)            from public, anon, authenticated;
 -- the invoker wrappers run their private function as the caller, so it needs execute (production answered 403 without it on 2026-10-20)
@@ -3120,10 +3335,12 @@ declare v jsonb;
 begin
   perform private.fw_admin_gate('mod');
   select jsonb_build_object('season', q.season, 'prev', q.prev, 'rolled_at', q.rolled_at,
+    -- beat / foes / top2 / flag: the collusion check (private.fw_vs_collusion; docs/admin.md 6, the review before a rollover)
     'top', (select coalesce(jsonb_agg(jsonb_build_object('rank', t.rank, 'nick', t.nick, 'rp', t.rp, 'tier', t.tier, 'claimed_at', t.claimed_at)
-              order by t.rank), '[]'::jsonb)
+                || private.fw_vs_collusion(q.prev, t.player_id) order by t.rank), '[]'::jsonb)
             from public.fw_vs_standing t where t.season = q.prev and t.rank <= 10),
-    'live', (select coalesce(jsonb_agg(jsonb_build_object('nick', x.nick, 'rp', x.rp, 'wins', x.wins, 'losses', x.losses) order by x.rp desc, x.player_id), '[]'::jsonb)
+    'live', (select coalesce(jsonb_agg(jsonb_build_object('id', x.player_id, 'nick', x.nick, 'rp', x.rp, 'wins', x.wins, 'losses', x.losses, 'ai', x.ai)
+                || private.fw_vs_collusion(q.season, x.player_id) order by x.rp desc, x.player_id), '[]'::jsonb)
              from (select * from public.fw_versus x where not x.hidden and (x.wins > 0 or x.losses > 0 or x.draws > 0)
                    order by x.rp desc, x.player_id limit 10) x))
   into v from private.fw_vs_season q;

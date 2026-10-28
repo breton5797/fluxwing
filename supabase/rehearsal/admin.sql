@@ -321,7 +321,12 @@ begin
   r := pg_temp.q('admin_season()');
   cur := (r ->> 'season')::int;
   if (r ->> 'prev')::int <> 202609 or jsonb_array_length(r -> 'top') <> 2 or r #>> '{top,0,nick}' <> 'Pilot' or (r #>> '{top,1,rank}')::int <> 2 then raise exception 'top: %', r; end if;
-  if r -> 'live' <> '[{"rp": 100, "nick": "Pilot", "wins": 2, "losses": 0}, {"rp": 50, "nick": "Doomed", "wins": 1, "losses": 0}]' then raise exception 'live: %', r -> 'live'; end if;
+  -- with the collusion check (fw_vs_collusion) and the AI count of the first season on every row
+  if r -> 'live' <> jsonb_build_array(
+       jsonb_build_object('id', pg_temp.u('b1'), 'rp', 100, 'nick', 'Pilot', 'wins', 2, 'losses', 0, 'ai', 0, 'beat', 0, 'foes', 0, 'top2', null, 'flag', false),
+       jsonb_build_object('id', pg_temp.u('b3'), 'rp', 50, 'nick', 'Doomed', 'wins', 1, 'losses', 0, 'ai', 0, 'beat', 0, 'foes', 0, 'top2', null, 'flag', false))
+    then raise exception 'live: %', r -> 'live'; end if;
+  if r #> '{top,0}' ?& array['beat', 'foes', 'top2', 'flag'] is not true then raise exception 'top carries the check: %', r -> 'top'; end if;
   perform pg_temp.who(pg_temp.u('a1'), '{"aal": "aal2"}');
   if pg_temp.q('admin_season_tick()') <> jsonb_build_object('season', cur) then raise exception 'season_tick in the running month changes nothing'; end if;
 end $$;

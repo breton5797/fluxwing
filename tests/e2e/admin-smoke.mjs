@@ -69,8 +69,9 @@ const canned = role => ({
   admin_errors: [{ id: 1, at: now, player_id: P1, build: 'L1', msg: XSS, stack: XSS + '\n at x', url: 'https://swishby.com/', ua: 'UA' }],
   admin_referrals_held: [{ invitee: P1, inviter: P2, inviter_nick: 'Ace', invitee_nick: XSS, invitee_best: 120, linked_at: now, days: 2, stage: 1 }],
   admin_referral_release: { released: 1 },
-  admin_season: { season: 202610, prev: 202609, rolled_at: now, top: NICKS.map((nick, i) => ({ rank: i + 1, nick, rp: 2400 - i * 170, tier: i < 3 ? 'gold' : 'silver', claimed_at: i % 3 ? now : null })),
-    live: NICKS.map((nick, i) => ({ nick, rp: 1480 - i * 115, wins: 30 - i * 2, losses: 8 + i })) },
+  admin_season: { season: 202610, prev: 202609, rolled_at: now, top: NICKS.map((nick, i) => ({ rank: i + 1, nick, rp: 2400 - i * 170, tier: i < 3 ? 'gold' : 'silver', claimed_at: i % 3 ? now : null,
+      beat: 20 - i, foes: i ? 6 : 2, top2: i ? .35 : .95, flag: !i })),
+    live: NICKS.map((nick, i) => ({ id: i ? P2 : P1, nick, rp: 1480 - i * 115, wins: 30 - i * 2, losses: 8 + i, ai: i % 4, beat: 30 - i * 2, foes: i === 1 ? 1 : 7, top2: i === 1 ? 1 : .4, flag: i === 1 })) },
   admin_season_tick: { season: 5 },
   admin_delete_player: { deleted: true },
   admin_log: [{ at: now, admin_id: ME, admin_nick: 'Boss', action: 'hide', target: P1, detail: { nick: XSS } }]
@@ -258,6 +259,7 @@ const shot = (page, name) => process.env.SHOT_DIR ? page.screenshot({ path: `${p
 
   // the season tick (owner only) and the hide toggle from the list's detail
   await clickTab(page, '시즌');
+  assert.equal(await page.locator('#view .tag.bad:text-is("담합 의심")').count(), 2, 'the collusion flag: one live row, one of last season');
   await page.click('#view button:text-is("정산 확인 실행")'); await page.click('#mOk');
   await page.waitForFunction(() => document.querySelector('#view .vw'));
   assert.ok(calls.some(c => c.name === 'admin_season_tick'));
