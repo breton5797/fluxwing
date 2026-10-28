@@ -54,6 +54,9 @@ function page(event){
   const req = event.request;
   const net = fetch(req).then(async res => { if (res.ok && isGame(req)) await putPage(res.clone()); return res; });
   event.waitUntil(net.catch(() => {}));
+  // Only the game races the clock: any other page (privacy, terms, delete-account, about, guide) waits for the network
+  // and is swapped for a cached copy only when the network fails, never just because it is slow
+  if (!isGame(req)) return net.catch(async err => (await fallback(req)) || Promise.reject(err));
   let timer;
   const slow = new Promise(res => { timer = setTimeout(res, NAV_TIMEOUT_MS, null); });
   return Promise.race([net, slow]).catch(() => null).then(async res => {

@@ -125,6 +125,27 @@ test('a navigation slower than the timeout is answered from the cache', async ()
   assert.match(src, /const NAV_TIMEOUT_MS = 3000;/);
 });
 
+test('a slow navigation to another page waits for the network instead of showing the cached game', async () => {
+  const w = fakeWorker({ timeoutMs: 20, net: () => new Promise(r => setTimeout(() => r(new Response('privacy page')), 120)) });
+  const c = await w.caches.open('swishby-' + w.version);
+  await c.put('/index.html', new Response('cached game'));
+  for (const p of ['/privacy.html', '/delete-account.html', '/about/', '/guide/']){
+    const { res } = await w.fire('fetch', { request: w.req(p, { mode: 'navigate' }) });
+    assert.equal(await res.text(), 'privacy page', `${p} is not replaced by the game after the timeout`);
+  }
+});
+
+test('an offline navigation to another page prefers its own cached copy', async () => {
+  const w = fakeWorker({ net: async () => { throw new TypeError('offline'); } });
+  const c = await w.caches.open('swishby-' + w.version);
+  await c.put('/index.html', new Response('cached game'));
+  await c.put('/terms.html', new Response('cached terms'));
+  const t = await w.fire('fetch', { request: w.req('/terms.html', { mode: 'navigate' }) });
+  assert.equal(await t.res.text(), 'cached terms');
+  const p = await w.fire('fetch', { request: w.req('/privacy.html', { mode: 'navigate' }) });
+  assert.equal(await p.res.text(), 'cached game', 'nothing else cached: the game opens rather than an error page');
+});
+
 test('same-origin images and fonts are cache-first', async () => {
   let n = 0;
   const w = fakeWorker({ net: async () => new Response('img' + (++n), { status: 200 }) });
