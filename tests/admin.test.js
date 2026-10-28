@@ -138,7 +138,7 @@ test('admin block: a sign-in error is shown as a fixed line, never the URL\'s ow
   for (const v of Object.values(A.ADM_AUTH_ERR)) assert.match(v, /[가-힣]/);
 });
 
-test('admin block: second factor — an owner below aal2 keeps the mod tabs, owner tabs wait', () => {
+test('admin block: second factor — every admin below aal2 gets the TOTP step first', () => {
   assert.equal(A.admAal({admin: true, role: 'owner', aal: 'aal2'}), 'aal2');
   assert.equal(A.admAal({aal: 'aal1'}), 'aal1');
   for (const bad of [null, {}, {aal: 'aal3'}, {aal: true}]) assert.equal(A.admAal(bad), null, JSON.stringify(bad));
@@ -149,7 +149,10 @@ test('admin block: second factor — an owner below aal2 keeps the mod tabs, own
   assert.equal(A.admNeedMfa('owner', 'aal1'), true);
   assert.equal(A.admNeedMfa('owner', null), true);
   assert.equal(A.admNeedMfa('owner', 'aal2'), false);
-  assert.equal(A.admNeedMfa('mod', 'aal1'), false, 'mod calls need no second factor');
+  assert.equal(A.admNeedMfa('mod', 'aal1'), true, 'mod calls need the second factor too');
+  assert.equal(A.admNeedMfa('mod', null), true);
+  assert.equal(A.admNeedMfa('mod', 'aal2'), false);
+  assert.equal(A.admNeedMfa(null, 'aal1'), false, 'no role: the denied screen, not the TOTP step');
   assert.deepEqual(['testers', 'referrals', 'log'].map(A.admOwnerTab), [true, true, true]);
   assert.deepEqual(['overview', 'players', 'mfa'].map(A.admOwnerTab), [false, false, false]);
   assert.equal(A.admMfaCode(' 123 456 '), '123456');
@@ -417,6 +420,16 @@ test('admin.html refuses to run inside a frame', () => {
   const frame = boot.indexOf('window.top !== window.self'), client = boot.indexOf('createClient(');
   assert.ok(frame > 0 && client > frame, 'the frame check comes before the client is created');
   assert.match(boot.slice(frame, client), /return;/);
+});
+
+test('admin.html keeps its session apart from the game: its own storage key, in sessionStorage', () => {
+  const boot = page.slice(page.indexOf('function boot(){'));
+  const opts = boot.match(/createClient\(CFG\.url, CFG\.key, (\{[^;]*\})\);/);
+  assert.ok(opts, 'createClient with options');
+  assert.match(opts[1], /storageKey: 'sb-swishby-admin'/);
+  assert.match(opts[1], /storage: window\.sessionStorage/);
+  assert.match(opts[1], /persistSession: true/);
+  assert.ok(!index.includes('sb-swishby-admin'), 'the game never reads the admin key');
 });
 
 test('admin.html is shipped by neither the iOS app nor the portal builds', () => {

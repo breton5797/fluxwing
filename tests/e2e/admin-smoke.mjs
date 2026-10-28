@@ -1,12 +1,12 @@
 // Admin page smoke: node tests/e2e/admin-smoke.mjs  (starts scripts/serve.mjs on 127.0.0.1:$PORT, default 5174, unless one answers there)
 // Nothing reaches a real server: every *.supabase.co request is answered by a fake backend here, and the SDK from the CDN is
 // served from node_modules (the identical file, so the page's SRI hash still holds). A signed-in session sits in the SDK's
-// storage key before the page loads, as the game would have left it.
+// own storage key (sb-swishby-admin, in sessionStorage) before the page loads; the game's localStorage session is never used.
 // Checks: an owner sees all nine tabs and each renders with no page error; a nickname with markup in it stays text (no <img>,
 // window.__xss untouched); the delete button wakes up only once the id is retyped and sends p_confirm; a mod sees no owner
 // tabs and no delete; admin_me false shows the no-permission screen; no session shows the sign-in screen with no guest option.
-// Second factor: an owner at aal1 keeps the mod tabs, the owner tabs show the TOTP step (enrol: QR + secret, or a code for a
-// verified factor); after the fake verify the session is aal2, admin_me says so and the owner tabs work. In a frame: nothing runs.
+// Second factor: every admin at aal1 (owner or mod) gets the TOTP step on every tab and no admin call goes out (enrol: QR + secret,
+// or a code for a verified factor); after the fake verify the session is aal2, admin_me says so and the tabs work. In a frame: nothing runs.
 // Charts: every chart is an inline SVG that answers hover and keyboard focus with a tooltip, its 표로 보기 twin opens and closes,
 // and a markup nickname stays text inside SVG labels and tooltips. Google Fonts are stubbed (SHOT_DIR=… lets them through for screenshots).
 import { chromium } from 'playwright';
@@ -77,13 +77,14 @@ const canned = role => ({
 });
 
 const b = await chromium.launch();
-async function open({ role, signedIn = true, width = 1280, aal = 'aal2', factors = [], over = {} }){
+async function open({ role, signedIn = true, gameSession = false, width = 1280, aal = 'aal2', factors = [], over = {} }){
   const ctx = await b.newContext({ viewport: { width, height: 900 } }), page = await ctx.newPage(), calls = [], errors = [], data = { ...canned(role), ...over }, sbReqs = [];
   const st = { aal, factors: factors.map(f => ({ ...f })), verifies: [] };
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
   page.on('dialog', d => { errors.push('native dialog: ' + d.type()); d.dismiss(); });
-  if (signedIn) await page.addInitScript(s => localStorage.setItem('sb-ecjeyelgcqbliavwltbc-auth-token', s), JSON.stringify(sess));
+  if (signedIn) await page.addInitScript(s => sessionStorage.setItem('sb-swishby-admin', s), JSON.stringify(sess));
+  if (gameSession) await page.addInitScript(s => localStorage.setItem('sb-ecjeyelgcqbliavwltbc-auth-token', s), JSON.stringify(sess));   // the game's session
   await page.route(/cdn\.jsdelivr\.net/, r => r.fulfill({ status: 200, contentType: 'text/javascript', body: SDK, headers: { 'access-control-allow-origin': '*' } }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, r => process.env.SHOT_DIR ? r.continue() : r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
   await page.route(/supabase\.co/, async r => {
@@ -113,8 +114,7 @@ async function open({ role, signedIn = true, width = 1280, aal = 'aal2', factors
     if (m){
       calls.push({ name: m[1], body: JSON.parse(req.postData() || '{}'), auth: req.headers()['authorization'] });
       if (m[1] === 'admin_me') return json(role ? { admin: true, role, aal: st.aal } : { admin: false, role: null, aal: null });
-      if (role === 'owner' && st.aal !== 'aal2' && ['admin_testers', 'admin_tester_set', 'admin_referrals_held', 'admin_referral_release', 'admin_season_tick', 'admin_delete_player', 'admin_log'].includes(m[1]))
-        return json({ code: '42501', message: 'fw_admin_mfa: second factor required' }, 403);
+      if (role && st.aal !== 'aal2'){ errors.push('an admin call below aal2: ' + m[1]); return json({ code: '42501', message: 'fw_admin_mfa: second factor required' }, 403); }   // the server: every admin call needs aal2
       if (!(m[1] in data)) return json({ code: 'PGRST202', message: 'unknown ' + m[1] }, 404);
       return json(data[m[1]]);
     }
@@ -330,24 +330,16 @@ for (const n of [2, 1, 0]){
   await ctx.close();
 }
 
-// --- owner at aal1, no factor yet: the mod tabs work, the owner tabs show the enrolment, a verified code opens them
+// --- owner at aal1, no factor yet: every tab shows the enrolment, no admin call goes out, a verified code opens them
 {
   const { ctx, page, calls, errors, st } = await open({ role: 'owner', aal: 'aal1' });
   await page.waitForSelector('#app:not([hidden]) #tabs button');
-  await page.waitForSelector('#view .vw');
+  await page.waitForSelector('#view #mfaBox');
   assert.deepEqual(await tabLabels(page), ['개요', '지표', '플레이어', '신고', '시즌', '오류', '테스터', '추천', '기록'], 'the owner tabs stay listed');
   assert.match(await page.textContent('#roleTag'), /2단계 미인증/);
   assert.equal(await page.isVisible('#mfaNote'), true);
-  await clickTab(page, '신고');
-  assert.ok((await page.textContent('#view')).includes(XSS), 'a mod-level tab works at aal1');
-  await page.click('#view button.link'); await settled(page);
-  assert.equal(await page.locator('#delBtn').count(), 0, 'no delete before the second factor');
-  assert.equal(await page.locator('#view button:text-is("2단계 인증 필요")').count(), 1);
-  await clickTab(page, '시즌');
-  assert.equal(await page.locator('#view button:text-is("정산 확인 실행")').count(), 0);
-  await clickTab(page, '기록');
-  assert.match(await page.textContent('#view'), /2단계 인증 필요/);
-  assert.ok(!calls.some(c => ['admin_log', 'admin_testers', 'admin_referrals_held'].includes(c.name)), 'owner reads wait for aal2');
+  for (const t of ['신고', '시즌', '기록']){ await clickTab(page, t); await page.waitForSelector('#view #mfaBox'); }
+  assert.deepEqual([...new Set(calls.map(c => c.name))], ['admin_me'], 'nothing but admin_me before the second factor');
   await noMarkup(page);
   await page.click('#mfaEnroll');
   await page.waitForSelector('#mfaQr');
@@ -372,10 +364,29 @@ for (const n of [2, 1, 0]){
   await ctx.close();
 }
 
+// --- a mod at aal1 with a verified factor: the code first, then the mod tabs (2026-10-28: mods need the second factor too)
+{
+  const { ctx, page, calls, errors, st } = await open({ role: 'mod', aal: 'aal1', factors: [{ id: 'f7', factor_type: 'totp', friendly_name: 'SWISHBY admin', status: 'verified' }] });
+  await page.waitForSelector('#view #mfaCode');
+  assert.match(await page.textContent('#roleTag'), /mod · 2단계 미인증/);
+  assert.equal(await page.isVisible('#mfaNote'), true);
+  await clickTab(page, '플레이어'); await page.waitForSelector('#view #mfaCode');
+  assert.deepEqual([...new Set(calls.map(c => c.name))], ['admin_me'], 'a mod below aal2 asks nothing but admin_me');
+  await page.fill('#mfaCode', '123456'); await page.click('#mfaGo');
+  await page.waitForSelector('#mfaNote', { state: 'hidden' });
+  await page.waitForFunction(() => document.querySelector('#view table'));
+  assert.equal(await page.textContent('#roleTag'), 'mod');
+  assert.ok(calls.some(c => c.name === 'admin_players'), 'the players tab loads after the code');
+  assert.deepEqual(await tabLabels(page), ['개요', '지표', '플레이어', '신고', '시즌', '오류'], 'still no owner tabs');
+  assert.deepEqual(errors, [], 'no page errors (mod mfa)');
+  console.log('PASS admin-smoke mod mfa');
+  await ctx.close();
+}
+
 // --- owner at aal1 with a verified factor: just the code
 {
   const { ctx, page, errors, st } = await open({ role: 'owner', aal: 'aal1', factors: [{ id: 'f9', factor_type: 'totp', friendly_name: 'SWISHBY admin', status: 'verified' }] });
-  await page.waitForSelector('#view .vw');
+  await page.waitForSelector('#view #mfaBox');
   await page.click('#mfaNoteBtn');
   await page.waitForSelector('#mfaCode');
   assert.equal(await page.locator('#mfaEnroll').count(), 0, 'no second enrolment');
@@ -395,7 +406,7 @@ for (const n of [2, 1, 0]){
   page.on('pageerror', e => errors.push(e.message));
   await page.route(/supabase\.co/, r => { sbReqs.push(r.request().url()); return r.abort(); });
   await page.route(/cdn\.jsdelivr\.net/, r => r.fulfill({ status: 200, contentType: 'text/javascript', body: SDK, headers: { 'access-control-allow-origin': '*' } }));
-  await page.addInitScript(s => localStorage.setItem('sb-ecjeyelgcqbliavwltbc-auth-token', s), JSON.stringify(sess));
+  await page.addInitScript(s => sessionStorage.setItem('sb-swishby-admin', s), JSON.stringify(sess));
   await page.goto(`http://127.0.0.1:${PORT}/privacy.html`);
   await page.evaluate(() => { const f = document.createElement('iframe'); f.id = 'fr'; f.src = 'admin.html'; document.body.append(f); });
   const fr = await (await page.waitForSelector('#fr')).contentFrame();
@@ -444,10 +455,12 @@ if (process.env.SHOT_DIR) for (const width of [1280, 360]){
   await ctx.close();
 }
 
-// --- no session: the sign-in screen, no rpc at all
+// --- no session: the sign-in screen, no rpc at all, even with the game signed in on the same origin (its own storage key)
 {
-  const { ctx, page, calls, errors } = await open({ role: 'owner', signedIn: false });
+  const { ctx, page, calls, errors } = await open({ role: 'owner', signedIn: false, gameSession: true });
   await page.waitForSelector('#login:not([hidden])');
+  assert.equal(await page.evaluate(() => localStorage.getItem('sb-ecjeyelgcqbliavwltbc-auth-token') !== null), true, 'the game session is there');
+  assert.equal(await page.evaluate(() => Object.keys(localStorage).some(k => /swishby-admin/.test(k))), false, 'nothing of the admin in localStorage');
   assert.ok(await page.isVisible('#gBtn') && await page.isVisible('#aBtn') && await page.isVisible('#mailIn'));
   assert.doesNotMatch(await page.textContent('#login'), /게스트로/);
   assert.equal(calls.length, 0);

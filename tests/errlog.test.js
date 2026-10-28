@@ -71,7 +71,10 @@ test('server: a private table, a capped definer function behind an authenticated
   assert.match(sql, /revoke all on function public\.report_error\(text, text, text, text, text, jsonb\)\s+from public, anon/);
   assert.match(sql, /grant execute on function public\.report_error\(text, text, text, text, text, jsonb\) to authenticated/);
   assert.match(sql, /grant execute on function private\.fw_report_error\(text, text, text, text, text, jsonb\) to authenticated, service_role/, 'the invoker wrapper needs this (production 403 on 2026-10-20)');
-  assert.match(sql, /interval '1 hour'\) >= 10/, 'per-player cap');
-  assert.match(sql, /interval '1 hour'\) >= 500/, 'global cap');
+  assert.match(sql, /c_cap_player constant int := 10;/, 'per-player cap');
+  assert.match(sql, /c_cap_all    constant int := 500;/, 'global cap');
+  assert.match(sql, /v_cap := case when v_fresh then c_cap_guest else c_cap_player end;/);
+  assert.match(sql, /interval '1 hour'\) >= v_cap then return false;/);
+  assert.match(sql, /\)\) >= c_cap_all then return false;/);
   assert.match(sql, /cron\.schedule\('fw_client_errors_gc', '40 15 \* \* \*',\s*'set statement_timeout = 0; delete from private\.fw_client_errors where at < now\(\) - interval ''30 days'';'\)/);
 });

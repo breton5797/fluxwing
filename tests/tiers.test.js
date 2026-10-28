@@ -88,8 +88,13 @@ test('server: every unit id (current and reserved) is on the whitelist; the boun
   // the rank's share of the bound: ranks up to ultra x1; each rank above its form-V mastery plus room for form growth, and never less
   const bm = sql.slice(sql.indexOf('create or replace function private.fw_bound_mul('), sql.indexOf('$$;', sql.indexOf('create or replace function private.fw_bound_mul(')));
   assert.ok(bm.length > 50, 'private.fw_bound_mul exists');
-  const groups = [...bm.matchAll(/array\[([^\]]*)\]\) then ([\d.]+)/g)].map(x => ({ ids: x[1].match(/'([a-z]+)'/g).map(s => s.slice(1, -1)), mul: +x[2] }));
+  // the ranks come from private.fw_unit_rank (one list for the share and the release check), the shares by rank number
+  const ur = sql.slice(sql.indexOf('create or replace function private.fw_unit_rank('), sql.indexOf('$$;', sql.indexOf('create or replace function private.fw_unit_rank(')));
+  const ranks = [...ur.matchAll(/array\[([^\]]*)\]\) then (\d+)/g)].map(x => ({ ids: x[1].match(/'([a-z]+)'/g).map(s => s.slice(1, -1)), rank: +x[2] }));
+  const muls = Object.fromEntries([...bm.matchAll(/when r = (\d+) then ([\d.]+)/g)].map(x => [+x[1], +x[2]]));
+  const groups = ranks.map(g => ({ ids: g.ids, mul: muls[g.rank] }));
   assert.equal(groups.length, 5);
+  ranks.forEach((g, i) => assert.equal(g.rank, i + 5));
   groups.forEach((g, i) => {
     assert.deepEqual(g.ids, T.TIER_IDS.slice(i*4, i*4 + 4), `rank ${i + 5} ids`);
     assert.ok(g.mul >= T.TIER_MUL[i + 5] + 4*T.MASTERY, `rank ${i + 5}: x${g.mul} covers form V mastery`);
