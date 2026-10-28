@@ -1672,8 +1672,9 @@ const nextStageOf = (cur, cleared, n, open) => cleared && cur + 1 < n && open(cu
 function focusStage(clr, open, cur){ for (let i = clr.length - 1; i >= 0; i--) if (open(i) && !clr[i]) return i; return cur; }
 // units that became affordable since the snapshot (ids)
 const newlyAffordable = (before, now) => now.filter(id => !before.includes(id));
-// where a run's first gate spawns: FIRST_GATE px past the right edge, so a retry reaches a decision sooner; rookie runs keep their longer lead-in
-const FIRST_GATE = 20;
+// where a run's first gate spawns: FIRST_GATE px past the right edge; rookie runs keep their longer lead-in. 80, not closer: the timed
+// obstacles (geyser, blade) run on the clock, so moving the first gate shifts every gate's meeting phase and undoes the stage retune
+const FIRST_GATE = 80;
 const firstGateX = (lw, rookie, lead) => rookie ? lw + 80 + lead : lw + FIRST_GATE;
 // the Perfect band (the next gate's Perfect zone, drawn while the PERFECT tip is up): once per device, on a tutorial run, never in versus
 const perfBandDue = o => o.mode !== 'versus' && o.step === 2 && !o.seen;

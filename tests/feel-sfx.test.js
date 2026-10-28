@@ -19,9 +19,11 @@ const A = block('audio', 'FLAP_DETUNE, flapFreq, PASS_SCALE, passFreq');
 const X = loadFx();
 
 // (5) death-to-restart tempo
-test('first gate: LW + 20 on a normal run, rookie runs keep their LW + 80 + lead', () => {
-  assert.equal(F.FIRST_GATE, 20);
-  assert.equal(F.firstGateX(360, false, 110), 380);
+test('first gate: LW + 80 on a normal run (the stage courses were tuned at it), rookie runs keep their LW + 80 + lead', () => {
+  // The timed obstacles (geyser, blade) run on the clock, so a closer first gate moves every gate's meeting phase: at LW + 20
+  // ZERO cleared the stage-40 boss 24% against 44% at LW + 80 (90 runs each, 2026-10-28), so the retune holds only at 80
+  assert.equal(F.FIRST_GATE, 80);
+  assert.equal(F.firstGateX(360, false, 110), 440);
   assert.equal(F.firstGateX(360, true, 110), 360 + 80 + 110, 'ROOKIE.lead is kept');
   assert.match(fnBody('reset'), /spawnGate\(firstGateX\(LW, rookieOn\(\), ROOKIE\.lead\)\);/);
   assert.doesNotMatch(fnBody('reset'), /spawnGate\(LW \+ 80/, 'the old fixed lead is gone');
