@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#07050f;color:#f3eefc}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:#07050f;animation:btgone 0s 8s forwards}@keyframes btgone{to{visibility:hidden}}#boot i{width:28px;height:28px;border:3px solid #4ff0ff;border-right-color:transparent;border-radius:50%;animation:bt 1s linear infinite}@keyframes bt{to{transform:rotate(1turn)}}</style>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:dark;box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#07050f;color:#f3eefc}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:#07050f;animation:btgone 0s 8s forwards}@keyframes btgone{to{visibility:hidden}}#boot i{width:28px;height:28px;border:3px solid #4ff0ff;border-right-color:transparent;border-radius:50%;animation:bt 1s linear infinite}@keyframes bt{to{transform:rotate(1turn)}}</style>
 <title>SWISHBY 2027</title>
 <meta name="description" content="탭 한 번으로 나는 원터치 비행 게임. 게이트를 아슬아슬하게 스쳐 콤보를 쌓고, 대시로 뚫고, 랭크 대전과 시즌에 도전하세요.">
 <meta name="theme-color" content="#07050f"><meta name="color-scheme" content="dark">
@@ -40,12 +40,14 @@
 :root:lang(zh-TW){--cjk:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Hiragino Sans",system-ui,sans-serif}
 :root:lang(ru),:root:lang(ar),:root:lang(he){--cjk:system-ui,"Segoe UI",Tahoma,"Noto Sans",sans-serif}
 :lang(ar) *{letter-spacing:0!important}
+:lang(ko) body{word-break:keep-all;overflow-wrap:anywhere}   /* Korean wraps between words, never inside one (자석 stays whole) */
 html,body{height:100%}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 #stage{position:relative;height:100%;width:100%;max-width:560px;margin:0 auto;overflow:hidden;background:#000}
 canvas{display:block;width:100%;height:100%}
-.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:16px;padding:24px 16px;text-align:center;overflow-y:auto;touch-action:pan-y;background:radial-gradient(ellipse at 50% 40%,rgba(7,5,15,.35),rgba(7,5,15,.84))}
+#c{position:absolute;left:0;top:env(safe-area-inset-top,0px);height:calc(100% - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}   /* #stage runs edge to edge; the play field (and its drawn HUD) stays clear of the notch and the home indicator */
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:16px;padding:calc(56px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));text-align:center;overflow-y:auto;touch-action:pan-y;background:radial-gradient(ellipse at 50% 40%,rgba(7,5,15,.35),rgba(7,5,15,.84))}
 .logoimg{display:block;width:min(330px,82vw);height:auto;filter:drop-shadow(0 0 18px rgba(255,79,139,.35))}
 .tag{color:var(--dim);font-size:15px;max-width:32ch;line-height:1.5;text-wrap:balance}
 .feat{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:360px}
@@ -66,7 +68,7 @@ canvas{display:block;width:100%;height:100%}
 .capbox{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9}   /* the Turnstile widget, shown only while it needs the player */
 select.ghost{appearance:none;-webkit-appearance:none;padding-right:16px}
 select.ghost option{background:#140e26;color:var(--ink)}
-.playpre{font:700 13px var(--body);color:var(--cool);text-decoration:none;padding:6px 14px;border:1px solid var(--line);border-radius:999px}
+.playpre{display:inline-flex;align-items:center;box-sizing:border-box;min-height:44px;font:700 13px var(--body);color:var(--cool);text-decoration:none;padding:6px 14px;border:1px solid var(--line);border-radius:999px}
 .playpre::before{content:'▶ '}
 .keys{display:grid;grid-template-columns:auto auto;gap:6px 14px;font-size:13px;color:var(--dim);text-align:left}
 .keys b{color:var(--ink);font-weight:700;letter-spacing:.06em}
@@ -175,7 +177,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 .abtn{--p:0;--ring:var(--cool);position:absolute;bottom:calc(66px + env(safe-area-inset-bottom,0px));width:78px;height:78px;border-radius:50%;border:0;padding:0;cursor:pointer;
   background:conic-gradient(var(--ring) calc(var(--p) * 1turn), rgba(243,238,252,.12) 0);display:grid;place-items:center;transition:transform .1s,box-shadow .2s;touch-action:none}
 .abtn > span{width:66px;height:66px;border-radius:50%;background:rgba(10,7,22,.88);display:grid;place-items:center;align-content:center;gap:1px;color:var(--ink);font:13px "Bungee",Impact,var(--cjk);letter-spacing:.04em;text-align:center;line-height:1.05}
-.abtn small{font:700 10px var(--body);letter-spacing:.02em;color:var(--dim);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.abtn small{font:700 9.5px var(--body);line-height:1.05;letter-spacing:.02em;color:var(--dim);max-width:60px;overflow:hidden;white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}   /* a long skill name takes 2 lines inside the fixed 66 px core */
 .abtn.ready{box-shadow:0 0 24px var(--ring);animation:pulse2 1s infinite}
 .abtn:active{transform:scale(.92)}
 .abtn:focus-visible{outline:2px solid var(--cool);outline-offset:3px}
@@ -186,6 +188,7 @@ select.ghost option{background:#140e26;color:var(--ink)}
 @keyframes pulse3{50%{box-shadow:0 0 44px var(--ring),0 0 0 3px var(--ring)}}
 @keyframes pulse2{50%{box-shadow:0 0 38px var(--ring)}}
 #topBtns{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));inset-inline-end:12px;display:flex;gap:8px;z-index:4}
+body.playing #topBtns{inset-inline-end:auto;right:12px;left:auto}   /* the pause button stays on the physical right in every language: in RTL it would cover the drawn hearts at the top left */
 body.playing #topBtns .ib:not(#pauseBtn){display:none}   /* a live run keeps only pause; the pause screen brings the settings back */
 #rotate{display:none}
 @media (orientation:landscape) and (max-height:500px) and (pointer:coarse){#rotate{display:grid;place-items:center;position:fixed;inset:0;z-index:98;background:#07050f;color:#f3eefb;font:700 20px var(--body);padding:16px;text-align:center}}   /* phones held sideways: the stage would be 390 px tall */
@@ -210,13 +213,13 @@ body.playing #topBtns .ib:not(#pauseBtn){display:none}   /* a live run keeps onl
 .strule{font-weight:600;font-size:11px;opacity:.85;margin-top:2px}
 .stgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:6px 0 14px}
 .stc{position:relative;min-height:54px;border-radius:10px;border:1px solid var(--line);background:rgba(14,10,30,.7);color:#fff;font:700 15px var(--body);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
-.stc small{font:600 10px var(--body);opacity:.8}
+.stc small{font:600 11px var(--body);opacity:.8}
 .stc.done{border-color:var(--gold)}
 .stc.boss{box-shadow:inset 0 0 0 1px rgba(255,90,110,.7)}
 .stc.boss::before{content:'♛';position:absolute;top:2px;left:5px;font-size:10px;color:var(--gold)}
 .stc.cur{outline:2px solid var(--cool)}
 .stc[disabled]{cursor:default;filter:grayscale(.85) brightness(.55)}
-.stc .lk{position:absolute;inset:auto 4px 3px auto;font-size:9px;color:var(--ink);opacity:.9}
+.stc .lk{position:absolute;inset:3px 4px auto auto;font-size:9px;color:var(--ink);opacity:.9}
 .stc:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 .stnote{font:600 11px var(--body);color:var(--ink);opacity:.75;text-align:center}
 .helpcard p{margin:0;font-size:14px;line-height:1.55;color:var(--ink)}
@@ -231,8 +234,9 @@ body.playing #topBtns .ib:not(#pauseBtn){display:none}   /* a live run keeps onl
 .bigcode{font:44px "Bungee",Impact,sans-serif;letter-spacing:.25em;color:var(--gold)}
 .vsstatus{font-size:13px;color:var(--dim);min-height:1.3em}
 .vsnote{font-size:11.5px;color:var(--dim);line-height:1.45}
-.legal{font-size:11px;color:var(--dim);line-height:1.5;margin-top:8px}.legal a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.legal{font-size:11px;color:var(--dim);line-height:1.5;margin-top:8px}.legal a{color:inherit;text-decoration:underline;text-underline-offset:2px;padding:12px 4px}   /* the padding makes a 44 px tall tap target around the 11 px link */
 .vsmode{grid-template-columns:repeat(2,minmax(0,1fr))}
+#vsScr .vsmode{grid-template-columns:repeat(3,minmax(0,1fr))}   /* 1v1 · 2v2 · FFA on one row; the season switch (#lbSea) keeps 2 */
 .vsroster{font-size:12.5px;font-weight:600;color:var(--ink);min-height:1.3em;overflow-wrap:anywhere}
 #vsWait{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;justify-items:center}
 #vsWait[hidden]{display:none}
@@ -250,6 +254,7 @@ body.playing #topBtns .ib:not(#pauseBtn){display:none}   /* a live run keeps onl
 .cring span{width:70px;height:70px;border-radius:50%;background:#120c24;display:grid;place-items:center;font:28px "Bungee",Impact,sans-serif}
 .contcard .ghost,.confcard .ghost,.seacard .ghost{width:100%;padding:12px;font-size:14px;display:inline-flex;justify-content:center;align-items:center;gap:6px}
 .contcard .ghost.primary,.confcard .ghost.primary,.seacard .ghost.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.contcard .ghost[disabled]{opacity:.5;cursor:default}
 #confScr{z-index:8}
 #seaScr{z-index:7}
 .seacard{text-align:center;align-items:center}
@@ -286,8 +291,9 @@ body.playing #topBtns .ib:not(#pauseBtn){display:none}   /* a live run keeps onl
 .hangar{box-sizing:border-box;width:min(354px,100%);display:flex;flex-direction:column;gap:8px;padding:14px 16px;border:1px solid var(--line);border-radius:18px;background:rgba(14,10,30,.62);backdrop-filter:blur(4px)}
 .hg-top{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
 .hg-row{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center}
-.hg-arrow{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(243,238,252,.06);color:var(--ink);font:700 22px var(--body);line-height:1;cursor:pointer}
+.hg-arrow{position:relative;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(243,238,252,.06);color:var(--ink);font:700 22px var(--body);line-height:1;cursor:pointer}
 .hg-arrow:hover{border-color:var(--cool)}
+.hg-arrow::after{content:"";position:absolute;inset:-4px;border-radius:50%}   /* 48 px touch target */
 .hg-arrow:focus-visible{outline:2px solid var(--cool);outline-offset:3px}
 #hgCv{width:100%;max-width:180px;height:86px;justify-self:center}
 .hg-name{font-family:"Bungee",Impact,sans-serif;font-size:28px;line-height:1;letter-spacing:.04em}
@@ -308,8 +314,9 @@ body.playing #topBtns .ib:not(#pauseBtn){display:none}   /* a live run keeps onl
 .hg-dots button[aria-current="true"]::before{height:10px;margin-top:-5px;border-radius:3px;box-shadow:0 0 8px var(--c)}
 .hg-dots button:focus-visible{outline:2px solid var(--cool);outline-offset:1px}
 [dir=rtl] .hg-row,[dir=rtl] .hg-dots,[dir=rtl] #hgCount{direction:ltr}   /* the unit carousel keeps one order in every language: ‹ previous, dots, › next, "1 / 20" */
-.hg-info{display:flex;flex-direction:column;gap:8px;min-height:0;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;scrollbar-width:none}
-.hg-info::-webkit-scrollbar{display:none}
+.hg-info{display:flex;flex-direction:column;gap:8px;min-height:0;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(243,238,252,.35) transparent}   /* a visible thin bar shows there is more unit text below */
+.hg-info::-webkit-scrollbar{width:3px}
+.hg-info::-webkit-scrollbar-thumb{border-radius:2px;background:rgba(243,238,252,.35)}
 .hg-info.clip{padding-bottom:12px;-webkit-mask-image:linear-gradient(#000 calc(100% - 18px),transparent);mask-image:linear-gradient(#000 calc(100% - 18px),transparent)}
 .bdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px}
 /* wallet, rarity, shop, rewards */
@@ -318,8 +325,8 @@ body.playing #topBtns .ib:not(#pauseBtn){display:none}   /* a live run keeps onl
 button.wpill{cursor:pointer}
 .wallet .wpill{padding:0 6px;gap:4px}
 @media (max-width:379px){.wallet .lvbar{display:none}}   /* three currency pills: the XP bar gives way on narrow screens */
-@media (max-width:419px){#topBtns{gap:4px;inset-inline-end:8px}#topBtns .ib{width:32px;height:32px}.wallet{inset-inline-start:8px;gap:2px;max-width:calc(100% - 164px)}.wallet .wpill{height:26px;padding:0 4px;gap:2px;font-size:11px;letter-spacing:0}}   /* one row up to Lv 999 · 999K · 999K · 9.9K: 4×32 + 3×4 + 8 + 8 + 8 */
-@media (max-width:339px){#topBtns{gap:3px}#topBtns .ib{width:28px;height:28px;font-size:13px}.wallet{gap:1px;max-width:calc(100% - 145px)}.wallet .wpill{padding:0 3px;font-size:10px}}   /* 320 px phones: 4×28 + 3×3 + 8 + 8 + 8 */
+@media (max-width:419px){#topBtns{gap:4px;inset-inline-end:8px}body.playing #topBtns{right:8px}#topBtns .ib{width:32px;height:32px}#topBtns .ib::after{inset:-7px -3px}#topBtns #pauseBtn::after{inset:-7px}.wallet{inset-inline-start:8px;gap:2px;max-width:calc(100% - 164px)}.wallet .wpill{height:26px;padding:0 4px;gap:2px;font-size:11px;letter-spacing:0}}   /* one row up to Lv 999 · 999K · 999K · 9.9K: 4×32 + 3×4 + 8 + 8 + 8 */
+@media (max-width:339px){#topBtns{gap:3px}#topBtns .ib{width:28px;height:28px;font-size:13px}#topBtns .ib::after{inset:-9px -2px}#topBtns #pauseBtn::after{inset:-9px}.wallet{gap:1px;max-width:calc(100% - 145px)}.wallet .wpill{padding:0 3px;font-size:10px}}   /* 320 px phones: 4×28 + 3×3 + 8 + 8 + 8 */
 button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 .ic{display:inline-block;flex:none}
 .ic.coin{width:11px;height:11px;border-radius:50%;background:var(--gold);box-shadow:inset -2px -2px 0 rgba(0,0,0,.25)}
@@ -351,19 +358,24 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 .trialtag{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--gold)}
 #toast{position:absolute;left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:calc(100% - 32px);background:rgba(14,10,30,.94);border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:999px;font:600 14px var(--body);text-align:center;z-index:9;pointer-events:none}
 #menu{padding-top:calc(54px + env(safe-area-inset-top,0px))}
+.row .ghost,#langSel,.lbhead .ghost{min-height:44px}   /* 44 px touch targets: menu row, card rows, every card's close button */
+#dailySub,#vsSub,#lbSub{font-size:11px}
+/* modal cards hide the HUD chrome: it would paint over the card and take its taps (the pause screen keeps the settings; shop and purchase confirmations keep the balances) */
+body:has(.overlay:not(#menu):not(#pauseScr):not([hidden])) #topBtns{visibility:hidden}
+body:has(.overlay:not(#menu):not(#pauseScr):not(#shopScr):not(#confScr):not([hidden])) .wallet{visibility:hidden}
 @media (max-height:900px){.tag{display:none}}
 @media (max-height:820px){.logoimg{width:min(300px,78vw)}}
 @media (max-height:720px){.keys,.hg-passive{display:none}}
 @media (hover:none) and (pointer:coarse){.keys{display:none}}
 /* fitMenu() adds .tight when the menu would not fit on one screen: flavour text and key hints go, spacing tightens */
-#menu.tight{gap:12px;padding-bottom:14px}
+#menu.tight{gap:12px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 #menu.tight #hgCv{max-width:150px;height:72px}
 #menu.tight .tag,#menu.tight .keys{display:none}
 #menu.tight .logoimg{width:min(280px,74vw)}
 #menu.tight .hangar{gap:6px;padding:12px 16px}
 #menu.tight .hg-lock{gap:2px 8px}
 /* .snug: still too tall after .tight and the clipped unit text (fitMenuBox) */
-#menu.snug{gap:7px;padding-top:calc(40px + env(safe-area-inset-top,0px));padding-bottom:8px}
+#menu.snug{gap:7px;padding-top:calc(40px + env(safe-area-inset-top,0px));padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
 #menu.snug .logoimg{width:min(230px,64vw)}
 #menu.snug #hgCv{max-width:124px;height:54px}
 #menu.snug .hangar{gap:4px;padding:8px 14px}
@@ -388,12 +400,12 @@ button.wpill:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
 #menu.rookie .hg-chips,#menu.rookie .hg-stats,#menu.rookie .hg-info{display:none}
 #menu.rookie .hangar{gap:6px;padding:10px 14px}
 #menu.rookie #hgCv{max-width:136px;height:62px}
-#menu.rookie .hg-row{grid-template-columns:34px minmax(0,1fr) 34px}
-#menu.rookie .hg-arrow{width:34px;height:34px;font-size:19px}
+#menu.rookie .hg-row{grid-template-columns:40px minmax(0,1fr) 40px}
+#menu.rookie .hg-arrow{width:40px;height:40px;font-size:19px}
 #menu.rookie .hg-name{font-size:25px}
 #menu.rookie .hg-role{font-size:11px}
 #menu.rookie .hg-dots button{height:12px}
-@media (max-height:760px){#menu.rookie{gap:10px;padding-top:calc(44px + env(safe-area-inset-top,0px));padding-bottom:10px}#menu.rookie .logoimg{width:min(250px,70vw)}#menu.rookie .startbig{font-size:23px;padding:13px 24px}.dailybig{padding:10px 14px}.mode2{gap:8px}.ghost{padding:8px 13px}}
+@media (max-height:760px){#menu.rookie{gap:10px;padding-top:calc(44px + env(safe-area-inset-top,0px));padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}#menu.rookie .logoimg{width:min(250px,70vw)}#menu.rookie .startbig{font-size:23px;padding:13px 24px}.dailybig{padding:10px 14px}.mode2{gap:8px}.ghost{padding:8px 13px}}
 /* result card: why the run ended, the daily line, the challenge */
 .why{font-size:13.5px;font-weight:700;line-height:1.4;color:var(--ink);text-wrap:balance}
 .dailynote{font-size:11.5px;font-weight:700;letter-spacing:.06em;color:var(--cool);font-variant-numeric:tabular-nums;text-wrap:balance}
