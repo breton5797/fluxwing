@@ -1,5 +1,5 @@
 // Higgsfield art smoke: node tests/e2e/art-smoke.mjs  (dev server: PORT=5291 node scripts/serve.mjs; PORT defaults to 5173)
-// Every *supabase* request is aborted. Waits for the 29 art files, then screenshots at a 390x844 phone size: the gates of each zone, every surprise
+// Every *supabase* request is aborted. Waits for the 37 art files, then screenshots at a 390x844 phone size: the gates of each zone, every surprise
 // kind in each zone (mid-lunge, mid-flight, mid-fall), all five bosses, a hit flash, the enraged state and a telegraph. Then it blocks art/ and checks
 // the procedural fallback draws without an error. Screenshots land in $SHOTS as art-*.png.
 import { chromium } from 'playwright';
@@ -16,7 +16,7 @@ await page.route(/supabase/, r => r.abort());
 const z50 = () => Array(50).fill(0);
 const seed = () => page.evaluate(stg => { localStorage.clear(); for (const [k, v] of Object.entries({ fw27_tut: 1, fw27_lang: 'en', fw27_dintro: 1, fw27_stg2: stg }))
   localStorage.setItem(k, JSON.stringify(v)); }, { gates: z50(), score: z50(), clr: z50(), star: z50(), open: 49 });
-const artIn = () => page.waitForFunction(() => performance.getEntriesByType('resource').filter(e => /\/art\/[\w-]+\.webp$/.test(e.name) && e.responseEnd > 0).length >= 29, null, { timeout: 15000 });
+const artIn = () => page.waitForFunction(() => performance.getEntriesByType('resource').filter(e => /\/art\/[\w-]+\.webp$/.test(e.name) && e.responseEnd > 0).length >= 37, null, { timeout: 15000 });
 const boot = async () => { await page.reload(); await page.waitForFunction(() => window.FW && FW.state === 'menu'); await artIn(); await page.waitForTimeout(150); };
 const start = async (i, salt = '') => { await page.evaluate(v => { FW.salt = v; document.getElementById('startBtn').click(); }, salt); await page.evaluate(n => document.querySelectorAll('#stageScr .stc')[n].click(), i);
   await page.waitForFunction(() => FW.state === 'play'); };

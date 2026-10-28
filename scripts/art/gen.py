@@ -76,6 +76,42 @@ for k, (v, z) in BOSS.items():
     A[f'boss-{k}'] = (f'Boss monster for an arcade game: {v}. Facing LEFT in three-quarter side view, looking toward the left edge of the image, '
                       f'menacing but stylised, full body visible. {Z[z]}. {STYLE}', '1:1', 'transparent')
 
+# Themed gate obstacles (section 10): a tileable stem plus a tip at the gap, separate objects for bottom and top.
+STEM = ('The object is cut off cleanly by BOTH the top edge and the bottom edge of the image, so neither end is visible: '
+        'it is one continuous straight vertical section of uniform width along its whole length, front view. '
+        'It is tall and narrow: its solid body fills only the middle third of the image width, with irregular organic '
+        'edges and small detail poking out a little at the sides. Fully transparent background left and right of it. '
+        'Polished stylised 3D game asset render, bright colours, soft rim light, strong readable silhouette, '
+        'not a pipe, not a cylinder, not a straight-sided column, no text, no letters, no watermark, no shadow, no glow halo.')
+TIP = ('The object enters from the {edge} edge of the image, where its body is cut off flat and wide (the cut spans about '
+       'two thirds of the image width), and it ends in the middle of the image in a clear point aimed straight {dir}. '
+       'Front view, fully transparent background. Polished stylised 3D game asset render, bright colours, soft rim light, '
+       'strong readable silhouette, not a pipe, no text, no letters, no watermark, no shadow, no glow halo.')
+OB = {
+ 'grove-bot':  ('a thick twisted carnivorous-plant stalk of fleshy green stems braided together, overlapping leaf sheaths, small thorny leaves and glowing lime veins',
+                'a carnivorous-plant stalk rising up and ending in a big closed glowing bud with tightly shut, thorn-toothed petals'),
+ 'grove-top':  ('a hanging bundle of gnarled twisted roots and dark green vines, intertwined root strands with moss, small leaves and glowing aqua spores, hanging downward',
+                'a bundle of hanging gnarled roots and vines that ends in a dangling cluster of spiky thorny seed pods with glowing cores'),
+ 'canyon-bot': ('a hoodoo rock column of stacked, balanced, rounded sandstone boulders with uneven bulging outlines and horizontal strata bands',
+                'a hoodoo: a column of stacked balanced sandstone boulders, as wide as the column at the bottom, topped by a big flat slab cap rock that overhangs clearly wider than the column'),
+ 'canyon-top': ('a hanging column of layered strata rock with jagged irregular ledges, horizontal sandstone bands in tan, orange and terracotta with turquoise mineral veins',
+                'hanging layered strata rock that ends in a cluster of sharp stalactites'),
+ 'magma-bot':  ('a rising column of erupting lava fire: glowing molten lava with rough black basalt crust plates and flames licking up along both sides',
+                'a short, wide, compact composition: a thick stub of glowing molten lava column with black basalt crust plates, as wide as two thirds of the image and only a third of the image tall, keeping that same width (not a volcano, not a cone, no flat base), bursting at its top into a flaming geyser crest of fire and lava spray that narrows to a point'),
+ 'magma-top':  ('a hanging flow of molten lava pouring downward: a thick glowing orange-red lava stream with cooling black crust plates and drips along its edges',
+                'a thick hanging stream of glowing orange molten lava with a few black crust plates, the same width where it enters (no lid, no plate, no flat shelf), its lower end narrowing into heavy glowing lava drips'),
+ 'palace-bot': ('a spiralling crystal spire: a thick twisted column of faceted sky-blue and violet crystal wound by a spiral band of polished gold filigree',
+                'a spiralling crystal spire with a polished gold ring around it, ending in a sharp faceted crystal point'),
+ 'palace-top': ('a hanging cluster of long faceted pale-blue crystal icicles bundled together and bound with gold filigree, hanging downward',
+                'a hanging crystal icicle cluster with gold filigree that ends in an ornate gold chandelier pendant with a crystal drop'),
+}
+for k, (stem, tip) in OB.items():
+    z, side = k.split('-')
+    A[f'ob-{k}-stem'] = (f'A game obstacle body: {stem}. {Z[z]}. {STEM}', '9:16', 'transparent')
+    A[f'ob-{k}-tip'] = (f'A game obstacle end piece: {tip}. {Z[z]}. ' + TIP.format(
+        edge='bottom' if side == 'bot' else 'top', dir='UP toward the top of the image' if side == 'bot' else 'DOWN toward the bottom of the image'),
+        '1:1' if k == 'magma-bot' else '3:4', 'transparent')
+
 
 def run(name):
     prompt, ar, bg = A[name]
