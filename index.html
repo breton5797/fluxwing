@@ -1765,16 +1765,23 @@ function fxCfgMerge(def, over, path = '') {
   }
   return out;
 }
-function fxQualityPick(hw, saved) {
+// learned: the level auto quality settled on in an earlier session on this device (fw27_fxq_auto). A first launch never
+// starts at high: a fast device gets there through fxQualityUp, a slow one would stutter through its first run.
+function fxQualityPick(hw, saved, learned) {
   if (saved && saved !== 'auto') return saved;
+  if (learned === 'low' || learned === 'mid' || learned === 'high') return learned;
   const cores = hw.cores || 4, mem = hw.mem || 4;
   if (cores <= 4 || mem <= 3) return 'low';
-  if (cores <= 6) return 'mid';
-  return 'high';
+  return 'mid';
 }
 function fxQualityStep(q, p90Ms) {
   if (p90Ms <= 20) return q;
-  return q === 'high' ? 'mid' : 'low';
+  return q === 'high' && p90Ms <= 40 ? 'mid' : 'low';   // a window over 40 ms at high skips mid
+}
+// One tier up after smoothFrames frames in a row whose windows all had p90 under 12 ms (the loop allows this once a session)
+function fxQualityUp(q, smoothFrames, p90Ms) {
+  if (smoothFrames < 600 || p90Ms >= 12) return q;
+  return q === 'low' ? 'mid' : 'high';
 }
 function fxFeatures(q, a11y, rm, fair) {
   const low = q === 'low', high = q === 'high';
@@ -1788,8 +1795,8 @@ function fxFeatures(q, a11y, rm, fair) {
     flash: !rm && !!a11y.flash,
     slowmo: !rm && !fair,
     waves: low ? 0 : high ? 2 : 1,
-    glow: !low,               // canvas shadowBlur at the per-frame hot spots (the costliest raster work)
-    dprCap: low ? 1.5 : 2     // backing-store pixels scale with the square of this
+    glow: high,               // canvas shadowBlur at the per-frame hot spots (the costliest raster work: ~2x p95 frame time at mid)
+    dprCap: low ? 1.5 : high ? 2 : 1.75   // backing-store pixels scale with the square of this
   };
 }
 const hitstopFor = (level, cfg) => fxClamp(cfg.hitstop[level] ?? cfg.hitstop.mid, .04, .12);
@@ -2295,7 +2302,7 @@ const FS_KEYS = Object.freeze(['fw27_wallet2', 'fw27_owned', 'fw27_pass', 'fw27_
   'fw27_bird', 'fw27_nick', 'fw27_tut', 'fw27_rookie_runs', 'fw27_dstreak', 'fw27_dbonus', 'fw27_vsclaim', 'fw27_evo']);
 const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_bestu', 'fw27_rday', 'fw27_ad2x', 'fw27_glide', 'fw27_affnew', 'fw27_stg', 'fw27_stage', 'fw27_lang', 'fw27_mute', 'fw27_mus', 'fw27_vib', 'fw27_ads', 'fw27_trial', 'fw27_rp2',
   'fw27_rej', 'fw27_vsmode', 'fw27_dg', 'fw27_daily_', 'fw27_sync',
-  'fw27_fxq', 'fw27_fxshake', 'fw27_fxflash',   // fx quality and accessibility: per-device hardware/comfort choices
+  'fw27_fxq', 'fw27_fxq_auto', 'fw27_fxshake', 'fw27_fxflash',   // fx quality (and the level auto learned) and accessibility: per-device hardware/comfort choices
   'fw27_push', 'fw27_pushk', 'fw27_feed2',     // friend alerts: the toggle follows this device's Notification permission; feed2 is this device's read cursor
   'fw27_ptok',         // the iOS app's APNs device token (one per install)
   'fw27_ev_first',     // product events: this device's first launch was reported (an install is per device)
@@ -2616,9 +2623,10 @@ const FXCFG0 = (() => { try { return JSON.parse($('fxcfg').textContent); } catch
 let FXCFG = fxCfgMerge(FX_DEFAULTS, FXCFG0);
 const fxSettings = { q: store.get('fw27_fxq', 'auto'), shake: store.get('fw27_fxshake', true), flash: store.get('fw27_fxflash', true) };
 const fxHw = { cores: navigator.hardwareConcurrency || 4, mem: navigator.deviceMemory || 4, dpr: window.devicePixelRatio || 1 };
+function fxLearn(q){ try { store.set('fw27_fxq_auto', q); } catch(e){} }   // auto quality's level for the next launch; fxSettings.q stays 'auto'
 const glowPx = px => IMP.feat.glow ? px : 0;   // shadowBlur radius at the hot spots: 0 on low quality
 function impNew(q){
-  q = q || fxQualityPick(fxHw, fxSettings.q);
+  q = q || fxQualityPick(fxHw, fxSettings.q, store.get('fw27_fxq_auto', null));
   return { q, feat: fxFeatures(q, fxSettings, RM, fairMode()), pool: fxPool(FXCFG.pool[q]), shk: { ox: 0, oy: 0, vx: 0, vy: 0 },
     flashCol: [0, 0, 100], flashA: 0, waves: [], caT: 0, slow: 0, gray: 0, deathT: -1, comboLvl: 0, coinPulse: 0, crackT: 0, rayT: 0, stampT: -1, glassT: 0, rng: fxRng((Math.random() * 1e9) | 0) };
 }
@@ -3448,7 +3456,7 @@ function startGame(m){
 function toMenu(){
   if (typeof hideTip === 'function') hideTip(); if (mode === 'versus') vsReset();
   state = 'menu'; mode = 'endless'; reset(); state = 'menu'; $('stageScr').hidden = true;
-  $('over').hidden = true; $('menu').hidden = false; $('wallet').hidden = false; updateDaily(); renderHangar(); renderWallet(); seaCheck(); cloudMenu(); startSubSync();
+  $('over').hidden = true; $('menu').hidden = false; $('wallet').hidden = false; updateDaily(); renderHangar(); renderWallet(); seaCheck(); cloudMenu(); reconnect(); startSubSync();
 }
 
 /* ---------- unit skills ---------- */
@@ -4216,7 +4224,7 @@ async function claimAd(place, btn, pay){
 $('oAd2x').addEventListener('click', e => { e.stopPropagation(); claimAd('coin2x', $('oAd2x'), () => { const a = ad2xLeft(store.get('fw27_ad2x', null), dayKey()); store.set('fw27_ad2x', { day: a.rec.day, n: (a.rec.n | 0) + 1 }); W.coins += adRun.coinBonus; }); });   // coin2x: five a day (fw27_ad2x)
 $('oAdDaily').addEventListener('click', e => { e.stopPropagation(); const b = adRun.dailyBonus; claimAd('daily2x', $('oAdDaily'), () => { W.coins += b.coin; W.dia += b.dia; W.gems += b.gem; }); });
 function showOver(){
-  state = 'over'; overAt = performance.now();
+  state = 'over'; overAt = performance.now(); reconnect();
   if (mode !== 'versus') store.set('fw27_ads', adRunDone(adNorm(store.get('fw27_ads', null), Date.now())));
   let nb, shownBest;
   if (mode === 'daily'){
@@ -7162,6 +7170,8 @@ function online(){
   dbBusy = true; dbAt = Date.now();
   return dbP = initDB().catch(() => {}).then(() => { dbBusy = false; });
 }
+// A session that started offline: the menu, a game over and the browser's 'online' event try again (online() keeps the 15 s limit)
+function reconnect(){ if (backend === 'none') online(); }
 function submitScore(sc, gp, m, key, bird = B.id){   // bird: the unit that flew the score (a resend may come while another is selected)
   if (backend === 'none' || !uid || readOnly){ if (supaCfg()) needSync = true; return; }   // not signed in yet: syncLocal() sends it later
   writeQ = writeQ.then(async () => {
@@ -8324,14 +8334,16 @@ function frameSteps(elapsedS, maxStep = .034, cap = .25){
 }
 /* loop-rules:end */
 let last = performance.now();
-const fxFrameMs = []; let fxFrameI = 0;
+const fxFrameMs = []; let fxFrameI = 0, fxSmooth = 0, fxUpDone = false;   // fxSmooth: frames in a row in windows with p90 < 12 ms; one step up a session
 function loop(now){
   const el = (now - last)/1000; last = now;
   const steps = frameSteps(el);
   if (fxSettings.q === 'auto' && state === 'play'){
     fxFrameMs[fxFrameI++ % 120] = el * 1000;
     if (fxFrameI % 120 === 0){ const srt = fxFrameMs.slice().sort((a, b) => a - b), p90 = srt[Math.floor(srt.length * .9)];
-      const q2 = fxQualityStep(IMP.q, p90); if (q2 !== IMP.q){ IMP = impNew(q2); resize(); } }
+      let q2 = fxQualityStep(IMP.q, p90); fxSmooth = p90 < 12 ? fxSmooth + 120 : 0;
+      if (q2 === IMP.q && !fxUpDone){ q2 = fxQualityUp(IMP.q, fxSmooth, p90); if (q2 !== IMP.q) fxUpDone = true; }
+      if (q2 !== IMP.q){ fxSmooth = 0; IMP = impNew(q2); fxLearn(q2); resize(); } }
   }
   if (state !== 'paused' && !(window.FW && window.FW.hold)) for (const h of steps) update(h);
   document.body.classList.toggle('playing', state === 'play');
@@ -8542,6 +8554,21 @@ applyI18n(); renderWallet();
 requestAnimationFrame(loop);
 ADS.ev('loaded');
 online();
+window.addEventListener('online', () => online());
+/* sw-reg:start — where sw.js may run: the live site and its Vercel previews, never the native app; ?sw=1 lets QA try it on the local server. Pure. */
+function swOk(loc, nat){
+  if (nat) return false;
+  const h = String(loc.hostname || '');
+  if (h === 'swishby.com' || h.endsWith('.vercel.app')) return true;
+  return (h === 'localhost' || h === '127.0.0.1') && /[?&]sw=1(&|$)/.test(String(loc.search || ''));
+}
+/* sw-reg:end */
+function swReg(){
+  if (!('serviceWorker' in navigator)) return;
+  const go = () => navigator.serviceWorker.register('/sw.js').catch(() => {});   // offline start for the Android app (a TWA on swishby.com)
+  if (document.readyState === 'complete') go(); else window.addEventListener('load', go, { once: true });
+}
+if (swOk(location, NAT)) swReg();
 })();
 </script>
 

@@ -41,13 +41,9 @@ test('page metadata sits in <head>, and the page starts dark', () => {
 });
 
 // The old game's worker (registered by src/main.js for v2.html) answered offline navigations with v2.html.
-// Browsers re-fetch sw.js on navigation; this version must only clear its caches and unregister itself.
-test('sw.js retires itself instead of serving the old game', () => {
-  const sw = read('../sw.js');
-  assert.match(sw, /registration\.unregister\(\)/);
-  assert.match(sw, /caches\.delete/);
-  assert.doesNotMatch(sw, /addEventListener\('fetch'|cache\.addAll|caches\.match|clients\.claim/);   // serves nothing, caches nothing
-  assert.doesNotMatch(read('../index.html'), /serviceWorker\.register/);
+// sw.js now serves the live game offline (tests/sw.test.js); it must never fall back to the old page.
+test('sw.js never serves the old game', () => {
+  assert.doesNotMatch(read('../sw.js'), /v2\.html/);
 });
 
 test('the title, the share title and the install name say SWISHBY', () => {
