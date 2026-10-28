@@ -83,6 +83,29 @@ test('about page: 4 power-ups and Elo RP (+20..+80), never +50/−50 for a 1v1 w
   }
 });
 
+test('about page: the versus card headline is Elo RP (+20~80), not the old +50 / −50', () => {
+  const page = buildAbout();
+  const at = page.indexOf('<article class="mode vs">');
+  const card = page.slice(at, page.indexOf('</article>', at));
+  const big = card.match(/<span class="big">([^<]*)<\/span>/)[1];
+  assert.doesNotMatch(big, /50/, 'no +50 / −50 headline');
+  assert.match(big, /20/); assert.match(big, /80/);
+  assert.doesNotMatch(page, /[+＋]50 \/ [−-]50/, 'nowhere on the about page');
+});
+
+// ---------- CSS integrity: an unclosed comment once swallowed the sign-in sheet's rules ----------
+test('CSS head: every /* comment is closed, no comment swallows a rule, and the sign-in sheet rules are live', () => {
+  const styles = [...css.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]);
+  assert.ok(styles.length >= 2);
+  for (const s of styles){
+    assert.equal(s.split('/*').length - 1, s.split('*/').length - 1, 'balanced comment markers');
+    for (const c of s.match(/\/\*[\s\S]*?\*\//g) || []) assert.doesNotMatch(c, /[{}]/, 'a comment holds no rule: ' + c.slice(0, 80));
+  }
+  const live = styles.join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const sel of ['.authcard{', '.ahero .aicon{width:44px;height:44px', '.abenefits{list-style:none', '.sbtn{display:flex', '.sbtn.google{', '.aform{', '.sstar{', '.testertag{', '.authcard #authAsk .ghost'])
+    assert.ok(live.includes(sel), sel + ' is outside any comment');
+});
+
 // ---------- 28: sign-in entry points ----------
 test('menu top bar: an account icon that opens the existing sign-in sheet (or the signed-in card)', () => {
   const bar = html.slice(html.indexOf('<div id="topBtns">'), html.indexOf('</div>', html.indexOf('<div id="topBtns">')));

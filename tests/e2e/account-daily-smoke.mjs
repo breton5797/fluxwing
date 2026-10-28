@@ -80,6 +80,9 @@ const menu = page => page.waitForFunction(() => window.FW && FW.state === 'menu'
   // 1. the top-bar icon opens the sign-in sheet
   await page.click('#acctTop');
   assert.equal(await page.isVisible('#authScr'), true); assert.equal(await page.isVisible('#authPick'), true);
+  const look = await page.evaluate(() => { const i = document.querySelector('#authScr .ahero .aicon').getBoundingClientRect(), s = document.querySelector('#authScr .sbtn'), r = s.getBoundingClientRect(), li = document.querySelector('#authScr .abenefits');
+    return { iw: Math.round(i.width), bh: Math.round(r.height), br: getComputedStyle(s).borderTopLeftRadius, ls: li ? getComputedStyle(li).listStyleType : 'none' }; });
+  assert.deepEqual(look, { iw: 44, bh: 46, br: '12px', ls: 'none' }, 'the sign-in sheet is styled (icon 44 px, buttons 46 px / 12 px, no bullets)');
   await page.screenshot({ path: join(shots, 'p390-en-auth-from-icon.png') });
   await page.click('#authClose');
   // 2. the first stage clear shows "save your progress" once

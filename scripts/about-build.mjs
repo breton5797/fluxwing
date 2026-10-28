@@ -286,7 +286,7 @@ footer a:hover{color:var(--ink)}
         <article class="mode endless"><h3 data-t="endless"></h3><span class="big">50</span><p data-t="m_endless_d"></p>
           <ul class="zonelist">${zones.map((z, i) => `<li style="--za:${hsl(z.a)};--zb:${hsl(z.b)}"><span class="zn">${z.name}</span><span class="zs">${data.stages[i].from}–${data.stages[i].to}</span></li>`).join('')}</ul></article>
         <article class="mode daily"><h3 data-t="daily"></h3><span class="big" id="today"></span><p data-t="m_daily_d"></p></article>
-        <article class="mode vs"><h3 data-t="vs"></h3><span class="big">+50 / −50</span><p data-t="m_vs_d"></p></article>
+        <article class="mode vs"><h3 data-t="vs"></h3><span class="big">+20~80</span><p data-t="m_vs_d"></p></article>
       </div>
     </div>
   </section>
