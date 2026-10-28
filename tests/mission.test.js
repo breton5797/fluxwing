@@ -16,7 +16,7 @@ test('reaching the goal: a boss row starts the fight (bossStart), any other stag
   const up = body('function update(');
   assert.match(up, /if \(mode === 'endless' && !FX\.clearDone && !FX\.bossOn && gatesPassed >= stGoal\(curStage\)\)\{ if \(STAGES\[curStage\]\.boss\) bossStart\(\); else stageWin\(\); \}/);
   const b = body('function bossStart(');
-  assert.match(b, /TODO phase 2/);
+  assert.doesNotMatch(b, /stageWin\(/, 'phase 2: the boss is fought (tests/boss.test.js); its defeat wins the stage');
   assert.match(b, /FX\.bossOn = true;/);
 });
 

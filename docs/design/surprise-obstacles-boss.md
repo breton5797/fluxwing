@@ -188,3 +188,56 @@ Where the code differs from the text above, and why:
 Code map for phase 2: `stageWin` / `bossStart` / `winTick` sit just above `sigTick`; the update loop's goal check reads
 `!FX.bossOn`; gate spawning stops at `spawnIdx >= stGoal(curStage)` and tolerates an empty `gates` list; `surs` (shots and drops in flight)
 is cleared by `closeCont`.
+
+## 8. Implementation notes (phase 2, engine, 2026-10-29)
+
+Where the boss fight differs from section 3, and why:
+
+- **The arena is narrow on a phone.** On a 390×844 phone the logical width `LW` is about 296, so the bird's home is `x ≈ 89`
+  (`min(LW*.3, 150)`, the same as `reset()`) and the boss rests at `LW - 95 ≈ 201`. Its mouth is then only about 70 px from the bird.
+  The fixes below come from playing it at that width, and the scripted bot in `tests/e2e/boss-smoke.mjs` beats both stage 10 and stage 50.
+- **The volley aims where the bird was when the telegraph started**, not where it is when it fires. Fired from 70 px away at the bird's
+  current height, it could not be dodged. With the aim locked at the start of the 0.5 s glow (a dashed aim line shows it), moving during the
+  warning is the dodge, like the beam.
+- **Minions** hatch 110 px above and below the boss and hold still for 0.5 s (`wake`). They then home in with a soft turn (`steer` 1.2/s),
+  and each makes **one pass**: once a minion is behind the bird it stops homing and flies off. The bird cannot move sideways, so a minion that
+  kept circling back could not be dodged, only dashed. The 6 s life still caps them. The boss **summons no new minions while some are out**,
+  so they never stack up.
+- **"STORMCROWN … faster"**: `spd` 1.12 on the wall and the minions. Telegraph lengths stay the same for every boss, so it stays fair.
+- **One death cause, `boss`,** covers contact, shots, the wall, the beam, the charge and the minions. It has one hint, `whyBoss`. The banner key is
+  `bossWarn`. Both are in all 23 languages; nl translates it as "EINDBAAS NADERT!" to stay under `SAME_OK`.
+- **The win banner** puts the boss name in front of the clear line, e.g. "MAWBLOOM · STAGE 10 CLEAR!". `bossKill` edits the big banner
+  that `stageWin()` just raised, so `stageWin` itself is unchanged.
+- **The ram** starts from `dash()` (`if (boss) bossRam();`), so it uses the normal dash with its invulnerability.
+  - The miss point `LW - 150` is inside the boss's circle on a phone. A lunge at the boss's height therefore always connects, and the miss
+    path only shows when the bird is off the boss's height.
+  - During the 0.6 s after a hit, a lunge passes through the boss: dash invulnerability covers the bird.
+- **Gate-counted skills and ultimates** (TEMPEST and VALKYRIE's storm chain, Hurricane, GARUDA, PLEIAD's meteors): while the fight runs,
+  every `BOSS.gate` = 0.6 s counts as one gate in `bossUpdate`, so `FX.stormN` and `FX.ultN` run out and `ultEnd()` runs.
+  - Genesis, AURORA's lane, COSMOS's stars and QUASAR's beam find no gate and do nothing. Every gate lookup in the code already handled an
+    empty `gates` list.
+  - None of these effects damages the boss: only the ram does.
+  - The smoke casts the skill and the ultimate of SOLARIS, TEMPEST, PLEIAD, QUASAR, AURORA, COSMOS, GARUDA and VALKYRIE during a fight.
+    Nothing throws, and every gate-counted part ends.
+- **No score from the boss.** The boss code never touches `score`, `addScore` or `gatesPassed`; `tests/boss.test.js` checks the source.
+  The dash meter refills by itself during the fight (`meterGain`), and no orb or gate adds to it.
+- **QA jump** (`#dev` on localhost only): `FW.bossGo()` clears the course on a boss stage, marks the goal reached and starts the fight.
+  `FW.boss` and `FW.bsh` show the fight.
+
+Code map for phase 3 (art):
+
+- **Boss data:** the `boss:start` block. `BOSS.list[k].id` matches the art file names: `art/boss-<id>.webp`.
+- **Drawing:** `drawBoss(b)` draws one boss at `b.x, b.y`, facing left; this is the function to wrap. Around it:
+  - `drawBossFx()`: the telegraphs, then `drawBoss`, then the shots and minions;
+  - `drawBossBar(y)`: the HP bar.
+- **Sizes:**
+  - The hit circle is `BOSS.r` = 58. The procedural body is drawn at `R = 1.12 r` (≈ 65), so the body is about 130 px across and its
+    features (petals, crown, coils) reach about 1.45 R.
+  - A 345×384 sprite reads right at about 150–170 px tall, centred on `b.x, b.y`.
+  - The bird is `r` 13 (about 26 px across), so the boss is roughly 5–6 times the bird's size.
+- **State for the sprite:**
+  - `b.hitT > 0`: flash white;
+  - `b.rage`: red tint;
+  - `b.s.ph === 'tel'`, with `b.s.atk`: the mouth or eye glow;
+  - `b.dieT`: fade and shake.
+- **Other draw code:** the surprise skins are `SUR_SKIN` and `drawSur()` (just above `drawBossFx`). `drawGate` and `drawGateDeco` draw the gates.
