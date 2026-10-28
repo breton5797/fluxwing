@@ -34,9 +34,13 @@ test('stageWin pays the clear once and starts the MISSION CLEAR beat; the beat e
 
 test('runD in stage mode climbs for 45 gates and then holds the stage\'s top difficulty; daily and versus are unchanged', () => {
   const src = body('function runD(') + '\n}';
-  const run = (mode, d0, k) => new Function('mode', 'stD0', 'curStage', `${src}\nreturn runD(${k});`)(mode, () => d0, 0);
-  assert.equal(run('endless', .2, 45), .55);
-  assert.equal(run('endless', .2, 99), .55);
+  const ramp = +html.match(/ST_RAMP = ([.\d]+);/)[1];
+  const run = (mode, d0, k) => new Function('mode', 'stD0', 'curStage', 'ST_RAMP', `${src}\nreturn runD(${k});`)(mode, () => d0, 0, ramp);
+  // the plateau is d0 + ST_RAMP (.20 since the 100-gate curve tune 2026-10-29, was .35)
+  assert.match(html, /ST_RAMP = \.20;/);
+  assert.ok(Math.abs(run('endless', .2, 45) - .4) < 1e-9);
+  assert.ok(Math.abs(run('endless', .2, 99) - .4) < 1e-9);
+  assert.ok(Math.abs(run('endless', .2, 22.5) - .3) < 1e-9, 'half way up the ramp');
   assert.equal(run('daily', 0, 30), 30 / 45);
   assert.equal(run('daily', 0, 99), 1);
 });

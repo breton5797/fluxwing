@@ -2911,16 +2911,18 @@ const gGap = g => g.gap + (g.lane ? g.laneGap : g.type === 'pulse' ? Math.sin((T
 /* stages:start — the stage table and the stage course (owner's redesign 2026-10-27): pure, no DOM, no game state. tests/stages.test.js runs this block as it stands. */
 // 50 stages in 4 themed zones (10/15/15/10): NEON GROVE, CANYON RUN, MAGMA CORE, SKY PALACE. A stage adds at most one new element to the one before
 // it; a breather ('~') eases the numbers and adds nothing, a finale ('!', row.fin) closes each zone with tighter numbers. Every stage is a mission of
-// ST_GOAL gates (owner 2026-10-29); every 10th stage (row.boss: 10, 20, 30, 40, 50) ends in a boss fight after its goal (first clear x1.5 diamonds, diaClear).
-const ST_N = 50, ST_FIRST = [0,10,25,40], ST_CNT = [10,15,15,10], ST_GOAL = 100;
+// ST_GOAL gates (owner 2026-10-29; SKY PALACE flies its band's goal, 70); every 10th stage (row.boss: 10, 20, 30, 40, 50) ends in a boss fight after its
+// goal (first clear x1.5 diamonds, diaClear). ST_RAMP: runD's 45-gate ramp climbs d0 → d0 + ST_RAMP, then holds (tune 2026-10-29: was .35).
+const ST_N = 50, ST_FIRST = [0,10,25,40], ST_CNT = [10,15,15,10], ST_GOAL = 100, ST_RAMP = .20;
 // Per zone, first → last stage (linear): head start d0, gap of the first gates in px (before jitter), move / pulse share once each is in,
 // hazard chance per gate, signature-obstacle chance per gate, twin chance once twins are in, fog every fogN gates once fog is in, bg: the finale's
-// cut, px off the zone's last gap (retune 2026-10-28, docs/balance/README.md: ZERO clears the bosses at about 80 / 60 / 45 / 30%)
+// cut, px off the zone's last gap, goal: the zone's mission length in gates (tune 2026-10-29, docs/balance/README.md "Tune to the 100-gate curve":
+// ZERO clears stages 1 / 10 / 20 / 30 / 40 / 50 at about 100 / 83 / 68 / 35 / 31 / 24%, VOLT stage 10 at about 43%)
 const ST_BAND = Object.freeze([
-  {d0:[0,.09],   gap:[256,240], mv:[.05,.08], pu:[.03,.05], hp:[0,0],     sp:[.25,.35], tw:[0,0],     fogN:[0,0],   bg:28},
-  {d0:[.10,.20], gap:[236,198], mv:[.08,.10], pu:[.05,.06], hp:[.04,.07], sp:[.2,.28],  tw:[.10,.14], fogN:[0,0],   bg:27},
-  {d0:[.20,.27], gap:[196,192], mv:[.09,.10], pu:[.06,.08], hp:[.07,.09], sp:[.25,.35], tw:[.12,.15], fogN:[10,8],  bg:16},
-  {d0:[.28,.34], gap:[190,186], mv:[.10,.11], pu:[.08,.10], hp:[.09,.10], sp:[.2,.28],  tw:[.14,.16], fogN:[12,10], bg:18}
+  {d0:[0,.09],   gap:[280,256], mv:[.05,.08], pu:[.03,.05], hp:[0,0],     sp:[.20,.26], tw:[0,0],     fogN:[0,0],   bg:26, goal:100},
+  {d0:[.10,.20], gap:[232,192], mv:[.08,.10], pu:[.05,.06], hp:[.04,.07], sp:[.2,.22],  tw:[.10,.14], fogN:[0,0],   bg:3, goal:100},
+  {d0:[.23,.25], gap:[190,189], mv:[.09,.10], pu:[.06,.08], hp:[.07,.09], sp:[.25,.35], tw:[.12,.15], fogN:[10,8],  bg:1, goal:100},
+  {d0:[.27,.34], gap:[189,186], mv:[.10,.11], pu:[.08,.10], hp:[.09,.10], sp:[.2,.28],  tw:[.14,.16], fogN:[12,10], bg:1, goal:70}
 ].map(Object.freeze));
 // What each stage brings in, zone by zone ('' nothing new). Elements: swing (full-height swings; stage 1 keeps them small), move, pulse, the
 // patterns drop / stairs / zigzag, the hazards weight / over / drain / smoke, twin, fog05 / fog1 / fog2 (fog seconds; a new one replaces the old),
@@ -2944,11 +2946,11 @@ const STAGES = (() => {
       if (add && !rest && !fin && add !== 'pu+') el.add(add);
       const m = fin ? 1.2 : rest ? .7 : 1, fog = Object.keys(ST_FOG).find(has);
       const d0 = Math.max(0, L(B.d0, k) + (fin ? .02 : rest ? -.03 : 0)), gap = L(B.gap, k) + (rest ? 8 : fin ? -B.bg : 0);
-      out.push(Object.freeze({ d0: r4(d0), gm: r4(gap / (212 - d0*62)), goal: ST_GOAL,
+      out.push(Object.freeze({ d0: r4(d0), gm: r4(gap / (212 - d0*62)), goal: B.goal,
         mv: has('move') ? r4(L(B.mv, k) * m) : 0, pu: has('pulse') ? r4(L(B.pu, k) * m * (add === 'pu+' ? 1.6 : 1)) : 0,
         haz: Object.freeze(['weight', 'over', 'drain', 'smoke'].filter(has)), hp: r4(L(B.hp, k) * (fin ? 1.1 : rest ? .5 : 1)),
         fogN: fog ? Math.round(L(B.fogN, k)) : 0, fogDur: fog ? ST_FOG[fog] : 0, stall: has('stall'), pat: Object.freeze(['drop', 'stairs', 'zigzag'].filter(has)),
-        sig: ST_SIG.find(has) || null, sp: ST_SIG.some(has) ? r4(L(B.sp, k) * (fin ? 1.3 : rest ? .6 : 1)) : 0, tw: has('twin') ? r4(L(B.tw, k) * m) : 0,
+        sig: ST_SIG.find(has) || null, sp: ST_SIG.some(has) ? r4(L(B.sp, k) * (fin ? 1 : rest ? .6 : 1)) : 0, tw: has('twin') ? r4(L(B.tw, k) * m) : 0,
         sw: has('swing') ? 1 : .55, boss, fin, rest, zone: z }));
     });
   });
@@ -2957,8 +2959,8 @@ const STAGES = (() => {
 // The elements a stage row shows (tests: one new element per stage)
 const stElems = r => ['static', r.sw >= 1 && 'swing', r.mv > 0 && 'move', r.pu > 0 && 'pulse', ...r.pat, ...r.haz, r.tw > 0 && 'twin', r.sig,
   r.fogDur && Object.keys(ST_FOG).find(f => ST_FOG[f] === r.fogDur), r.stall && 'stall'].filter(Boolean);
-// Difficulty and gap (px, before jitter) at the stage's goal gate: runD's ramp (+0.35 over 45 gates, then held) read at the goal
-const stDGoal = r => r.d0 + (Math.min(1, r.d0 + .35) - r.d0) * Math.min(1, r.goal / 45);
+// Difficulty and gap (px, before jitter) at the stage's goal gate: runD's ramp (+ST_RAMP over 45 gates, then held) read at the goal
+const stDGoal = r => r.d0 + (Math.min(1, r.d0 + ST_RAMP) - r.d0) * Math.min(1, r.goal / 45);
 const stGapGoal = r => (212 - stDGoal(r) * 62) * r.gm;
 // Patterns: authored height steps (px) from the gate before, applied after the clamp. An episode every PAT_EVERY gates from gate 6, the stage's
 // patterns in turn; stairs and zigzag climb or fall (whichever stays on screen), a drop always falls. TWIN: the second gate of a twin comes at
@@ -3026,20 +3028,20 @@ function stLay(row, idx, d, prev, G, rng, srng, ease){
    falls from the top halfway between its gate and the one before. Per kind and gate: the zone's base + step across the zone, x hot on finales and
    bosses, x calm on breathers; at most one a gate, none before gate from + 1. Times in s, sizes in px. */
 const SUR = Object.freeze({
-  kinds: Object.freeze(['snap', 'shot', 'drop']), intro: Object.freeze({snap: 2, shot: 4, drop: 6}), from: 7, base: Object.freeze([.06, .08, .10, .12]), step: .02, hot: 1.3, calm: .5,
+  kinds: Object.freeze(['snap', 'shot', 'drop']), intro: Object.freeze({snap: 2, shot: 4, drop: 6}), from: 7, base: Object.freeze([.02, .06, .07, .07]), step: .01, hot: 1.3, calm: .7, w: Object.freeze({snap: 1, shot: .2, drop: 1}),
   snap: Object.freeze({trig: Object.freeze([100, 220]), k: Object.freeze([.30, .42]), keep: 112, min: 24, tel: .18, out: .12, hold: .5, back: .3, w: 30, head: 16}),
   shot: Object.freeze({tel: .45, fly: .55, r: 14, hr: 12, pad: 24}),
   drop: Object.freeze({trig: 260, tel: .4, v0: 300, acc: 1400, r: 18})
 });
 const surKinds = i => SUR.kinds.filter(k => i >= SUR.intro[k]);   // the kinds stage i has (0-based: snap from stage 3, shot from 5, drop from 7)
-function surRate(row, i){ const z = row.zone, k = (i - ST_FIRST[z]) / (ST_CNT[z] - 1); return (SUR.base[z] + SUR.step * k) * (row.fin || row.boss ? SUR.hot : row.rest ? SUR.calm : 1); }
+function surRate(row, i){ const z = row.zone, k = (i - ST_FIRST[z]) / (ST_CNT[z] - 1); return (SUR.base[z] + SUR.step * k) * (row.boss ? SUR.hot : row.rest ? SUR.calm : 1); }
 // The surprise of one stage gate (or null). sur: its own rng, three rolls a gate always, so the course (rng) and the extras (srng) roll as before.
 // L: the gate stLay laid, tw2: it is the second gate of a twin. No snap on a moving, pulsing or twin gate or one with an obstacle (a branch would
 // close the gap from above while the jaws close it from below); no drop after a twin (no room), beside a hazard or in a gust / geyser / blade span.
 function surLay(row, i, idx, L, tw2, sur){
   const u = sur(), a = sur(), b = sur(), ks = surKinds(i), p = surRate(row, i), P = SUR.snap;
-  if (idx < SUR.from || u >= p * ks.length) return null;
-  const k = ks[Math.floor(u / p)];
+  if (idx < SUR.from || u >= p * ks.reduce((t, k) => t + SUR.w[k], 0)) return null;
+  let c = u / p, k = ks[0]; for (const q of ks){ k = q; if ((c -= SUR.w[q]) < 0) break; }   // each kind takes w of the rate, in turn (a shot only .2)
   if (k === 'snap'){
     if (L.type !== 'static' || L.twin || tw2 || L.sg) return null;
     const dep = Math.min((P.k[0] + (P.k[1] - P.k[0]) * b) * L.gap, L.gap - P.keep);
@@ -3069,14 +3071,14 @@ const dropAt = t => { const P = SUR.drop, u = t - P.tel; return u < 0 ? {s: 'tel
    follows the bird's height and uses one attack at a time from its pool: pause → telegraph → attack. Its rng is seeded from the stage seed + ':b', so
    the course (rng), the extras (srng) and the surprises (':s') roll as before. Times in s, sizes in px, speeds in px/s. */
 const BOSS = Object.freeze({
-  r: 58, off: 95, lunge: 1500, miss: 150, back: .35, inv: .6, kb: 70, charge: 2.6, follow: .4, bob: 14, bobW: Object.freeze([2, 3.6]),
-  enter: Object.freeze([1.4, 1]), pause: Object.freeze([2.2, 1.5]), rage: .75, dieT: 1.1, gate: .6,   // enter: the banner, then the slide in; gate: fight time that counts as one gate (gate-counted skills)
+  r: 58, off: 95, lunge: 1500, miss: 150, back: .35, inv: .6, kb: 70, charge: 2.4, follow: .4, bob: 14, bobW: Object.freeze([2, 3.6]),
+  enter: Object.freeze([1.4, 1]), pause: Object.freeze([2.8, 1.8]), rage: .75, dieT: 1.1, gate: .6,   // enter: the banner, then the slide in; gate: fight time that counts as one gate (gate-counted skills)
   list: Object.freeze([
-    Object.freeze({id: 'mawbloom', name: 'MAWBLOOM', st: 9, hp: 5, zone: 0, spd: 1, pool: Object.freeze(['volley', 'wall'])}),
-    Object.freeze({id: 'dunehulk', name: 'DUNEHULK', st: 19, hp: 7, zone: 1, spd: 1, pool: Object.freeze(['volley', 'wall', 'charge'])}),
+    Object.freeze({id: 'mawbloom', name: 'MAWBLOOM', st: 9, hp: 4, zone: 0, spd: 1, pool: Object.freeze(['volley', 'wall'])}),
+    Object.freeze({id: 'dunehulk', name: 'DUNEHULK', st: 19, hp: 8, zone: 1, spd: 1, pool: Object.freeze(['volley', 'wall', 'charge'])}),
     Object.freeze({id: 'cinderwyrm', name: 'CINDERWYRM', st: 29, hp: 9, zone: 2, spd: 1, pool: Object.freeze(['volley', 'wall', 'charge', 'beam'])}),
-    Object.freeze({id: 'moltenking', name: 'MOLTEN KING', st: 39, hp: 12, zone: 2, spd: 1, pool: Object.freeze(['volley', 'wall', 'charge', 'beam', 'minion'])}),
-    Object.freeze({id: 'stormcrown', name: 'STORMCROWN', st: 49, hp: 15, zone: 3, spd: 1.12, pool: Object.freeze(['volley', 'wall', 'charge', 'beam', 'minion'])})   // "faster": spd on the wall, the charge and the minions
+    Object.freeze({id: 'moltenking', name: 'MOLTEN KING', st: 39, hp: 10, zone: 2, spd: 1, pool: Object.freeze(['volley', 'wall', 'charge', 'beam', 'minion'])}),
+    Object.freeze({id: 'stormcrown', name: 'STORMCROWN', st: 49, hp: 11, zone: 3, spd: 1.12, pool: Object.freeze(['volley', 'wall', 'charge', 'beam', 'minion'])})   // "faster": spd on the wall, the charge and the minions
   ]),
   atk: Object.freeze({
     volley: Object.freeze({tel: .5, act: .25, n: Object.freeze([3, 5]), spread: 12, v: 330, dv: 20, r: 10}),   // dv: added per boss
@@ -3169,11 +3171,11 @@ const stGap0 = i => Math.max(128, (212 - stD0(i)*62) * STAGES[i].gm);   // gap o
 const stFogN = i => STAGES[i].fogN;
 function runD(k){
   if (mode !== 'endless') return Math.min(1, Math.min(k/45, 1));
-  const d0 = stD0(curStage), cap = Math.min(1, d0 + .35);
+  const d0 = stD0(curStage), cap = Math.min(1, d0 + ST_RAMP);
   return k <= 45 ? d0 + (k/45)*(cap - d0) : cap;   // a 100-gate mission flies gates 46-100 at the stage's top difficulty (design 2026-10-29)
 }
-// The difficulty the speed reads. Stage mode: the gain over the stage's head start is scaled by stAcc (stage 50: +63 px/s over the first 45 gates
-// instead of +42); gaps and gate mix keep reading runD itself. Fair modes: d unchanged.
+// The difficulty the speed reads. Stage mode: the gain over the stage's head start is scaled by stAcc (stage 50: +36 px/s over the first 45 gates
+// instead of +24, with ST_RAMP .20); gaps and gate mix keep reading runD itself. Fair modes: d unchanged.
 const spdD = d => { if (mode !== 'endless') return d; const d0 = stD0(curStage); return d0 + (d - d0) * stAcc(curStage); };
 // Saves: new keys only. The old fw27_stg / fw27_stage (4-stage build) are read once to carry the unlock over, never written.
 const stg = (() => {
@@ -9060,8 +9062,8 @@ if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)
   selfTest(){
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b), S = [0,9,10,24,25,39,40,49], fails = [];
     const checks = {
-      goal: () => STAGES.every(r => r.goal === ST_GOAL) && ST_GOAL === 100 && eq(STAGES.map((r, i) => r.boss ? i : -1).filter(i => i >= 0), [9,19,29,39,49]),   // 100-gate missions, a boss fight every 10th stage
-      d0: () => eq(S.map(i => +stD0(i).toFixed(2)), [0,.11,.1,.22,.2,.29,.28,.36]),
+      goal: () => STAGES.every((r, i) => r.goal === (i < 40 ? ST_GOAL : 70)) && ST_GOAL === 100 && ST_RAMP === .20 && eq(STAGES.map((r, i) => r.boss ? i : -1).filter(i => i >= 0), [9,19,29,39,49]),   // 100-gate missions (70 in SKY PALACE, tune 2026-10-29), a boss fight every 10th stage
+      d0: () => eq(S.map(i => +stD0(i).toFixed(2)), [0,.11,.1,.22,.23,.27,.27,.36]),   // tune 2026-10-29: MAGMA CORE d0 .20-.27 -> .23-.25, SKY PALACE starts at .27
       curve: () => { const P = STAGES.map((r, i) => i).filter(i => !STAGES[i].rest && !STAGES[i].fin);   // the stage table: plain stages climb (head start, gap, difficulty at the goal), breathers ease off, finales peak, one new element a stage
         let seen = new Set(); const one = STAGES.every(r => { if (r.rest) return true; const n = stElems(r).filter(e => !seen.has(e)).length; seen = new Set(stElems(r)); return n <= 1; });
         return one && P.every((i, k) => !k || (stD0(i) >= stD0(P[k-1]) && stGap0(i) <= stGap0(P[k-1]) && stDGoal(STAGES[i]) >= stDGoal(STAGES[P[k-1]])))
@@ -9075,7 +9077,7 @@ if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)
         put(s0); return eq(a, b) && new Set(a).size === 4 && eq(k, [['branch'],['gust'],['geyser'],['blade']]); },
       accel: () => { const at = (m, st, f) => { const m0 = mode, s0 = curStage; mode = m; curStage = st; const v = f(); mode = m0; curStage = s0; return v; }, gain = st => at('endless', st, () => +((spdD(runD(45)) - spdD(runD(0))) * 120).toFixed(6)), D = [0,.2,.38,.5,.73,1];   // in-run acceleration by stage: the speed's share of the difficulty only, and nothing of it in the fair modes
         for (let i = 1; i < ST_N; i++) if (stAcc(i) <= stAcc(i-1)) return false;
-        return stAcc(0) === 1 && stAcc(ST_N - 1) === 1.5 && eq([0, 49].map(gain), [42, 63]) && S.every(st => at('endless', st, () => spdD(stD0(st)) === stD0(st) && spdD(runD(60)) >= runD(60)))
+        return stAcc(0) === 1 && stAcc(ST_N - 1) === 1.5 && eq([0, 49].map(gain), [24, 36]) && S.every(st => at('endless', st, () => spdD(stD0(st)) === stD0(st) && spdD(runD(60)) >= runD(60)))
           && ['daily','versus'].every(m => [0, 24, 49].every(st => at(m, st, () => D.every(d => spdD(d) === d) && [0, 20, 45, 90].every(k => (190 + spdD(runD(k))*120) * 1.25 === (190 + runD(k)*120) * 1.25)))); },
       hazard: () => { const put = v => { [mode, curStage, gates, orbs, hazs, spawnIdx, rng, srng, Math.random] = v; }, s0 = [mode, curStage, gates, orbs, hazs, spawnIdx, rng, srng, Math.random], at = (m, st, f) => { mode = m; curStage = st; return f(); };   // hazards: the table's chance, stage 11 on and none in the fair modes, where one is put, per-run state, texts
         const lay = (m, st, ex) => at(m, st, () => { gates = []; orbs = []; hazs = []; spawnIdx = 0; rng = mulberry32(7); srng = () => ex; Math.random = () => 0; for (let i = 0; i < 12; i++) spawnGate(400 + i*240);   // ex: every extras roll (twin, hazard, obstacle) at that value, 0 says yes to each: a hazard at every gate that can have one

@@ -6,10 +6,10 @@ import { readIndex, loadHitLoop } from './helpers/hitloop.js';
 // seeded stream so the stage course (rng) and the extras (srng) roll exactly as before. The surprise block builds on the stages block.
 const html = readIndex();
 const st = html.match(/\/\* stages:start[\s\S]*?\/\* stages:end \*\//), sb = html.match(/\/\* surprise:start[\s\S]*?\/\* surprise:end \*\//);
-const S = st && sb ? new Function(`${st[0]}\n${sb[0]}\nreturn {STAGES, ST_FIRST, ST_CNT, stLay, SUR, surKinds, surRate, surLay, snapAt, snapHit, shotAt, shotClear, dropAt};`)() : {};
+const S = st && sb ? new Function(`${st[0]}\n${sb[0]}\nreturn {STAGES, ST_FIRST, ST_CNT, ST_RAMP, stLay, SUR, surKinds, surRate, surLay, snapAt, snapHit, shotAt, shotClear, dropAt};`)() : {};
 const R = new Function(`${html.match(/function hashStr\(s\)\{[^\n]+/)[0]}\n${html.match(/function mulberry32\(a\)\{[^\n]+/)[0]}\nreturn {hashStr, mulberry32};`)();
 const ROWS = S.STAGES || [];
-const dAt = (row, k) => { const cap = Math.min(1, row.d0 + .35); return k <= 45 ? row.d0 + (k / 45) * (cap - row.d0) : cap; };
+const dAt = (row, k) => { const cap = Math.min(1, row.d0 + S.ST_RAMP); return k <= 45 ? row.d0 + (k / 45) * (cap - row.d0) : cap; };
 // a stage's course as spawnGate lays it: stLay on rng / srng, three more course rolls, then surLay on the surprise stream
 function course(i, n = 100, seed = 'stage:' + i + ':v2'){
   const row = ROWS[i], rng = R.mulberry32(R.hashStr(seed)), srng = R.mulberry32(R.hashStr(seed + ':x')), sur = R.mulberry32(R.hashStr(seed + ':s')), out = [];
@@ -22,19 +22,25 @@ function course(i, n = 100, seed = 'stage:' + i + ':v2'){
   return out;
 }
 
+// Rates: the 100-gate curve tune 2026-10-29 (docs/balance/README.md, "Tune to the 100-gate curve, 2026-10-29"): base [.06, .08, .10, .12] ->
+// [.02, .06, .07, .07], step .02 -> .01, x1.3 on boss rows only (was finales too), breathers x.5 -> x.7, a shot takes .2 of a kind's rate
 test('a pure surprise block next to the stages block, with the agreed numbers', () => {
   assert.ok(sb, 'surprise block');
   assert.ok(Object.isFrozen(S.SUR) && Object.isFrozen(S.SUR.snap) && Object.isFrozen(S.SUR.shot) && Object.isFrozen(S.SUR.drop));
   assert.deepEqual([...S.SUR.kinds], ['snap', 'shot', 'drop']);
-  assert.deepEqual([...S.SUR.base], [.06, .08, .10, .12]);
+  assert.deepEqual([...S.SUR.base], [.02, .06, .07, .07]);
+  assert.deepEqual([S.SUR.step, S.SUR.hot, S.SUR.calm, S.SUR.from], [.01, 1.3, .7, 7]);
+  assert.ok(Object.isFrozen(S.SUR.w));
+  assert.deepEqual({...S.SUR.w}, {snap: 1, shot: .2, drop: 1});
   assert.deepEqual([S.SUR.snap.keep, S.SUR.snap.tel, S.SUR.snap.out, S.SUR.snap.hold, S.SUR.snap.back], [112, .18, .12, .5, .3]);
   assert.deepEqual([[...S.SUR.snap.trig], [...S.SUR.snap.k]], [[100, 220], [.30, .42]]);
   assert.deepEqual([S.SUR.shot.tel, S.SUR.shot.fly, S.SUR.shot.r, S.SUR.shot.hr], [.45, .55, 14, 12]);
   assert.deepEqual([S.SUR.drop.trig, S.SUR.drop.tel, S.SUR.drop.v0, S.SUR.drop.acc, S.SUR.drop.r], [260, .4, 300, 1400, 18]);
 });
 
-test('the old course is untouched: gates of stages 1, 10, 25 and 50 lay exactly as before the surprises (snapshot taken on main 47bb0ce)', () => {
-  const before = {"0":[[222.53,251.66,"static"],[239.2,251.35,"static"],[219.93,258.05,"static"],[216.32,260.98,"static"],[202.49,250.5,"static"],[251.6,252.5,"static"],[257.29,253.25,"static"],[306.14,248.95,"static"],[267.03,249.18,"static"],[202.05,248.46,"static"],[250.53,254.19,"static"],[298.87,251.68,"static"]],"9":[[344.8,214.99,"static"],[291.01,217.28,"static"],[367.73,212.24,"static"],[294.78,207.83,"static"],[381.01,211.68,"static"],[297.66,208.51,"static"],[247.66,204.32,"static"],[347.66,212.42,"static"],[330.08,213.3,"move"],[249.68,213.22,"static"],[210.45,205.39,"static"],[217.97,204.72,"static"]],"24":[[383.4,174.72,"static"],[200.2,164.81,"static"],[157.17,171.62,"static"],[190.8,172.26,"static"],[273.73,172.48,"static"],[356.43,172.97,"static"],[306.43,175.67,"static"],[406.43,162.4,"pulse"],[220.43,161.67,"static"],[220.43,163.44,"static"],[268.77,172.95,"pulse"],[268.77,164.84,"static"]],"49":[[272.01,168.46,"static"],[316.43,164.99,"static"],[395.63,173.06,"static"],[212.95,168.57,"static"],[154.71,163.84,"static"],[233.21,160.11,"static"],[183.21,160.56,"static"],[283.21,167.33,"static"],[278.03,164.81,"move"],[355.59,159.88,"static"],[404.54,169.43,"static"],[302.23,163.37,"static"]]};
+// The snapshot was re-taken after the 100-gate curve tune 2026-10-29 changed the gaps (and so the heights); the surprise stream still moves nothing
+test('the course is untouched by surprises: gates of stages 1, 10, 25 and 50 lay exactly as the course alone lays them (snapshot re-taken 2026-10-29)', () => {
+  const before = {"0":[[231.21,275.68,"static"],[245.78,275.37,"static"],[229.24,282.07,"static"],[226.34,285.22,"static"],[213.8,274.95,"static"],[263.08,277.17,"static"],[261.82,278.14,"static"],[310.95,274.06,"static"],[270.28,274.51,"static"],[213.8,274.01,"static"],[262.72,279.96,"static"],[309.4,277.66,"static"]],"9":[[340.65,233.01,"static"],[291.09,235.3,"static"],[361.84,230.25,"static"],[294.56,226.04,"static"],[381,230.07,"static"],[297.21,227.1,"static"],[247.21,223.09,"static"],[347.21,231.39,"static"],[325.85,232.45,"move"],[253.22,232.56,"static"],[217.13,224.92,"static"],[224.07,224.44,"static"]],"24":[[377.87,192.71,"static"],[202.2,182.8,"static"],[166.07,189.61,"static"],[197.55,190.41,"static"],[280.69,190.77,"static"],[363.69,191.42,"static"],[313.69,194.27,"static"],[413.69,181.16,"pulse"],[228.89,180.58,"static"],[228.89,182.5,"static"],[270.41,192.17,"static"],[270.41,184.21,"static"]],"49":[[273.24,185.45,"static"],[314.94,181.98,"static"],[394.14,190.05,"static"],[217.88,185.73,"static"],[163.2,181.15,"static"],[242,177.58,"static"],[192,178.19,"static"],[292,185.12,"static"],[279.24,182.75,"move"],[357.51,177.99,"static"],[397.06,187.69,"static"],[301.56,181.79,"static"]]};
   for (const i of [0, 9, 24, 49]) assert.deepEqual(course(i, 12).map(g => [Math.round(g.base * 100) / 100, Math.round(g.gap * 100) / 100, g.type]), before[i], 'stage ' + (i + 1));
 });
 
@@ -90,6 +96,15 @@ test('exclusions: no snap on a moving, pulsing, twin or obstacle gate; no drop b
   assert.equal(S.surLay(ROWS[2], 2, 20, {gap: 220, type: 'static', twin: false, sg: null, haz: null}, true, sur), null, 'the second gate of a twin');
 });
 
+test('each kind takes its weight w of the rate: snap 1, shot .2, drop 1 (tune 2026-10-29: shots ended most bot runs), in that order', () => {
+  const i = 6, row = ROWS[i], p = S.surRate(row, i), L = {gap: 220, type: 'static', twin: false, sg: null, haz: null};
+  const at = c => { const v = [c * p, .5, .5]; let n = 0; const r = S.surLay(row, i, 20, L, false, () => v[n++]); return r && r.k; };
+  assert.deepEqual([0, .99, 1.01, 1.19, 1.21, 2.19, 2.21].map(at), ['snap', 'snap', 'shot', 'shot', 'drop', 'drop', null]);
+  let shots = 0, others = 0;
+  for (let k = 0; k < 50; k++) for (const g of course(k)) if (g.sr) g.sr.k === 'shot' ? shots++ : others++;
+  assert.ok(shots > 0 && shots * 3 < others, `fewer shots than the other kinds: ${shots} vs ${others}`);
+});
+
 test('a snap always leaves at least keep px of the gap open, and lunges at least min px', () => {
   const P = S.SUR.snap;
   for (let i = 2; i < 50; i++) for (const g of course(i)) if (g.sr && g.sr.k === 'snap'){
@@ -134,13 +149,15 @@ test('drop: .4 s telegraph, then falls from 300 px/s at 1400 px/s²', () => {
   assert.equal(q.s, 'fall'); assert.ok(Math.abs(q.y - (300 * .5 + 700 * .25)) < 1e-9);
 });
 
-test('rates by zone: base + .02 across the zone, x1.3 on finales and bosses, x.5 on breathers', () => {
+test('rates by zone: base + .01 across the zone, x1.3 on bosses, x.7 on breathers (tune 2026-10-29)', () => {
   for (let z = 0; z < 4; z++){
-    const a = S.ST_FIRST[z], b = a + S.ST_CNT[z] - 1, m = r => r.fin || r.boss ? 1.3 : r.rest ? .5 : 1;
+    const a = S.ST_FIRST[z], b = a + S.ST_CNT[z] - 1, m = r => r.boss ? 1.3 : r.rest ? .7 : 1;
     assert.ok(Math.abs(S.surRate(ROWS[a], a) - S.SUR.base[z] * m(ROWS[a])) < 1e-9, 'zone start ' + z);
-    assert.ok(Math.abs(S.surRate(ROWS[b], b) - (S.SUR.base[z] + .02) * m(ROWS[b])) < 1e-9, 'zone end ' + z);
+    assert.ok(Math.abs(S.surRate(ROWS[b], b) - (S.SUR.base[z] + .01) * m(ROWS[b])) < 1e-9, 'zone end ' + z);
   }
-  assert.ok(Math.abs(S.surRate(ROWS[19], 19) / ((S.SUR.base[1] + .02 * 9 / 14)) - 1.3) < 1e-9, 'stage 20: a boss without the finale numbers');
+  assert.ok(Math.abs(S.surRate(ROWS[19], 19) / ((S.SUR.base[1] + .01 * 9 / 14)) - 1.3) < 1e-9, 'stage 20: a boss without the finale numbers');
+  assert.ok(Math.abs(S.surRate(ROWS[24], 24) - (S.SUR.base[1] + .01)) < 1e-9, 'stage 25: a finale without a boss is not hot (its gust trap, re-measure 2026-10-29)');
+  for (let z = 1; z < 4; z++) assert.ok(S.SUR.base[z] >= S.SUR.base[z - 1], 'the rate never falls zone to zone');
   const share = i => course(i).filter(g => g.sr).length;
   const z0 = [6, 7].reduce((s, i) => s + share(i), 0), z3 = [42, 43].reduce((s, i) => s + share(i), 0);
   assert.ok(z3 > z0, `the palace has more than the grove: ${z3} vs ${z0}`);

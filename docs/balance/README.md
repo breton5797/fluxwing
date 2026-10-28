@@ -334,3 +334,331 @@ Measured with a fresh-player bot (stages 1-2 cleared, VOLT, empty wallet, flying
 | 40 px | 164 (140) | 1,144 → 1,544 (+35%) | 41 → 119 |
 
 The before and after numbers come from the same runs: each run read its "Distance bonus" pill. A clear on stages 3-10 paid 900–2,300 coins in the same runs. The largest failed run paid 543 coins (STAGE 8, 13 of 14 gates).
+
+
+## Re-measure after 100-gate missions and boss fights, 2026-10-29 (main dd0a65e)
+
+**Headline: the course is now the wall, not the boss.** ZERO at form I clears stage 1 at 93%, but stage 10 at 44% and stages 40/50 at 0%. It wins 96–100% of the boss fights it reaches on stages 10–30. Gates 46–100 fly at the stage's top difficulty (the `runD` plateau). At the narrow gaps from the 10-28 retune, 100 gates there are far more than this bot survives. VOLT clears nothing from stage 7 on except 14% of stage 15 and 5% of stage 20.
+
+Files (form I, 100 runs a cell, 7 units × 11 stages):
+- `remeasure-100-seeded.json`: the seeded courses, the headline;
+- `remeasure-100-anyseed.json`: a new course each run;
+- `remeasure-100-naive.json`: the course bot before this change (no reaction to branches or surprises);
+- `remeasure-100-bossgo.json`: the boss fights alone (`--bossgo`), 100 fights a unit and boss;
+- `remeasure-100-probe-g24.json` and `remeasure-100-probe-final.json`: lever probes (below).
+
+```
+PORT=5391 node scripts/serve.mjs     # another terminal
+PORT=5391 node scripts/balance.mjs --clear 1,3,5,7,10,15,20,25,30,40,50 --units volt,nimbus,zero,mochi,aegis,solaris,pulsar --runs 100 --jobs 12 --out docs/balance/remeasure-100-seeded.json
+PORT=5391 node scripts/balance.mjs --clear 10,20,30,40,50 --units … --runs 100 --jobs 12 --bossgo --out docs/balance/remeasure-100-bossgo.json
+```
+
+Each grid of 7,700 runs took 5.5 min with 12 pages.
+
+**What changed in `scripts/balance.mjs`:**
+- **The boss fight.** While `FW.boss` is set, the bot flies the scripted fight bot of `tests/e2e/boss-smoke.mjs`:
+  - it keeps out of the beam band, the charge line, the volley's aim, and the paths of shots and minions;
+  - it flies to the wall's hole;
+  - it smashes a minion when the meter is full;
+  - it rams when the meter is full and the boss is within 40 px of its height.
+
+  The same Gaussian aim error (`--aim`, 6 px) sits on its target height, with a new error at every telegraph and after every dash. It does not use the course bot's every-0.25 s dash, since in a fight a dash is a ram.
+- **A run ends as the game ends it.** That is the win (`FX.won`: the 100th gate, or the boss beaten), a death, or `--cap` 600 s. The clear rate is therefore a stage win.
+- **Per run** (`list` in the JSON): gates, won, cause (`deathWhy`), fight seconds, boss HP left. **Per row:** boss reached / won / win rate given reached, fight length (won: mean and median; lost: mean), HP left when lost, and the causes of the losses.
+- **The course bot reacts to what a player sees.** It does so after a 0.2 s reflex (`--react`), and `--naive` turns it off.
+  - **A shaking branch:** the top of its flap cycle stays under the fallen branch.
+  - **Twitching jaws:** the bottom of its cycle stays above them.
+  - **A locked shot or a falling drop** becomes a height band it does not fly through, on the side it is already on.
+
+  Without this the bot flew into most shots: ZERO died to shots in 76 of 100 stage-7 runs without it and 14 with it. A real player dodges these, so the naive numbers undersell every unit.
+- **`--jobs N`** runs N pages in parallel, one browser context each. **`--bossgo`** skips to the fight. **`--see`** picks which reactions are on.
+
+Bot caveat: the flap trigger is unchanged. The bot flaps when the bird sinks 6 px below its target, and a flap lifts it ~68–74 px, so its cycle sits ~30 px above the target. That is why "top" is the main cause of death. It is the same bot every earlier table used, so comparisons with history hold; a player who centres the cycle does better.
+
+### Clear rate, form I, seeded, n = 100 per cell (♛ = boss fight after gate 100)
+
+| Unit | 1 | 3 | 5 | 7 | 10 ♛ | 15 | 20 ♛ | 25 | 30 ♛ | 40 ♛ | 50 ♛ |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| volt | 98 | 92 | 63 | 2 | 0 | 14 | 5 | 0 | 0 | 0 | 0 |
+| nimbus | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| mochi | 98 | 90 | 76 | 9 | 2 | 14 | 0 | 0 | 0 | 0 | 0 |
+| **zero** | **93** | 93 | 94 | 60 | **44** | 43 | **31** | 1 | **6** | **0** | **0** |
+| aegis | 100 | 100 | 100 | 79 | 70 | 96 | 83 | 0 | 17 | 0 | 0 |
+| solaris | 100 | 98 | 97 | 88 | 28 | 54 | 30 | 0 | 2 | 0 | 0 |
+| pulsar | 100 | 86 | 90 | 30 | 6 | 32 | 16 | 0 | 5 | 0 | 0 |
+
+The 95% interval is about ±10 points at 50% and ±5 points near 5% or 95% (the Wilson bounds are in the JSON). A new course each run (`anyseed`) gives ZERO 96 / 83 / 72 / 64 / **20** / 37 / **25** / 2 / **14** / 0 / 0. That is the same picture; stage 10's seeded course is kinder than the average course. The naive bot gives ZERO 94 / 87 / 93 / 17 / 14 / 34 / 26 / 0 / 8 / 2 / 0.
+
+### Mean gates reached, seeded
+
+| Unit | 1 | 3 | 5 | 7 | 10 ♛ | 15 | 20 ♛ | 25 | 30 ♛ | 40 ♛ | 50 ♛ |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| volt | 99 | 98 | 74 | 25 | 25 | 55 | 41 | 6 | 21 | 15 | 7 |
+| nimbus | 14 | 9 | 10 | 7 | 10 | 10 | 9 | 6 | 9 | 7 | 5 |
+| mochi | 99 | 96 | 90 | 47 | 43 | 41 | 30 | 7 | 17 | 21 | 12 |
+| zero | 99 | 96 | 99 | 81 | 78 | 69 | 59 | 32 | 44 | 35 | 28 |
+| aegis | 100 | 100 | 100 | 83 | 82 | 98 | 92 | 11 | 52 | 26 | 15 |
+| solaris | 100 | 100 | 99 | 96 | 78 | 74 | 71 | 19 | 48 | 43 | 27 |
+| pulsar | 100 | 93 | 94 | 64 | 45 | 66 | 57 | 19 | 46 | 33 | 14 |
+
+ZERO's course survival (share of runs past N gates), seeded:
+
+| Stage | ≥ 40 | ≥ 60 | ≥ 80 | 100 |
+|---|---|---|---|---|
+| 10 | 84 | 77 | 57 | 46 |
+| 20 | 56 | 49 | 44 | 32 |
+| 30 | 43 | 20 | 7 | 6 |
+| 40 | 32 | 13 | 6 | 0 |
+| 50 | 33 | 4 | 0 | 0 |
+
+### Bosses
+
+**In the run** (seeded): win rate among runs that reached the boss, and the mean fight length of the wins.
+
+| Unit | 10 | 20 | 30 | 40 | 50 |
+|---|---|---|---|---|---|
+| zero | 44/46 (96%), 22 s | 31/32 (97%), 35 s | 6/6, 41 s | never reached | never reached |
+| aegis | 70/70, 24 s | 83/86 (97%), 35 s | 17/17, 47 s | never reached | never reached |
+| solaris | 28/32 (88%), 21 s | 30/38 (79%), 31 s | 2/4 | 0/3 | never reached |
+| pulsar | 6/6 | 16/30 (53%), 29 s | 5/8 | never reached | never reached |
+| volt | never reached | 5/7 | never reached | never reached | never reached |
+
+**Alone** (`--bossgo`, n = 100 fights each): win %, then the mean fight length of the wins.
+
+| Unit | 10 (HP 5) | 20 (HP 7) | 30 (HP 9) | 40 (HP 12) | 50 (HP 15) |
+|---|---|---|---|---|---|
+| volt | 60, 22 s | 46, 35 s | 47, 45 s | **0** | **0** |
+| nimbus | 52, 24 s | 38, 34 s | 14, 49 s | 1 | 0 |
+| mochi | 53, 22 s | 43, 34 s | 36, 48 s | **0** | **0** |
+| zero | 96, 22 s | 96, 31 s | 89, 41 s | **50, 77 s** | **60, 88 s** |
+| aegis | 100, 24 s | 97, 37 s | 93, 50 s | 52, 91 s | 46, 108 s |
+| solaris | 95, 24 s | 87, 30 s | 94, 44 s | 40, 83 s | 30, 100 s |
+| pulsar | 61, 20 s | 44, 32 s | 43, 40 s | 1 | 0 |
+
+Losses on bosses 40/50 come mid-fight: ZERO had 5.9 of 12 and 7.7 of 15 HP left when it died. The fights there run 77–108 s, about 6 s a hit. Units without a save (a shield, AEGIS) or a strong skill fall off a cliff at the two bosses with minions and all five attacks: VOLT, MOCHI and PULSAR win 0–1%.
+
+### Where the bot dies (seeded, all 7 units, 5,165 deaths)
+
+| Cause | Deaths | Share |
+|---|---|---|
+| gate (top 3,753, bot 327, ground 0) | 4,080 | 79% |
+| shot (surprise) | 442 | 9% |
+| wind (a crash right after a gust) | 283 | 5% |
+| branch (NEON GROVE) | 248 | 5% |
+| snap (surprise) | 53 | 1% |
+| boss | 44 | 1% |
+| drop (surprise), geyser, blade | 15 | <1% |
+
+- **Stage 25 (CANYON RUN finale, no boss) is a trap.** All seven units clear 0–2% of it, with 226 "wind" deaths (gusts). ZERO is past gate 40 in 32% of runs and past gate 50 in 10%; the deaths cluster there.
+- **Stage 50 has 199 "bot" deaths:** stall and fog2 at the narrowest gaps.
+- **Shots are the most common surprise death:** 125 of 700 runs on stage 7 even with the dodge. The naive bot died to 75–99% of them there.
+
+### Against the old targets
+
+| | Stage 10 | Stage 25 | Stage 40 | Stage 50 |
+|---|---|---|---|---|
+| ZERO, target 10-28 (bosses 10/25/40/50) | ~80 | ~60 | ~45 | ~30 |
+| ZERO, measured 10-28 (pooled) | 78 | 62 | 47 | 29 |
+| ZERO, now (seeded / anyseed) | **44 / 20** | **1 / 2** | **0 / 0** | **0 / 0** |
+| VOLT, measured 10-28 | 37 | 5 | 2 | 0 |
+| VOLT, now (seeded / anyseed) | **0 / 0** | **0 / 0** | **0 / 0** | **0 / 0** |
+
+The old targets were measured with goals of 16–46 gates. The 100-gate missions put 2–6 times as many gates, mostly at the plateau, behind the same gaps, so every boss stage dropped from its target to near zero.
+
+Flags:
+- **NIMBUS** clears nothing, not even stage 1 (14 gates on average, all "top"), yet it wins 52% of the stage 10 fight alone. The bot cannot fly its light gravity through gates; that is the known NIMBUS issue (see the 10-27 notes), now fatal over 100 gates.
+- **PULSAR** dies to shots more than the other units (120 shot deaths), and it wins only about half of its boss fights.
+
+### Lever probes (copies of index.html via `--page`, not applied; ZERO and VOLT, n = 60, or n = 100 for the final probe)
+
+Clear rate on stages 1 / 10 / 20 / 30 / 40 / 50:
+
+| Probe | ZERO | VOLT |
+|---|---|---|
+| main (seeded) | 93 / 44 / 31 / 6 / 0 / 0 | 98 / 0 / 5 / 0 / 0 / 0 |
+| plateau `runD` +.35 → +.20 | 100 / 37 / 48 / 7 / 2 / 0 | 98 / 2 / 7 / 0 / 0 / 0 |
+| SUR base and step ×0.5 | 90 / 68 / 35 / 27 / 2 / 0 | 100 / 0 / 0 / 0 / 0 / 0 |
+| every gap +12 px | 95 / 48 / 43 / 7 / 10 / 0 | 100 / 0 / 5 / 0 / 0 / 0 |
+| every gap +36 px | 100 / 68 / 52 / 3 / 12 / 2 | 100 / 2 / 13 / 0 / 0 / 0 |
+| plateau .20 + SUR ×0.5 + gap +24 (g24) | 100 / 65 / 67 / 57 / 27 / 0 | 100 / 8 / 12 / 17 / 2 / 0 |
+| g24 + stage 10's cut `bg` 28 → 12 + boss HP 40/50 12 → 9 and 15 → 11 + SKY PALACE goal 70 (final) | **100 / 70 / 51 / 44 / 27 / 12** | 100 / **23** / 6 / 11 / 1 / 0 |
+
+No single lever reaches the curve: each one moves only one or two stages. Together they bring ZERO within about 10 points of the proposed curve on stages 1–40. Stage 50 and VOLT on stage 10 still fall short.
+
+### Recommendations (not applied; the owner decides)
+
+Proposed curve: ZERO 95 / 75 / 60 / 45 / 35 / 25 on stages 1 / 10 / 20 / 30 / 40 / 50, and VOLT ≥ 40 on stage 10.
+
+1. **Give gates 46–100 back some room: gap +24 px and a lower plateau.**
+   - Raise every `ST_BAND` gap by about 24 px (first and last of each zone).
+   - Lower the stage-mode plateau in `runD` from `d0 + .35` to `d0 + .20`, and the same in `stDGoal`.
+   - Expected, from the g24 probe: ZERO 100 / 65 / 67 / 57 / 27 / 0. Stages 10–30 come near the curve; stage 30 overshoots, so zone 2 could take +16 instead of +24.
+   - This is the biggest lever: 79% of all deaths are gates.
+   - Re-check `tests/stages.test.js`: the curve and the minimum gap still hold, since the gaps only grow.
+2. **Halve the surprise rates:** `SUR.base` [.06, .08, .10, .12] → [.03, .04, .05, .06] and `step` .02 → .01.
+   - Alone this took ZERO's stage 10 from 44% to 68% and stage 30 from 6% to 27%.
+   - At 100 gates a stage, the old rate means 6–15 surprises a run. Shots alone end 9% of runs, and 18% on stages 5–7 where they are new.
+   - Keep `hot` ×1.3 on boss rows.
+3. **Make bosses 40/50 winnable for a unit without a save:**
+   - boss HP 12 → 9 and 15 → 11;
+   - stage 10's finale cut `bg` 28 → 12, which brings VOLT on stage 10 from 0% to 23%;
+   - for stage 50, a shorter SKY PALACE mission (goal 70, or a goal by tier: 100 / 100 / 90 / 70) or +12 px more gap in zone 3.
+
+   Expected with 1–3 together (the final probe): ZERO 100 / 70 / 51 / 44 / 27 / 12, and VOLT 23% on stage 10.
+
+   To reach the curve's last two points and VOLT ≥ 40%, the next probes to fly are:
+   - zone 3 at goal 60 or gap +36;
+   - stage 40's `bg` 16 → 8;
+   - boss attack pause `BOSS.pause` [2.2, 1.5] → [2.4, 2.0];
+   - the meter refill `BOSS.charge` 2.6 → 2.2 s, which shortens the 77–108 s fights.
+4. **Separate from the curve:**
+   - **Stage 25:** look at its gust trap (226 wind deaths; every unit clears 0–2%) before tuning around it.
+   - **NIMBUS:** cannot clear stage 1 with this bot; needs its own fix (glide-aware bot or unit numbers).
+   - **Validate on a phone:** the bot's flap cycle sits ~30 px high, so play stages 10 / 20 / 40 with a common unit before locking any of these numbers.
+
+## Tune to the 100-gate curve, 2026-10-29: `tune-100-final.json`
+
+**Headline.** The owner applied recommendations 1–3 above and asked for the curve ZERO 95 / 75 / 60 / 45 / 35 / 25 (stages 1 / 10 / 20 / 30 / 40 / 50) and VOLT ≥ 40 on stage 10. The final grid (form I, seeded, n = 100 a cell) gives **ZERO 100 / 83 / 68 / 35 / 31 / 24** and **VOLT 43**. Every boss stage is in its ±8 band except stage 30: this grid has it at 35, 10 points under. The same stage-30 course flown in three n = 100 batches pools to 39%, 6 points under. There is no trap stage left. Stage 25 went from 1% to 44%, and every non-boss stage sits at or above the next boss for ZERO.
+
+```
+PORT=5417 node scripts/serve.mjs     # another terminal
+PORT=5417 node scripts/balance.mjs --clear 1,5,7,10,15,20,25,30,40,45,50 --units volt,mochi,zero,aegis,solaris,pulsar --runs 100 --jobs 14 --out docs/balance/tune-100-final.json
+```
+
+The grid took 7.3 min with 14 pages (6,600 runs).
+
+### Clear rate, form I, seeded, n = 100 per cell (♛ = boss fight after the goal)
+
+| Unit | 1 | 5 | 7 | 10 ♛ | 15 | 20 ♛ | 25 | 30 ♛ | 40 ♛ | 45 | 50 ♛ |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| volt | 100 | 74 | 69 | **43** | 77 | 7 | 9 | 3 | 0 | 25 | 0 |
+| mochi | 100 | 91 | 61 | 40 | 60 | 8 | 13 | 2 | 2 | 31 | 0 |
+| **zero** | **100** | 100 | 88 | **83** | 92 | **68** | 44 | **35** | **31** | 60 | **24** |
+| aegis | 100 | 100 | 100 | 100 | 100 | 80 | 87 | 73 | 66 | 78 | 39 |
+| solaris | 100 | 100 | 92 | 75 | 92 | 28 | 46 | 26 | 25 | 65 | 29 |
+| pulsar | 100 | 92 | 92 | 27 | 84 | 11 | 34 | 22 | 7 | 46 | 1 |
+
+Was (the re-measure above, stages 1 / 5 / 7 / 10 / 15 / 20 / 25 / 30 / 40 / 50): ZERO 93 / 94 / 60 / 44 / 43 / 31 / 1 / 6 / 0 / 0; VOLT 0 on stage 10.
+
+**Mean gates reached** (out of 100, or 70 on stage 50):
+
+| Unit | 1 | 5 | 7 | 10 ♛ | 15 | 20 ♛ | 25 | 30 ♛ | 40 ♛ | 45 | 50 ♛ |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| volt | 100 | 89 | 84 | 74 | 87 | 30 | 52 | 32 | 31 | 32 | 20 |
+| mochi | 100 | 97 | 80 | 73 | 76 | 43 | 42 | 27 | 32 | 34 | 27 |
+| zero | 100 | 100 | 95 | 91 | 98 | 80 | 75 | 61 | 57 | 50 | 43 |
+| aegis | 100 | 100 | 100 | 100 | 100 | 84 | 94 | 83 | 89 | 59 | 53 |
+| solaris | 100 | 100 | 96 | 91 | 98 | 72 | 76 | 63 | 87 | 56 | 63 |
+| pulsar | 100 | 97 | 96 | 72 | 92 | 61 | 62 | 59 | 62 | 43 | 43 |
+
+**Bosses in the run:** won / reached.
+
+| Unit | 10 (HP 4) | 20 (HP 8) | 30 (HP 9) | 40 (HP 10) | 50 (HP 11) |
+|---|---|---|---|---|---|
+| volt | 43/60 | 7/9 | 3/3 | 0/2 | 0/0 |
+| mochi | 40/57 | 8/12 | 2/3 | 2/5 | 0/1 |
+| zero | 83/87 | 68/72 | 35/35 | 31/38 | 24/31 |
+| aegis | 100/100 | 80/81 | 73/73 | 66/77 | 39/50 |
+| solaris | 75/81 | 28/39 | 26/28 | 25/52 | 29/62 |
+| pulsar | 27/54 | 11/33 | 22/34 | 7/32 | 1/26 |
+
+**Deaths** (all 6,600 runs): gate 2,238 (top 2,174), boss 253, wind 210, shot 134, snap 51, branch 50, blade 4, drop 3. Shots were the most common surprise death before (442 deaths in 7,700 runs) and are now 134 in 6,600.
+
+### Targets vs actual
+
+| | Target | Final grid | Pooled, same course | In band (±8)? |
+|---|---|---|---|---|
+| ZERO stage 1 | 95 | 100 | – | yes |
+| ZERO stage 10 | 75 | 83 | 85 (n = 300) | yes in this grid; the pooled rate is 2 over |
+| ZERO stage 20 | 60 | 68 | – | yes, at the edge |
+| ZERO stage 30 | 45 | 35 | 39 (n = 300) | **no** in this grid (−10); the pooled rate is in (−6) |
+| ZERO stage 40 | 35 | 31 | – | yes |
+| ZERO stage 50 | 25 | 24 | – | yes |
+| VOLT stage 10 | ≥ 40 | 43 | 44 (n = 300) | yes |
+| Non-boss ≥ next boss (ZERO) | – | 7: 88 ≥ 83 · 15: 92 ≥ 68 · 25: 44 ≥ 35 · 45: 60 ≥ 24 | – | yes |
+
+The pooled cells add the probes of the final settings that flew the same course: stage 10 from probe 26 (n = 200), stage 30 from probe 25 and the second final grid. Stage 30's course has not changed since probe 25.
+
+Sanity units (no hard target):
+- **AEGIS** stays above ZERO everywhere.
+- **SOLARIS** is above ZERO on 7, 25, 45 and 50 and below it on the boss stages 10–40. It was below ZERO on 10/20/30 in the re-measure too. It loses its boss fights (25/52 on 40, 29/62 on 50) while it reaches the boss more often than ZERO.
+- **MOCHI** sits between VOLT and ZERO on 5, 25 and 45, and level with or just under VOLT elsewhere: 40 vs 43 on stage 10, and 0–2% from stage 20 on.
+- **PULSAR** is level with ZERO on stages 1–7 and below it from stage 10 on. It loses the fights: 27/54 on 10, 7/32 on 40.
+
+### Levers changed (old → new)
+
+All of them are table numbers in `index.html`, plus two one-line rule changes (marked *rule*).
+
+| Lever | Old | New |
+|---|---|---|
+| Plateau of the 45-gate ramp (`ST_RAMP` in `runD` and `stDGoal`) | d0 + .35 | **d0 + .20** |
+| NEON GROVE `ST_BAND[0]` gap / cut `bg` | 256→240 / 28 | **280→256 / 26** |
+| CANYON RUN `ST_BAND[1]` gap / cut | 236→198 / 27 | **232→192 / 3** |
+| MAGMA CORE `ST_BAND[2]` d0 / gap / cut | .20→.27 / 196→192 / 16 | **.23→.25 / 190→189 / 1** |
+| SKY PALACE `ST_BAND[3]` d0 / gap / cut | .28→.34 / 190→186 / 18 | **.27→.34 / 189→186 / 1** |
+| SKY PALACE goal (`ST_BAND[3].goal`; stages 1–40 keep `ST_GOAL` 100) | 100 | **70** |
+| Signature rate `sp`: grove / canyon | .25→.35 / .20→.28 | **.20→.26 / .20→.22** |
+| Signature rate on finales | ×1.3 | **×1** |
+| `SUR.base` by zone | .06 / .08 / .10 / .12 | **.02 / .06 / .07 / .07** |
+| `SUR.step` across a zone | .02 | **.01** |
+| `SUR.hot` ×1.3 applies to (*rule*) | finales and bosses | **boss rows only** (stage 25 loses it) |
+| `SUR.calm` on breathers | ×.5 | **×.7** (keeps a shot in stage 5's seeded course: the intro order) |
+| `SUR.w`, each kind's share of the rate (*rule*: kinds were equal) | 1 / 1 / 1 | **snap 1, shot .2, drop 1** |
+| Boss HP 10 / 20 / 30 / 40 / 50 | 5 / 7 / 9 / 12 / 15 | **4 / 8 / 9 / 10 / 11** |
+| `BOSS.charge` (the meter refill in a fight) | 2.6 s | **2.4 s** |
+| `BOSS.pause` (stage 10 → 50) | 2.2 → 1.5 s | **2.8 → 1.8 s** |
+
+**Gaps, first gates / gates 46+ (px before jitter), old → new:**
+
+| Stage | 1 | 10 | 20 | 25 | 30 | 40 | 45 | 50 |
+|---|---|---|---|---|---|---|---|---|
+| first gates | 256 → 280 | 212 → 230 | 212 → 206 | 171 → 189 | 195 → 190 | 176 → 188 | 188 → 188 | 168 → 185 |
+| gates 46+ | 230 → 264 | 190 → 216 | 189 → 194 | 152 → 177 | 174 → 178 | 156 → 176 | 167 → 176 | 149 → 173 |
+
+So recommendation 1's "+24 px past gate 45" lands as +26 / +5 / +4 / +20 / +24 at stages 10 / 20 / 30 / 40 / 50. Most of it comes from the lower plateau and the smaller finale cuts. The zone tables could not take +24 everywhere: `tests/stages.test.js` requires the plain stages' gaps never to grow, so each zone must start no wider than the last one ended. With the plateau at +.20, CANYON and MAGMA were already too easy (ZERO 88% on stage 20), so their first gates ended slightly narrower than before.
+
+Unchanged: unit stats, `ST_PLAN` (one new element a stage, the intro order), the patterns, the gust / geyser / blade numbers, the shot / snap / drop timings, `SUR.intro`, `SUR.from`. The seeded courses still introduce snap on stage 3, shot on 5 and drop on 7.
+
+Server bound: `tests/score-bound.test.js` passes. `c_max_gates` is 400, and 100-gate missions (70 on 41–50) stay far under it; `3g² + 75g` is unchanged.
+
+### Probe history (zero / volt / solaris, n = 50–200; ZERO 1 / 10 / 20 / 25 / 30 / 40 / 50, then VOLT 10)
+
+| # | Change | ZERO | VOLT 10 |
+|---|---|---|---|
+| 1 | Recommendations 1–3 as written (gap +24, MAGMA +16, plateau .20, SUR ×½, HP 9/11, grove cut 12, SKY PALACE 70) | 100 / 80 / 54 / 42 / 30 / 34 / 12 | 14 |
+| 3 | + fewer grove branches, finale signature ×1, MAWBLOOM HP 4 | 100 / 64 / 50 / 36 / 36 / 22 / 6 | 18 |
+| 5–6 | + grove SUR .02, shot weight .5 (VOLT died to a shot after gate 15 in 27 of 50 runs) | 100 / 92 / 88 / 52 / 40 / 35 / 32 | 45 |
+| 8–9 | Gaps reworked so the plain stages never widen (the +24 broke `tests/stages.test.js`) | 100 / 72 / 75 / 40 / 48 / 17 / 18 | 33 |
+| 11–12 | Shot weight .2, boss rows hot only, CANYON SUR .06, MAGMA d0 end .25 | – / 87 / 53 / 59 / 47 / 32 / 32 | 57 |
+| 14 | Sensitivity: MAGMA/PALACE gaps 188 | 30: 28, 40: 29, 50: 23 | – |
+| 15–18 | MAGMA 190→189, PALACE 189→186, meter 2.4, pause 2.4→1.8, HP 5/8/9/9/10 | – / 82 / 56 / 58 / 50 / 27 / 28 | 45 |
+| 19–20 | MAGMA d0 .23–.25, stage-40 cut 1 | 30: 33, 40: 42 | – |
+| 22, 24, 27 | Stage 10 cut 22 / shot weight .3 / cut 34 (each tried to pull ZERO 10 down) | 10: 84 / 78 / 88 | 37 / 30 / 35 |
+| 26 | MAWBLOOM HP 4, pause 2.8→1.8, stage-10 cut 26 | 10: 86 (n = 200) | 45 |
+| final | this table | 100 / 83 / 68 / 44 / 35 / 31 / 24 | 43 |
+
+The probe JSONs are not committed (1.8 MB in all); this table is their summary.
+
+Lessons:
+- **A seeded course is one draw.** Any change to a gap, d0 or cut re-rolls the stage's heights, and with them its traps. The same table can move a cell by 10–20 points just by moving a trap. The tune therefore judged moves at n = 100 and over several settings, not one cell.
+- **Gap sensitivity is uneven.** Stage 30 went 51 → 28% when its gaps narrowed 197 → 188 px. Stages 40 and 50 barely moved (32 → 29, 22 → 23), because a few traps kill most of their runs.
+- **Shots decided VOLT, not ZERO.** ZERO's dash (meter ×1.2) carries its invulnerability through many shots; VOLT's does not.
+
+### Remaining gaps and trade-offs
+
+1. **ZERO on stage 10 cannot reach 75% while VOLT stays at 40% or more.**
+   - ZERO reaches MAWBLOOM in 87–88% of runs and wins 95–98% of the fights. VOLT reaches it in ~60% and wins ~70%.
+   - Every course lever tried (cut 22 / 26 / 34, more shots) took ~1 point from ZERO for every 1–2 points from VOLT: cut 34 gave ZERO 88 / VOLT 35, shot weight .3 gave 78 / 30.
+   - The final keeps VOLT ≥ 40 and leaves ZERO at 83–86, the top edge of its band. To get both, the owner would need a lever that hurts ZERO more than VOLT, such as unit stats, which were out of scope.
+2. **Stage 30 runs a few points low** (39% pooled, 35% in the final grid).
+   - Widening MAGMA would raise it, but stage 25 (44%) must stay at or above it. Stage 25 would then need easing too (11 of ZERO's deaths there are wind: fewer gusts).
+   - Each of these moves re-rolls both seeded courses, so it was left here.
+3. **The drop pattern is the main trap left**, and it is a bot limit as much as a design one.
+   - The first pattern of every stage from 3 on is a drop: up 50 px, then down 100 px at gates 7–8.
+   - On late stages the bot's high flap cycle hits the next gate's top pillar: ZERO dies at gate 7 in 25% of stage-40 runs and 16% of stage-45 runs.
+   - Stage 50's gate-2 deaths (19%) are an 80 px fall at full start speed.
+   - The pattern table was not a lever here. If phone play confirms the trap, cap the pattern's fall at the stage's `md`, or start late stages with stairs.
+4. **Shot weight .2** makes shots rare (134 deaths, down from 442). Each kind still shows in every zone, and stage 5 keeps its first shot (gate 60).
+5. **The SOLARIS and PULSAR boss fights** decide their late stages: SOLARIS wins 25/52 on stage 40 and PULSAR 7/32. Their boss balance is separate from this curve.
+6. **NIMBUS** was not measured: the bot cannot fly its low gravity, a known bot limit.
+7. **Validate on a phone** before locking: the bot's flap cycle sits ~30 px high, so falls are harder for it than for a player.

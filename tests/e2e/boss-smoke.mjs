@@ -72,7 +72,7 @@ async function bossRun(stage, tag, wantShots, maxTries = 12){
     if (r.ev !== 'won'){ console.log(`stage ${stage + 1} try ${tries + 1}: ${r.ev} (${r.why}), boss HP left`, await page.evaluate(() => FW.boss && FW.boss.hp)); continue; }
     const secs = await page.evaluate(t0 => FW.run.T - t0, t0);
     await page.evaluate(() => FW.step(1/60, 24)); await snap(`${tag}-clear`);
-    assert.equal(await page.evaluate(() => FW.run.gatesPassed), 100, 'the boss adds no gate');
+    assert.equal(await page.evaluate(() => FW.run.gatesPassed), await page.evaluate(() => FW.STAGES[FW.stage].goal), 'the boss adds no gate (the goal: 100, or 70 in SKY PALACE since the tune of 2026-10-29)');
     const sc = await page.evaluate(() => FW.run.score);
     await page.evaluate(() => FW.step(1/60, 80));
     assert.equal(await page.evaluate(() => FW.state), 'over', 'the result card follows the beat');

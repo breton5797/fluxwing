@@ -12,6 +12,7 @@ This document is the contract shared by the art and engine work. Numbers here ar
 ## 1. Missions: 100 gates, then the run ends
 
 - Every stage's goal is **100 gates** (`ST_GOAL = 100`). It replaces `10 + round(.62 i) ± rest/boss`.
+  - *Tune 2026-10-29* (docs/balance/README.md, "Tune to the 100-gate curve, 2026-10-29"): SKY PALACE (stages 41–50) flies **70 gates** (`ST_BAND[3].goal = 70`); stages 1–40 stay at 100.
 - Reaching the goal **ends the run as a win** (stage mode only). No more score chasing after the clear:
   a short "MISSION CLEAR" moment (~1.2 s: slow-mo, banner, confetti), then the result screen with the clear rewards.
   Daily and versus are unchanged.
@@ -19,6 +20,8 @@ This document is the contract shared by the art and engine work. Numbers here ar
   Beating the boss is the clear.
 - Keep the course seeded up to the goal (now 100). `runD` keeps its 45-gate ramp, so gates 45–100 fly at the
   stage's top difficulty. That is intended: harder.
+  - *Tune 2026-10-29:* the plateau is now `d0 + ST_RAMP` with `ST_RAMP = .20` (was `+.35`), in `runD` and `stDGoal`. The gaps
+    and finale cuts `bg` moved too; see the README section for the table.
 - Stars, `failPay` and replay pay keep their formulas, which already scale with `goal`.
 - Stage select shows `gates/100`. HUD stage line `min(gatesPassed, goal)/goal` stays.
 
@@ -26,7 +29,7 @@ This document is the contract shared by the art and engine work. Numbers here ar
 
 - `row.boss` now means **a boss fight**: `(i + 1) % 10 === 0`, i.e. stages 10, 20, 30, 40 and 50.
 - The old `'!'` zone finales (stages 10, 25, 40 and 50) keep their tighter numbers under a new flag `row.fin`
-  (d0 +.02, gap −bg, hp ×1.1, sp ×1.3). Stage 25 is a finale without a boss; stages 20 and 30 are bosses without finale numbers.
+  (d0 +.02, gap −bg, hp ×1.1, sp ×1.3; since the tune of 2026-10-29 the obstacle rate is ×1 on finales and the cuts `bg` are 26 / 3 / 1 / 1). Stage 25 is a finale without a boss; stages 20 and 30 are bosses without finale numbers.
 - First-clear diamonds ×1.5 (`diaClear`), the ♛ mark on the stage map, and SOLARIS's `bossGod` follow `row.boss` (the fight).
 
 ## 3. Boss fight
@@ -35,11 +38,13 @@ Each boss is themed to the zone of its stage:
 
 | Stage | Zone | Boss (original names, not translated) | HP | Attack pool |
 |---|---|---|---|---|
-| 10 | NEON GROVE | MAWBLOOM: a giant carnivorous flower | 5 | volley, wall |
-| 20 | CANYON RUN | DUNEHULK: a sandstone golem | 7 | volley, wall, charge |
+| 10 | NEON GROVE | MAWBLOOM: a giant carnivorous flower | 5 → **4** | volley, wall |
+| 20 | CANYON RUN | DUNEHULK: a sandstone golem | 7 → **8** | volley, wall, charge |
 | 30 | MAGMA CORE | CINDERWYRM: a lava serpent-dragon | 9 | volley, wall, charge, beam |
-| 40 | MAGMA CORE | MOLTEN KING: a magma titan | 12 | all five |
-| 50 | SKY PALACE | STORMCROWN: a thunder sovereign | 15 | all five, faster |
+| 40 | MAGMA CORE | MOLTEN KING: a magma titan | 12 → **10** | all five |
+| 50 | SKY PALACE | STORMCROWN: a thunder sovereign | 15 → **11** | all five, faster |
+
+*Tune 2026-10-29* (docs/balance/README.md, "Tune to the 100-gate curve, 2026-10-29"): HP 5 / 7 / 9 / 12 / 15 → **4 / 8 / 9 / 10 / 11** (it never falls stage to stage). The meter refill and the attack pause below changed in the same tune.
 
 **Flow.**
 - Gate 100 is passed and no gates spawn after it.
@@ -47,7 +52,7 @@ Each boss is themed to the zone of its stage:
 - The boss hovers at `x = LW - 95`. It eases its y toward the bird's y at about 40% of the gap per second, with a sine bob, clamped on screen.
 
 **Ram.**
-- While the fight runs, the dash meter refills by itself: full in `BOSS.charge = 2.6 s / B.dash`. Gate-based fills are gone, since there are no gates.
+- While the fight runs, the dash meter refills by itself: full in `BOSS.charge = 2.6 s / B.dash` (**2.4 s** since the tune of 2026-10-29). Gate-based fills are gone, since there are no gates.
 - Pressing dash with a full meter lunges the bird forward at 1500 px/s toward the boss. It still has the usual dash invulnerability.
 - **Hit:** the bird circle overlaps the boss's hit circle (`r ≈ 58`, scaled with the sprite). The boss loses 1 HP, is knocked back, flashes white for 0.6 s and is invulnerable for that time. Hit-stop, shake, shatter SFX.
 - **Miss:** the bird flies to `x = LW - 150` and comes back.
@@ -56,7 +61,7 @@ Each boss is themed to the zone of its stage:
 
 **Attacks.**
 - The boss uses one attack at a time.
-- The pause between attacks goes from 2.2 s (stage 10) down to 1.5 s (stage 50), and drops to ×0.75 once HP falls to half or below ("enraged": red tint, faster bob).
+- The pause between attacks goes from 2.2 s (stage 10) down to 1.5 s (stage 50) (**2.8 → 1.8 s** since the tune of 2026-10-29), and drops to ×0.75 once HP falls to half or below ("enraged": red tint, faster bob).
 - Every attack is telegraphed. All boss projectiles respect invulnerability (`godT`, `invuln`, dash) and the clone/shield saves, so they go through the same path as `sigHit`.
 
 | Attack | Telegraph | What happens |
@@ -115,6 +120,9 @@ Every surprise has a short, readable telegraph: sudden but fair. The bird can al
 - The kinds arrive in order: snap from stage 3, shot from stage 5, drop from stage 7. After that all three run in every zone.
 - **Chance per gate, for each kind:** zone base `[.06, .08, .10, .12]` plus `.02 * k`, where k runs 0→1 across the zone.
   - ×1.3 on `fin` and boss rows, ×.5 on breathers.
+  - *Tune 2026-10-29* (docs/balance/README.md, "Tune to the 100-gate curve, 2026-10-29"): base **`[.02, .06, .07, .07]`**, step **`.01`**, ×1.3 on **boss rows only** (stage 25, a finale
+    without a boss, is no longer hot), ×**.7** on breathers. Each kind takes a weight `SUR.w` of the rate: snap 1, **shot .2**, drop 1.
+    The intro order is unchanged: the seeded courses still show the first snap on stage 3, shot on 5, drop on 7.
 - At most one surprise per gate. None before gate 8.
 - **Separate rng stream** seeded `'stage:' + i + ':v2' + salt + ':s'`, so the existing course (`rng`) and extras (`srng`) roll counts stay untouched.
 - Surprises are their own track. They are not in `stElems`, so the "one new element per stage" rule is unchanged, and they have their own tests.
