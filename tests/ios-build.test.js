@@ -31,7 +31,8 @@ test('the bundled SDK is byte-identical to the file the page pins (SRI)', () => 
 
 test('every asset the bundle copies exists, and the page links nothing else local', () => {
   for (const f of IOS_ASSETS) assert.ok(existsSync(new URL(f, root)), f);
-  const local = [...html.matchAll(/(?:src|href)="(?!https?:|data:|#|mailto:)([^"]+)"/g)].map(m => m[1].replace(/\/$/, '/index.html'));
+  const local = [...html.matchAll(/(?:src|href|srcset)="(?!https?:|data:|#|mailto:)([^"]+)"/g)]   // srcset too: a <picture> source the app cannot load shows no image at all
+    .flatMap(m => m[1].split(',').map(s => s.trim().split(/\s+/)[0])).map(f => f.replace(/\/$/, '/index.html'));
   for (const f of local) assert.ok(IOS_ASSETS.includes(f), `${f} is linked but not bundled`);
 });
 
