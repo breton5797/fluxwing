@@ -8,7 +8,7 @@
   "bloom": { "down": 4, "alpha": 0.25 },
   "slowmo": { "scale": 0.3, "near": 0.2 },
   "vignette": { "hurt": 0.55, "danger": 0.45 },
-  "death": { "slow": 0.4, "slowScale": 0.3, "grayFrom": 0.6, "grayTo": 1.1, "debrisBounce": 0.45 },
+  "death": { "slow": 0.4, "slowScale": 0.3, "grayFrom": 0.6, "grayTo": 0.85, "debrisBounce": 0.45 },
   "layers": {
     "core":   { "n": [1, 2],   "size": [18, 34], "speed": [0, 0],     "life": [0.08, 0.14], "drag": 0,   "grav": 0 },
     "spark":  { "n": [10, 18], "size": [2, 4],   "speed": [220, 520], "life": [0.25, 0.55], "drag": 3.5, "grav": 900 },

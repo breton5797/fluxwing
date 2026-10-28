@@ -106,8 +106,8 @@ test('buses and mix: SFX bus, compressor between master and destination, one sha
 });
 
 test('SFX levels: flap .18, pass .11, perfect +40%, click .06', () => {
-  assert.match(html, /flap\(\)\{ tone\(520, \.07, 'triangle', \.18, 240\); \}/);
-  assert.match(html, /pass\(\)\{ tone\(660, \.09, 'square', \.11\); \}/);
+  assert.match(html, /flap\(\)\{ tone\(flapFreq\(Math\.random\(\)\), \.07, 'triangle', \.18, 240\); \}/);
+  assert.match(html, /pass\(i\)\{ tone\(passFreq\(i\), \.09, 'square', \.11\); \}/);
   assert.match(html, /click\(\)\{ tone\(900,\.03,'square',\.06\); \}/);
   assert.match(html, /perfect\(c\)\{[^\n]*tone\(b,\.14,'triangle',\.168\); tone\(b\*1\.25,\.14,'triangle',\.14,0,\.05\); tone\(b\*1\.5,\.2,'triangle',\.14,0,\.1\);/);
 });
