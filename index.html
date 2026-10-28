@@ -3135,7 +3135,8 @@ const ramBack = (x0, home, t) => { const k = Math.min(1, t / BOSS.back); return 
    talons start); shot / drop: [cx, cy, scale], the body's centre
    and the scale that makes the body about the hit circle; ob: per zone, the bottom piece then the top one, each [sw, scx, tw, tcx, pad, join]: the
    stem drawn sw screen px wide with its column scx on the gate's centre line, the tip tw screen px wide with its column tcx there, pad transparent rows
-   on its gap side and join on its stem side (scripts/art/metrics.py measures them; the stem's opaque core covers 85 % of the 68 px hit width);
+   on its gap side and join on its stem side (scripts/art/metrics.py measures them). Stems are 96 px wide (scale .75): even the 10th-percentile row
+   is 85 % solid over the 68 px hit width. A tip is drawn at its stem's scale, but CANYON RUN's 192 px hoodoo cap is scaled down to the stem's 96 px;
    boss: [cx, cy], the body's centre as fractions, put on the hit circle's centre; bossH: a boss's height on screen. */
 const ART_Z = Object.freeze(['grove', 'canyon', 'magma', 'palace']);
 const ART_OB = Object.freeze(ART_Z.map(z => Object.freeze(['bot-stem', 'bot-tip', 'top-stem', 'top-tip'].map(k => `ob-${z}-${k}`)))), ART_BG = Object.freeze(ART_Z.map(z => 'bg-' + z));
@@ -3147,10 +3148,10 @@ const ART_FIT = Object.freeze({
   shot: Object.freeze([[44, 52, .375], [72, 68, .24], [42, 52, .34], [62, 38, .41]]),
   drop: Object.freeze([[56, 85, .36], [48, 50, .4], [37, 155, .51], [65, 96, .36]]),
   ob: Object.freeze([
-    [[84, 65.1, 77, 53.2, 1, 0], [84, 64.2, 75, 51, 3, 0]],
-    [[84, 62.3, 104, 94.8, 0, 0], [84, 65.1, 72, 51.5, 3, 0]],
-    [[84, 64.5, 72, 52.3, 2, 0], [84, 64.1, 72, 52.1, 0, 0]],
-    [[84, 63.8, 77, 53, 2, 1], [84, 62.5, 75, 53, 1, 0]]
+    [[96, 65.1, 79.5, 53.2, 1, 0], [96, 64.2, 78, 51, 3, 0]],
+    [[96, 62.3, 96, 94.8, 0, 0], [96, 65.1, 78, 51.5, 3, 0]],
+    [[96, 64.5, 78, 52.3, 2, 0], [96, 64.1, 78, 52.1, 0, 0]],
+    [[96, 63.8, 79.5, 53, 2, 1], [96, 62.5, 79.5, 53, 1, 0]]
   ].map(z => Object.freeze(z.map(Object.freeze)))),
   boss: Object.freeze({mawbloom: [.52, .53], dunehulk: [.53, .5], cinderwyrm: [.46, .59], moltenking: [.5, .55], stormcrown: [.52, .54]}), bossH: 160
 });
@@ -3450,13 +3451,13 @@ function artObs(g, t0, bot, col){
   ctx.restore();
 }
 // One piece, its tip's visible end on the gap edge e: d 1 rises from the ground (the bottom piece), -1 hangs from the sky. The stem pattern (made
-// once, anchored at e so it travels with the gate) is cut only lengthwise, so its own irregular sides show: its head (artHead) starts 34 px into
+// once, anchored at e so it travels with the gate) is cut only lengthwise, so its own irregular sides show: its head (artHead) starts 18 px into
 // the tip and fades in under it, the rest runs to the screen's edge. Then the tip over it (artSoft: its base fades into the stem), turned rot
 // radians about its base. Returns the tip's base.
 function artOb(a, t, f, cx, e, d, rot){
   const img = a.img, tip = t.img, ks = f[0] / img.width, kt = f[2] / tip.width, th = tip.height * kt, pat = a.pat || (a.pat = ctx.createPattern(img, 'repeat-y'));
   const y0 = d > 0 ? e - f[4]*kt : e + f[4]*kt - th, by = d > 0 ? y0 + th - f[5]*kt : y0 + f[5]*kt;   // y0: the tip image's top; by: its base
-  const n = Math.round(24 / ks), r = d > 0 ? Math.round((by - 34 - e) / ks) : Math.round((by + 34 - e) / ks) - n;   // the head: n source rows from row r (from e)
+  const n = Math.round(24 / ks), r = d > 0 ? Math.round((by - 18 - e) / ks) : Math.round((by + 18 - e) / ks) - n;   // the head: n source rows from row r (from e)
   ctx.save(); ctx.translate(cx - f[1]*ks, e); ctx.scale(ks, ks); ctx.drawImage(artHead(a, r, n, d), 0, r);
   ctx.fillStyle = pat;
   if (d > 0 && GROUND > e + (r + n)*ks) ctx.fillRect(0, r + n, img.width, (GROUND - e) / ks - r - n);
@@ -3465,13 +3466,13 @@ function artOb(a, t, f, cx, e, d, rot){
   ctx.save(); ctx.translate(cx, by); ctx.rotate(rot); ctx.drawImage(artSoft(t, Math.round(10 / kt), f[5], d), -f[3]*kt, y0 - by, f[2], th); ctx.restore();
   return by;
 }
-// A stem's head: n rows of its pattern from row r (wrapping), clear at the tip's end (the top for d 1) and opaque from 20 of its 24 screen px on,
-// so it is whole 10 px before the tip's base. Made once per stem (its rows depend only on the fits), like artTint.
+// A stem's head: n rows of its pattern from row r (wrapping), clear at the tip's end (the top for d 1) and opaque from 10 of its 24 screen px on,
+// so it is whole 8 px before the tip's base. Made once per stem (its rows depend only on the fits), like artTint.
 function artHead(a, r, n, d){
   if (a.fx.head) return a.fx.head;
   const img = a.img, h = img.height, c = document.createElement('canvas'), x = c.getContext('2d'); c.width = img.width; c.height = n;
   for (let y = 0; y < n; y++) x.drawImage(img, 0, ((r + y) % h + h) % h, img.width, 1, 0, y, img.width, 1);
-  const fade = x.createLinearGradient(0, 0, 0, n); fade.addColorStop(d > 0 ? 0 : 1, 'rgba(0,0,0,0)'); fade.addColorStop(d > 0 ? .83 : .17, '#000');
+  const fade = x.createLinearGradient(0, 0, 0, n); fade.addColorStop(d > 0 ? 0 : 1, 'rgba(0,0,0,0)'); fade.addColorStop(d > 0 ? .42 : .58, '#000');
   x.globalCompositeOperation = 'destination-in'; x.fillStyle = fade; x.fillRect(0, 0, c.width, n);
   a.fx.head = c;
   return c;
