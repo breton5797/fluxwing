@@ -709,7 +709,7 @@ body:has(.overlay:not(#menu):not(#pauseScr):not(#shopScr):not(#confScr):not([hid
 <!-- ================= ONLINE CONFIG (Supabase) =================
      Empty values = offline build: device-only records, versus against the AI, no third-party request at all.
      Fill both in to switch on the global leaderboard and online versus (backend: supabase/schema.sql). -->
-<script type="application/json" id="fxcfg">{"hitstop":{"light":0.04,"mid":0.08,"heavy":0.12},"punch":{"light":1.05,"mid":1.09,"heavy":1.15},"shake":{"stiff":260,"damp":18,"ampPx":{"light":4,"mid":9,"heavy":16}},"flash":{"frames":2,"alpha":0.55},"wave":{"life":0.45,"maxR":220,"refract":1.03,"cap":2},"chroma":{"dur":0.2,"px":3,"idleAlpha":0.15},"bloom":{"down":4,"alpha":0.25},"slowmo":{"scale":0.3,"near":0.2},"vignette":{"hurt":0.55,"danger":0.45},"death":{"slow":0.4,"slowScale":0.3,"grayFrom":0.6,"grayTo":1.1,"debrisBounce":0.45},"layers":{"core":{"n":[1,2],"size":[18,34],"speed":[0,0],"life":[0.08,0.14],"drag":0,"grav":0},"spark":{"n":[10,18],"size":[2,4],"speed":[220,520],"life":[0.25,0.55],"drag":3.5,"grav":900},"smoke":{"n":[4,8],"size":[10,22],"speed":[30,90],"life":[0.5,0.9],"drag":2,"grav":-60},"debris":{"n":[5,10],"size":[3,7],"speed":[150,380],"life":[0.6,1.1],"drag":1,"grav":1100}},"pool":{"low":240,"mid":400,"high":640},"quality":{"partMul":{"low":0.4,"mid":0.7,"high":1},"downP90Ms":20},"combo":{"l3":20,"l4":30,"partMulL3":2,"beatHz":2},"pop":{"from":1.6,"dur":0.35},"near":{"closeFrac":0.33,"flashHue":205},"events":{"flap":{"haptic":"flap"},"gate":{"haptic":null},"near":{"haptic":"near"},"shieldHit":{"haptic":"shieldHit"},"shieldMulti":{"haptic":null},"speed":{"haptic":null},"death":{"haptic":"deathHeavy"},"record":{"haptic":"record"},"coin":{"haptic":null},"comboBreak":{"haptic":"shatter"},"overdrive":{"haptic":"overdrive"}}}</script>
+<script type="application/json" id="fxcfg">{"hitstop":{"light":0.04,"mid":0.08,"heavy":0.12},"punch":{"light":1.05,"mid":1.09,"heavy":1.15},"shake":{"stiff":260,"damp":18,"ampPx":{"light":4,"mid":9,"heavy":16}},"flash":{"frames":2,"alpha":0.55},"wave":{"life":0.45,"maxR":220,"refract":1.03,"cap":2},"chroma":{"dur":0.2,"px":3,"idleAlpha":0.15},"bloom":{"down":4,"alpha":0.25},"slowmo":{"scale":0.3,"near":0.2},"vignette":{"hurt":0.55,"danger":0.45},"death":{"slow":0.4,"slowScale":0.3,"grayFrom":0.6,"grayTo":0.85,"debrisBounce":0.45},"layers":{"core":{"n":[1,2],"size":[18,34],"speed":[0,0],"life":[0.08,0.14],"drag":0,"grav":0},"spark":{"n":[10,18],"size":[2,4],"speed":[220,520],"life":[0.25,0.55],"drag":3.5,"grav":900},"smoke":{"n":[4,8],"size":[10,22],"speed":[30,90],"life":[0.5,0.9],"drag":2,"grav":-60},"debris":{"n":[5,10],"size":[3,7],"speed":[150,380],"life":[0.6,1.1],"drag":1,"grav":1100}},"pool":{"low":240,"mid":400,"high":640},"quality":{"partMul":{"low":0.4,"mid":0.7,"high":1},"downP90Ms":20},"combo":{"l3":20,"l4":30,"partMulL3":2,"beatHz":2},"pop":{"from":1.6,"dur":0.35},"near":{"closeFrac":0.33,"flashHue":205},"events":{"flap":{"haptic":"flap"},"gate":{"haptic":null},"near":{"haptic":"near"},"shieldHit":{"haptic":"shieldHit"},"shieldMulti":{"haptic":null},"speed":{"haptic":null},"death":{"haptic":"deathHeavy"},"record":{"haptic":"record"},"coin":{"haptic":null},"comboBreak":{"haptic":"shatter"},"overdrive":{"haptic":"overdrive"}}}</script>
 <script>
 // Only the publishable / anon key ever goes here. Never a secret or service_role key.
 window.FW_CONFIG = { ads: 'none', supabaseUrl: 'https://ecjeyelgcqbliavwltbc.supabase.co', supabaseAnonKey: 'sb_publishable_wG1eznhHBLW33Ghrt1gNNg_c32xOXX1', auth: { apple: false, captcha: { provider: 'turnstile', siteKey: '' } } };
@@ -1639,6 +1639,11 @@ const nextStageOf = (cur, cleared, n, open) => cleared && cur + 1 < n && open(cu
 function focusStage(clr, open, cur){ for (let i = clr.length - 1; i >= 0; i--) if (open(i) && !clr[i]) return i; return cur; }
 // units that became affordable since the snapshot (ids)
 const newlyAffordable = (before, now) => now.filter(id => !before.includes(id));
+// where a run's first gate spawns: FIRST_GATE px past the right edge, so a retry reaches a decision sooner; rookie runs keep their longer lead-in
+const FIRST_GATE = 20;
+const firstGateX = (lw, rookie, lead) => rookie ? lw + 80 + lead : lw + FIRST_GATE;
+// the Perfect band (the next gate's Perfect zone, drawn while the PERFECT tip is up): once per device, on a tutorial run, never in versus
+const perfBandDue = o => o.mode !== 'versus' && o.step === 2 && !o.seen;
 /* ftue:end */
 // A unit shown on a board (leaderboard, friends, versus): a hidden unit the viewer does not own stays a secret, "???" in a neutral colour
 function boardUnit(bd, ownedHas){
@@ -1714,7 +1719,7 @@ const FX_DEFAULTS = Object.freeze({
   bloom: { down: 4, alpha: .25 },
   slowmo: { scale: .3, near: .2 },
   vignette: { hurt: .55, danger: .45 },
-  death: { slow: .4, slowScale: .3, grayFrom: .6, grayTo: 1.1, debrisBounce: .45 },
+  death: { slow: .4, slowScale: .3, grayFrom: .6, grayTo: .85, debrisBounce: .45 },
   layers: {
     core:   { n: [1, 2],   size: [18, 34], speed: [0, 0],     life: [.08, .14], drag: 0,   grav: 0 },
     spark:  { n: [10, 18], size: [2, 4],   speed: [220, 520], life: [.25, .55], drag: 3.5, grav: 900 },
@@ -2300,7 +2305,7 @@ const FS_CFG = Object.freeze({ v: 1, maxBytes: 16384, stN: 50, owned0: Object.fr
 // Synced to the account (public.fw_saves). Every other fw27_ key stays on this device: FS_LOCAL ("_" at the end = a prefix)
 const FS_KEYS = Object.freeze(['fw27_wallet2', 'fw27_owned', 'fw27_pass', 'fw27_starter', 'fw27_best', 'fw27_bestg', 'fw27_stg2', 'fw27_stage2',
   'fw27_bird', 'fw27_nick', 'fw27_tut', 'fw27_rookie_runs', 'fw27_dstreak', 'fw27_dbonus', 'fw27_vsclaim', 'fw27_evo']);
-const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_bestu', 'fw27_rday', 'fw27_ad2x', 'fw27_glide', 'fw27_affnew', 'fw27_stg', 'fw27_stage', 'fw27_lang', 'fw27_mute', 'fw27_mus', 'fw27_vib', 'fw27_ads', 'fw27_trial', 'fw27_rp2',
+const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_bestu', 'fw27_rday', 'fw27_ad2x', 'fw27_glide', 'fw27_pband', 'fw27_affnew', 'fw27_stg', 'fw27_stage', 'fw27_lang', 'fw27_mute', 'fw27_mus', 'fw27_vib', 'fw27_ads', 'fw27_trial', 'fw27_rp2',
   'fw27_rej', 'fw27_vsmode', 'fw27_dg', 'fw27_daily_', 'fw27_sync',
   'fw27_fxq', 'fw27_fxq_auto', 'fw27_fxshake', 'fw27_fxflash',   // fx quality (and the level auto learned) and accessibility: per-device hardware/comfort choices
   'fw27_push', 'fw27_pushk', 'fw27_feed2',     // friend alerts: the toggle follows this device's Notification permission; feed2 is this device's read cursor
@@ -2479,6 +2484,11 @@ const musWant = (state, on) => !on ? 0 : state === 'play' ? .32 : state === 'pau
 // fw27_mute is the SFX switch (it used to mute everything): a player who had muted and has no music choice yet keeps hearing nothing
 const musPrefInit = (sfxMuted, musSaved) => typeof musSaved === 'boolean' ? musSaved : !sfxMuted;
 const soundOn = (sfxMuted, musOn) => !(sfxMuted && !musOn);   // the master button: off only when both are off
+// SFX variety: the flap is detuned at random within ±FLAP_DETUNE (r in 0..1), the gate pass climbs a 4-note scale (E, F#, G#, B from 660 Hz) gate by gate
+const FLAP_DETUNE = .04;
+const flapFreq = r => 520 * (1 + (r*2 - 1)*FLAP_DETUNE);
+const PASS_SCALE = Object.freeze([1, 9/8, 5/4, 3/2]);
+const passFreq = i => 660 * PASS_SCALE[((i % 4) + 4) % 4];
 /* audio:end */
 let ac = null, master = null, sfxBus = null, nbuf2 = null;
 let musOn = musPrefInit(muted, store.get('fw27_mus', null));
@@ -2512,8 +2522,8 @@ function noise(dur=.4, vol=.3){
 const SFX = {
   skill(){ [0,.05,.1,.15].forEach((d,i)=>tone(392*Math.pow(1.25,i),.18,'sawtooth',.06,0,d)); tone(1600,.4,'sine',.08,-1200); noise(.3,.1); },
   click(){ tone(900,.03,'square',.06); },
-  flap(){ tone(520, .07, 'triangle', .18, 240); },
-  pass(){ tone(660, .09, 'square', .11); },
+  flap(){ tone(flapFreq(Math.random()), .07, 'triangle', .18, 240); },
+  pass(i){ tone(passFreq(i), .09, 'square', .11); },
   perfect(c){ const b = 523 * Math.pow(1.06, Math.min(c,14)); tone(b,.14,'triangle',.168); tone(b*1.25,.14,'triangle',.14,0,.05); tone(b*1.5,.2,'triangle',.14,0,.1); },
   orb(){ tone(1180, .06, 'sine', .1, 400); },
   power(){ [0,.06,.12,.18].forEach((d,i)=>tone(440*Math.pow(1.26,i),.12,'square',.08,0,d)); },
@@ -2601,7 +2611,7 @@ let skillCharge = 0, skillWasReady = false, boostT = 0, lowGravT = 0, autoT = 0,
 let bounceLeft = 0, rewindLeft = 0, perfCount = 0, phaseT = 0, giantT = 0, inkT = 0, guardUsed = false, travel = 0, hist = [], bolts = [];
 let score, gatesPassed, combo, maxCombo, perfects, speed, dashMeter, dashT, invuln, magnetT, slowT, zoneIdx, zoneBanner, deathT, spawnIdx, runDay, deathWhy, lastShare = '';
 // Per-run state for stage rules and the newer skills; TMAX remembers each timer's value when it was set (render/HUD read it).
-const newFx = () => ({ flapBuf:false, windAt:-9, fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:0, clearDone:false, clearCoin:0, clearDia:0, gemsRun:0, adSeen:false, hit:false, flawless:false, bonusCoin:0, bonusDia:0, bonusGem:0, replayCoin:0, evoCoin:0,
+const newFx = () => ({ pband:0, flapBuf:false, windAt:-9, fogT:0, fogDur:0, idleT:0, idleWarn:false, amb:0, heavyT:0, clearDone:false, clearCoin:0, clearDia:0, gemsRun:0, adSeen:false, hit:false, flawless:false, bonusCoin:0, bonusDia:0, bonusGem:0, replayCoin:0, evoCoin:0,
   laneN:0, laneY:0, strikeN:0, strikeT:0, stormDash:false, dashHit:false, resoT:0, resoMul:1, keepT:0, dark:false, darkT:0, darkMul:0, zod:0, zodP:0, beamLeft:0, holeT:0, holeGap:0, entT:0, entAdd:0, entLast:1, arch:0, loops:0, loopsWas:-1, runT:0, stars:0, starLeft:0, glide:0, gliding:false,
   castT:0, castMax:0, sigT:0, sigK:'', perfT:0,   // unit fx timers (s): cast sky event and its length, passive moment and its kind, perfect flourish
   gustLock:0,   // TEMPEST: scored gates left before the gust reflex can arm again
@@ -2757,7 +2767,7 @@ function reset(){
   zoneIdx = mode === 'endless' ? stTier(curStage) : 0;
   if (mode === 'endless'){ const r = STAGES[curStage]; if (r.sig && (!curStage || STAGES[curStage - 1].sig !== r.sig)) FX.sigBan = 1.4; }   // the stage that brings in a zone's obstacle names it, a moment after GO
   { const Z = ZONES[zoneIdx]; Object.assign(pal, JSON.parse(JSON.stringify({ sky0:Z.sky[0], sky1:Z.sky[1], a:Z.a, b:Z.b, gate:Z.gate }))); }
-  spawnGate(LW + 80 + (rookieOn() ? ROOKIE.lead : 0));
+  spawnGate(firstGateX(LW, rookieOn(), ROOKIE.lead));
 }
 
 const diff = () => runD(gatesPassed);
@@ -4359,7 +4369,7 @@ function update(rdt){
       IMP.gray = ph.gray;
     }
     bird.vy += 1600*dt; bird.y = Math.min(GROUND - bird.r, bird.y + bird.vy*dt); bird.rot += 8*dt;
-    if (deathT > 1.1){ if (canContinue()) openCont(); else showOver(); }
+    if (deathT > FXCFG.death.grayTo){ if (canContinue()) openCont(); else showOver(); }   // the card comes up as the gray-out ends
     return;
   }
   if (state !== 'play') return;
@@ -4518,7 +4528,7 @@ function update(rdt){
           if (combo > 1) pop(t('comboBreak'), bird.x, bird.y+36, [0,0,70]);
           if (tier === 2) banner(t('feverEnd'), [0,0,78], .9, false);
           const comboWas = combo;
-          combo = PK.comboKeep ? Math.floor(combo * PK.comboKeep) : 0; tier = combo >= Math.min(5, PK.feverAt - 3) ? 1 : 0; addScore(1); SFX.pass(); if (combo > 0) sigFx(B.id, 'keep', g);
+          combo = PK.comboKeep ? Math.floor(combo * PK.comboKeep) : 0; tier = combo >= Math.min(5, PK.feverAt - 3) ? 1 : 0; addScore(1); SFX.pass(gatesPassed); pop('+1', bird.x + 10, bird.y - 30, [0,0,92]); if (combo > 0) sigFx(B.id, 'keep', g);
           if (comboWas > 4) impFx('comboBreak');
           IMP.comboLvl = comboLevel(combo, tier, FXCFG); impFx('gate');
         }
@@ -4645,6 +4655,7 @@ function render(){
   if (state === 'menu') drawFlock(1/60);
   for (const g of gates) drawGate(g);
   if (mode === 'endless') for (const g of gates) if (g.sg) drawSig(g);   // the zones' signature obstacles, over the gates
+  if (state === 'play' && FX.pband && tutStep === 2) drawPerfBand();   // first run only: the next gate's Perfect zone while the PERFECT tip is up
   if (state === 'play'){ const f = ufx(B.id, 'marks'); if (f) f(); if (ultLive()){ const m = ufx(B.id, 'ultMarks'); if (m) m(); } }   // unit judgment marks: the only unit art allowed on top of the gates
   for (const bo of bolts){
     if (bo.kind === 'beam'){   // straight ray x0,y0 → x,y (width bo.w, narrowing as it fades) with a four-point burst where it lands; no shadowBlur
@@ -4794,6 +4805,13 @@ function render(){
     ctx.font = `600 13px "Chakra Petch", ${SYS}`; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(243,238,252,.7)';
     ctx.fillText(`${t('best')} ${best}`, LW/2, LH - 22);
   }
+}
+// the one-time Perfect band: the next gate's Perfect zone (from perfWin(), the number scoring reads) as two soft gold strips across the gap's lips, with a small PERFECT label
+function drawPerfBand(){
+  const g = gates.find(q => !q.scored && !q.broken && q.x + q.w > bird.x); if (!g) return;
+  const cy = gY(g), gp = gGap(g), wn = Math.min(perfWin(), gp/2), a = RM ? .4 : .3 + .15*Math.sin(T*6);
+  ctx.save(); ctx.fillStyle = `hsla(48,100%,62%,${a})`; ctx.beginPath(); ctx.rect(g.x - 4, cy - gp/2, g.w + 8, wn); ctx.rect(g.x - 4, cy + gp/2 - wn, g.w + 8, wn); ctx.fill();
+  ctx.font = `10px Bungee, ${SYS}`; ctx.textAlign = 'right'; ctx.fillStyle = 'hsla(48,100%,72%,.95)'; ctx.fillText(t('perfectP'), g.x - 8, cy - gp/2 + wn); ctx.restore();
 }
 function drawGate(g){
   if (g.broken){ ctx.save(); ctx.globalAlpha = .28; }
@@ -7610,7 +7628,7 @@ function tutTick(dt){
   if (!tutStep) return;
   if (state !== 'play'){ if (state === 'dying' || state === 'over' || state === 'menu'){ hideTip(); if (tutDone(0, tutStep, store.get('fw27_tutruns', 0))){ store.set('fw27_tut', 1); evTrack('tutorial_done', { how: 'run' }); } tutStep = 0; } return; }
   const nx = tutNext(tutStep, gatesPassed);
-  if (tutStep === 1 && nx === 2){ tutStep = 2; showTip(t('tut2')); }
+  if (tutStep === 1 && nx === 2){ tutStep = 2; showTip(t('tut2')); if (perfBandDue({mode, step: 2, seen: store.get('fw27_pband', 0)})){ FX.pband = 1; store.set('fw27_pband', 1); } }
   else if (tutStep === 2 && nx === 3){ tutStep = 3; tutT = 4.5; showTip(t('tut3')); dashMeter = Math.max(dashMeter, 1); skillCharge = 1; }
   else if (tutStep === 3){ tutT -= dt; if (tutT <= 0){ tutStep = 0; hideTip(); store.set('fw27_tut', 1); evTrack('tutorial_done', { how: 'tips' }); } }
 }
