@@ -2,12 +2,12 @@
 // index.html registers it only on swishby.com and *.vercel.app previews (swOk), never on the dev server or in the iOS app.
 // The game page is network-first (a deploy shows up on the next launch); same-origin images and fonts are cache-first,
 // so bump VERSION when one of them changes in place. Supabase, admin.html and any request but GET are never touched.
-const VERSION = '2026-10-29.1';
+const VERSION = '2026-10-29.2';
 const CACHE = `swishby-${VERSION}`;
 const NAV_TIMEOUT_MS = 3000;
 const PAGE = '/index.html';
 // The game's Higgsfield art (art/*.webp, the names of index.html's art block): precached so a first launch with no signal has it too
-const ART = [...['grove', 'canyon', 'magma', 'palace'].flatMap(z => ['pillar', 'cap', 'bg', 'sur-snap', 'sur-shot', 'sur-drop'].map(k => `${k}-${z}`)),
+const ART = [...['grove', 'canyon', 'magma', 'palace'].flatMap(z => [...['bot-stem', 'bot-tip', 'top-stem', 'top-tip'].map(k => `ob-${z}-${k}`), ...['bg', 'sur-snap', 'sur-shot', 'sur-drop'].map(k => `${k}-${z}`)]),
   ...['mawbloom', 'dunehulk', 'cinderwyrm', 'moltenking', 'stormcrown'].map(b => `boss-${b}`)].map(n => `/art/${n}.webp`);
 const PRECACHE = ['/logo-swishby.webp', '/logo-swishby.png', '/icon-192.png', '/icon-512.png', '/icon.svg', '/apple-touch-icon.png', ...ART];
 const STATIC_RX = /\.(?:png|webp|jpe?g|gif|svg|ico|woff2?|ttf|otf)$/i;

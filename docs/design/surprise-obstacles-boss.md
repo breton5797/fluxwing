@@ -281,3 +281,57 @@ Where the art integration differs from section 5, and why:
   - The silhouettes are built once per boss on first use (`artTint`).
 - **Backdrops** are cover-fit and static, drawn at 60 % alpha over the sky gradient and under the stars and the procedural layers. At that alpha
   the gates and the bird keep their contrast in all four zones (screenshots `art-gates-*.png`).
+
+## 11. Implementation notes (themed shapes, engine, 2026-10-29)
+
+The gates no longer read as pillars. Each zone's two pieces are objects of the theme; the gameplay and the hit rectangles did not change.
+
+| Zone | Bottom piece (rises to the gap) | Top piece (hangs to the gap) |
+|---|---|---|
+| NEON GROVE | a carnivorous-plant stalk with a bud | hanging roots and vines |
+| CANYON RUN | a stacked boulder hoodoo | hanging rock with stalactites |
+| MAGMA CORE | an erupting lava fire column | hanging molten lava drips |
+| SKY PALACE | a crystal spire | hanging crystal icicles |
+
+- **Files.** `art/ob-{zone}-{bot,top}-stem.webp` (128×512, transparent, tiles vertically with irregular sides) and
+  `art/ob-{zone}-{bot,top}-tip.webp` (at most 192×256). They replace the 8 `pillar-*`/`cap-*` files, so art/ holds 37 files. `ART_OB[zoneIdx]`
+  lists the zone's four as [bot stem, bot tip, top stem, top tip]. `sw.js` precaches them under `VERSION` `2026-10-29.2`. The iOS and portal
+  builds take the folder listing as before.
+- **Fits.** `scripts/art/metrics.py` measures each file's alpha (opaque: alpha ≥ 128) into `scripts/art/ob-metrics.json`, because node cannot
+  decode WebP. `ART_FIT.ob[zone]` holds, per piece, `[sw, scx, tw, tcx, pad, join]`:
+  - the stem's drawn width (84) and its centre column;
+  - the tip's drawn width and its centre column. A tip is scaled so its base matches the stem's core. The exception is CANYON RUN's hoodoo
+    cap: it is 104 px wide, overhanging the hit width by 18 px each side, like the old caps;
+  - the tip's transparent rows on the gap side and on the stem side.
+
+  `tests/art.test.js` checks the fits against the metrics, and checks the metrics against each file's byte size. **Rerun the script whenever an
+  ob-* file changes.**
+- **Drawing (`artObs`, `artOb`).**
+  - The stem pattern is anchored at the gap edge, so it travels with moving and pulsing gates. It is cut only lengthwise, so its own irregular
+    sides show.
+  - Its head (`artHead`, made once per stem) starts 34 px into the tip and fades in under it. The tip's last 10 px before its base fade out
+    (`artSoft`, made once per tip). Together they hide both straight cuts at the junction.
+  - The tip's visible end sits on the gap edge.
+  - All four images must be loaded before the art draws; until then the procedural pillar draws as it is, with its rim, caps and
+    `drawGateDeco`. The body gradient is no longer laid over the art.
+- **The gap-edge line stays.** The tips taper to points: over the 40 px next to the gap, the drawn tip covers only 13–39 % of the 68 px hit
+  width (78 % for the canyon cap). A 1.5 px line in the gate colour at 60 % alpha (`glowPx(6)`) runs across the hit width on each gap edge, so the wall's real end reads.
+- **Fairness, measured in Chromium** (`tests/e2e/ob-smoke.mjs`). An init script mirrors every draw of the obstacle art onto a transparent
+  canvas, so the backdrop does not matter.
+
+  | Zone | Stem cover of the hit width, bot / top | Tip offset from the gap edge, bot / top |
+  |---|---|---|
+  | NEON GROVE | 93.4 % / 97.1 % | 0 / 0.8 px |
+  | CANYON RUN | 97.9 % / 96.8 % | 0 / 0 px |
+  | MAGMA CORE | 98.0 % / 97.5 % | 0 / 0 px |
+  | SKY PALACE | 97.6 % / 98.5 % | 0 / 0 px |
+
+  Nothing opaque reaches more than 1.5 px into the gap. The node fit test asks for at least 85 % cover from the alpha metrics, and for each tip
+  within 3 px of the gap edge.
+- **Theme motion.** None of it runs under RM, and none of it allocates per frame.
+  - MAGMA CORE (`artLava`, also skipped at `IMP.q === 'low'`): a flicker glow on both pieces, embers rising along the column's sides and
+    falling along the drips' (`glowPx(6)`), and short heat wisps rising off the column. All of it stays on the stems, past the tips' bases,
+    so nothing glows over the narrow tips or the gap.
+  - NEON GROVE: the bud sways ±0.03 rad about its base, a few px at its point.
+- **Unchanged.** `drawBranch` still draws over the top piece. Moving and pulse markers, the gap tint, a broken gate's 0.28 alpha, the hit flash
+  and the red hit edge (`state === 'dying' && g.hitSide`) are as before.
