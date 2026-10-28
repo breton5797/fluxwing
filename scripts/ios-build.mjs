@@ -6,7 +6,7 @@ import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const SDK_LOCAL = 'vendor/supabase.js';
-export const IOS_ASSETS = ['manifest.webmanifest', 'icon.svg', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'logo-swishby.png',
+export const IOS_ASSETS = ['manifest.webmanifest', 'icon.svg', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'logo-swishby.png', 'logo-swishby.webp',
   'privacy.html', 'terms.html', 'delete-account.html', 'about/index.html',
   'guide/index.html', ...['title-annotated', 'tut-1', 'tut-3', 'hud-annotated', 'combo', 'dash', 'stages', 'versus-menu', 'versus', 'roster',
     'result-annotated', 'help'].map(n => `guide/img/${n}.jpg`)];
