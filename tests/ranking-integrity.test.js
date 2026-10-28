@@ -151,7 +151,7 @@ test('client: the name form says saved only after set_nick answers, and keeps th
   const call = f.indexOf("socRpc('set_nick', {p_nick: v})");
   assert.ok(call > 0, 'set_nick');
   assert.ok(f.indexOf("statusMsg = t('saved')", call) > call, 'saved after the answer');
-  assert.match(f, /nick = r\.data;/);
+  assert.match(f, /const a = nickReply\(v, r\);[\s\S]*nick = a\.nick;/, 'the name the server stored (nickReply hands back r.data, tests/nick-msg.test.js)');
   assert.equal(f.match(/submitScore\(0, 0/g).length, 1, 'no rate-limited score submit for a name on Supabase ...');
   assert.match(f, /if \(myDoc && backend === 'artifact'\) submitScore\(0, 0/, '... only the claude.ai build (no set_nick there) posts it with a score');
 });
