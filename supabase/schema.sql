@@ -138,15 +138,35 @@ language sql immutable set search_path = '' as $$
                'archon','ouroboros','kirin','garuda','aeon','cosmos','infinity','omega'];
 $$;
 revoke all on function private.fw_units() from public, anon, authenticated;
--- A unit's share of the endless score bound (see the derivation above fw_units): x1 up to ultra, then by rank (TIER_IDS order)
+-- The highest released rank: TIER_OPEN in index.html. BUMP IT WITH EACH RANK'S RELEASE (both places, same PR): a unit above it
+-- is refused on the leaderboard (testers in private.fw_testers excepted) and gets no share of the bound.
+create or replace function private.fw_tier_open() returns integer
+language sql immutable set search_path = '' as $$ select 4 $$;
+revoke all on function private.fw_tier_open() from public, anon, authenticated;
+-- A unit's rank for the release check and the bound: 5..9 for the ranks above ultra (TIER_IDS order), 0 for every other unit
+-- (all of them released; the open ranks 0..4 are not told apart here)
+create or replace function private.fw_unit_rank(p_bird text) returns integer
+language sql immutable set search_path = '' as $$
+  select case when p_bird = any (array['seraph','valkyrie','lumen','halcyon']) then 5
+              when p_bird = any (array['quasar','comet','zodiac','eclipse']) then 6
+              when p_bird = any (array['singular','rift','nyx','entropy']) then 7
+              when p_bird = any (array['archon','ouroboros','kirin','garuda']) then 8
+              when p_bird = any (array['aeon','cosmos','infinity','omega']) then 9
+              else 0 end;
+$$;
+revoke all on function private.fw_unit_rank(text) from public, anon, authenticated;
+-- A unit's share of the endless score bound (see the derivation above fw_units): x1 up to ultra, then by rank, and x1 for a
+-- rank not released yet (private.fw_tier_open)
 create or replace function private.fw_bound_mul(p_bird text) returns numeric
 language sql immutable set search_path = '' as $$
-  select case when p_bird = any (array['seraph','valkyrie','lumen','halcyon']) then 1.4
-              when p_bird = any (array['quasar','comet','zodiac','eclipse']) then 1.5
-              when p_bird = any (array['singular','rift','nyx','entropy']) then 1.6
-              when p_bird = any (array['archon','ouroboros','kirin','garuda']) then 1.75
-              when p_bird = any (array['aeon','cosmos','infinity','omega']) then 1.9
-              else 1 end;
+  select case when r > private.fw_tier_open() then 1
+              when r = 5 then 1.4
+              when r = 6 then 1.5
+              when r = 7 then 1.6
+              when r = 8 then 1.75
+              when r = 9 then 1.9
+              else 1 end
+  from (select private.fw_unit_rank(p_bird) as r) x;
 $$;
 revoke all on function private.fw_bound_mul(text) from public, anon, authenticated;
 
@@ -186,14 +206,19 @@ security definer
 set search_path = ''
 as $$
 declare
-  c_max_gates   constant integer  := 1500;             -- 13x the best real run on the board when this was set (112 gates, 2026-10)
-  -- Time budget: a run of g gates takes real time. The fastest unit (speed 1.25) at the top speed of the hardest stage,
-  -- dashing, crosses the 220 px minimum spacing in a little over 0.1 s, and the dash cannot be held; 6 gates a second
-  -- over a whole run is far above that. The budget runs from the caller's previous accepted submit (a run ends with
-  -- one) or, for a first submit, from the creation of the anonymous user. It stops a forged score sent in one call:
-  -- claiming g gates means waiting g / 6 seconds first.
-  c_gates_per_s constant numeric  := 6;
+  c_max_gates   constant integer  := 400;              -- about 3x the best real run on the board (112 gates, 2026-10); was 1,500
+  -- Time budget: a run of g gates takes real time. Measured 2026-10-28 (scripts/balance.mjs bot, form V, every run timed):
+  -- the most gates a second over a run was 2.57 (TEMPEST, stage 50, the top speed), 1.96 for the fastest open-rank
+  -- units (ZERO, BLITZ 1.80); the most gates in one run 161 (SOLARIS, stage 20). The ceiling is ceil(2.57 x 1.5) = 4.
+  -- The budget runs from the caller's previous accepted submit (a run ends with one) or, for a first submit, from the
+  -- creation of the anonymous user. It stops a forged score sent in one call: claiming g gates means waiting g / 4 seconds first.
+  c_gates_per_s constant numeric  := 4;
   c_gate_grace  constant integer  := 30;
+  -- Soft limit: real runs stay at or below 0.27 of the endless bound (docs/balance/README.md, every rank); a score above
+  -- 0.4 of it is stored, but the row is hidden (fw_scores.hidden) until an admin looks at it. Endless only: daily is fair
+  -- mode, whose bound g^2 + 5g is already close to an all-Perfect run.
+  c_soft        constant numeric  := 0.4;
+  v_soft  boolean := false;
   v_since timestamptz;
   c_min_gap     constant interval := interval '2 seconds';
   c_day_cap     constant integer  := 400;              -- accepted submits per player per UTC day
@@ -218,6 +243,11 @@ begin
      or p_score < 0 or p_gates < 0 or p_gates > c_max_gates then
     raise exception 'fw_bad_input: unknown mode or unit, or value out of range' using errcode = '22023';
   end if;
+  -- a unit of a rank not released yet (private.fw_tier_open) cannot be on the board: nobody could have flown it, except a tester
+  if private.fw_unit_rank(p_bird) > private.fw_tier_open()
+     and not exists (select 1 from private.fw_testers t where t.player_id = v_uid) then
+    raise exception 'fw_bad_input: unit not released' using errcode = '22023';
+  end if;
 
   -- plausibility: score against gates (see the derivation above)
   -- every mode: a score comes with its gates (2026-10: the endless back-fill of an old local best without a gate count, up to
@@ -230,6 +260,7 @@ begin
     if p_score > v_bound then
       raise exception 'fw_implausible: score too high for the gates passed' using errcode = '22023';
     end if;
+    v_soft := p_mode = 'endless' and p_score > c_soft * v_bound;
   end if;
 
   -- daily key: the client's UTC day (YYYY-MM-DD), accepted only within one day of the server's UTC date
@@ -299,7 +330,8 @@ begin
     nick = v_nick, cc = v_cc, lang = v_lang,
     best = v_row.best, gates = v_row.gates, bird = v_row.bird,
     daily_key = v_row.daily_key, daily_score = v_row.daily_score, daily_bird = v_row.daily_bird,
-    submit_day = v_row.submit_day, submit_count = v_row.submit_count + 1, last_submit_at = v_now, updated_at = v_now
+    submit_day = v_row.submit_day, submit_count = v_row.submit_count + 1, last_submit_at = v_now, updated_at = v_now,
+    hidden = hidden or v_soft   -- over the soft limit: off the boards for review (an admin un-hides); never un-hidden here
   where player_id = v_uid
   returning * into v_row;
   return v_row;
@@ -1939,12 +1971,23 @@ revoke all on function public.social_hello(bigint)           from public, anon, 
 grant execute on function private.fw_social_hello(bigint)    to authenticated, service_role;
 grant execute on function public.social_hello(bigint)        to authenticated, service_role;
 
+-- A guest (anonymous) account younger than 10 minutes: telemetry gives it a small cap of its own and leaves its rows out of the
+-- global hourly counts, so a few dozen fresh guest accounts cannot fill a global cap and blind the launch numbers.
+-- (to_jsonb: the column may be absent on a local rehearsal stub)
+create or replace function private.fw_fresh_guest(p_uid uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from auth.users u where u.id = p_uid and u.created_at > now() - interval '10 minutes'
+                   and coalesce(to_jsonb(u) ->> 'is_anonymous', 'false') = 'true');
+$$;
+revoke all on function private.fw_fresh_guest(uuid) from public, anon, authenticated;
+
 -- ---------- CLIENT ERRORS: the game reports its own uncaught errors ----------
 -- No third-party tracker: the client (index.html errlog block) sends an uncaught error or rejection once per distinct
 -- bug, at most 5 a session, through public.report_error(). A row holds the message, the stack, a build fingerprint,
 -- the page path (never the query: an OAuth return carries a code there), the user agent and a small context object.
 -- Caps: 10 reports an hour per player and 500 an hour overall (a bug on every screen must not fill the database);
--- over a cap the call returns false and stores nothing. Rows older than 30 days go with the pg_cron job
+-- a guest account younger than 10 minutes (private.fw_fresh_guest) gets 3 an hour instead and its reports do not count
+-- toward the overall cap; over a cap the call returns false and stores nothing. Rows older than 30 days go with the pg_cron job
 -- fw_client_errors_gc (scheduled with the other jobs above). A deleted account leaves its rows without a player.
 -- Read:  select at, player_id, build, msg, left(stack, 200) as stack, url, extra
 --        from private.fw_client_errors order by at desc limit 50;
@@ -1970,10 +2013,18 @@ returns boolean language plpgsql security definer set search_path = '' as $$
 declare
   v_uid uuid := (select auth.uid());
   v_msg text := left(btrim(regexp_replace(coalesce(p_msg, ''), '\s+', ' ', 'g')), 300);
+  c_cap_player constant int := 10;
+  c_cap_guest  constant int := 3;
+  c_cap_all    constant int := 500;
+  v_fresh boolean; v_cap int;
 begin
   if v_uid is null or v_msg = '' then return false; end if;
-  if (select count(*) from private.fw_client_errors e where e.player_id = v_uid and e.at > now() - interval '1 hour') >= 10 then return false; end if;
-  if (select count(*) from private.fw_client_errors e where e.at > now() - interval '1 hour') >= 500 then return false; end if;
+  v_fresh := private.fw_fresh_guest(v_uid);
+  v_cap := case when v_fresh then c_cap_guest else c_cap_player end;
+  if (select count(*) from private.fw_client_errors e where e.player_id = v_uid and e.at > now() - interval '1 hour') >= v_cap then return false; end if;
+  if not v_fresh and (select count(*) from private.fw_client_errors e where e.at > now() - interval '1 hour'
+                        and not exists (select 1 from auth.users u where u.id = e.player_id and e.at < u.created_at + interval '10 minutes'
+                                          and coalesce(to_jsonb(u) ->> 'is_anonymous', 'false') = 'true')) >= c_cap_all then return false; end if;
   insert into private.fw_client_errors (player_id, build, msg, stack, url, ua, extra)
   values (v_uid, left(coalesce(p_build, ''), 40), v_msg, left(p_stack, 2000), left(p_url, 200), left(p_ua, 200),
           case when jsonb_typeof(p_extra) = 'object' and length(p_extra::text) <= 500 then p_extra else null end);
@@ -2042,10 +2093,12 @@ grant execute on function public.delete_me() to authenticated;
 -- No third-party analytics: the client (index.html events block) queues first_open (once per device), session_start /
 -- session_end (props.dur = visible seconds of the session so far; a session can end more than once, the max counts),
 -- tutorial_done, run_end, daily_done, shop_buy (the shop is a test build: nothing is paid), ad_view, share and level_up,
--- and sends them in batches through public.track(). 'purchase' is reserved for real payments. A batch is a json array
+-- and sends them in batches through public.track(). 'purchase' is reserved for real payments and is not accepted from a
+-- client (a server-side receipt check will write it). A batch is a json array
 -- of {k: kind, s: session id (16 base-36 chars), p: props object up to 1 KB}; an element that is not valid is skipped,
 -- oversized props are dropped. Caps: 300 events an hour per player (a beginner's runs can end every 10 s) and 20,000 an
--- hour overall, at most 50 a call; over a cap the rest of the batch is not stored. at is the server's insert time
+-- hour overall, at most 50 a call; a guest account younger than 10 minutes (private.fw_fresh_guest) gets 60 an hour and
+-- its events do not count toward (nor wait on) the overall cap; over a cap the rest of the batch is not stored. at is the server's insert time
 -- (the client sends within 30 s). Rows are deleted with the account (delete_me) and after 400 days by the pg_cron job
 -- fw_events_gc (long enough for a D30 cohort a year back).
 -- Read:  select at, player_id, kind, session, props from private.fw_events order by at desc limit 50;
@@ -2071,14 +2124,21 @@ returns integer language plpgsql security definer set search_path = '' as $$
 declare
   v_uid uuid := (select auth.uid());
   v_cap_player constant int := 300;
+  v_cap_guest  constant int := 60;
   v_cap_all    constant int := 20000;
-  v_room int; v_n int;
+  v_room int; v_n int; v_fresh boolean;
 begin
   if v_uid is null or jsonb_typeof(p_events) is distinct from 'array' then return 0; end if;
-  v_room := least(50, v_cap_player - (select count(*) from private.fw_events e where e.player_id = v_uid and e.at > now() - interval '1 hour'));
+  v_fresh := private.fw_fresh_guest(v_uid);
+  v_room := least(50, case when v_fresh then v_cap_guest else v_cap_player end
+                      - (select count(*) from private.fw_events e where e.player_id = v_uid and e.at > now() - interval '1 hour'));
   if v_room <= 0 then return 0; end if;
-  v_room := least(v_room, v_cap_all - (select count(*) from private.fw_events e where e.at > now() - interval '1 hour'));
-  if v_room <= 0 then return 0; end if;
+  if not v_fresh then
+    v_room := least(v_room, v_cap_all - (select count(*) from private.fw_events e where e.at > now() - interval '1 hour'
+                                           and not exists (select 1 from auth.users u where u.id = e.player_id and e.at < u.created_at + interval '10 minutes'
+                                                             and coalesce(to_jsonb(u) ->> 'is_anonymous', 'false') = 'true')));
+    if v_room <= 0 then return 0; end if;
+  end if;
   insert into private.fw_events (player_id, kind, session, props, build)
   select v_uid, x.e->>'k', x.e->>'s',
          case when jsonb_typeof(x.e->'p') = 'object' and length((x.e->'p')::text) <= 1024 then x.e->'p' end,
@@ -2086,7 +2146,7 @@ begin
   from jsonb_array_elements(p_events) with ordinality as x(e, i)
   where jsonb_typeof(x.e) = 'object'
     and x.e->>'k' in ('first_open', 'session_start', 'session_end', 'tutorial_done', 'run_end', 'daily_done',
-                      'shop_buy', 'purchase', 'ad_view', 'share', 'level_up')
+                      'shop_buy', 'ad_view', 'share', 'level_up')   -- not 'purchase': real payments only, written server-side
     and coalesce(x.e->>'s', '') ~ '^[0-9a-z]{16}$'
   order by x.i
   limit v_room;
@@ -2670,8 +2730,9 @@ begin
   if v_role is null or (p_role = 'owner' and v_role <> 'owner') then
     raise exception 'fw_admin: not allowed' using errcode = '42501';
   end if;
-  -- owner powers (deletion, e-mails, the log) need a session signed in with a second factor (Supabase MFA: aal2)
-  if p_role = 'owner' and coalesce((select auth.jwt()) ->> 'aal', '') <> 'aal2' then
+  -- every admin call (owner and mod: the mod functions show every player's sign-ins, events and errors, and hide players)
+  -- needs a session signed in with a second factor (Supabase MFA: aal2)
+  if coalesce((select auth.jwt()) ->> 'aal', '') <> 'aal2' then
     raise exception 'fw_admin_mfa: second factor required' using errcode = '42501';
   end if;
   return v_uid;
@@ -2702,10 +2763,12 @@ begin
   begin
     v_aal := (select auth.jwt()) ->> 'aal';
     v_uid := private.fw_admin_gate('mod');
-    select a.role into v_role from private.fw_admins a where a.user_id = v_uid;
   exception when others then
-    v_role := null;   -- refused by the gate (no user, a guest, not an admin): the answer is "not an admin"
+    -- the gate asks for the second factor only after every other check passed: an admin on aal1 keeps its role here, so the
+    -- page can ask for the TOTP code; any other refusal (no user, a guest, not an admin) is "not an admin"
+    if sqlerrm like 'fw_admin_mfa:%' then v_uid := (select auth.uid()); else v_uid := null; end if;
   end;
+  select a.role into v_role from private.fw_admins a where a.user_id = v_uid;
   return jsonb_build_object('admin', v_role is not null, 'role', v_role, 'aal', v_aal);
 end $$;
 

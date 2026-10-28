@@ -97,7 +97,7 @@ test('play edge: start on entering play, stop on leaving it, nothing otherwise',
 });
 
 test('volume: silent while muted or while an ad plays', () => {
-  assert.equal(A.adVol(false, false), 0.5);
+  assert.equal(A.adVol(false, false), 0.8);
   assert.equal(A.adVol(true, false), 0);
   assert.equal(A.adVol(false, true), 0);
   assert.equal(A.adVol(true, true), 0);

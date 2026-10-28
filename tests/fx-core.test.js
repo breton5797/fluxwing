@@ -120,7 +120,7 @@ test('sfxRoute prefers a loaded file, falls back to the synth', () => {
 
 test('quality pick and step', () => {
   assert.equal(F.fxQualityPick({ cores: 4, mem: 2, dpr: 3 }, 'auto'), 'low');
-  assert.equal(F.fxQualityPick({ cores: 8, mem: 8, dpr: 2 }, 'auto'), 'high');
+  assert.equal(F.fxQualityPick({ cores: 8, mem: 8, dpr: 2 }, 'auto'), 'mid');   // first launch: mid, a smooth session steps up (tests/perf.test.js)
   assert.equal(F.fxQualityPick({ cores: 8, mem: 8, dpr: 2 }, 'mid'), 'mid');
   assert.equal(F.fxQualityStep('high', 25), 'mid');
   assert.equal(F.fxQualityStep('low', 40), 'low');
@@ -137,10 +137,10 @@ test('hapticFor reads the event table and returns null for silent events', () =>
   assert.equal(F.hapticFor('gate', table), null);
 });
 
-test('low quality drops canvas glow and caps the backing store at 1.5x', () => {
+test('only high quality keeps canvas glow; low caps the backing store at 1.5x', () => {
   const a = { shake: true, flash: true };
   assert.equal(F.fxFeatures('low', a, false, false).glow, false);
-  assert.equal(F.fxFeatures('mid', a, false, false).glow, true);
+  assert.equal(F.fxFeatures('mid', a, false, false).glow, false);
   assert.equal(F.fxFeatures('high', a, false, false).glow, true);
   assert.equal(F.fxFeatures('low', a, false, false).dprCap, 1.5);
   assert.equal(F.fxFeatures('high', a, false, false).dprCap, 2);

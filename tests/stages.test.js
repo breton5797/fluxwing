@@ -194,6 +194,21 @@ test('wind gust: an up-gust never sits before a gate far below the one before (l
   assert.ok(ups >= 10, 'up-gusts still show up');
 });
 
+test('no fall right after a pulse gate or a pattern end is more than .6 of the usual fall (the stage 44 gate 24 trap)', () => {
+  let seen = 0;
+  for (let i = 0; i < 50; i++){
+    const row = ROWS[i], C = course(i, row.goal + 1);
+    for (let k = 1; k < C.length; k++){
+      const g = C[k], p = C[k - 1];
+      if (g.pat || p.twin || g.type === 'move' || !(p.pat || p.type === 'pulse')) continue;   // a pattern's own steps are authored; a twin and a moving gate have their own limits
+      seen++;
+      const md = (90 - dAt(row, Math.max(k - 2, 0))*30) * row.sw;
+      assert.ok(g.base - p.base <= md * .6 + 1e-6, `stage ${i + 1} gate ${k + 1}: falls ${(g.base - p.base).toFixed(1)} > ${(md * .6).toFixed(1)}`);
+    }
+  }
+  assert.ok(seen >= 50, 'the rule is exercised: ' + seen);
+});
+
 test('no signature obstacle ever scores, and a hit takes the gate-hit path', () => {
   const tick = html.slice(html.indexOf('function sigTick('), html.indexOf('\n}\n', html.indexOf('function sigTick(')));
   const hit = html.slice(html.indexOf('function sigHit('), html.indexOf('\n}\n', html.indexOf('function sigHit(')));

@@ -1,7 +1,7 @@
 -- Admin rehearsal (run on a copy: bash supabase/rehearsal/run.sh supabase/rehearsal/admin.sql).
 -- Calls every public.admin_* AS THE API ROLE (set role authenticated, the caller in request.jwt.claim.sub and request.jwt.claims)
 -- as nobody, a guest (auth.users.is_anonymous), a guest by its token (the is_anonymous claim), a plain signed-in player, a mod,
--- an owner without a second factor (aal1: mod powers, 'fw_admin_mfa' on owner functions) and an owner with one (aal2), and checks that each is allowed or refused ('fw_admin: not allowed', 42501) exactly as docs/admin.md's table
+-- a mod and an owner without a second factor (aal1: 'fw_admin_mfa' on every function they hold, 2026-10-28) and an owner with one (aal2), and checks that each is allowed or refused ('fw_admin: not allowed', 42501) exactly as docs/admin.md's table
 -- says, that admin_me never raises, and that a refused call writes nothing. Then the effects: hide / unhide on both boards, the
 -- name reset, the report groups and their auto-hide count, clearing reports, testers, the held referrals, the season, KPIs, the
 -- input checks (fw_bad_input), account deletion (confirmation, yourself, another admin, the cascade) and the audit log rows
@@ -106,7 +106,7 @@ insert into private.fw_client_errors (player_id, build, msg, stack) values (pg_t
 insert into private.fw_referrals (invitee_id, inviter_id, days, stage, held) values
   (pg_temp.u('d2'), pg_temp.u('d1'), 2, 8, true), (pg_temp.u('d3'), pg_temp.u('d1'), 1, 3, true), (pg_temp.u('d4'), pg_temp.u('d1'), 0, 1, false);
 
-\echo === the matrix: every function as nobody, a guest, a guest by token, a player, a mod, an owner on aal1 and an owner on aal2 ===
+\echo === the matrix: every function as nobody, a guest, a guest by token, a player, a mod on aal1 and aal2, an owner on aal1 and an owner on aal2 ===
 set role authenticated;
 do $$
 declare
@@ -118,8 +118,9 @@ begin
       ('guest',     pg_temp.u('a4'), '{}'::jsonb,                    0, null),
       ('guest_jwt', pg_temp.u('a5'), '{"is_anonymous": true}'::jsonb, 0, null),
       ('player',    pg_temp.u('a3'), '{"is_anonymous": false}'::jsonb, 0, null),
+      ('mod_aal1',  pg_temp.u('a2'), '{"aal": "aal1"}'::jsonb,       0, 'mod'),
       ('mod',       pg_temp.u('a2'), '{"aal": "aal2"}'::jsonb,       1, 'mod'),
-      ('owner_aal1', pg_temp.u('a1'), '{"aal": "aal1"}'::jsonb,      1, 'owner'),
+      ('owner_aal1', pg_temp.u('a1'), '{"aal": "aal1"}'::jsonb,      0, 'owner'),
       ('owner',     pg_temp.u('a1'), '{"aal": "aal2"}'::jsonb,       2, 'owner')) v(label, sub, claims, lvl, role) loop
     perform pg_temp.who(w.sub, w.claims);
     for c in select * from (values
@@ -131,7 +132,8 @@ begin
         ('admin_log(10)', 2)) f(call, need) loop
       got := pg_temp.try(c.call);
       if w.lvl < c.need then
-        want := case when w.label = 'owner_aal1' then 'mfa' else 'refused' end;   -- an owner on aal1: fw_admin_mfa
+        -- aal1: fw_admin_mfa on every function the role holds (a mod on an owner function: refused by role first)
+        want := case when w.label = 'owner_aal1' or (w.label = 'mod_aal1' and c.need = 1) then 'mfa' else 'refused' end;
         if got <> want then raise exception '% calling %: must be refused (%), got %', w.label, c.call, want, got; end if;
       elsif c.call like 'admin_delete_player%' then
         if got not like 'err:22023:fw_bad_input%' then raise exception '% calling %: past the gate to the confirmation check, got %', w.label, c.call, got; end if;
@@ -155,8 +157,8 @@ reset role;
 do $$
 begin
   if (select count(*) from private.fw_admin_log where admin_id = pg_temp.u('a2')) <> 3 then raise exception 'mod: 3 writes logged (hide, name, reports)'; end if;
-  if (select count(*) from private.fw_admin_log where admin_id = pg_temp.u('a1')) <> 11 then
-    raise exception 'owner: 11 rows (bare-stub view, 3 writes on aal1, 7 on aal2 incl. view_player; the refused delete and the aal1 view are not logged)';
+  if (select count(*) from private.fw_admin_log where admin_id = pg_temp.u('a1')) <> 8 then
+    raise exception 'owner: 8 rows (bare-stub view, 7 on aal2 incl. view_player; the refused delete and every aal1 call are not logged)';
   end if;
   if (select count(*) from private.fw_admin_log where action = 'view_player' and admin_id = pg_temp.u('a1') and target = pg_temp.u('b2')) <> 1 then raise exception 'only the aal2 owner view of X is logged'; end if;
   if exists (select 1 from private.fw_admin_log where admin_id not in (pg_temp.u('a1'), pg_temp.u('a2'))) then raise exception 'a refused call wrote the log'; end if;
@@ -168,7 +170,7 @@ set role authenticated;
 do $$
 declare r jsonb; ok boolean; P constant uuid := pg_temp.u('b1');
 begin
-  perform pg_temp.who(pg_temp.u('a2'), '{}');
+  perform pg_temp.who(pg_temp.u('a2'), '{"aal": "aal2"}');
   r := pg_temp.q('admin_overview()');
   if r -> 'cron' <> '[]' then raise exception 'without pg_cron, cron is []: %', r -> 'cron'; end if;
   if (r #>> '{users,guests}')::int <> 2 or (r #>> '{users,total}')::int <> (r #>> '{users,guests}')::int + (r #>> '{users,signed_in}')::int then raise exception 'users: %', r -> 'users'; end if;
@@ -207,9 +209,10 @@ begin
   if not pg_temp.bad(format('admin_player(%L)', gen_random_uuid())) then raise exception 'an unknown id is fw_bad_input'; end if;
   if pg_temp.q(format('admin_player(%L)', pg_temp.u('a1'))) -> 'admin_role' <> 'null' then raise exception 'a mod is not told who the admins are'; end if;
   perform pg_temp.who(pg_temp.u('a1'), '{"aal": "aal1"}');
-  r := pg_temp.q(format('admin_player(%L)', P));
-  if r -> 'email' <> 'null' or r -> 'admin_role' <> 'null' then raise exception 'an owner without a second factor reads as a mod: %', r; end if;
+  if pg_temp.try(format('admin_player(%L)', P)) <> 'mfa' then raise exception 'an owner without a second factor reads nothing (fw_admin_mfa)'; end if;
   perform pg_temp.who(pg_temp.u('a2'), '{}');
+  if pg_temp.try(format('admin_player(%L)', P)) <> 'mfa' then raise exception 'a mod without a second factor reads nothing (fw_admin_mfa)'; end if;
+  perform pg_temp.who(pg_temp.u('a2'), '{"aal": "aal2"}');
 
   r := pg_temp.q('admin_errors(5)');
   if jsonb_array_length(r) <> 1 or char_length(r -> 0 ->> 'stack') <> 500 or r -> 0 ->> 'msg' <> 'TypeError: x' then raise exception 'errors: %', r; end if;
@@ -238,7 +241,7 @@ set role authenticated;
 do $$
 declare r jsonb; g jsonb; P constant uuid := pg_temp.u('b1');
 begin
-  perform pg_temp.who(pg_temp.u('a2'), '{}');
+  perform pg_temp.who(pg_temp.u('a2'), '{"aal": "aal2"}');
   r := pg_temp.q('admin_reports()');
   select e into g from jsonb_array_elements(r) e where e ->> 'target' = P::text and e ->> 'reason' = 'name';
   if (g ->> 'n')::int <> 5 or (g ->> 'counted')::int <> 2 or g ->> 'nick' <> 'BadName' or (g ->> 'hidden')::boolean
@@ -276,7 +279,7 @@ set role authenticated;
 do $$
 declare P constant uuid := pg_temp.u('b1');
 begin
-  perform pg_temp.who(pg_temp.u('a2'), '{}');
+  perform pg_temp.who(pg_temp.u('a2'), '{"aal": "aal2"}');
   if pg_temp.q(format('admin_set_hidden(%L, true)', P)) <> jsonb_build_object('id', P, 'hidden', true) then raise exception 'hide answer'; end if;
   if not (pg_temp.q(format('admin_player(%L)', P)) #>> '{versus,hidden}')::boolean then raise exception 'hidden on versus'; end if;
   if jsonb_array_length(pg_temp.q('admin_season()') -> 'live') <> 1 then raise exception 'a hidden player leaves the live top'; end if;
@@ -287,7 +290,7 @@ begin
     raise exception 'a mod cannot hide or rename an admin';
   end if;
   perform pg_temp.who(pg_temp.u('a1'), '{"aal": "aal1"}');
-  if not pg_temp.bad(format('admin_set_hidden(%L, true)', pg_temp.u('a2'))) then raise exception 'an owner without a second factor cannot either'; end if;
+  if pg_temp.try(format('admin_set_hidden(%L, true)', pg_temp.u('a2'))) <> 'mfa' then raise exception 'an owner without a second factor cannot either'; end if;
   perform pg_temp.who(pg_temp.u('a1'), '{"aal": "aal2"}');
   if pg_temp.q(format('admin_set_hidden(%L, false)', pg_temp.u('a2'))) <> jsonb_build_object('id', pg_temp.u('a2'), 'hidden', false) then raise exception 'an owner can'; end if;
 end $$;
@@ -299,7 +302,7 @@ begin
 end $$;
 set role authenticated;
 do $$ begin
-  perform pg_temp.who(pg_temp.u('a2'), '{}');
+  perform pg_temp.who(pg_temp.u('a2'), '{"aal": "aal2"}');
   perform pg_temp.q(format('admin_set_hidden(%L, false)', pg_temp.u('b1')));
 end $$;
 reset role;
@@ -314,7 +317,7 @@ set role authenticated;
 do $$
 declare r jsonb; cur int;
 begin
-  perform pg_temp.who(pg_temp.u('a2'), '{}');
+  perform pg_temp.who(pg_temp.u('a2'), '{"aal": "aal2"}');
   r := pg_temp.q('admin_season()');
   cur := (r ->> 'season')::int;
   if (r ->> 'prev')::int <> 202609 or jsonb_array_length(r -> 'top') <> 2 or r #>> '{top,0,nick}' <> 'Pilot' or (r #>> '{top,1,rank}')::int <> 2 then raise exception 'top: %', r; end if;

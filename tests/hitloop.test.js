@@ -123,11 +123,11 @@ test('daily reward gives a meaningful return reason without changing competitive
   assert.deepEqual(dailyReward(30), { coin: 650, dia: 100, gem: 4 });
 });
 
-test('using the dash grants half a second of invincibility', () => {
+test('using the dash grants invincibility that outlasts the dash (tests/run.test.js: dashCover)', () => {
   const html = readIndex();
   const m = html.match(/function dash\(\)\{[\s\S]*?\n\}/);
   assert.ok(m, 'dash() found');
-  assert.match(m[0], /invuln = Math\.max\(invuln, \.5\)/);
+  assert.match(m[0], /invuln = dashCover\(invuln, dashT\)/);
 });
 
 test('a ranked match cannot be paused: keys and the button do nothing, leaving the tab is a death', () => {

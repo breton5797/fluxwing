@@ -71,7 +71,7 @@ test('the gate: definer, pinned search_path, refuses guests by the JWT claim and
   assert.match(g[0], /from auth\.users/);
   assert.match(g[0], /from private\.fw_admins/);
   assert.match(g[0], /raise exception 'fw_admin: not allowed' using errcode = '42501'/);
-  assert.match(g[0], /if p_role = 'owner' and coalesce\(\(select auth\.jwt\(\)\) ->> 'aal', ''\) <> 'aal2' then\s+raise exception 'fw_admin_mfa: second factor required' using errcode = '42501'/, 'owner powers need MFA');
+  assert.match(g[0], /if coalesce\(\(select auth\.jwt\(\)\) ->> 'aal', ''\) <> 'aal2' then\s+raise exception 'fw_admin_mfa: second factor required' using errcode = '42501'/, 'every admin call needs MFA (owner and mod)');
   assert.match(sql, /revoke all on function private\.fw_adm_is_owner\(uuid\)\s+from public, anon, authenticated;/);
   assert.match(sql, /revoke all on function private\.fw_admin_gate\(text\)\s+from public, anon, authenticated;/);
   assert.doesNotMatch(sql, /grant execute on function private\.fw_admin_gate/);
@@ -88,6 +88,7 @@ test('every admin function: definer + search_path in private, the gate first (ad
   }
   assert.match(body('me'), /exception when others/, 'admin_me answers instead of raising');
   assert.match(body('me'), /'aal', v_aal\)/, 'admin_me tells the page the session\'s aal');
+  assert.match(body('me'), /if sqlerrm like 'fw_admin_mfa:%' then v_uid := \(select auth\.uid\(\)\);/, 'an admin on aal1 still learns its role (the page then asks for the TOTP code)');
 });
 
 test('every admin function has its public invoker wrapper with the exact revoke / grant lines', () => {

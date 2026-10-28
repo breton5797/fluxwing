@@ -28,7 +28,7 @@ select pg_sleep(2.1);
 set role authenticated;
 select pg_temp.try('10000000-0000-4000-8000-000000000002', 100000, 600) as forged_600_gates_2s_later;
 \echo === 4. the old user posts a big (plausible) score, then gets hidden ===
-select pg_temp.try('10000000-0000-4000-8000-000000000003', 90000, 1200) as old_user_big;
+select pg_temp.try('10000000-0000-4000-8000-000000000003', 90000, 350) as old_user_big;   -- under the 400-gate cap and the 0.4 soft limit
 reset role;
 update public.fw_scores set hidden = true where player_id = '10000000-0000-4000-8000-000000000003';
 set role authenticated;

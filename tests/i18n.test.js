@@ -118,7 +118,9 @@ test('Korean rarity names: mythic is 신화, never the food word', () => {
 });
 
 test('daily intro copy exists and says what the mode is', () => {
-  assert.equal(I.ko.dIntroT, '오늘의 챌린지'); assert.match(I.en.dIntroB, /same course/i); assert.match(I.ja.dIntroB, /同じコース/);
+  assert.equal(I.ko.dIntroT, '데일리 런'); assert.match(I.en.dIntroB, /same course/i); assert.match(I.ja.dIntroB, /同じコース/);
+  assert.doesNotMatch(I.en.dIntroB, /no unit skills/i, 'skills work in the daily run, evened out');
+  assert.equal(I.ko.dIntroB, '오늘은 전 세계가 같은 코스예요. 하루 1회 보상, 모든 유닛 능력은 공정하게 맞춰져요. 세계와 겨뤄 보세요.');
   for (const l of Object.keys(I)) for (const k of ['dIntroT', 'dIntroB', 'dIntroGo']) assert.ok(typeof I[l][k] === 'string' && I[l][k].length, `${l}.${k}`);
 });
 
@@ -136,4 +138,39 @@ test('Korean and Japanese copy: one register, no retired currency, full friend w
     for (const s of I.ja[k].split('。').filter(Boolean)) assert.match(s, /(ます|です|ません)$/, `${k}: ${s}`);
   }
   for (const l of Object.keys(I)) assert.match(I[l].hMoney, /10/, `${l} hMoney says coins come every 10 points`);
+});
+
+// First-time flow and copy (ftue-copy-i18n): every new key in every language, one name for the daily mode, the effects menu in all 23
+const FT_KEYS = ['nextStage', 'startSub2', 'canUnlock', 'fx_close', 'fx_overdrive', 'hintTap', 'authB3N', 'frWarnN', 'adTestSfx', 'secFmt', 'starRules',
+  'hStage', 'hPow', 'hGlide', 'hEvo', 'hZone', 'aSound', 'aPrev', 'aNext', 'aLang', 'aFriend'];
+test('ftue: every new key exists and is non-empty in all 23 languages (world tables carry them too)', () => {
+  for (const l of LANGS) for (const k of FT_KEYS) assert.ok(typeof I[l][k] === 'string' && I[l][k].trim(), `${l}.${k}`);
+  for (const l of WORLD) for (const k of FT_KEYS) assert.ok(typeof P.I18N_W[l][k] === 'string', `I18N_W.${l}.${k}`);
+  for (const l of LANGS) assert.match(I[l].secFmt, /\{n\}/, l); for (const l of LANGS) assert.match(I[l].nextStage, /\{n\}/, l);
+  for (const l of LANGS) assert.match(I[l].canUnlock, /\{u\}/, l);
+  for (const l of LANGS.filter(l => l !== 'en')) assert.ok(I[l].fx_close !== 'CLOSE!' && I[l].fx_overdrive !== 'OVERDRIVE', l + ': the in-run feedback words are its own'); for (const l of LANGS) assert.equal((I[l].starRules.match(/★/g) || []).length, 3, l);
+});
+test('ftue: the daily mode has one name per language (button, intro, result tag)', () => {
+  for (const l of LANGS){
+    const n = I[l].dIntroT, up = s => s.toLocaleUpperCase(P.bcp47(l));
+    assert.equal(up(I[l].dailyCta), up(n), `${l} dailyCta`);
+    assert.equal(I[l].modeDaily, n + ' · {d}', `${l} modeDaily`);
+  }
+  assert.equal(I.en.dIntroT, 'Daily Run');
+  for (const l of ['ko', 'en']) for (const k of ['hMoney', 'hUnits']) assert.ok(I[l][k].includes(I[l].dIntroT), `${l}.${k} names the mode the same way`);
+  assert.doesNotMatch(I.ko.hUnits + I.ko.hMoney, /오늘의 챌린지/);
+});
+test('ftue: copy that matches the game — gems name stars and evolution, the gate death hint is safe first, ads are not called a test build', () => {
+  for (const l of LANGS) assert.match(I[l].gemHint, /1 ?%|%1/, `${l} gemHint keeps the 1% figure`);
+  assert.match(I.en.gemHint, /stars/); assert.match(I.en.gemHint, /evolution/);
+  assert.match(I.en.whyGate, /middle.*edge/); assert.match(I.ko.whyGate, /가운데.*가장자리/);
+  for (const l of LANGS) assert.doesNotMatch(I[l].adPlaying, /test|테스트|テスト|测试|測試|prueba|teste|Test|uji|thử|ทดสอบ|टेस्ट|тест|ujian|bandingan|بية|prova|deneme|testowa|testi|בדיקה/i, l);
+});
+test('ftue: the effects menu (FXTXT) has its own words in all 23 languages', () => {
+  for (const l of LANGS){
+    const m = html.match(new RegExp(`(?:\\n    |FXTXT = \\{ )${l}: \\{ (fxT: .+) \\}`));
+    assert.ok(m, l + ' missing in FXTXT');
+    for (const k of ['fxT', 'fxAuto', 'fxLow', 'fxMid', 'fxHigh', 'fxShake', 'fxFlash', 'fxRm']) assert.match(m[1], new RegExp(`\\b${k}: ["'][^"']+["']`), `${l}.${k}`);
+    if (l !== 'en') assert.doesNotMatch(m[1], /Reduced motion is on/, l + ' fxRm is translated');
+  }
 });

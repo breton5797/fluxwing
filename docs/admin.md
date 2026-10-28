@@ -7,12 +7,12 @@
 - 페이지는 정적 파일(`/admin.html`, GitHub Pages)이다. 화면을 숨기는 것은 보안이 아니다: **모든 권한 판단은 서버 함수 안에서** 한다. 페이지 코드와 공개 키(anon/publishable key)는 누구나 볼 수 있다는 전제로 설계한다.
 - 관리자 목록 `private.fw_admins (user_id uuid pk → auth.users on delete cascade, role text check in ('owner','mod'), note text, added_at timestamptz)`. RLS on, 정책 없음, API 역할에서 revoke. **API로는 추가·삭제할 수 없고** 데이터베이스 소유자가 SQL로만 넣는다:
   `insert into private.fw_admins (user_id, role, note) values ('<auth.users id>', 'owner', '대표');`
-- `private.fw_admin_gate(p_role text) returns uuid`: 호출자가 (1) 로그인했고 (2) 게스트(익명) 계정이 아니며 (`auth.jwt()->>'is_anonymous'`가 true면 거부) (3) `fw_admins`에 있고 (4) `p_role = 'owner'`이면 role도 owner일 때만 `auth.uid()`를 돌려준다. 아니면 `raise exception 'fw_admin: not allowed' using errcode = '42501'`. (5) `p_role = 'owner'`이면 2단계 인증(Supabase MFA)으로 로그인한 세션이어야 한다: `auth.jwt()->>'aal'`이 `aal2`가 아니면 `raise exception 'fw_admin_mfa: second factor required' using errcode = '42501'`. 모든 관리 함수가 **첫 줄에서** 이것을 부른다.
-- 역할: `mod` = 읽기 + 숨기기·닉네임 초기화·신고 정리 (관리자 계정은 대상으로 삼을 수 없음: `fw_bad_input`). `owner` = 전부(테스터, 추천 보류 해제, 시즌 정산 실행, 계정 삭제, 이메일·관리자 역할 보기, 관리자 숨기기·닉네임 초기화, 감사 로그). aal1인 owner 세션은 mod 권한만 가진다(이메일·admin_role은 null). mod 함수는 aal1로 충분하다.
+- `private.fw_admin_gate(p_role text) returns uuid`: 호출자가 (1) 로그인했고 (2) 게스트(익명) 계정이 아니며 (`auth.jwt()->>'is_anonymous'`가 true면 거부) (3) `fw_admins`에 있고 (4) `p_role = 'owner'`이면 role도 owner일 때만 `auth.uid()`를 돌려준다. 아니면 `raise exception 'fw_admin: not allowed' using errcode = '42501'`. (5) 역할과 상관없이(owner와 mod 모두, 2026-10-28부터) 2단계 인증(Supabase MFA)으로 로그인한 세션이어야 한다: `auth.jwt()->>'aal'`이 `aal2`가 아니면 `raise exception 'fw_admin_mfa: second factor required' using errcode = '42501'`. 모든 관리 함수가 **첫 줄에서** 이것을 부른다.
+- 역할: `mod` = 읽기 + 숨기기·닉네임 초기화·신고 정리 (관리자 계정은 대상으로 삼을 수 없음: `fw_bad_input`). `owner` = 전부(테스터, 추천 보류 해제, 시즌 정산 실행, 계정 삭제, 이메일·관리자 역할 보기, 관리자 숨기기·닉네임 초기화, 감사 로그). aal1 세션은 owner든 mod든 `admin_me` 말고는 아무 함수도 부를 수 없다(`fw_admin_mfa`). 화면은 먼저 인증 앱(TOTP) 등록·코드 입력을 요청한다.
 - 감사 로그 `private.fw_admin_log (id bigserial, at timestamptz default now(), admin_id uuid, action text, target uuid, detail jsonb)`. **쓰기 함수는 전부 기록**하고, owner가 `admin_player`(이메일 포함)를 읽을 때도 `view_player`로 기록한다. service_role은 읽기(select)만 가능(쓰기는 관리 함수만, 수정·삭제는 아무도 못 함). admin_id는 on delete set null(관리자 계정이 지워져도 기록은 남음), target은 FK 없음(삭제된 계정도 기록에 남게).
 - 함수 형식은 기존 규칙 그대로: `private.fw_admin_*` = `security definer set search_path = ''`, `public.admin_*` = `security invoker` 래퍼. private은 `revoke all … from public, anon` 후 `grant execute … to authenticated, service_role`, public은 `revoke … from public, anon` 후 `grant execute … to authenticated`. anon은 절대 못 부른다.
 - 입력 검증: uuid는 타입으로, 문자열 길이·limit 상한(최대 200), 알 수 없는 값은 `fw_bad_input` (errcode `22023`).
-- 화면: 사용자 데이터(닉네임, 오류 메시지, 이벤트 props)는 **`textContent`로만** 넣는다(`innerHTML` 금지). `<meta name="robots" content="noindex, nofollow">`. Supabase SDK는 게임과 같은 버전·SRI. 같은 출처라 게임에서 로그인한 세션을 그대로 쓴다.
+- 화면: 사용자 데이터(닉네임, 오류 메시지, 이벤트 props)는 **`textContent`로만** 넣는다(`innerHTML` 금지). `<meta name="robots" content="noindex, nofollow">`. Supabase SDK는 게임과 같은 버전·SRI. 세션은 게임과 따로 둔다: 저장 키 `sb-swishby-admin`, `sessionStorage`(탭을 닫으면 끝나고, 게임 페이지의 스크립트가 읽을 수 없으며 게임의 로그아웃과도 무관). 그래서 관리자 페이지에서는 따로 한 번 로그인해야 한다.
 - 파괴적 작업(계정 삭제)은 화면에서 대상 id를 다시 입력해야 하고, 서버도 `p_confirm = p_id::text`를 확인한다.
 
 ## 2. RPC 계약 (프론트·백엔드가 지키는 약속)
@@ -21,7 +21,7 @@
 
 | 함수 | 역할 | 인자 | 반환 |
 | --- | --- | --- | --- |
-| `admin_me` | 누구나(로그인) | — | `{admin: bool, role: 'owner'\|'mod'\|null, aal: 'aal1'\|'aal2'\|null}`. 예외 없이 답한다 (화면 분기용). owner인데 aal이 `aal2`가 아니면 화면이 2단계 인증을 요청한다 |
+| `admin_me` | 누구나(로그인) | — | `{admin: bool, role: 'owner'\|'mod'\|null, aal: 'aal1'\|'aal2'\|null}`. 예외 없이 답한다 (화면 분기용). 관리자(owner·mod)인데 aal이 `aal2`가 아니면 role은 그대로 알려 주고, 화면이 2단계 인증을 요청한다 |
 | `admin_overview` | mod | — | `{users:{total, guests, signed_in, new_1d, new_7d}, players:{scores, versus, hidden}, season:{season, prev, rolled_at}, reports:{open_targets, last_1d}, errors:{last_1d}, push:{devices}, testers:{count}, admins:{count}, cron:[{job, schedule, active, last_status, last_at}] }` — cron은 pg_cron이 없으면 `[]` |
 | `admin_kpi` | mod | `p_days int` (1..120, 기본 30) | `{installs:[{day, installs}], retention:[{day, installs, d1, d7, d30}], daily:[{day, dau, runs_per_dau, share_rate, purchase_conversion, ad_views, daily_runs}], sessions:[{day, sessions, avg_min, median_min}]}` — `supabase/checks/kpi.sql`과 같은 정의(Asia/Seoul 날짜, 끝나지 않은 날의 D-n은 null), 최근 p_days일, 날짜 내림차순 |
 | `admin_players` | mod | `p_q text` (닉네임 부분일치, 또는 uuid 정확히), `p_limit int` (1..200, 기본 50), `p_offset int` (≥0) | `{total, rows:[{id, nick, cc, best, rp, hidden, guest, provider, created_at, last_sign_in_at, reports}]}` — p_q가 비면 최근 가입순. `reports` = 이 플레이어가 받은 신고 수 |

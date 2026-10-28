@@ -53,5 +53,5 @@ test('the hold: set on press, cleared on every way a press can end; a hold is ne
 test('every language explains the hold once', () => {
   const P = loadI18NParts();
   for (const [l, tb] of Object.entries(P.I18N)) assert.ok(tb.glideHint && tb.glideHint.trim(), `${l} glideHint`);
-  assert.match(html, /if \(mode === 'endless' && PK\.glide && !store\.get\('fw27_glide', 0\)\)\{ store\.set\('fw27_glide', 1\); banner\(t\('glideHint'\)/);
+  assert.match(html, /else if \(glideHintDue\(\{mode, glide: PK\.glide, seen: store\.get\('fw27_glide', 0\), tut: tutDone\(store\.get\('fw27_tut', 0\), 0, store\.get\('fw27_tutruns', 0\)\)\}\)\)\{ store\.set\('fw27_glide', 1\); banner\(t\('glideHint'\)/);
 });

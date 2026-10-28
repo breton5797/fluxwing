@@ -15,3 +15,6 @@ capacitor.config.json
 plan-social.md
 README.md
 CNAME
+# The old 'Flux Wing 2' prototype stays in the repo only (2026-10-28 audit): nothing live loads it.
+v2.html
+src

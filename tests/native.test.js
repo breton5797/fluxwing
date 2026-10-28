@@ -55,7 +55,7 @@ test('natHapticStyle: the web vibration pattern picks a native strength', () => 
   assert.equal(N.natHapticStyle(6), 'LIGHT');
   assert.equal(N.natHapticStyle(14), 'MEDIUM');
   assert.equal(N.natHapticStyle(40), 'HEAVY');
-  assert.equal(N.natHapticStyle([20, 30, 40]), 'HEAVY');
+  assert.equal(N.natHapticStyle([20, 30, 40]), null, 'a pattern goes through natHapticPulses (tests/run.test.js)');
   assert.equal(N.natHapticStyle(undefined), null);
 });
 
