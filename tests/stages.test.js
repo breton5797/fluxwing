@@ -73,6 +73,17 @@ test('difficulty at the goal climbs from about .05 to .70 and only breathers and
   for (const i of ROWS.map((r, i) => i).filter(i => ROWS[i].rest)) assert.ok(D[i] < D[i - 1], 'a breather eases off: ' + (i + 1));
 });
 
+test('a boss is also the narrowest gap of its stretch: its zone\'s last gap less the band\'s boss cut bg (retune 2026-10-28)', () => {
+  const g0 = r => (212 - r.d0 * 62) * r.gm;
+  S.ST_BAND.forEach((B, z) => {
+    assert.ok(B.bg > 0 && B.bg <= 40, 'zone ' + z + ' boss cut ' + B.bg);
+    const i = S.ST_FIRST[z] + S.ST_CNT[z] - 1;
+    assert.ok(ROWS[i].boss);
+    assert.ok(Math.abs(g0(ROWS[i]) - (B.gap[1] - B.bg)) < .05, 'stage ' + (i + 1) + ': ' + g0(ROWS[i]));
+    for (const j of [i - 1, i - 2]) assert.ok(S.stGapGoal(ROWS[i]) < S.stGapGoal(ROWS[j]), `stage ${i + 1} narrower than ${j + 1}`);
+  });
+});
+
 test('gaps never under 128 px at the goal; zone 2 narrows about 3 px a stage instead of one cut', () => {
   ROWS.forEach((r, i) => assert.ok(S.stGapGoal(r) >= 128, `stage ${i + 1}: ${S.stGapGoal(r)}`));
   const g0 = r => (212 - r.d0 * 62) * r.gm, z2 = [10, 11, 12, 14, 15, 16, 17, 19, 20, 21, 23];   // zone 2 without its breathers and boss

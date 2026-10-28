@@ -3,6 +3,7 @@
 //   node scripts/balance.mjs --clear 10,25,40,50 --units volt [--runs 60]   (clear rate with its 95% Wilson interval and mean gates per stage, each run
 //   stopped at the goal; the profile is re-seeded before every run, so the unit stays at --form and clears in the batch never evolve it)
 //   add --anyseed to fly a different course of the same stage each run (the table's expected clear rate, not one seeded course's)
+//   in --clear mode each row also gives the mean score (runs stop at the goal) and the deaths: cause (the game's deathWhy) -> gates passed
 // Needs the dev server (npm run dev, 127.0.0.1:5173). Supabase is blocked; nothing leaves the machine.
 // The bot: flaps when it sinks below the next gap's centre plus an aim error (--aim px, Gaussian), dashes when the meter is full,
 // casts the skill / ultimate when ready. Same bot for every unit, so the numbers compare units, not players.
@@ -14,7 +15,7 @@ import { writeFileSync } from 'node:fs';
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const ANY = process.argv.includes('--anyseed'), CLEAR = arg('clear', '') ? arg('clear', '').split(',').map(n => +n - 1) : null;
 const STAGE = +arg('stage', 20) - 1, RUNS = +arg('runs', CLEAR ? 60 : 12), FORM = +arg('form', 0), AIM = +arg('aim', 6), OUT = arg('out', '');
-const base = `http://127.0.0.1:${process.env.PORT || 5173}/index.html#dev`;
+const base = `http://127.0.0.1:${process.env.PORT || 5173}/${arg('page', 'index.html')}#dev`;   // --page: a copy of the game next to index.html (a tuning probe)
 const EVO_AT = [0, 3, 10, 20, 35];
 const BOUND_MUL = { 5: 1.4, 6: 1.5, 7: 1.6, 8: 1.75, 9: 1.9 };   // = private.fw_bound_mul by rank
 
@@ -51,8 +52,9 @@ async function run(stage = STAGE, stop = false){
       if (i % 30 === 0){ const r = FW.run; if (FW.timers.dashMeter >= 1) key('ShiftLeft'); if (r.skillCharge >= 1) key('KeyS'); if (r.ultCharge >= 1) key('KeyA'); }
       FW.step(1/120);
     }
+    const why = FW.state === 'play' ? '' : FW.why;   // what ended the run (FW.why: the game's deathWhy), '' when the bot reached the goal or the time cap
     if (FW.state === 'play') FW.kill();
-    const r = FW.run; return { score: r.score, gates: r.gatesPassed, clear: r.gatesPassed >= goal };
+    const r = FW.run; return { score: r.score, gates: r.gatesPassed, clear: r.gatesPassed >= goal, why };
   }, [AIM, stop]);
 }
 
@@ -67,8 +69,10 @@ if (CLEAR) for (const u of units){   // clear rates: the bot flies each stage RU
     const res = [];
     for (let i = 0; i < RUNS; i++){ res.push(await run(st, true)); await page.evaluate(() => { if (FW.state === 'play') FW.kill(); }); await seed(u.id); await menu(); }   // re-seeded: a clear in the batch would evolve the unit (evoClear)
     const k = res.filter(r => r.clear).length, clr = k / res.length, g = res.reduce((a, r) => a + r.gates, 0) / res.length, [lo, hi] = wilson(k, res.length);
-    rows.push({ id: u.id, stage: st + 1, runs: RUNS, form: FORM, clear: +clr.toFixed(3), lo: +lo.toFixed(3), hi: +hi.toFixed(3), gates: +g.toFixed(1) });
-    console.log(`${u.id.padEnd(10)} stage ${String(st + 1).padStart(2)}  clear ${(clr*100).toFixed(0).padStart(3)}%  [95% ${(lo*100).toFixed(0)}-${(hi*100).toFixed(0)}]  mean gates ${g.toFixed(1)}  (${RUNS} runs, form ${FORM})`);
+    const sc = Math.round(res.reduce((a, r) => a + r.score, 0) / res.length), deaths = {};   // deaths: cause -> gates passed when it struck (failed runs only)
+    for (const r of res) if (!r.clear) (deaths[r.why || 'time'] ||= []).push(r.gates);
+    rows.push({ id: u.id, stage: st + 1, runs: RUNS, form: FORM, clear: +clr.toFixed(3), lo: +lo.toFixed(3), hi: +hi.toFixed(3), gates: +g.toFixed(1), score: sc, deaths });
+    console.log(`${u.id.padEnd(10)} stage ${String(st + 1).padStart(2)}  clear ${(clr*100).toFixed(0).padStart(3)}%  [95% ${(lo*100).toFixed(0)}-${(hi*100).toFixed(0)}]  mean gates ${g.toFixed(1)}  mean score ${sc}  (${RUNS} runs, form ${FORM})  deaths ${Object.entries(deaths).map(([k, v]) => k + ' ' + v.length).join(', ')}`);
   }
 }
 for (const u of CLEAR ? [] : units){
