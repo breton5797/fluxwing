@@ -37,7 +37,7 @@ test('a daily card: 9:16, the name, the day, the score, gates and combo, the uni
   const s = shareCardSpec(T, daily);
   assert.equal(s.w, 1080); assert.equal(s.h, 1920); assert.equal(s.w / s.h, 9 / 16);
   assert.equal(byK(s, 'brand').text, 'SWISHBY');
-  assert.equal(byK(s, 'mode').text, 'Daily Challenge · Oct 21');
+  assert.equal(byK(s, 'mode').text, 'Daily Run · Oct 21');
   assert.equal(byK(s, 'score').text, '1234');
   assert.equal(byK(s, 'unit').text, 'VOLT');
   assert.equal(s.unit.id, 'volt');
@@ -60,7 +60,7 @@ test('a stage card names the stage and its zone, and the day falls back to the k
   const s = shareCardSpec(T, stage);
   assert.equal(byK(s, 'mode').text, 'STAGE 3 · SOLAR VEIN');
   assert.equal(s.file, 'swishby-1234.png');
-  assert.equal(byK(shareCardSpec(T, { ...daily, dayText: '' }), 'mode').text, 'Daily Challenge · 2026-10-21');
+  assert.equal(byK(shareCardSpec(T, { ...daily, dayText: '' }), 'mode').text, 'Daily Run · 2026-10-21');
 });
 
 test('every line sits inside the card, top to bottom, and a missing unit still draws a card', () => {
