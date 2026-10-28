@@ -3,10 +3,12 @@ import { test } from 'node:test';
 import { readIndex } from './helpers/hitloop.js';
 
 // The stage redesign (owner's decision 2026-10-27): one frozen STAGES table of 50 rows built from band rows, one new element per stage,
-// breathers and a boss at each zone end, themed zones with one signature obstacle each, a seeded course up to the goal.
+// breathers and a finale at each zone end, themed zones with one signature obstacle each, a seeded course up to the goal.
+// 2026-10-29 (docs/design/surprise-obstacles-boss.md): every goal is 100 gates, a boss fight closes every 10th stage (row.boss) and the
+// old zone finales keep their tighter numbers as row.fin.
 const html = readIndex();
 const m = html.match(/\/\* stages:start[\s\S]*?\/\* stages:end \*\//);
-const S = m ? new Function(`${m[0]}\nreturn {ST_N, ST_FIRST, ST_CNT, ST_BAND, ST_PLAN, ST_SIG, STAGES, stElems, stDGoal, stGapGoal, PAT, PAT_EVERY, TWIN, SIG, branchK, geyserAt, bladeAt, stLay};`)() : {};
+const S = m ? new Function(`${m[0]}\nreturn {ST_GOAL, ST_N, ST_FIRST, ST_CNT, ST_BAND, ST_PLAN, ST_SIG, STAGES, stElems, stDGoal, stGapGoal, PAT, PAT_EVERY, TWIN, SIG, branchK, geyserAt, bladeAt, stLay};`)() : {};
 const R = new Function(`${html.match(/function hashStr\(s\)\{[^\n]+/)[0]}\n${html.match(/function mulberry32\(a\)\{[^\n]+/)[0]}\nreturn {hashStr, mulberry32};`)();
 const ROWS = S.STAGES || [];
 const reg = ROWS.map((r, i) => i).filter(i => !ROWS[i].rest);   // every stage but the breathers
@@ -16,7 +18,7 @@ test('a pure stages block holds one frozen table of 50 rows with the agreed fiel
   assert.equal(ROWS.length, 50);
   assert.deepEqual([S.ST_N, S.ST_FIRST, S.ST_CNT], [50, [0, 10, 25, 40], [10, 15, 15, 10]]);
   assert.ok(Object.isFrozen(S.STAGES) && ROWS.every(Object.isFrozen) && Object.isFrozen(S.ST_BAND) && Object.isFrozen(S.SIG));
-  const keys = ['d0', 'gm', 'goal', 'mv', 'pu', 'haz', 'hp', 'fogN', 'fogDur', 'stall', 'pat', 'sig', 'boss'];
+  const keys = ['d0', 'gm', 'goal', 'mv', 'pu', 'haz', 'hp', 'fogN', 'fogDur', 'stall', 'pat', 'sig', 'boss', 'fin'];
   for (const r of ROWS) for (const k of keys) assert.ok(k in r, k);
   assert.equal(S.ST_PLAN.flat().length, 50, 'one plan entry per stage');
 });
@@ -44,41 +46,42 @@ test('the introduction order the owner approved', () => {
   assert.deepEqual(['fog05', 'fog1', 'fog2'].map(f => ROWS.filter(r => S.stElems(r).filter(e => /^fog/.test(e)).length > 1).length), [0, 0, 0], 'one fog at a time');
 });
 
-test('bosses close each zone, breathers sit inside them', () => {
-  assert.deepEqual(ROWS.map((r, i) => r.boss ? i + 1 : 0).filter(Boolean), [10, 25, 40, 50]);
+test('finales close each zone, bosses fight on every 10th stage, breathers sit inside the zones', () => {
+  assert.deepEqual(ROWS.map((r, i) => r.fin ? i + 1 : 0).filter(Boolean), [10, 25, 40, 50]);
+  assert.deepEqual(ROWS.map((r, i) => r.boss ? i + 1 : 0).filter(Boolean), [10, 20, 30, 40, 50]);
+  assert.ok(ROWS.every(r => typeof r.boss === 'boolean' && typeof r.fin === 'boolean'));
+  assert.ok(!ROWS[19].rest && !ROWS[29].rest, 'a boss stage is never a breather');
   const rests = ROWS.map((r, i) => r.rest ? i + 1 : 0).filter(Boolean);
   assert.ok(rests.length >= 8, 'a breather every few stages');
   for (const z of [0, 1, 2, 3]) assert.ok(rests.some(s => s - 1 >= S.ST_FIRST[z] && s - 1 < S.ST_FIRST[z] + S.ST_CNT[z]), 'zone ' + z);
 });
 
-test('goals: 10 + round(0.62 i), breathers -2, bosses +4, stage 50 about 45', () => {
-  ROWS.forEach((r, i) => assert.equal(r.goal, 10 + Math.round(.62 * i) + (r.rest ? -2 : 0) + (r.boss ? 4 : 0), 'stage ' + (i + 1)));
-  assert.equal(ROWS[0].goal, 10);
-  assert.ok(ROWS[49].goal >= 43 && ROWS[49].goal <= 46);
-  assert.ok(ROWS.every(r => r.goal >= 10 && r.goal <= 46 && Number.isInteger(r.goal)));
-  for (let k = 1; k < reg.length; k++) if (!ROWS[reg[k]].boss && !ROWS[reg[k - 1]].boss) assert.ok(ROWS[reg[k]].goal >= ROWS[reg[k - 1]].goal);
+test('goals: every stage is a 100-gate mission (owner 2026-10-29)', () => {
+  assert.equal(S.ST_GOAL, 100);
+  ROWS.forEach((r, i) => assert.equal(r.goal, 100, 'stage ' + (i + 1)));
 });
 
-test('difficulty at the goal climbs from about .05 to .70 and only breathers and bosses break the climb', () => {
+test('difficulty at the goal (the top of the 45-gate ramp) climbs from .35 to about .70 and only breathers and finales break the climb', () => {
   const D = ROWS.map(S.stDGoal), G = ROWS.map(S.stGapGoal);
-  assert.ok(D[0] > .03 && D[0] < .1, 'stage 1 ' + D[0]);
+  assert.ok(Math.abs(D[0] - .35) < 1e-9, 'stage 1 ' + D[0]);
+  ROWS.forEach((r, i) => assert.ok(Math.abs(D[i] - Math.min(1, r.d0 + .35)) < 1e-9, 'a 100-gate goal sits on the plateau: ' + (i + 1)));
   assert.ok(D[49] > .65 && D[49] < .75, 'stage 50 ' + D[49]);
-  const plain = ROWS.map((r, i) => i).filter(i => !ROWS[i].rest && !ROWS[i].boss);
+  const plain = ROWS.map((r, i) => i).filter(i => !ROWS[i].rest && !ROWS[i].fin);
   for (let k = 1; k < plain.length; k++){
     const a = plain[k - 1], b = plain[k];
     assert.ok(D[b] >= D[a], `difficulty ${a + 1} → ${b + 1}`);
     assert.ok(G[b] <= G[a], `gap ${a + 1} → ${b + 1}`);
   }
-  for (const i of ROWS.map((r, i) => i).filter(i => ROWS[i].boss)) assert.ok(D[i] > D[i - 1] && D[i] > D[i - 2], 'a boss is the peak of its stretch: ' + (i + 1));
+  for (const i of ROWS.map((r, i) => i).filter(i => ROWS[i].fin)) assert.ok(D[i] > D[i - 1] && D[i] > D[i - 2], 'a finale is the peak of its stretch: ' + (i + 1));
   for (const i of ROWS.map((r, i) => i).filter(i => ROWS[i].rest)) assert.ok(D[i] < D[i - 1], 'a breather eases off: ' + (i + 1));
 });
 
-test('a boss is also the narrowest gap of its stretch: its zone\'s last gap less the band\'s boss cut bg (retune 2026-10-28)', () => {
+test('a finale is also the narrowest gap of its stretch: its zone\'s last gap less the band\'s finale cut bg (retune 2026-10-28)', () => {
   const g0 = r => (212 - r.d0 * 62) * r.gm;
   S.ST_BAND.forEach((B, z) => {
     assert.ok(B.bg > 0 && B.bg <= 40, 'zone ' + z + ' boss cut ' + B.bg);
     const i = S.ST_FIRST[z] + S.ST_CNT[z] - 1;
-    assert.ok(ROWS[i].boss);
+    assert.ok(ROWS[i].fin);
     assert.ok(Math.abs(g0(ROWS[i]) - (B.gap[1] - B.bg)) < .05, 'stage ' + (i + 1) + ': ' + g0(ROWS[i]));
     for (const j of [i - 1, i - 2]) assert.ok(S.stGapGoal(ROWS[i]) < S.stGapGoal(ROWS[j]), `stage ${i + 1} narrower than ${j + 1}`);
   });
@@ -101,7 +104,7 @@ test('hazards: one kind at a time from stage 11, never in zone 1; fog and the st
   assert.deepEqual([...new Set(ROWS.map(r => r.fogDur))].sort(), [0, .5, 1, 2]);
 });
 
-const dAt = (row, k) => { const cap = Math.min(1, row.d0 + .35); return k <= 45 ? row.d0 + (k / 45) * (cap - row.d0) : Math.min(1, cap + (k - 45) * .008); };
+const dAt = (row, k) => { const cap = Math.min(1, row.d0 + .35); return k <= 45 ? row.d0 + (k / 45) * (cap - row.d0) : cap; };   // runD in stage mode: the 45-gate ramp, then the stage's top difficulty
 function course(i, n, seed = 'stage:' + i + ':v2'){
   const row = ROWS[i], rng = R.mulberry32(R.hashStr(seed)), srng = R.mulberry32(R.hashStr(seed + ':x')), out = [];
   let prev = null;
@@ -231,7 +234,7 @@ test('no signature obstacle ever scores, and a hit takes the gate-hit path', () 
   assert.match(html, /die\(bird\.y - hr < top \? \(g\.brK > 0 \? 'branch' : 'top'\) : 'bot'\)/, 'a branch hit is a gate hit, told apart for the hint');
 });
 
-test('boss stages pay x1.5 first-clear diamonds', () => {
+test('boss stages (the fight, row.boss) pay x1.5 first-clear diamonds', () => {
   assert.match(html, /const diaClear = i => Math\.round\(DIA_CLEAR\[stTier\(i\)\] \* \(STAGES\[i\]\.boss \? 1\.5 : 1\)\);/);
 });
 

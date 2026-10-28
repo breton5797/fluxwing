@@ -172,13 +172,16 @@ test('the server books and returns the coins with each payout; the device grants
   assert.match(read('guide/index.html'), /젬 15개와 코인 10,000개/, 'the Korean guide says the new reward');
 });
 
-test('the stage goal and min_best: the target stage is in the first zone, and minBest asks for real play beyond its goals', () => {
+test('the stage goal and min_best: the target stage is in the first zone, and its goals (and minBest) ask for real play', () => {
   const blk = html.match(/\/\* stages:start[\s\S]*?\/\* stages:end \*\//)[0], S = new Function(blk + '\nreturn {STAGES, ST_FIRST};')();
   const i = R.REF_CFG.stage - 2;   // the 0-based index of the stage that must be cleared to reach the target
   assert.ok(i < S.ST_FIRST[1], 'still in the first zone');
   // owner's decision 2026-10-28 (referral farming): not just the lowest score a run that reached the target needed, but a best a
   // genuine new player reaches in a few runs (fw_ref_cfg: measured with scripts/balance.mjs), so a forged minimal run is not enough
-  assert.ok(R.REF_CFG.minBest > Math.max(...S.STAGES.slice(0, i + 1).map(r => r.goal)), 'above every goal before the target');
+  // 2026-10-29: every stage is a 100-gate mission now, so the goals themselves outgrow minBest: reaching the target already takes nine
+  // clears of 100 gates each (a gate scores at least 1), far more than 30. minBest stays the server's floor for a forged best.
+  assert.ok(Math.min(...S.STAGES.slice(0, i + 1).map(r => r.goal)) >= 3 * R.REF_CFG.minBest, 'every goal before the target asks for real play by itself');
+  assert.ok(R.REF_CFG.minBest >= 30, 'and the best floor is never lowered');
   assert.equal(R.REF_CFG.minBest, 30, 'mirrored by the server (fw_ref_cfg)');
 });
 
