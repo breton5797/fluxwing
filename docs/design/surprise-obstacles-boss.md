@@ -348,3 +348,24 @@ The gates no longer read as pillars. Each zone's two pieces are objects of the t
   - NEON GROVE: the bud sways ±0.03 rad about its base, a few px at its point.
 - **Unchanged.** `drawBranch` still draws over the top piece. Moving and pulse markers, the gap tint, a broken gate's 0.28 alpha, the hit flash
   and the red hit edge (`state === 'dying' && g.hitSide`) are as before.
+
+## 12. Clear by any means (2026-10-29)
+
+Owner requirement: whatever the player uses (skill, ultimate, dash, giant, shields, a continue), once 100 gates are behind the bird the stage
+clears; on a boss stage the boss comes after gate 100 instead. Verified, no engine change needed:
+
+- **No gate leaves unscored.** Broken, dashed, lane and ultimate gates all stay in `gates`. The one removal in a run,
+  `gates.filter(g => g.x > -120)`, sits about 130 px behind the scoring line (`bird.x - bird.r > g.x + g.w`). The fastest step moves a gate
+  at most about 51 px (the fastest unit at the top of the speed curve, dashing with the potion and the over hazard, on a 0.034 s frame step).
+  `g.scored = true; gatesPassed++` is the only place either changes. The only `return` before it in the gate loop follows a death.
+- **Exactly 100 gates.** `spawnGate` is the only `gates.push` and the only `spawnIdx++`, and stage mode stops laying at the goal.
+- **A death on the 100th gate.** The gate is not scored; a continue breaks the gates within 140 px and the gate scores when the bird
+  passes it. Hazards never kill, and `winTick` returns before anything else, so nothing can kill once the clear has started.
+- **AURORA.** `case 'aurora'` in `useSkill` and in `useUlt` both end in `break;`; neither falls through into TEMPEST's storm dash.
+- **Tests.** `tests/clear-any-means.test.js` holds the source invariants and a fall-through check over every case group of both switches.
+  `tests/e2e/clear-any-means.mjs` makes an aggressive bot fly stage 1 with every unit in `FW.BIRDS` (43 units, hidden and unreleased
+  ranks included). The bot dashes when the meter is full and casts the skill and the ultimate when they are ready, and a death takes the coin
+  continue. Every unit cleared at `gatesPassed` 100 with 100 gates laid, and no gate left the array unscored. On stage 10, SOLARIS, PLEIAD,
+  TEMPEST, QUASAR, AURORA, PULSAR, VALKYRIE, GARUDA and AEGIS were forced to cast the ultimate at gate 97 and the skill at gate 98. Each got
+  its boss right after gate 100, with no gate laid after it, and the fight started. Where the bot could not dodge stage 10's shots and
+  branches, it rode the dash (`FW.setRun({dash: 1})` back to back), so that run took every gate at 2.6x speed.
