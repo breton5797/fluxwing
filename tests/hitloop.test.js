@@ -105,12 +105,13 @@ test('a result is measured against the challenge it answers', () => {
   assert.equal(challengeResult(null, 'endless', 43), null);
 });
 
-test('daily streak advances once per UTC day and resets after a missed day', () => {
+test('daily streak advances once per UTC day, forgives one missed day and resets after two', () => {
   assert.equal(dayIndex('2026-10-13') + 1, dayIndex('2026-10-14'));
   assert.deepEqual(dailyStreakNext(null, '2026-10-13'), { last: '2026-10-13', streak: 1, claimed: false });
   assert.deepEqual(dailyStreakNext({ last: '2026-10-13', streak: 1 }, '2026-10-13'), { last: '2026-10-13', streak: 1, claimed: true });
   assert.deepEqual(dailyStreakNext({ last: '2026-10-13', streak: 1 }, '2026-10-14'), { last: '2026-10-14', streak: 2, claimed: false });
-  assert.deepEqual(dailyStreakNext({ last: '2026-10-13', streak: 4 }, '2026-10-15'), { last: '2026-10-15', streak: 1, claimed: false });
+  assert.deepEqual(dailyStreakNext({ last: '2026-10-13', streak: 4 }, '2026-10-15'), { last: '2026-10-15', streak: 5, claimed: false });
+  assert.deepEqual(dailyStreakNext({ last: '2026-10-13', streak: 4 }, '2026-10-16'), { last: '2026-10-16', streak: 1, claimed: false });
   assert.deepEqual(dailyStreakNext({ last: 'bad-date', streak: 99 }, '2026-10-13'), { last: '2026-10-13', streak: 1, claimed: false });
 });
 

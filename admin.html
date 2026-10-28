@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-8+c5CZYopi/rCTGAuTPJ33+xEeIre215libG3CDDPKc=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://ecjeyelgcqbliavwltbc.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-f+nRUCaESv5FeEubBcf4b8+nLy2i6RoZXOLO+Qf3xuw=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://ecjeyelgcqbliavwltbc.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <title>SWISHBY 관리자</title>
 <style>
 :root{color-scheme:dark;--sky-0:#0d0820;--sky-1:#140c2b;--sky-2:#1d1440;--line:#2c2152;--ink:#f3eefc;--ink-2:#b8afd6;--ink-3:#7f77a3;--cool:#4ff0ff;
@@ -799,6 +799,9 @@ async function vReports(){
         top.some(t => t.hot) ? el('p', {class: 'fig-s'}, st({k: 'crit', glyph: '!', label: '숨김이거나 집계가 기준에 닿은 플레이어'})) : null)}));
 }
 
+// The collusion check of admin_season (private.fw_vs_collusion): different rivals beaten, the share of the two most-beaten, the review flag
+const seasonCheck = [['이긴 상대', r => admNum(r.foes), 'n'], ['상위 2명 비중', r => r.top2 == null ? '—' : admPct(Math.round(r.top2 * 100)), 'n'],
+  ['검토', r => r.flag ? tag('담합 의심', 'bad') : '—']];
 async function vSeason(){
   const d = await need('admin_season') || {}, live = Array.isArray(d.live) ? d.live : [];
   return el('div', {class: 'vw'},
@@ -808,9 +811,12 @@ async function vSeason(){
       : role === 'owner' ? el('div', {class: 'acts'}, mfaNeed()) : null,
     barChart({title: '이번 시즌 RP 상위 10', sub: '숨긴 플레이어 제외', int: true, rows: live.slice(0, 10).map(r => ({label: r.nick, value: admFin(r.rp) || 0, tip: [{value: `${admNum(r.rp)} RP`}, {value: `${admNum(r.wins)}승 ${admNum(r.losses)}패`}]})),
       fmt: v => admNum(v), none: '이번 시즌 대전 기록이 아직 없습니다', aria: '이번 시즌 RP 상위 10명',
-      tbl: table([['닉네임', r => r.nick], ['RP', r => admNum(r.rp), 'n'], ['승', r => admNum(r.wins), 'n'], ['패', r => admNum(r.losses), 'n']], live)}),
+      tbl: table([['닉네임', r => r.id ? link(r.nick, openPlayer(r.id)) : r.nick], ['RP', r => admNum(r.rp), 'n'], ['승', r => admNum(r.wins), 'n'], ['패', r => admNum(r.losses), 'n'],
+        ['AI전', r => admNum(r.ai), 'n'], ...seasonCheck], live)}),
+    el('p', {class: 'fig-s', text: '검토: 이번 시즌 사람에게 거둔 승리가 5승 이상이고 그중 2/3 이상이 상대 2명 이하에게서 나온 플레이어. 정산 전에 확인하고, 담합이면 플레이어 화면에서 숨깁니다 (docs/admin.md 6).'}),
+    live.some(r => r.flag) ? el('p', {class: 'fig-s'}, st({k: 'crit', glyph: '!', label: '검토 대상: ' + live.filter(r => r.flag).map(r => r.nick).join(', ')})) : null,
     el('h2', {text: '지난 시즌 상위 10'}),
-    table([['순위', r => admNum(r.rank), 'n'], ['닉네임', r => r.nick], ['RP', r => admNum(r.rp), 'n'], ['티어', r => r.tier], ['보상 수령', r => admDate(r.claimed_at)]], d.top, '지난 시즌 기록이 없습니다'));
+    table([['순위', r => admNum(r.rank), 'n'], ['닉네임', r => r.nick], ['RP', r => admNum(r.rp), 'n'], ['티어', r => r.tier], ['보상 수령', r => admDate(r.claimed_at)], ...seasonCheck], d.top, '지난 시즌 기록이 없습니다'));
 }
 
 let errLimit = 50;

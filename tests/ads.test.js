@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { loadAds } from './helpers/ads.js';
+import { readFileSync } from 'node:fs';
 
 const A = loadAds();
 const NOW = 1_800_000_000_000, GAP = A.AD_CFG.interGapMs;
@@ -40,11 +41,16 @@ test('pacing helpers return new objects', () => {
   assert.notEqual(A.adRunDone(st), st);
 });
 
-test('coin x2 pays the run income again; daily x2 the daily reward again', () => {
+test('coin x2 pays the run income again; daily x2 the daily reward\'s coins and diamonds again, never its gems (owner 2026-10-28)', () => {
   assert.equal(A.adCoinBonus(120, 330), 450);
   assert.equal(A.adCoinBonus(-5, NaN), 0);
-  assert.deepEqual(A.adDailyBonus({ coin: 350, dia: 100, gem: 2 }), { coin: 350, dia: 100, gem: 2 });
+  assert.deepEqual(A.adDailyBonus({ coin: 350, dia: 100, gem: 2 }), { coin: 350, dia: 100 });
   assert.equal(A.adDailyBonus(null), null);
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const h = html.match(/\$\('oAdDaily'\)\.addEventListener\('click', [^\n]*/)[0];
+  assert.match(h, /W\.coins \+= b\.coin; W\.dia \+= b\.dia;/);
+  assert.doesNotMatch(h, /W\.gems/, 'gems come from clears, invites and purchases, never from an ad');
+  assert.match(readFileSync(new URL('../docs/balance/README.md', import.meta.url), 'utf8'), /daily x2[^\n]*never gems/i, 'the rule is written down next to the replay numbers');
 });
 
 test('each placement can be claimed once per run', () => {

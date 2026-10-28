@@ -94,13 +94,14 @@ test('comboLevel follows the existing tier and adds 20/30 only inside FEVER', ()
   assert.equal(F.comboLevel(24, 1, cfg), 1);     // comboKeep left a big combo below FEVER
 });
 
-test('deathPhase: slow for 0.4s, one flash+explosion, then greyscale ramps to 1 by 1.1s', () => {
+test('deathPhase: slow for 0.4s, one flash+explosion, then greyscale ramps to 1 by 0.85s', () => {
   assert.equal(F.deathPhase(.1, cfg).scale, .3);
   assert.equal(F.deathPhase(.5, cfg).scale, .35);
   assert.equal(F.deathPhase(.39, cfg).explode, false);
   assert.equal(F.deathPhase(.41, cfg).explode, true);
   assert.equal(F.deathPhase(.2, cfg).gray, 0);
-  assert.equal(F.deathPhase(1.1, cfg).gray, 1);
+  assert.equal(F.deathPhase(.85, cfg).gray, 1);
+  assert.ok(F.deathPhase(.8, cfg).gray < 1);
 });
 
 test('shieldRings: one entry per shield, distinct spin and hue; arcs from 3', () => {

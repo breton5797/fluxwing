@@ -32,10 +32,21 @@ test('definer functions pin search_path, refuse anonymous players, and are reach
 
 test('save_put refuses implausible wallets and units nobody can earn', () => {
   assert.deepEqual(C.FS_CFG.caps, { coins: 5e7, dia: 1e7, gems: 1e5, lvl: 1e5 });
-  assert.deepEqual(C.FS_CFG.neverOwned, ['aurora', 'tempest', 'pleiad']);
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const tierIds = JSON.parse(html.match(/const TIER_IDS = Object\.freeze\((\[[\s\S]*?\])\);/)[1].replace(/'/g, '"'));
+  const open = Number(html.match(/const TIER_OPEN = (\d+);/)[1]), unreleased = tierIds.filter((id, i) => 5 + Math.floor(i / 4) > open);
+  assert.equal(unreleased.length, 20, 'TIER_OPEN = 4: ranks 5-9 are all unreleased');
+  // owner 2026-10-28: the hidden three, the season unit MONARCH (season top 10 only) and every unit of a rank not released yet
+  assert.deepEqual(C.FS_CFG.neverOwned, ['aurora', 'tempest', 'pleiad', 'monarch', ...unreleased]);
+  assert.equal(C.FS_CFG.seasonUnit, 'monarch');
   for (const [k, v] of [['coins', 50000000], ['dia', 10000000], ['gems', 100000], ['lvl', 100000]])
     assert.equal(Number(sql.match(new RegExp(`c_cap_${k}\\s+constant bigint\\s*:=\\s*(\\d+)`))[1]), v, k);
-  assert.match(sql, /c_never_owned\s+constant text\[\]\s*:=\s*array\['aurora','tempest','pleiad'\]/);
+  const lit = sql.match(/c_never_owned\s+constant text\[\]\s*:=\s*array\[([^\]]*)\]/);
+  assert.ok(lit, 'c_never_owned literal');
+  assert.deepEqual(lit[1].replace(/--[^\n]*/g, '').split(',').map(x => x.trim().replace(/'/g, '')), C.FS_CFG.neverOwned, 'server list = client list');
+  // MONARCH is earned by the season: allowed for a player the server ranked in a season's top_n (fw_vs_standing, fw_vs_season_cfg)
+  assert.match(sql, /c_season_unit constant text := \(select c\.top_unit from private\.fw_vs_season_cfg\(\) c\);/);
+  assert.match(sql, /where o\.id = any \(c_never_owned\)\s+and not \(o\.id = c_season_unit and exists \(\s*select 1 from public\.fw_vs_standing t, private\.fw_vs_season_cfg\(\) c\s+where t\.player_id = v_uid and t\.rank <= c\.top_n\)\)\) then/);
   assert.match(sql, /fw_bad_input: save out of range/);
   assert.match(sql, /fw_bad_input: save owns a unit nobody can earn/);
 });
