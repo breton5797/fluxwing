@@ -281,7 +281,7 @@ body.playing #topBtns .ib:not(#pauseBtn){display:none}   /* a live run keeps onl
 @keyframes stamp{0%{opacity:0;transform:scale(2.8) rotate(-14deg)}60%{opacity:1;transform:scale(.9) rotate(-3deg)}100%{transform:scale(1) rotate(-4deg)}}
 .newbest:not([hidden]){animation:nbGlow .9s ease-in-out infinite alternate}
 @keyframes nbGlow{to{text-shadow:0 0 14px var(--cool);transform:scale(1.06)}}
-#vibBtn.off{opacity:.4}
+#vibBtn.off,#muteBtn.off{opacity:.4}
 #vibBtn svg{width:18px;height:18px;vertical-align:-3px}
 #pushBtn.off{opacity:.4}
 #pushBtn svg{width:18px;height:18px;vertical-align:-3px}
@@ -622,6 +622,10 @@ body:has(.overlay:not(#menu):not(#pauseScr):not(#shopScr):not(#confScr):not([hid
       <div class="row">
         <button class="ghost" data-fxshake></button>
         <button class="ghost" data-fxflash></button>
+      </div>
+      <div class="row">
+        <button class="ghost" data-fxmus></button>
+        <button class="ghost" data-fxsfx></button>
       </div>
       <div class="hint" id="fxRmNote" hidden></div>
     </div>
@@ -2177,7 +2181,7 @@ function adVendor(name, drv, env){
     ev(k){ if (k === 'start' || k === 'stop') want = k === 'start'; else if (k === 'loaded') loadQ = true; else if (k === 'happy'){ if (up()) fire('happy'); return; } flush(); } };
 }
 const adPlayEv = (was, state) => (state === 'play') === was ? null : was ? 'stop' : 'start';
-const adVol = (muted, adOn) => muted || adOn ? 0 : .5;
+const adVol = (muted, adOn) => muted || adOn ? 0 : .8;
 // Portal SDKs: loaded from the vendor CDN only when FW_CONFIG.ads names the portal (no SRI: the vendors ship these URLs unversioned)
 const AD_SDK = Object.freeze({ guardMs: 120000, loadMs: 10000,
   src: Object.freeze({ crazygames: 'https://sdk.crazygames.com/crazygames-sdk-v3.js', poki: 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js' }) });
@@ -2244,7 +2248,7 @@ const FS_CFG = Object.freeze({ v: 1, maxBytes: 16384, stN: 50, owned0: Object.fr
 // Synced to the account (public.fw_saves). Every other fw27_ key stays on this device: FS_LOCAL ("_" at the end = a prefix)
 const FS_KEYS = Object.freeze(['fw27_wallet2', 'fw27_owned', 'fw27_pass', 'fw27_starter', 'fw27_best', 'fw27_bestg', 'fw27_stg2', 'fw27_stage2',
   'fw27_bird', 'fw27_nick', 'fw27_tut', 'fw27_rookie_runs', 'fw27_dstreak', 'fw27_dbonus', 'fw27_vsclaim', 'fw27_evo']);
-const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_bestu', 'fw27_rday', 'fw27_ad2x', 'fw27_glide', 'fw27_stg', 'fw27_stage', 'fw27_lang', 'fw27_mute', 'fw27_vib', 'fw27_ads', 'fw27_trial', 'fw27_rp2',
+const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_bestu', 'fw27_rday', 'fw27_ad2x', 'fw27_glide', 'fw27_stg', 'fw27_stage', 'fw27_lang', 'fw27_mute', 'fw27_mus', 'fw27_vib', 'fw27_ads', 'fw27_trial', 'fw27_rp2',
   'fw27_rej', 'fw27_vsmode', 'fw27_dg', 'fw27_daily_', 'fw27_sync',
   'fw27_fxq', 'fw27_fxshake', 'fw27_fxflash',   // fx quality and accessibility: per-device hardware/comfort choices
   'fw27_push', 'fw27_pushk', 'fw27_feed2',     // friend alerts: the toggle follows this device's Notification permission; feed2 is this device's read cursor
@@ -2368,7 +2372,7 @@ function adLoad(prov){
 const ADS = (() => { const p = adPick(location.search, location.hostname, (window.FW_CONFIG || {}).ads); return adGuard(adMake(p, { wait: adWait, load: adLoad }), adWait, adGuardMs(p.prov)); })();
 let adBusy = false;
 let adOn = false;   // an ad is on screen: the master gain stays at 0 whatever the mute button says
-function adAudio(on){ adOn = on; if (master) master.gain.value = adVol(muted, adOn); }
+function adAudio(on){ adOn = on; if (master) master.gain.value = adVol(!soundOn(muted, musOn), adOn); }
 let adRun = { coinBonus: 0, dailyBonus: null, claimed: {} };
 let adPlaying = false;   // what the portal was last told: gameplay on (state 'play') or off
 function adPlaySync(){ const e = adPlayEv(adPlaying, state); if (e){ adPlaying = e === 'start'; ADS.ev(e); } }
@@ -2404,12 +2408,37 @@ function resize(){
 addEventListener('resize', resize);
 
 /* ---------- audio ---------- */
-let ac = null, master = null;
+/* audio:start — the music scheduler's timing and the sound settings: pure, no Web Audio, no DOM, no storage. tests/audio.test.js runs this block as it stands. */
+const MUS_AHEAD = .2;   // seconds of music scheduled ahead of the clock
+const musSpb = bpm => 60/bpm/4;   // one 16th-note step
+// A stall (a hitch, a throttled timer) leaves nextT behind the clock: skip the missed steps on the beat grid instead of firing them all at once
+const musCatch = (nextT, step, now, spb) => {
+  if (nextT >= now) return {nextT, step};
+  const k = Math.ceil((now - nextT)/spb), k2 = nextT + k*spb < now ? k + 1 : k;
+  return {nextT: nextT + k2*spb, step: (step + k2) % 64};
+};
+// the steps to schedule now ([step, time] pairs inside the lookahead) and where the next call starts
+const musDue = (nextT, step, now, spb, ahead = MUS_AHEAD) => {
+  const c = musCatch(nextT, step, now, spb), n = Math.max(0, Math.ceil((now + ahead - c.nextT)/spb));
+  const due = Array.from({length: n}, (_, i) => [(c.step + i) % 64, c.nextT + i*spb]).filter(d => d[1] < now + ahead);
+  return {due, nextT: c.nextT + due.length*spb, step: (c.step + due.length) % 64};
+};
+const musWant = (state, on) => !on ? 0 : state === 'play' ? .32 : state === 'paused' ? .08 : .14;   // music bus level per screen
+// fw27_mute is the SFX switch (it used to mute everything): a player who had muted and has no music choice yet keeps hearing nothing
+const musPrefInit = (sfxMuted, musSaved) => typeof musSaved === 'boolean' ? musSaved : !sfxMuted;
+const soundOn = (sfxMuted, musOn) => !(sfxMuted && !musOn);   // the master button: off only when both are off
+/* audio:end */
+let ac = null, master = null, sfxBus = null, nbuf2 = null;
+let musOn = musPrefInit(muted, store.get('fw27_mus', null));
 function audioInit(){
   if (ac) { if (audioResumeOn(ac.state)) ac.resume().catch(() => {}); return; }
   try {
     ac = new (window.AudioContext || window.webkitAudioContext)();
-    master = ac.createGain(); master.gain.value = adVol(muted, adOn); master.connect(ac.destination);
+    const comp = ac.createDynamicsCompressor();
+    comp.threshold.value = -12; comp.knee.value = 6; comp.ratio.value = 4; comp.attack.value = .003; comp.release.value = .25;
+    master = ac.createGain(); master.gain.value = adVol(!soundOn(muted, musOn), adOn); master.connect(comp); comp.connect(ac.destination);
+    sfxBus = ac.createGain(); sfxBus.gain.value = muted ? 0 : 1; sfxBus.connect(master);
+    nbuf2 = ac.createBuffer(1, ac.sampleRate*2, ac.sampleRate); const d = nbuf2.getChannelData(0); for (let i=0;i<d.length;i++) d[i] = Math.random()*2 - 1;
     setTimeout(musicStart, 0);
   } catch(e){ ac = null; }
 }
@@ -2418,23 +2447,22 @@ function tone(freq, dur=.1, type='square', vol=.15, slide=0, delay=0){
   const tt = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
   o.type = type; o.frequency.setValueAtTime(freq, tt);
   if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), tt + dur);
-  g.gain.setValueAtTime(vol, tt); g.gain.exponentialRampToValueAtTime(.0001, tt + dur);
-  o.connect(g); g.connect(master); o.start(tt); o.stop(tt + dur + .02);
+  g.gain.setValueAtTime(0, tt); g.gain.linearRampToValueAtTime(vol, tt + .004); g.gain.exponentialRampToValueAtTime(.0001, tt + dur);
+  o.connect(g); g.connect(sfxBus); o.start(tt); o.stop(tt + dur + .02);
 }
 function noise(dur=.4, vol=.3){
   if (!ac || muted) return;
-  const n = ac.sampleRate * dur, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0);
-  for (let i=0;i<n;i++) d[i] = (Math.random()*2-1) * (1 - i/n);
-  const s = ac.createBufferSource(), g = ac.createGain(), f = ac.createBiquadFilter();
-  f.type='lowpass'; f.frequency.value = 900; s.buffer = b; g.gain.value = vol;
-  s.connect(f); f.connect(g); g.connect(master); s.start();
+  const t = ac.currentTime, s = ac.createBufferSource(), g = ac.createGain(), f = ac.createBiquadFilter();
+  f.type='lowpass'; f.frequency.value = 900; s.buffer = nbuf2;
+  g.gain.setValueAtTime(vol, t); g.gain.linearRampToValueAtTime(0, t + dur);   // the linear fade the per-call buffer used to carry
+  s.connect(f); f.connect(g); g.connect(sfxBus); s.start(t, 0, dur);
 }
 const SFX = {
   skill(){ [0,.05,.1,.15].forEach((d,i)=>tone(392*Math.pow(1.25,i),.18,'sawtooth',.06,0,d)); tone(1600,.4,'sine',.08,-1200); noise(.3,.1); },
-  click(){ tone(900,.03,'square',.04); },
-  flap(){ tone(520, .07, 'triangle', .12, 240); },
-  pass(){ tone(660, .09, 'square', .07); },
-  perfect(c){ const b = 523 * Math.pow(1.06, Math.min(c,14)); tone(b,.14,'triangle',.12); tone(b*1.25,.14,'triangle',.1,0,.05); tone(b*1.5,.2,'triangle',.1,0,.1); },
+  click(){ tone(900,.03,'square',.06); },
+  flap(){ tone(520, .07, 'triangle', .18, 240); },
+  pass(){ tone(660, .09, 'square', .11); },
+  perfect(c){ const b = 523 * Math.pow(1.06, Math.min(c,14)); tone(b,.14,'triangle',.168); tone(b*1.25,.14,'triangle',.14,0,.05); tone(b*1.5,.2,'triangle',.14,0,.1); },
   orb(){ tone(1180, .06, 'sine', .1, 400); },
   power(){ [0,.06,.12,.18].forEach((d,i)=>tone(440*Math.pow(1.26,i),.12,'square',.08,0,d)); },
   dash(){ tone(180,.35,'sawtooth',.14,900); noise(.25,.12); },
@@ -3108,8 +3136,16 @@ function musicStart(){
 }
 function schedMusic(){
   if (!ac || !mus.on) return;
-  const M = MUSIC[mus.zone], spb = 60/M.bpm/4;
-  while (mus.nextT < ac.currentTime + .12){ playStep(M, mus.step, mus.nextT); mus.nextT += spb; mus.step = (mus.step + 1) % 64; }
+  if (!musOn){ mus.nextT = ac.currentTime + .05; return; }   // music off: no nodes at all
+  const M = MUSIC[mus.zone], r = musDue(mus.nextT, mus.step, ac.currentTime, musSpb(M.bpm));
+  r.due.forEach(([st, t]) => playStep(M, st, t)); mus.nextT = r.nextT; mus.step = r.step;
+}
+// Hidden (another app, a locked screen, a closed tab): no sound in the background and no timer; shown again: the beat restarts from now
+function audioHide(){ if (ac && ac.state === 'running') ac.suspend().catch(() => {}); clearInterval(mus.timer); mus.timer = 0; }
+function audioShow(){
+  if (!ac) return;
+  if (audioResumeOn(ac.state)) ac.resume().catch(() => {});
+  if (mus.on && !mus.timer){ mus.nextT = ac.currentTime + .05; mus.timer = setInterval(schedMusic, 25); }
 }
 function mnote(f, t0, dur, type, vol, cut){
   const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t0);
@@ -3119,7 +3155,7 @@ function mnote(f, t0, dur, type, vol, cut){
 }
 function playStep(M, st, t0){
   const bar = Math.floor(st/16) % 4, s = st % 16, root = M.root + M.prog[bar], playing = state === 'play';
-  if (s % 4 === 0 || (mus.zone === 3 && s === 14)){ const o = ac.createOscillator(), g = ac.createGain(); o.frequency.setValueAtTime(150, t0); o.frequency.exponentialRampToValueAtTime(42, t0 + .12); g.gain.setValueAtTime(.55, t0); g.gain.exponentialRampToValueAtTime(.001, t0 + .2); o.connect(g); g.connect(mus.gain); o.start(t0); o.stop(t0 + .22); }
+  if (s % 4 === 0 || (mus.zone === 3 && s === 14)){ const o = ac.createOscillator(), g = ac.createGain(); o.frequency.setValueAtTime(150, t0); o.frequency.exponentialRampToValueAtTime(42, t0 + .12); g.gain.setValueAtTime(.38, t0); g.gain.exponentialRampToValueAtTime(.001, t0 + .2); o.connect(g); g.connect(mus.gain); o.start(t0); o.stop(t0 + .22); }
   if (s % 2 === 1 && playing){ const src = ac.createBufferSource(), g = ac.createGain(), f = ac.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 7000; src.buffer = mus.nbuf; g.gain.value = s % 4 === 3 ? .09 : .04; src.connect(f); f.connect(g); g.connect(mus.gain); src.start(t0); }
   if ([0,3,6,8,11,14].includes(s)) mnote(mtof(root - 12), t0, .2, 'sawtooth', .13, 520);
   if (playing || s % 4 === 0) mnote(mtof(root + 12 + M.arp[s % 8] + (tier === 2 && playing ? 12 : 0)), t0, .14, M.wave, M.wave === 'sawtooth' || M.wave === 'square' ? .03 : .05, 3200);
@@ -3128,7 +3164,7 @@ function playStep(M, st, t0){
 function musicTick(){
   if (!mus.on) return;
   mus.zone = Math.max(0, Math.min(3, zoneIdx));
-  const want = state === 'play' ? .5 : state === 'paused' ? .12 : .22;
+  const want = musWant(state, musOn);
   if (want !== mus.vol){ mus.vol = want; mus.gain.gain.setTargetAtTime(want, ac.currentTime, .4); }
 }
 
@@ -3268,35 +3304,57 @@ $('shareBtn').addEventListener('click', async e => {
   catch { prompt(t('shareManual'), text); evTrack('share', { mode, via: 'manual' }); }
 });
 $('over').addEventListener('click', e => { if (e.target === $('over')) flap(); });
-$('resumeBtn').addEventListener('click', () => togglePause('button'));
-$('pauseBtn').addEventListener('click', e => { e.stopPropagation(); togglePause('button'); });
-$('muteBtn').addEventListener('click', e => {
-  e.stopPropagation(); audioInit(); muted = !muted; store.set('fw27_mute', muted);
-  if (master) master.gain.value = adVol(muted, adOn); $('muteBtn').style.opacity = muted ? .4 : 1;
-});
-$('muteBtn').style.opacity = muted ? .4 : 1;
+$('resumeBtn').addEventListener('click', () => { audioInit(); togglePause('button'); });
+$('pauseBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); togglePause('button'); });
+// iOS unlocks or restores audio on touchend / click, not on a touch pointerdown: any release anywhere resumes an interrupted context
+addEventListener('touchend', audioInit, {capture: true, passive: true});
+addEventListener('pointerup', audioInit, {capture: true});
+// fw27_mute = SFX off, fw27_mus = music on; both are written together so the music choice never falls back to the old mute
+function soundSet(sfxMuted, mOn){
+  muted = sfxMuted; musOn = mOn; store.set('fw27_mute', muted); store.set('fw27_mus', musOn);
+  if (master) master.gain.value = adVol(!soundOn(muted, musOn), adOn);
+  if (sfxBus) sfxBus.gain.value = muted ? 0 : 1;
+  if (mus.gain){ mus.vol = musWant(state, musOn); mus.gain.gain.setTargetAtTime(mus.vol, ac.currentTime, .05); }
+  soundUi();
+}
+function soundUi(){ const on = soundOn(muted, musOn), b = $('muteBtn'); b.setAttribute('aria-pressed', String(on)); b.classList.toggle('off', !on); }
+$('muteBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); const on = !soundOn(muted, musOn); soundSet(!on, on); });
+soundUi();
 $('vibBtn').classList.toggle('off', !vibOn);
 $('vibBtn').addEventListener('click', e => { e.stopPropagation(); vibOn = !vibOn; store.set('fw27_vib', vibOn); $('vibBtn').classList.toggle('off', !vibOn); haptic([30,40,30]); });
-{ const FXTXT = { ko: { fxT: '이펙트', fxAuto: '자동', fxLow: '낮음', fxMid: '중간', fxHigh: '높음', fxShake: '화면 흔들림', fxFlash: '화면 플래시', fxRm: '시스템의 동작 줄이기 설정이 켜져 있어 흔들림·플래시가 꺼집니다' },
-    en: { fxT: 'Effects', fxAuto: 'Auto', fxLow: 'Low', fxMid: 'Mid', fxHigh: 'High', fxShake: 'Screen shake', fxFlash: 'Screen flash', fxRm: 'Reduced motion is on: shake and flash stay off' },
-    zh_TW: { fxT: "特效", fxAuto: "自動", fxLow: "低", fxMid: "中", fxHigh: "高", fxShake: "畫面震動", fxFlash: "畫面閃光", fxRm: "已開啟減少動態效果：震動和閃光維持關閉" },
-    nl: { fxT: "Effecten", fxAuto: "Auto", fxLow: "Laag", fxMid: "Middel", fxHigh: "Hoog", fxShake: "Schermschudden", fxFlash: "Schermflits", fxRm: "Minder beweging staat aan: schudden en flitsen blijven uit" },
-    ru: { fxT: "Эффекты", fxAuto: "Авто", fxLow: "Низк.", fxMid: "Средн.", fxHigh: "Высок.", fxShake: "Тряска экрана", fxFlash: "Вспышки", fxRm: "Включено «Уменьшение движения»: тряска и вспышки отключены" },
-    ms: { fxT: "Kesan", fxAuto: "Auto", fxLow: "Rendah", fxMid: "Sederhana", fxHigh: "Tinggi", fxShake: "Gegaran skrin", fxFlash: "Kilatan skrin", fxRm: "Kurangkan gerakan aktif: gegaran dan kilatan kekal mati" },
-    nb: { fxT: "Effekter", fxAuto: "Auto", fxLow: "Lav", fxMid: "Middels", fxHigh: "Høy", fxShake: "Skjermristing", fxFlash: "Skjermblink", fxRm: "Redusert bevegelse er på: risting og blink er av" },
-    ar: { fxT: "المؤثرات", fxAuto: "تلقائي", fxLow: "منخفض", fxMid: "متوسط", fxHigh: "مرتفع", fxShake: "اهتزاز الشاشة", fxFlash: "وميض الشاشة", fxRm: "تقليل الحركة مفعّل: الاهتزاز والوميض متوقفان" },
-    it: { fxT: "Effetti", fxAuto: "Auto", fxLow: "Bassi", fxMid: "Medi", fxHigh: "Alti", fxShake: "Vibrazione schermo", fxFlash: "Flash schermo", fxRm: "Movimento ridotto attivo: vibrazione e flash restano spenti" },
-    tr: { fxT: "Efektler", fxAuto: "Otomatik", fxLow: "Düşük", fxMid: "Orta", fxHigh: "Yüksek", fxShake: "Ekran sarsıntısı", fxFlash: "Ekran parlaması", fxRm: "Azaltılmış hareket açık: sarsıntı ve parlama kapalı kalır" },
-    pl: { fxT: "Efekty", fxAuto: "Auto", fxLow: "Niskie", fxMid: "Średnie", fxHigh: "Wysokie", fxShake: "Wstrząsy ekranu", fxFlash: "Błyski ekranu", fxRm: "Ograniczony ruch włączony: wstrząsy i błyski są wyłączone" },
-    fi: { fxT: "Efektit", fxAuto: "Auto", fxLow: "Matala", fxMid: "Keski", fxHigh: "Korkea", fxShake: "Ruudun tärinä", fxFlash: "Ruudun välähdys", fxRm: "Vähennetty liike on päällä: tärinä ja välähdys pysyvät pois" },
-    he: { fxT: "אפקטים", fxAuto: "אוטומטי", fxLow: "נמוך", fxMid: "בינוני", fxHigh: "גבוה", fxShake: "רעידת מסך", fxFlash: "הבזק מסך", fxRm: "הפחתת תנועה פעילה: רעידה והבזק כבויים" } };
+{ const FXTXT = { ko: { fxT: '이펙트', fxAuto: '자동', fxLow: '낮음', fxMid: '중간', fxHigh: '높음', fxShake: '화면 흔들림', fxFlash: '화면 플래시', fxRm: '시스템의 동작 줄이기 설정이 켜져 있어 흔들림·플래시가 꺼집니다', fxOn: '켜짐', fxOff: '꺼짐', fxMusic: '음악', fxSfx: '효과음' },
+    en: { fxT: 'Effects', fxAuto: 'Auto', fxLow: 'Low', fxMid: 'Mid', fxHigh: 'High', fxShake: 'Screen shake', fxFlash: 'Screen flash', fxRm: 'Reduced motion is on: shake and flash stay off', fxOn: 'ON', fxOff: 'OFF', fxMusic: 'Music', fxSfx: 'Sound effects' },
+    zh_TW: { fxT: "特效", fxAuto: "自動", fxLow: "低", fxMid: "中", fxHigh: "高", fxShake: "畫面震動", fxFlash: "畫面閃光", fxRm: "已開啟減少動態效果：震動和閃光維持關閉", fxOn: "開", fxOff: "關", fxMusic: "音樂", fxSfx: "音效" },
+    nl: { fxT: "Effecten", fxAuto: "Auto", fxLow: "Laag", fxMid: "Middel", fxHigh: "Hoog", fxShake: "Schermschudden", fxFlash: "Schermflits", fxRm: "Minder beweging staat aan: schudden en flitsen blijven uit", fxOn: "AAN", fxOff: "UIT", fxMusic: "Muziek", fxSfx: "Geluidseffecten" },
+    ru: { fxT: "Эффекты", fxAuto: "Авто", fxLow: "Низк.", fxMid: "Средн.", fxHigh: "Высок.", fxShake: "Тряска экрана", fxFlash: "Вспышки", fxRm: "Включено «Уменьшение движения»: тряска и вспышки отключены", fxOn: "ВКЛ", fxOff: "ВЫКЛ", fxMusic: "Музыка", fxSfx: "Звуковые эффекты" },
+    ms: { fxT: "Kesan", fxAuto: "Auto", fxLow: "Rendah", fxMid: "Sederhana", fxHigh: "Tinggi", fxShake: "Gegaran skrin", fxFlash: "Kilatan skrin", fxRm: "Kurangkan gerakan aktif: gegaran dan kilatan kekal mati", fxOn: "HIDUP", fxOff: "MATI", fxMusic: "Muzik", fxSfx: "Kesan bunyi" },
+    nb: { fxT: "Effekter", fxAuto: "Auto", fxLow: "Lav", fxMid: "Middels", fxHigh: "Høy", fxShake: "Skjermristing", fxFlash: "Skjermblink", fxRm: "Redusert bevegelse er på: risting og blink er av", fxOn: "PÅ", fxOff: "AV", fxMusic: "Musikk", fxSfx: "Lydeffekter" },
+    ar: { fxT: "المؤثرات", fxAuto: "تلقائي", fxLow: "منخفض", fxMid: "متوسط", fxHigh: "مرتفع", fxShake: "اهتزاز الشاشة", fxFlash: "وميض الشاشة", fxRm: "تقليل الحركة مفعّل: الاهتزاز والوميض متوقفان", fxOn: "تشغيل", fxOff: "إيقاف", fxMusic: "الموسيقى", fxSfx: "المؤثرات الصوتية" },
+    it: { fxT: "Effetti", fxAuto: "Auto", fxLow: "Bassi", fxMid: "Medi", fxHigh: "Alti", fxShake: "Vibrazione schermo", fxFlash: "Flash schermo", fxRm: "Movimento ridotto attivo: vibrazione e flash restano spenti", fxOn: "ON", fxOff: "OFF", fxMusic: "Musica", fxSfx: "Effetti sonori" },
+    tr: { fxT: "Efektler", fxAuto: "Otomatik", fxLow: "Düşük", fxMid: "Orta", fxHigh: "Yüksek", fxShake: "Ekran sarsıntısı", fxFlash: "Ekran parlaması", fxRm: "Azaltılmış hareket açık: sarsıntı ve parlama kapalı kalır", fxOn: "AÇIK", fxOff: "KAPALI", fxMusic: "Müzik", fxSfx: "Ses efektleri" },
+    pl: { fxT: "Efekty", fxAuto: "Auto", fxLow: "Niskie", fxMid: "Średnie", fxHigh: "Wysokie", fxShake: "Wstrząsy ekranu", fxFlash: "Błyski ekranu", fxRm: "Ograniczony ruch włączony: wstrząsy i błyski są wyłączone", fxOn: "WŁ.", fxOff: "WYŁ.", fxMusic: "Muzyka", fxSfx: "Efekty dźwiękowe" },
+    fi: { fxT: "Efektit", fxAuto: "Auto", fxLow: "Matala", fxMid: "Keski", fxHigh: "Korkea", fxShake: "Ruudun tärinä", fxFlash: "Ruudun välähdys", fxRm: "Vähennetty liike on päällä: tärinä ja välähdys pysyvät pois", fxOn: "PÄÄLLÄ", fxOff: "POIS", fxMusic: "Musiikki", fxSfx: "Ääniefektit" },
+    he: { fxT: "אפקטים", fxAuto: "אוטומטי", fxLow: "נמוך", fxMid: "בינוני", fxHigh: "גבוה", fxShake: "רעידת מסך", fxFlash: "הבזק מסך", fxRm: "הפחתת תנועה פעילה: רעידה והבזק כבויים", fxOn: "פועל", fxOff: "כבוי", fxMusic: "מוזיקה", fxSfx: "אפקטים קוליים" },
+    de: { fxT: "Effekte", fxAuto: "Auto", fxLow: "Niedrig", fxMid: "Mittel", fxHigh: "Hoch", fxShake: "Bildschirmwackeln", fxFlash: "Bildschirmblitz", fxRm: "Bewegung reduzieren ist an: Wackeln und Blitz bleiben aus", fxOn: "AN", fxOff: "AUS", fxMusic: "Musik", fxSfx: "Soundeffekte" },
+    fr: { fxT: "Effets", fxAuto: "Auto", fxLow: "Bas", fxMid: "Moyen", fxHigh: "Élevé", fxShake: "Tremblement de l'écran", fxFlash: "Flash de l'écran", fxRm: "Animations réduites activées : tremblement et flash restent désactivés", fxOn: "ACTIVÉ", fxOff: "DÉSACTIVÉ", fxMusic: "Musique", fxSfx: "Effets sonores" },
+    es: { fxT: "Efectos", fxAuto: "Auto", fxLow: "Bajo", fxMid: "Medio", fxHigh: "Alto", fxShake: "Vibración de pantalla", fxFlash: "Destello de pantalla", fxRm: "Movimiento reducido activado: la vibración y los destellos siguen desactivados", fxOn: "SÍ", fxOff: "NO", fxMusic: "Música", fxSfx: "Efectos de sonido" },
+    pt: { fxT: "Efeitos", fxAuto: "Auto", fxLow: "Baixo", fxMid: "Médio", fxHigh: "Alto", fxShake: "Tremor da tela", fxFlash: "Flash da tela", fxRm: "Movimento reduzido ativado: tremor e flash ficam desligados", fxOn: "LIGADO", fxOff: "DESLIGADO", fxMusic: "Música", fxSfx: "Efeitos sonoros" },
+    ja: { fxT: "エフェクト", fxAuto: "自動", fxLow: "低", fxMid: "中", fxHigh: "高", fxShake: "画面の揺れ", fxFlash: "画面のフラッシュ", fxRm: "「動きを減らす」がオンのため、揺れとフラッシュはオフのままです", fxOn: "オン", fxOff: "オフ", fxMusic: "音楽", fxSfx: "効果音" },
+    zh: { fxT: "特效", fxAuto: "自动", fxLow: "低", fxMid: "中", fxHigh: "高", fxShake: "画面震动", fxFlash: "画面闪光", fxRm: "已开启减弱动态效果：震动和闪光保持关闭", fxOn: "开", fxOff: "关", fxMusic: "音乐", fxSfx: "音效" },
+    id: { fxT: "Efek", fxAuto: "Otomatis", fxLow: "Rendah", fxMid: "Sedang", fxHigh: "Tinggi", fxShake: "Guncangan layar", fxFlash: "Kilatan layar", fxRm: "Kurangi gerakan aktif: guncangan dan kilatan tetap mati", fxOn: "AKTIF", fxOff: "MATI", fxMusic: "Musik", fxSfx: "Efek suara" },
+    vi: { fxT: "Hiệu ứng", fxAuto: "Tự động", fxLow: "Thấp", fxMid: "Trung bình", fxHigh: "Cao", fxShake: "Rung màn hình", fxFlash: "Nháy màn hình", fxRm: "Đã bật Giảm chuyển động: rung và nháy luôn tắt", fxOn: "BẬT", fxOff: "TẮT", fxMusic: "Nhạc", fxSfx: "Hiệu ứng âm thanh" },
+    th: { fxT: "เอฟเฟกต์", fxAuto: "อัตโนมัติ", fxLow: "ต่ำ", fxMid: "กลาง", fxHigh: "สูง", fxShake: "หน้าจอสั่น", fxFlash: "หน้าจอแฟลช", fxRm: "เปิดลดการเคลื่อนไหวอยู่: การสั่นและแฟลชจะปิดไว้", fxOn: "เปิด", fxOff: "ปิด", fxMusic: "เพลง", fxSfx: "เสียงประกอบ" },
+    hi: { fxT: "इफ़ेक्ट", fxAuto: "ऑटो", fxLow: "कम", fxMid: "मध्यम", fxHigh: "ज़्यादा", fxShake: "स्क्रीन हिलना", fxFlash: "स्क्रीन फ़्लैश", fxRm: "मोशन कम करें चालू है: हिलना और फ़्लैश बंद रहेंगे", fxOn: "चालू", fxOff: "बंद", fxMusic: "संगीत", fxSfx: "साउंड इफ़ेक्ट" } };
   for (const l in I18N) for (const k in FXTXT.en) I18N[l][k] = (FXTXT[l] || FXTXT.en)[k]; }
 function renderFxScr(){
   $('fxTitle').textContent = t('fxT');
   document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => { const q = b.dataset.fxq; b.textContent = t('fx' + q[0].toUpperCase() + q.slice(1)); b.classList.toggle('primary', fxSettings.q === q); });
   const sh = document.querySelector('[data-fxshake]'), fl = document.querySelector('[data-fxflash]');
-  sh.textContent = `${t('fxShake')}: ${fxSettings.shake && !RM ? 'ON' : 'OFF'}`;
-  fl.textContent = `${t('fxFlash')}: ${fxSettings.flash && !RM ? 'ON' : 'OFF'}`;
+  const onOff = v => v ? t('fxOn') : t('fxOff');
+  sh.textContent = `${t('fxShake')}: ${onOff(fxSettings.shake && !RM)}`;
+  fl.textContent = `${t('fxFlash')}: ${onOff(fxSettings.flash && !RM)}`;
+  document.querySelector('[data-fxmus]').textContent = `${t('fxMusic')}: ${onOff(musOn)}`;
+  document.querySelector('[data-fxsfx]').textContent = `${t('fxSfx')}: ${onOff(!muted)}`;
   sh.disabled = fl.disabled = RM;
   $('fxRmNote').hidden = !RM; if (RM) $('fxRmNote').textContent = t('fxRm');
 }
@@ -3307,9 +3365,12 @@ $('fxScr').addEventListener('pointerdown', e => { if (e.target === $('fxScr')) $
 document.querySelectorAll('#fxQRow [data-fxq]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); fxSettings.q = b.dataset.fxq; fxApply(); }));
 document.querySelector('[data-fxshake]').addEventListener('click', e => { e.stopPropagation(); fxSettings.shake = !fxSettings.shake; fxApply(); });
 document.querySelector('[data-fxflash]').addEventListener('click', e => { e.stopPropagation(); fxSettings.flash = !fxSettings.flash; fxApply(); });
+document.querySelector('[data-fxmus]').addEventListener('click', e => { e.stopPropagation(); audioInit(); soundSet(muted, !musOn); renderFxScr(); });
+document.querySelector('[data-fxsfx]').addEventListener('click', e => { e.stopPropagation(); audioInit(); soundSet(!muted, musOn); renderFxScr(); SFX.click(); });
 const ROTATE_MQ = matchMedia('(orientation:landscape) and (max-height:500px) and (pointer:coarse)');   // the #rotate prompt's query: it covers the stage
 ROTATE_MQ.addEventListener('change', () => { if (ROTATE_MQ.matches && state === 'play') togglePause('hidden'); });
-document.addEventListener('visibilitychange', () => { if (!document.hidden && ac && audioResumeOn(ac.state)) ac.resume().catch(() => {}); if (document.hidden && state === 'play') togglePause('hidden'); adPlaySync(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) audioHide(); else audioShow(); if (document.hidden && state === 'play') togglePause('hidden'); adPlaySync(); });
+addEventListener('pagehide', audioHide);
 
 function togglePause(why = 'key'){
   const a = vsPauseAction(mode, state, why);
@@ -8190,6 +8251,16 @@ if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)
   soc: {notifyRoute, notifText, feedMerge, fcNorm, fcOk, fcFmt, socNorm, show: socShow, get on(){ return pushOn; }, get k(){ return pushK; }},
   eco: {PRICE, INCOME_X, ST_SCOIN, ST_ORBP, DIA_LEVEL, DIA_DAILY, DIA_CLEAR},
   ev: {EV_CFG, get st(){ return evSt; }, flush: evFlush, get tok(){ return !!evTok; }},   // product events: the queue as it stands (QA: what a session produced)
+  // audio QA (tests/e2e/audio-smoke.mjs): the live context and buses. offline(ctx, zone, secs) routes the whole chain into a context the caller made
+  // (an OfflineAudioContext) with one zone's in-play music scheduled on it, so SFX fired at ctx.suspend points land in the same render; drop() lets go of it.
+  audio: {get ac(){ return ac; }, get mus(){ return mus; }, get muted(){ return muted; }, get musOn(){ return musOn; }, get master(){ return master; }, get sfxBus(){ return sfxBus; }, SFX,
+    offline(off, z, secs){ const Real = window.AudioContext; window.AudioContext = function(){ return off; };
+      try { audioInit(); } finally { window.AudioContext = Real; }
+      musicStart(); clearInterval(mus.timer); mus.timer = 0; mus.zone = z; mus.vol = musWant('play', true); mus.gain.gain.value = mus.vol;
+      const was = state, M = MUSIC[z], spb = musSpb(M.bpm); state = 'play';
+      for (let i = 0, t = .05; t < secs; i++, t += spb) playStep(M, i % 64, t);
+      state = was; mus.on = false; },   // off: musicTick leaves the offline gain alone
+    drop(){ clearInterval(mus.timer); ac = master = sfxBus = nbuf2 = null; mus.gain = null; mus.on = false; mus.timer = 0; mus.vol = -1; }},
   get W(){ return W; }, get stg(){ return stg; }, get FX(){ return FX; }, get PK(){ return PK; }, get gates(){ return gates; }, get orbs(){ return orbs; }, get hazards(){ return hazs; }, get mode(){ return mode; },
   get state(){ return state; }, get bird(){ return bird; }, get run(){ return {score, gatesPassed, combo, tier, shields, skillCharge, speed, T, orbsGot, ultCharge: FX.ult, ultLive: ultLive()}; },
   setRun(o){ if (o.score != null) score = clampI(o.score, 0, 1e9); if (o.orbsGot != null) orbsGot = clampI(o.orbsGot, 0, 1e9); if (o.dash != null) dashMeter = Math.max(0, Math.min(1, +o.dash || 0)); },   // QA only: result-screen reward checks, dash-ghost shots
