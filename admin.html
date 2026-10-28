@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-8X4a+h5vq6gPuSeBFzYU8CdjJrD/M7NnqherwNaP+ks=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://ecjeyelgcqbliavwltbc.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-8+c5CZYopi/rCTGAuTPJ33+xEeIre215libG3CDDPKc=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://ecjeyelgcqbliavwltbc.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <title>SWISHBY 관리자</title>
 <style>
 :root{color-scheme:dark;--sky-0:#0d0820;--sky-1:#140c2b;--sky-2:#1d1440;--line:#2c2152;--ink:#f3eefc;--ink-2:#b8afd6;--ink-3:#7f77a3;--cool:#4ff0ff;
@@ -176,7 +176,7 @@ ul.cron .sub{font-size:12px;color:var(--ink-2);font-family:var(--num)}
 
 <section id="app" hidden>
   <nav id="tabs" class="tabs" role="tablist" aria-label="관리 메뉴"></nav>
-  <div id="mfaNote" class="banner" hidden><span>owner 기능은 2단계 인증 뒤에 열립니다.</span><button id="mfaNoteBtn" class="sm">2단계 인증</button></div>
+  <div id="mfaNote" class="banner" hidden><span>관리 기능은 2단계 인증 뒤에 열립니다.</span><button id="mfaNoteBtn" class="sm">2단계 인증</button></div>
   <div id="view"></div>
 </section>
 </main>
@@ -206,10 +206,10 @@ const admRole = me => me && typeof me === 'object' && me.admin === true && (me.r
 const admTabs = role => role === 'owner' ? ADM_TABS.slice() : role === 'mod' ? ADM_TABS.filter(t => !t.owner) : [];
 const admCan = (role, tab) => admTabs(role).some(t => t.id === tab);
 const admOwnerTab = tab => ADM_TABS.some(t => t.id === tab && t.owner);
-// The server asks for a second factor (aal2) on every owner-level call: an owner at aal1 has the mod tabs, the owner ones wait for the TOTP step
+// The server asks for a second factor (aal2) on every admin call, owner and mod alike: below aal2 every tab waits for the TOTP step
 const admAal = me => me && typeof me === 'object' && (me.aal === 'aal1' || me.aal === 'aal2') ? me.aal : null;
 const admOwnerReady = (role, aal) => role === 'owner' && aal === 'aal2';
-const admNeedMfa = (role, aal) => role === 'owner' && aal !== 'aal2';
+const admNeedMfa = (role, aal) => (role === 'owner' || role === 'mod') && aal !== 'aal2';
 const admMfaCode = s => { const v = typeof s === 'string' ? s.replace(/\s+/g, '') : ''; return /^\d{6}$/.test(v) ? v : ''; };
 // The enrolment QR: only an SVG data URL (the SDK prefixes the raw SVG without escaping it, so it is re-encoded here)
 function admQrSrc(s){
@@ -630,7 +630,7 @@ async function show(t, arg){
   const g = ++gen, v = $('view');
   v.replaceChildren(el('p', {class: 'dim', text: '불러오는 중…'}));
   let node;
-  try { node = await (tab === 'mfa' || (admOwnerTab(tab) && !full()) ? vMfa : VIEWS[tab])(arg); }
+  try { node = await (tab === 'mfa' || admNeedMfa(role, aal) || (admOwnerTab(tab) && !full()) ? vMfa : VIEWS[tab])(arg); }
   catch(e){ node = el('div', {class: 'banner'}, el('span', {text: admErrText(e)}), el('button', {class: 'ghost sm', text: '다시 시도', onclick: () => show(tab, arg)})); }
   if (g === gen) v.replaceChildren(node);
 }
@@ -873,7 +873,7 @@ async function vMfa(){
     }}, code, btn);
   };
   const box = el('div', {class: 'card', id: 'mfaBox'}, el('h3', {text: '2단계 인증 필요'}),
-    el('p', {class: 'dim', text: 'owner 기능(테스터, 추천, 기록, 시즌 정산, 테스터 지정, 계정 삭제)은 인증 앱(TOTP) 확인 뒤에 열립니다. 그 전에도 다른 탭은 쓸 수 있습니다.'}));
+    el('p', {class: 'dim', text: '모든 관리 기능(owner와 mod 모두)은 인증 앱(TOTP) 확인 뒤에 열립니다. 처음이면 인증 앱을 한 번 등록하고, 그다음부터는 접속할 때마다 6자리 코드를 입력합니다.'}));
   if (ok){
     box.append(el('p', {text: '인증 앱에 표시된 6자리 코드를 입력하세요.'}), form(c => sb.auth.mfa.challengeAndVerify({factorId: ok.id, code: c})), msg);
     return box;
@@ -975,8 +975,9 @@ function boot(){
   const cb = admCallback(location.href);
   if (cb.err){ history.replaceState(null, '', cb.clean); banner(cb.err); }
   if (!window.supabase || !window.supabase.createClient){ screen('denied'); $('deniedTitle').textContent = '불러오지 못했습니다'; $('deniedTxt').textContent = 'Supabase SDK를 불러오지 못했습니다. 네트워크를 확인하고 새로고침하세요.'; return; }
-  // Same project, same default storage key as the game: a session signed in there is used here
-  sb = window.supabase.createClient(CFG.url, CFG.key, {auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit'}});
+  // Its own session, apart from the game's (same origin): its own storage key, in sessionStorage, so no script of the game page can
+  // read the aal2 token and the game's sign-out never touches it. The session ends with the tab; sign in again in a new one.
+  sb = window.supabase.createClient(CFG.url, CFG.key, {auth: {storageKey: 'sb-swishby-admin', storage: window.sessionStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit'}});
   sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT' || ev === 'USER_UPDATED') setTimeout(start, 0); });   // no Supabase call inside the callback
   providers();
   start();
