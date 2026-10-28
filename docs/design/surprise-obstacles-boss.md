@@ -241,3 +241,43 @@ Code map for phase 3 (art):
   - `b.s.ph === 'tel'`, with `b.s.atk`: the mouth or eye glow;
   - `b.dieT`: fade and shake.
 - **Other draw code:** the surprise skins are `SUR_SKIN` and `drawSur()` (just above `drawBossFx`). `drawGate` and `drawGateDeco` draw the gates.
+
+## 9. Implementation notes (phase 3, engine, 2026-10-29)
+
+Where the art integration differs from section 5, and why:
+
+- **How art/ ships.** The page loads `art/<name>.webp` as same-origin images, so it is no longer a single file with no asset fetches.
+  That rule only ever covered the rank badges (`PTIER_IMG`, still data URIs), and no test enforces it for the page. The art is not inlined.
+  - Web (Vercel, swishby.com): the folder is deployed as is; `.vercelignore` does not list it.
+  - Android (the TWA opens swishby.com): `sw.js` precaches all 29 files (`ART`), and `VERSION` is now `2026-10-29.1`, because images are cache-first.
+  - iOS and the portal builds: `IOS_ASSETS` and the portal `ASSETS` take the folder listing from `scripts/art-files.mjs`. The portal build now
+    creates subfolders as it copies.
+  - `tests/art.test.js` checks the names against the folder, each file's size (from its WebP header), the precache, both builds and the 1 MB cap.
+- **The loader never blocks.**
+  - `artOk(name)` makes the `Image` on first need and returns it only once it has loaded.
+  - `artWarm()` requests all 29 files 0.8 s after boot.
+  - Until a file is in, or if it never loads, its draw path falls back to the procedural art. `tests/e2e/art-smoke.mjs` blocks `art/` and
+    checks this.
+- **Pillars.**
+  - The shaft pattern is anchored at each pillar's gap end, so it travels with moving and pulsing gates.
+  - The body gradient goes over it at 35 % alpha.
+  - The neon rim is 1.5 px with `glowPx(10)`.
+  - The cap is 84 px wide, with its top face on the gap edge. A 2 px neon line runs along that face so the gap reads at a glance.
+  - `drawGateDeco` is skipped when the texture is on: the textures already carry the vines, strata, cracks and fluting, and the deco doubled them.
+  - A broken (dashed) gate still draws at 0.28 alpha; the gradient overlay multiplies with it.
+- **Snap sprites line up with `snapHit`.**
+  - The jaws are scaled to about 38 px wide (the hit head is 32) with their top at the reach.
+  - The part still inside the pillar is clipped away.
+  - The reach can be up to about 84 px while the sprites are 61–73 px tall. A longer reach therefore stretches the body below the jaws
+    (rows `n` on, `ART_FIT.snap`) down to the pillar; the jaws keep their size. For the SKY PALACE claw, the talons stay fixed and the cuff stretches.
+  - "Open" (`o`) is a small horizontal scale (0.92–1.04), since a still image cannot open its jaws.
+- **Shots and drops** put their body centre (`ART_FIT`) on the hit circle, at about the circle's size. Trails and tails (the shots' trails, the
+  magma drop's flame, the canyon stalactite's point) reach beyond the circle and do not hit.
+- **Bosses** are 160 px tall (`ART_FIT.bossH`), with the sprite's mass centre on the hit circle.
+  - Hit: a cached white silhouette at 85 % alpha, with the same 20 Hz flicker as before.
+  - Enraged: a cached red silhouette at 40 % alpha (pulsing unless low quality or `RM`).
+  - Telegraph: a `shadowBlur` glow (red before a charge, the zone colour otherwise), skipped at `IMP.q === 'low'`.
+  - Death: fade and shake.
+  - The silhouettes are built once per boss on first use (`artTint`).
+- **Backdrops** are cover-fit and static, drawn at 60 % alpha over the sky gradient and under the stars and the procedural layers. At that alpha
+  the gates and the bird keep their contrast in all four zones (screenshots `art-gates-*.png`).
