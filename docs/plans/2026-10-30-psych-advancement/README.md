@@ -25,3 +25,6 @@
 
 ## 날짜(도구 확인)
 오늘 2026-10-30(금) · 코드 동결 11-07(토, D-8) · iOS 제출 11-10(화, D-11) · 출시 11-17(화, D-18) · 30일 종료 12-17(목).
+
+## 진행
+- 사4-0 구현됨 (PR TBD): `run_end`에 goal·pct·clr·cont·cm·bhp·att·best0·dur·sn, `session_start`에 lvl·clr_n, `daily_done`에 stk·gap, 전 이벤트에 plat·v. 새 kind 0, 마이그레이션 0, evTrack 호출 지점 13개 그대로. 검증: `tests/events-props.test.js`, `tests/e2e/events-smoke.mjs`(기존 세션 1·2 + 퍼널 세션 3).
