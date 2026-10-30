@@ -1630,6 +1630,8 @@ function dailyStreakNext(rec, today){
   if (last === today) return { last: today, streak: Math.max(1, prev), claimed: true };
   return { last: today, streak: li >= 0 && ti - li >= 1 && ti - li <= 2 ? prev + 1 : 1, claimed: false };   // one missed UTC day is forgiven (grace), two reset it
 }
+// daily_done.gap (사4-0): UTC days from the last daily to today by the arithmetic above (1 consecutive, 2 the forgiven miss, 3+ a reset); 0 when first ever or the same day
+const dailyGap = (rec, today) => { const li = dayIndex(rec && rec.last), ti = dayIndex(today); return li >= 0 && ti >= 0 ? Math.max(0, ti - li) : 0; };
 // The fresh daily button: whole hours left until the UTC reset, rounded up (1..24)
 const dailyLeftH = ms => Math.max(1, Math.min(24, Math.ceil((Number(ms) || 0) / 36e5)));
 // The result card's one-time "save your progress": after a stage clear, for a guest, where sign-in exists, never twice
@@ -2219,15 +2221,39 @@ const evTake = (st, n) => ({ batch: st.q.slice(0, n), st: { ...st, q: st.q.slice
 const evDue = (st, last, now) => st.q.length > 0 && (st.q.length >= EV_CFG.batch || now - last >= EV_CFG.flushMs);
 // Hidden: session_end with the visible seconds of the session so far. A session can end more than once (the player comes back within idleMs):
 // each end carries the running total, so the longest one is the session's length (kpi.sql takes the max).
-function evHide(st, now){
+function evHide(st, now, base){
   if (!st || st.at == null) return st;
   const vis = st.vis + Math.max(0, now - st.at), s = { ...st, vis, at: null, hid: now };
-  return evAdd(s, 'session_end', { dur: Math.round(vis / 1000) });
+  return evAdd(s, 'session_end', { ...(base || {}), dur: Math.round(vis / 1000) });
 }
-function evShow(st, now, sid){
+function evShow(st, now, sid, props){
   if (!st || st.at != null) return st;
   if (st.hid != null && now - st.hid < EV_CFG.idleMs) return { ...st, at: now, hid: null };
-  return evAdd({ ...st, sid, vis: 0, at: now, hid: null }, 'session_start', null);
+  return evAdd({ ...st, sid, vis: 0, at: now, hid: null }, 'session_start', props);
+}
+/* 사4-0 (owner decision 2026-10-30; docs/plans/2026-10-30-psych-advancement): the launch funnel baselines ride on the kinds above as more props. Never a new
+   kind (the server checks kind only), never a new call site (the event count per run stays, so does the fresh guest's 60-an-hour room), nothing personal:
+   flat, short keys, numbers and short strings. plat: 'ios' the Capacitor app | 'and' the Android app (a TWA runs in display-mode standalone; its first load
+   comes with an android-app:// referrer) | 'web'. v: the A/B variant slot, '' until 사5-lite fills it. tests/events-props.test.js */
+const EV_V = '';
+function evPlat(env){
+  if (!env) return 'web';
+  if (env.native) return 'ios';
+  return /^android-app:\/\//.test(env.referrer || '') || (env.standalone && /Android/.test(env.ua || '')) ? 'and' : 'web';
+}
+const evStamp = (base, props) => ({ ...(base || {}), ...(props || {}) });   // plat and v under every event; the call site's own keys win
+const evBhp = (hp, max) => max > 0 && hp != null ? Math.max(0, Math.min(100, Math.round(hp / max * 100))) : -1;   // the boss's HP left in %, -1 without a boss
+// fw27_att (device-only): attempts of each stage, bumped once per run_end, so "this run included"
+function evAtt(rec, i){
+  const r = rec && typeof rec === 'object' && !Array.isArray(rec) ? rec : {};
+  return { ...r, [i]: Math.min(1e6, Math.max(0, Math.floor(Number(r[i]) || 0)) + 1) };
+}
+// run_end: the five fields of old, then goal (the stage's gates, 0 off stage mode), pct (gates / goal to 2 decimals), clr (a stage win), cont (0 never offered,
+// 1 offered and declined or timed out, 2 taken) with cm (by what: 'coin' | 'ad' | ''), bhp, att, best0 (the stage's best gates before this run), dur (seconds), sn (run ordinal in the session)
+function evRunProps(r){
+  const gt = Math.max(0, r.gates | 0), goal = r.goal > 0 ? r.goal | 0 : 0, took = r.cont === 'coin' || r.cont === 'ad';
+  return { mode: r.mode, score: r.score, gates: gt, stage: r.stage, bird: r.bird, goal, pct: goal ? Math.round(gt / goal * 100) / 100 : 0, clr: goal && r.clr ? 1 : 0,
+    cont: took ? 2 : r.cont === 'no' ? 1 : 0, cm: took ? r.cont : '', bhp: r.bhp | 0, att: Math.max(0, Math.floor(r.att) || 0), best0: Math.max(0, r.best0 | 0), dur: Math.max(0, Math.round(r.dur || 0)), sn: r.sn | 0 };
 }
 /* events:end */
 /* ads:start — rewarded / interstitial rules and the ad-provider adapters: pure, no DOM, no storage, no clock of its own (now and wait come in). tests/ads.test.js runs this block as it stands (tests/helpers/ads.js). */
@@ -2362,6 +2388,7 @@ const FS_LOCAL = Object.freeze(['fw27_wallet', 'fw27_bestu', 'fw27_rday', 'fw27_
   'fw27_nonce', 'fw27_refnonce',   // claim nonces (claim block): per device on purpose, a synced nonce would let a second device grant the same reward
   'fw27_tutruns', 'fw27_dintro',   // tutorial runs started / daily intro card seen, on this device (the tutorial done flag fw27_tut itself syncs)
   'fw27_savepr',      // the result card's one-time "save your progress" prompt was shown on this device
+  'fw27_att',         // 사4-0 analytics: attempts of each stage on this device (run_end.att), a device count rather than progress
   'fw27_block']);   // report block: the players this device has blocked (the store copy says "on this device")
 const fsI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
 const fsDay = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
@@ -2657,7 +2684,7 @@ let rings = [], ghosts = [], banners = [], scorePunch = 0, popT = -1, squash = 0
 const cam = { z:1, tz:1, fx:180, fy:320 };
 let shields = 0, reviveLeft = 0, orbsGot = 0, runTrial = false, PK = null;
 let lastWarnT = 0, pillBot = 0, banDrop = 0; const hudCache = {d:'', s:'', sl:'', u:'', ul:''};   // pillBot: bottom of the status-pill band this frame (0 = none); banDrop slides big banners below it
-let skillCharge = 0, skillWasReady = false, boostT = 0, lowGravT = 0, autoT = 0, cloneT = 0, rushT = 0, foreT = 0, freezeT = 0, potionT = 0, godT = 0, hurtT = 0, danger = 0, contUsed = false;
+let skillCharge = 0, skillWasReady = false, boostT = 0, lowGravT = 0, autoT = 0, cloneT = 0, rushT = 0, foreT = 0, freezeT = 0, potionT = 0, godT = 0, hurtT = 0, danger = 0, contUsed = false, contSeen = '', runAt = 0;
 let bounceLeft = 0, rewindLeft = 0, perfCount = 0, phaseT = 0, giantT = 0, inkT = 0, guardUsed = false, travel = 0, hist = [], bolts = [];
 let score, gatesPassed, combo, maxCombo, perfects, speed, dashMeter, dashT, invuln, magnetT, slowT, zoneIdx, zoneBanner, deathT, spawnIdx, runDay, deathWhy, lastShare = '';
 // Per-run state for stage rules and the newer skills; TMAX remembers each timer's value when it was set (render/HUD read it).
@@ -2804,7 +2831,7 @@ function reset(){
   gates = []; orbs = []; hazs = []; surs = []; parts = []; pops = []; trail = []; boss = null; bsh = []; ram = null;
   score = 0; gatesPassed = 0; combo = 0; maxCombo = 0; perfects = 0;
   PK = perks(); bird.r = B.r * PK.evoHit; FX = newFx(); FX.glide = PK.glide; FX.threads = PK.veilStart; if (ultOn()) FX.ult = ULT.start;   // AURORA starts a stage with its veil woven (0 for every other unit and in fair modes); a continue does not weave it again
-  skillCharge = .35; skillWasReady = false; boostT = lowGravT = autoT = cloneT = rushT = foreT = freezeT = potionT = godT = hurtT = overT = weightT = 0; danger = 0; contUsed = false;
+  skillCharge = .35; skillWasReady = false; boostT = lowGravT = autoT = cloneT = rushT = foreT = freezeT = potionT = godT = hurtT = overT = weightT = 0; danger = 0; contUsed = false; contSeen = ''; runAt = Date.now();
   bounceLeft = PK.bounce + (rookieOn() ? ROOKIE.bounces : 0); rewindLeft = PK.rewind; perfCount = 0; phaseT = 0; giantT = 0; inkT = 0; guardUsed = false; travel = 0; hist = []; bolts = [];
   speed = 190; dashMeter = PK.dashFull ? 1 : 0; dashT = 0; invuln = 0; shields = PK.shieldStart; reviveLeft = PK.revive; orbsGot = 0; magnetT = 0; slowT = 0;
   zoneIdx = 0; zoneBanner = 2.2; deathT = 0; deathWhy = 'gate'; spawnIdx = 0;
@@ -4647,7 +4674,7 @@ let contTimer = 0, contLeft = 0;
 const CONT_COST = 200;
 function canContinue(){ return contOk(mode, contUsed, score, adOffers(ADS.ready(), { coinBonus: 0, dailyBonus: null, claimed: {} }), W.coins, CONT_COST); }   // no card when nothing on it can be used: a fresh profile with no ads goes straight to the result
 function openCont(){
-  state = 'cont'; contLeft = 5; $('contScr').hidden = false; $('contAdMsg').hidden = true;
+  state = 'cont'; contSeen = 'no'; contLeft = 5; $('contScr').hidden = false; $('contAdMsg').hidden = true;
   $('contAd').hidden = !adOffers(ADS.ready(), { coinBonus: 0, dailyBonus: null, claimed: {} }).revive;
   $('contAd').disabled = false; $('contCoin').disabled = W.coins < CONT_COST;
   $('contCoin').textContent = t('contCoin', {n: CONT_COST});
@@ -4673,10 +4700,10 @@ $('contAd').addEventListener('click', async e => {
   $('contAdMsg').hidden = false; $('contAdMsg').textContent = adMsg(ADS.name, t);
   const r = await runAd('revive');
   if (state !== 'cont') return;
-  if (r === 'granted'){ FX.adSeen = true; closeCont(true); return; }
+  if (r === 'granted'){ FX.adSeen = true; contSeen = 'ad'; closeCont(true); return; }
   $('contAdMsg').textContent = t('adFail'); $('contAd').hidden = true; $('contCoin').disabled = W.coins < CONT_COST;   // the coin continue and the countdown carry on
 });
-$('contCoin').addEventListener('click', e => { e.stopPropagation(); if (W.coins < CONT_COST) return; W.coins -= CONT_COST; saveW(); renderWallet(); closeCont(true); });
+$('contCoin').addEventListener('click', e => { e.stopPropagation(); if (W.coins < CONT_COST) return; W.coins -= CONT_COST; saveW(); renderWallet(); contSeen = 'coin'; closeCont(true); });
 $('contNo').addEventListener('click', e => { e.stopPropagation(); closeCont(false); });
 function renderAdOffers(){
   const of = adOffers(ADS.ready(), adRun, ad2xLeft(store.get('fw27_ad2x', null), dayKey()).left);
@@ -4712,6 +4739,7 @@ function showOver(){
     $('oMode').textContent = B.name + ' · ' + t('modeEndless');
   }
   if (score > best && mode !== 'versus'){ best = score; store.set('fw27_best', best); store.set('fw27_bestg', gatesPassed); store.set('fw27_bestu', B.id); }
+  const best0 = mode === 'endless' ? stg.gates[curStage] : 0;   // 사4-0: run_end.best0, the stage's best gates before this run (read before the max below)
   if (mode === 'endless'){ stg.gates[curStage] = Math.max(stg.gates[curStage], gatesPassed); stg.score[curStage] = Math.max(stg.score[curStage], score); store.set('fw27_stg2', stg); $('oMode').textContent = B.name + ' · ' + t('stage', {n: curStage + 1}) + ' ' + ZONES[stTier(curStage)].name; if (curStage === 0) store.set('fw27_rookie_runs', rookieRuns() + 1); }
   const why = $('oWhy'); why.textContent = FX.won ? t('stClear', {n: curStage + 1}) : t(deathHint(deathWhy, gatesPassed)); why.hidden = false;
   const dailyLine = $('oDaily'); dailyLine.hidden = mode !== 'daily'; if (mode === 'daily') dailyLine.textContent = t('oDailyLine', {d: fmtDay(runDay), t: fmtLeft(msToNextDay())});
@@ -4731,19 +4759,21 @@ function showOver(){
   // coins: field coins (orbs picked up) + score coins (stage mode, per 50 score by tier); the unit's coin multiplier applies to both
   const inSt = mode === 'endless', xpGain = Math.round((gatesPassed + perfects*2 + Math.floor(score/10)) * PK.xpMul);
   const fieldCoin = Math.round(orbsGot * INCOME_X * PK.coinMul), scoreCoin = inSt ? Math.min(scoreCoinCap(clearCoinOf(curStage)), Math.round(scoreCoins(score, stTier(curStage)) * PK.coinMul)) : 0;
-  const gems0 = W.gems, dia0 = W.dia; let dCoin = 0, dStreak = 0, starNew = 0;
+  const gems0 = W.gems, dia0 = W.dia; let dCoin = 0, dStreak = 0, dGap = 0, starNew = 0;
   if (inSt && FX.clearDone){ const sp = starPay(stg.star[curStage] | stg.clr[curStage], starBits({cleared: true, flawless: FX.flawless, score, need: starNeed(stGoal(curStage), stTier(curStage))}), DIA_CLEAR[stTier(curStage)]);   // mastery stars, each paid once
     if (sp.mask !== stg.star[curStage]){ stg.star[curStage] = sp.mask; store.set('fw27_stg2', stg); } W.gems += sp.gem; W.dia += sp.dia; starNew = sp.nw; }
   if (mode === 'daily'){
     const rec = store.get('fw27_dstreak', null);
     const ds = store.get('fw27_dbonus','') === runDay && (!rec || rec.last !== runDay) ? { last: runDay, streak: 1, claimed: true } : dailyStreakNext(rec, runDay);
-    dStreak = ds.streak;
+    dStreak = ds.streak; dGap = dailyGap(rec, runDay);
     store.set('fw27_dstreak', {last: ds.last, streak: ds.streak});
     if (!ds.claimed){ const rw = dailyReward(ds.streak); dCoin = rw.coin; W.coins += rw.coin; W.gems += rw.gem; W.dia += rw.dia; store.set('fw27_dbonus', runDay); }
   }
   const distCoin = inSt && !FX.clearDone ? failPay(clearCoinOf(curStage), gatesPassed, stGoal(curStage), fieldCoin + scoreCoin, stg.clr[curStage]) : 0;
   W.coins += fieldCoin + scoreCoin + distCoin; const ups = grantXP(xpGain); saveW();
-  evTrack('run_end', { mode, score, gates: gatesPassed, stage: inSt ? curStage + 1 : null, bird: B.id }); if (mode === 'daily') evTrack('daily_done', { score, streak: dStreak }); if (ups) evTrack('level_up', { lvl: W.lvl, n: ups });
+  const attRec = inSt ? evAtt(store.get('fw27_att', null), curStage) : null; if (attRec) store.set('fw27_att', attRec);   // 사4-0: this device's attempts of the stage, this run included (device-only key)
+  evTrack('run_end', evRunProps({ mode, score, gates: gatesPassed, stage: inSt ? curStage + 1 : null, bird: B.id, goal: inSt ? stGoal(curStage) : 0, clr: inSt && FX.clearDone, cont: contSeen,
+    bhp: boss ? evBhp(boss.hp, boss.max) : inSt && STAGES[curStage].boss && FX.clearDone ? 0 : -1, att: attRec ? attRec[curStage] : 0, best0, dur: (Date.now() - runAt) / 1000, sn: ++evRun })); if (mode === 'daily') evTrack('daily_done', { score, streak: dStreak, stk: dStreak, gap: dGap }); if (ups) evTrack('level_up', { lvl: W.lvl, n: ups });
   adRun = { coinBonus: adCoinBonus(fieldCoin, scoreCoin), dailyBonus: dCoin ? adDailyBonus(dailyReward(dStreak)) : null, claimed: {} };
   renderAdOffers();
   const rw = $('oRewards'); rw.textContent = '';
@@ -7756,10 +7786,13 @@ window.addEventListener('unhandledrejection', ev => errReport(ev.reason));
 // send is dropped, never retried. Hiding the page ends the session and sends what is queued with fetch keepalive (the client's rpc cannot
 // outlive the page), using the access token kept from the auth callback. Nothing here may throw into the game.
 const EV_BUILD = errBuild(document.scripts);
-let evSt = evAdd(evNew(evSid(Math.random), Date.now()), 'session_start', null), evLast = Date.now(), evBusy = false, evTok = null;
-if (!store.get('fw27_ev_first', 0)) evSt = evAdd(evSt, 'first_open', null);   // marked only once delivered, so an offline first start is counted later
+// 사4-0: plat and v (EV_BASE, events block) under every event; session_start adds the level and the cleared stage count; evRun numbers the runs of a session (run_end.sn)
+const EV_PLAT = evPlat({ native: NAT, referrer: document.referrer, standalone: !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches), ua: navigator.userAgent }), EV_BASE = Object.freeze({ plat: EV_PLAT, v: EV_V });
+const evSess = () => ({ ...EV_BASE, lvl: W.lvl, clr_n: stg.clr.reduce((a, b) => a + b, 0) });
+let evSt = evAdd(evNew(evSid(Math.random), Date.now()), 'session_start', evSess()), evLast = Date.now(), evBusy = false, evTok = null, evRun = 0;
+if (!store.get('fw27_ev_first', 0)) evSt = evAdd(evSt, 'first_open', EV_BASE);   // marked only once delivered, so an offline first start is counted later
 const evSent = (batch, ok) => { if (ok && batch.some(e => e.k === 'first_open')) store.set('fw27_ev_first', 1); };
-function evTrack(kind, props){ try { evSt = evAdd(evSt, kind, props); if (evDue(evSt, evLast, Date.now())) evFlush(); } catch(e){} }
+function evTrack(kind, props){ try { evSt = evAdd(evSt, kind, evStamp(EV_BASE, props)); if (evDue(evSt, evLast, Date.now())) evFlush(); } catch(e){} }
 async function evFlush(){
   if (evBusy || backend !== 'supa' || !sbC || !evSt.q.length) return;
   const r = evTake(evSt, EV_CFG.batch); evSt = r.st; evBusy = true; evLast = Date.now();
@@ -7774,7 +7807,7 @@ function evBeacon(){
       headers: { apikey: cfg.supabaseAnonKey, Authorization: 'Bearer ' + evTok, 'Content-Type': 'application/json' } }).then(x => evSent(r.batch, x.ok), () => {});
   } catch(e){}
 }
-document.addEventListener('visibilitychange', () => { try { if (document.hidden){ evSt = evHide(evSt, Date.now()); evBeacon(); } else evSt = evShow(evSt, Date.now(), evSid(Math.random)); } catch(e){} });
+document.addEventListener('visibilitychange', () => { try { if (document.hidden){ evSt = evHide(evSt, Date.now(), EV_BASE); evBeacon(); } else { const was = evSt.sid; evSt = evShow(evSt, Date.now(), evSid(Math.random), evSess()); if (evSt.sid !== was) evRun = 0; } } catch(e){} });
 setInterval(() => { if (!document.hidden && evDue(evSt, evLast, Date.now())) evFlush(); }, 5000);
 $('acctBtn').addEventListener('click', e => { e.stopPropagation(); audioInit(); acctOpen(); });
 $('acctTop').addEventListener('click', e => { e.stopPropagation(); audioInit(); acctOpen(); });
