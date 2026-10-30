@@ -7,6 +7,10 @@
 //   game time. Each row gives the clear rate (a stage win), mean gates, mean score, the deaths (cause, the game's deathWhy -> gates passed), and on a boss
 //   stage: runs that reached the boss, boss wins among them, the fight's length (s of game time) and the boss HP left when the bird died in the fight.
 //   --bossgo (with --clear on boss stages) skips each run to its fight (FW.bossGo): the boss alone.
+//   --daily --days 2026-11-17..2026-12-16 (or a comma list) [--units zero,volt] [--runs 40] [--batch 40] [--jobs 8]: the daily course of each UTC day
+//   (FW.day, a #dev-only hook: the seed is hashStr('fluxwing27:' + day)), fair mode, no goal, so a run ends at death or --cap s. Per unit and day: mean /
+//   median / p90 gates and score; per unit across days: the CV (stdev / mean) of the per-day mean gates and p90 score, the easiest and hardest day.
+//   --batch B: a day flown in more than one batch of B runs also gives the CV of its batch means (the bot's own noise, the floor for the CVs above).
 //   --jobs N flies N browser pages at once (one context each, so their profiles never mix); the rows and every run are written to --out.
 // Needs the dev server (npm run dev, 127.0.0.1:5173; PORT=… for another port). Supabase is blocked; nothing leaves the machine.
 // The bot: flaps when it sinks below the next gap's centre plus an aim error (--aim px, Gaussian), dashes when the meter is full,
@@ -21,6 +25,9 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
 const ANY = process.argv.includes('--anyseed'), CLEAR = arg('clear', '') ? arg('clear', '').split(',').map(n => +n - 1) : null;
 const STAGE = +arg('stage', 20) - 1, RUNS = +arg('runs', CLEAR ? 60 : 12), FORM = +arg('form', 0), AIM = +arg('aim', 6), OUT = arg('out', '');
 const JOBS = Math.max(1, +arg('jobs', 1)), CAP = +arg('cap', 600);   // CAP: s of game time before a run counts as 'time'
+const DAILY = process.argv.includes('--daily'), BATCH = +arg('batch', 40);
+const DAYS = (d => { const m = d.match(/^(\d{4}-\d\d-\d\d)\.\.(\d{4}-\d\d-\d\d)$/); if (!m) return d ? d.split(',') : [];
+  const out = []; for (let t = Date.parse(m[1] + 'T00:00:00Z'); t <= Date.parse(m[2] + 'T00:00:00Z'); t += 864e5) out.push(new Date(t).toISOString().slice(0, 10)); return out; })(arg('days', ''));
 const BOSSGO = process.argv.includes('--bossgo'), NAIVE = process.argv.includes('--naive'), REACT = +arg('react', .2), SEE = arg('see', 'branch,snap,shot,drop').split(',');   // --naive: the course bot ignores branches and surprises; react: its reflex in s
 const base = `http://127.0.0.1:${process.env.PORT || 5173}/${arg('page', 'index.html')}#dev`;   // --page: a copy of the game next to index.html (a tuning probe)
 const EVO_AT = [0, 3, 10, 20, 35];
@@ -46,11 +53,13 @@ const seed = (id, pg = page) => pg.evaluate(([id, ids, n]) => {
     localStorage.setItem(k, JSON.stringify(v));
 }, [id, all.map(u => u.id), EVO_AT[FORM]]);
 
-async function run(stage = STAGE, stop = false, pg = page){
+async function run(stage = STAGE, stop = false, pg = page, day = ''){
   await pg.evaluate(any => { if (any) FW.salt = Math.random().toString(36).slice(2); }, ANY && stop);
-  await pg.evaluate(i => { FW.hold = true; document.getElementById('startBtn').click(); document.querySelectorAll('#stageScr .stc')[i].click(); }, stage);   // hold: no real-time frames before the bot takes over
+  if (day) await pg.evaluate(d => { FW.day = d; FW.hold = true; document.getElementById('dailyBtn').click(); }, day);   // the daily course of that day (fw27_dintro is set: no intro)
+  else await pg.evaluate(i => { FW.hold = true; document.getElementById('startBtn').click(); document.querySelectorAll('#stageScr .stc')[i].click(); }, stage);   // hold: no real-time frames before the bot takes over
   await pg.waitForFunction(() => FW.state === 'play');
   if (BOSSGO) await pg.evaluate(() => FW.bossGo());   // --bossgo: the fight alone (QA jump: the course counts as flown, no score)
+  if (day && await pg.evaluate(() => FW.mode) !== 'daily') throw new Error('not a daily run');
   return pg.evaluate(([aim, cap, naive, react, seeK]) => {
     const goal = FW.STAGES[FW.stage].goal;
     const key = code => { dispatchEvent(new KeyboardEvent('keydown', { code })); dispatchEvent(new KeyboardEvent('keyup', { code })); };   // a tap, not a hold: the bot never glides
@@ -156,8 +165,46 @@ function clearRow(id, st, res){
 }
 const fmtRow = r => `${r.id.padEnd(10)} stage ${String(r.stage).padStart(2)}  clear ${(r.clear*100).toFixed(0).padStart(3)}%  [95% ${(r.lo*100).toFixed(0)}-${(r.hi*100).toFixed(0)}]  mean gates ${r.gates}  mean score ${r.score}  (${r.runs} runs, form ${r.form})  deaths ${Object.entries(r.deaths).map(([k, v]) => k + ' ' + v.length).join(', ')}`
   + (r.boss ? `  boss ${r.boss.won}/${r.boss.reached} won, fight ${r.boss.fightWin ?? '-'} s (won) ${r.boss.fightLoss ?? '-'} s (lost), HP left ${r.boss.hpLeft ?? '-'}/${r.boss.hp}` : '');
-const save = () => { if (OUT) writeFileSync(OUT, JSON.stringify({ stage: CLEAR ? CLEAR.map(s => s + 1) : STAGE + 1, runs: RUNS, form: FORM, aim: AIM, cap: CAP, anyseed: ANY, bossgo: BOSSGO, naive: NAIVE, react: REACT, rows }, null, 1)); };
+const save = () => { if (OUT) writeFileSync(OUT, JSON.stringify(DAILY ? { mode: 'daily', days: DAYS, runs: RUNS, batch: BATCH, aim: AIM, cap: CAP, naive: NAIVE, react: REACT, summary: dailySummary(), rows } : { stage: CLEAR ? CLEAR.map(s => s + 1) : STAGE + 1, runs: RUNS, form: FORM, aim: AIM, cap: CAP, anyseed: ANY, bossgo: BOSSGO, naive: NAIVE, react: REACT, rows }, null, 1)); };
 
+// --daily: one row per unit and day, then the spread across days per unit
+const sd = a => { const m = avg(a); return Math.sqrt(a.reduce((t, x) => t + (x - m)**2, 0) / (a.length - 1)); }, cv = a => a.length > 1 ? +(sd(a) / avg(a)).toFixed(3) : null;
+function dailyRow(id, day, res){
+  const g = res.map(r => r.gates), sc = res.map(r => r.score), why = {};
+  for (const r of res) why[r.why || 'time'] = (why[r.why || 'time'] || 0) + 1;
+  const bm = []; for (let i = 0; i + BATCH <= res.length; i += BATCH) bm.push(avg(g.slice(i, i + BATCH)));
+  return { id, day, runs: res.length, gates: r1(avg(g)), gatesMed: q(g, .5), gatesP90: q(g, .9), score: Math.round(avg(sc)), scoreMed: q(sc, .5), scoreP90: q(sc, .9),
+    T: r1(avg(res.map(r => r.T))), why, batchMeans: bm.length > 1 ? bm.map(r1) : undefined, batchCv: bm.length > 1 ? cv(bm) : undefined, list: res.map(r => [r.gates, r.score, r.why, r.T]) };
+}
+function dailySummary(){
+  return Object.fromEntries(units.map(u => {
+    const rs = rows.filter(r => r.id === u.id); if (rs.length < 2) return [u.id, null];
+    const by = rs.slice().sort((a, c) => a.gates - c.gates), easy = by.at(-1), hard = by[0];
+    return [u.id, { days: rs.length, cvGates: cv(rs.map(r => r.gates)), cvScoreP90: cv(rs.map(r => r.scoreP90)), cvScore: cv(rs.map(r => r.score)), cvGatesP90: cv(rs.map(r => r.gatesP90)),
+      meanGates: r1(avg(rs.map(r => r.gates))), easiest: { day: easy.day, gates: easy.gates, scoreP90: easy.scoreP90 }, hardest: { day: hard.day, gates: hard.gates, scoreP90: hard.scoreP90 },
+      ratio: +(easy.gates / hard.gates).toFixed(2), ratioScoreP90: +(Math.max(...rs.map(r => r.scoreP90)) / Math.min(...rs.map(r => r.scoreP90))).toFixed(2) }];
+  }));
+}
+if (DAILY){   // JOBS pages fly the (unit, day, run) tasks; each run re-seeds the profile (form I, fair mode anyway) and reloads
+  if (!DAYS.length) throw new Error('--daily needs --days');
+  const tasks = units.flatMap(u => DAYS.flatMap(day => Array.from({ length: RUNS }, () => ({ u: u.id, day })))), out = new Map(), left = new Map();
+  for (const u of units) for (const day of DAYS) left.set(u.id + '|' + day, RUNS);
+  let next = 0, done = 0;
+  const pages = [page, ...await Promise.all(Array.from({ length: Math.min(JOBS, tasks.length) - 1 }, newPage))];
+  await Promise.all(pages.map(async pg => {
+    while (next < tasks.length){
+      const { u, day } = tasks[next++], key = u + '|' + day;
+      await seed(u, pg); await menu(pg);
+      const r = await run(STAGE, false, pg, day); (out.get(key) || out.set(key, []).get(key)).push(r);
+      if (++done % 50 === 0) console.error(`… ${done}/${tasks.length} runs, ${((Date.now() - t0) / 60000).toFixed(1)} min`);
+      left.set(key, left.get(key) - 1);
+      if (!left.get(key)){ const row = dailyRow(u, day, out.get(key)); rows.push(row);
+        console.log(`${u.padEnd(8)} ${day}  gates mean ${row.gates} med ${row.gatesMed} p90 ${row.gatesP90}  score mean ${row.score} p90 ${row.scoreP90}  (${row.runs} runs)` + (row.batchCv != null ? `  batch means ${row.batchMeans.join(' / ')} cv ${row.batchCv}` : '')); save(); }
+    }
+  }));
+  rows.sort((a, c) => units.findIndex(u => u.id === a.id) - units.findIndex(u => u.id === c.id) || a.day.localeCompare(c.day));
+  for (const [id, s] of Object.entries(dailySummary())) if (s) console.log(`${id}: cv mean gates ${s.cvGates}  cv p90 score ${s.cvScoreP90}  easiest ${s.easiest.day} (${s.easiest.gates})  hardest ${s.hardest.day} (${s.hardest.gates})  ratio ${s.ratio}`);
+}
 if (CLEAR){   // clear rates: JOBS pages fly the (unit, stage, run) tasks; each run re-seeds the profile and reloads, so a clear never evolves the unit
   const tasks = units.flatMap(u => CLEAR.flatMap(st => Array.from({ length: RUNS }, () => ({ u: u.id, st })))), out = new Map(), left = new Map();
   for (const u of units) for (const st of CLEAR) left.set(u.id + '|' + st, RUNS);
@@ -175,7 +222,7 @@ if (CLEAR){   // clear rates: JOBS pages fly the (unit, stage, run) tasks; each 
   }));
   rows.sort((a, c) => units.findIndex(u => u.id === a.id) - units.findIndex(u => u.id === c.id) || a.stage - c.stage);
 }
-for (const u of CLEAR ? [] : units){
+for (const u of CLEAR || DAILY ? [] : units){
   await seed(u.id); await menu();
   const res = [];
   for (let i = 0; i < RUNS; i++){ res.push(await run()); await page.waitForFunction(() => FW.state !== 'play', null, { timeout: 15000 }).catch(() => {}); await menu(); }
