@@ -1562,7 +1562,7 @@ function fmtLeft(ms){ const s = Math.max(0, Math.floor(ms/1000)); const h = Math
 function fmtDay(key){ try { return new Intl.DateTimeFormat(numLoc(lang), {month:'short', day:'numeric', timeZone:'UTC'}).format(new Date(key+'T00:00:00Z')); } catch(e){ return key; } }
 function hashStr(s){ let h = 2166136261; for (let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
 function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let r = Math.imul(a ^ a >>> 15, 1 | a); r = r + Math.imul(r ^ r >>> 7, 61 | r) ^ r; return ((r ^ r >>> 14) >>> 0) / 4294967296; }; }
-let mode = 'endless', rng = Math.random, srng = Math.random, sur = Math.random, stSalt = '', curDay = dayKey();   // srng: a stage course's second rng (twins, hazards, signature obstacles); sur: its surprise hazards' own rng; stSalt: QA only (FW.salt), another course for the same stage
+let mode = 'endless', rng = Math.random, srng = Math.random, sur = Math.random, stSalt = '', devDay = '', curDay = dayKey();   // srng: a stage course's second rng (twins, hazards, signature obstacles); sur: its surprise hazards' own rng; stSalt: QA only (FW.salt), another course for the same stage; devDay: QA only (FW.day, #dev), the daily course of another UTC day
 
 /* ---------- local records ---------- */
 let best = store.get('fw27_best', 0);
@@ -2837,7 +2837,7 @@ function reset(){
   zoneIdx = 0; zoneBanner = 2.2; deathT = 0; deathWhy = 'gate'; spawnIdx = 0;
   rings = []; ghosts = []; banners = []; scorePunch = 0; popT = -1; squash = 0; tier = 0; newBestShown = false; wasReady = false; feverGlow = 0;
   cam.z = cam.tz = 1; cam.fx = LW/2; cam.fy = LH/2;
-  runDay = dayKey();
+  runDay = devDay || dayKey();
   runBestRef = mode === 'daily' ? dailyBestLocal(runDay) : mode === 'endless' ? stg.score[curStage] : 0;
   // Daily: same seed for everyone today. Stage: the same course every run up to the goal (spawnGate reseeds after it), extras on their own rng.
   rng = mode === 'daily' ? mulberry32(hashStr('fluxwing27:' + runDay)) : mode === 'versus' ? mulberry32(vs.seed >>> 0) : mulberry32(hashStr('stage:' + curStage + ':v2' + stSalt));
@@ -9102,7 +9102,7 @@ if (['#dev', '#localtest'].includes(location.hash) && /^(localhost|127\.0\.0\.1)
   STAGES, SIG, TIER_FX, UNIT_ART, UNIT_FX, unitTier, cast(){ skillCharge = 1; useSkill(); }, ult(){ if (ultOn()){ FX.ult = 1; useUlt(); } }, kill(){ die(); }, sig(k){ sigFx(B.id, k, gates.find(g => !g.scored)); }, dbg: {render, drawBird, drawShape, skyEvent, counts: () => [parts.length, rings.length]},   // QA only: fire a cast / death / passive moment, count draws
   get timers(){ return {godT, potionT, slowT, invuln, dashMeter, lowGravT, inkT, overT, weightT, fogT: FX.fogT}; },   // QA only: timers a player reads off the screen (lowGravT: the bot's flight model follows NIMBUS's glide; inkT: KRAKEN's ink cloak log; overT / weightT / fogT: the hazards)
   haz(k, dx, dy){ const h = {x: bird.x + (dx || 0), y: bird.y + (dy || 0), k, got:false, t:0}; if (dx == null) hazHit(h); else hazs.push(h); },   // QA only: a hazard as if touched right now, or one placed dx / dy from the bird
-  get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, set salt(v){ stSalt = String(v || ''); }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
+  get stage(){ return curStage; }, set stage(v){ curStage = clampI(v, 0, ST_N - 1); }, set salt(v){ stSalt = String(v || ''); }, set day(v){ devDay = /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; }, get gemP(){ return GEM_P; }, set gemP(v){ GEM_P = Number(v) || 0; },
   setFxQuality(q){ fxSettings.q = q; IMP = impNew(q); }, comboLevelOf: (c, tr) => comboLevel(c, tr, FXCFG), get imp(){ return IMP; }, fx: impFx, get fxEvents(){ return FX_EVENTS.slice(); },
   pop: (s, x, y) => pop(s, x ?? bird.x + 10, y ?? bird.y - 30, pal.a, true), banner: (s, big) => banner(s, [45,100,64], 1.6, big !== false), get LW(){ return LW; },   // QA only: a pop / banner on screen now (tests that they stay inside 0..LW)
   hold: false, press(on){ pressed = !!on; }, step(dt, n){ for (let i = 0; i < (n || 1); i++) update(dt); },

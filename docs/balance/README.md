@@ -662,3 +662,93 @@ Lessons:
 5. **The SOLARIS and PULSAR boss fights** decide their late stages: SOLARIS wins 25/52 on stage 40 and PULSAR 7/32. Their boss balance is separate from this curve.
 6. **NIMBUS** was not measured: the bot cannot fly its low gravity, a known bot limit.
 7. **Validate on a phone** before locking: the bot's flap cycle sits ~30 px high, so falls are harder for it than for a player.
+
+## Daily seed variance (experiment 1), 2026-10-31: `daily-seed-variance-2026-10-31.json`
+
+Experiment 1 of the ranking plan (`docs/plans/2026-10-31-ranking/03-judge-final.md`, branch `docs/ranking-brainstorm`). The all-time board is now the all-time daily best, so the question is how much a day's course decides the score.
+
+- **Setup.** 30 daily seeds, 2026-11-17 (launch) to 2026-12-16, units ZERO and VOLT. Daily is fair mode (form I numbers, no unit multipliers) with no goal: a run ends at death, or at 600 s of game time (no run reached it).
+  - Two passes: the asked-for 40 runs per seed per unit, and 200 runs per seed per unit to separate the bot's noise from the seed.
+  - The noise floor: seed 2026-11-17 flown again as 3 × 40. The 200-run pass also gives 5 batches of 40 for every seed.
+- **How the day is chosen.** `FW.day = 'YYYY-MM-DD'` is a new #dev-only hook in index.html (`devDay`, used by `reset()` as `runDay = devDay || dayKey()`). It changes only the day key, so the seed stays `hashStr('fluxwing27:' + day)` and the same day always gives the same course. In production `FW` does not exist, so `devDay` stays empty.
+
+```
+node scripts/balance.mjs --daily --days 2026-11-17..2026-12-16 --units zero,volt --runs 200 --batch 40 --jobs 8 --out daily.json
+```
+
+### Result (200 runs per seed; the 40-run pass in brackets)
+
+| | ZERO | VOLT |
+|---|---|---|
+| CV of per-seed mean gates | **19.2%** (20.0%) | **24.7%** (25.1%) |
+| CV of per-seed p90 score | **18.1%** (19.0%) | **28.1%** (29.5%) |
+| Noise floor, CV of a 40-run mean (11-17, 3 × 40: gates / p90 score) | 6.8% / 9.0% | 7.9% / 7.9% |
+| Noise floor, the median over all 30 seeds of 5 × 40 (gates / p90 score) | 5.6% / 9.2% | 5.9% / 12.4% |
+| CV of mean gates, noise taken out (200-run means) | 19.0% | 24.6% |
+| CV of mean gates without the 2 hardest seeds | 14.0% | 17.2% |
+| Mean gates over all seeds | 27.0 | 21.8 |
+| Easiest seed (mean gates, p90 score) | 12-02 (35.5, 73) | 12-02 (29.4, 66) |
+| Hardest seed (mean gates, p90 score) | 12-15 (13.2, 51) | 12-07 (7.4, 16) |
+| Easiest / hardest, mean gates | ×2.7 | ×4.0 |
+| Best / median p90 score | ×1.20 | ×1.25 |
+
+**Band verdict** (judge's rule: ≤ 25% keep, 25–40% combine with post-launch data, > 40% weekly ranked run first):
+
+| Unit | Mean gates | p90 score |
+|---|---|---|
+| ZERO | 19.2%: **keep** | 18.1%: **keep** |
+| VOLT | 24.7%: **keep, but on the line** (25.1% at 40 runs) | 28.1%: **25–40%, combine with experiments 2 and 3** |
+
+**No unit is above 40%.** The weekly ranked run is not made the first priority on this data. ZERO is clearly in the keep band. VOLT's top-of-board proxy sits in the middle band, so the 11-30 decision should still use experiments 2 and 3.
+
+### Per seed (200 runs; mean / median / p90 gates · mean / p90 score)
+
+| Day | ZERO | VOLT |
+|---|---|---|
+| 11-17 | 29.8 / 25 / 46 · 42 / 68 | 28.0 / 29 / 43 · 40 / 69 |
+| 11-18 | 31.7 / 29 / 45 · 47 / 72 | 23.5 / 22 / 36 · 34 / 57 |
+| 11-19 | 26.4 / 23 / 42 · 38 / 64 | 15.8 / 16 / 30 · 21 / 43 |
+| 11-20 | 21.0 / 24 / 37 · 30 / 59 | 19.9 / 17 / 29 · 27 / 43 |
+| 11-21 | 28.9 / 23 / 43 · 43 / 69 | 24.3 / 23 / 40 · 36 / 65 |
+| 11-22 | 34.8 / 33 / 49 · 51 / 75 | 26.1 / 27 / 39 · 37 / 62 |
+| 11-23 | 24.2 / 23 / 35 · 34 / 54 | 22.0 / 23 / 30 · 32 / 53 |
+| 11-24 | 29.4 / 25 / 45 · 43 / 72 | 24.1 / 21 / 36 · 35 / 58 |
+| 11-25 | 24.4 / 23 / 29 · 33 / 42 | 19.8 / 22 / 29 · 28 / 39 |
+| 11-26 | 31.0 / 30 / 47 · 48 / 79 | 28.5 / 28 / 36 · 41 / 58 |
+| 11-27 | 30.7 / 29 / 42 · 46 / 70 | 18.9 / 17 / 29 · 26 / 40 |
+| 11-28 | 33.2 / 31 / 46 · 48 / 71 | 20.2 / 18 / 36 · 27 / 53 |
+| 11-29 | 30.6 / 28 / 43 · 45 / 67 | 24.2 / 23 / 41 · 34 / 61 |
+| 11-30 | 25.2 / 25 / 43 · 36 / 65 | 26.2 / 27 / 36 · 37 / 53 |
+| 12-01 | 27.7 / 26 / 39 · 40 / 62 | 17.0 / 15 / 26 · 23 / 35 |
+| 12-02 | 35.5 / 37 / 48 · 53 / 73 | 29.4 / 32 / 40 · 45 / 66 |
+| 12-03 | 24.1 / 23 / 36 · 34 / 56 | **7.9 / 7 / 7 · 9 / 8** |
+| 12-04 | 27.7 / 24 / 42 · 40 / 66 | 18.4 / 17 / 36 · 26 / 57 |
+| 12-05 | 25.9 / 27 / 35 · 36 / 51 | 20.7 / 19 / 30 · 28 / 45 |
+| 12-06 | **14.9 / 9 / 26 · 19 / 36** | 20.2 / 20 / 38 · 27 / 55 |
+| 12-07 | 22.2 / 23 / 31 · 31 / 45 | **7.4 / 6 / 12 · 9 / 16** |
+| 12-08 | 29.5 / 24 / 45 · 43 / 71 | 25.8 / 23 / 40 · 37 / 67 |
+| 12-09 | 25.5 / 25 / 42 · 37 / 67 | 28.2 / 27 / 39 · 41 / 64 |
+| 12-10 | 30.4 / 28 / 49 · 44 / 78 | 28.1 / 27 / 41 · 41 / 69 |
+| 12-11 | 27.4 / 24 / 42 · 39 / 61 | 27.1 / 25 / 38 · 41 / 66 |
+| 12-12 | 33.2 / 33 / 45 · 50 / 70 | 22.1 / 23 / 31 · 33 / 49 |
+| 12-13 | 24.2 / 25 / 43 · 36 / 66 | 18.6 / 14 / 35 · 26 / 50 |
+| 12-14 | 21.4 / 20 / 27 · 30 / 39 | 19.7 / 20 / 35 · 26 / 50 |
+| 12-15 | **13.2 / 8 / 34 · 18 / 51** | 22.6 / 24 / 34 · 33 / 56 |
+| 12-16 | 26.4 / 23 / 40 · 38 / 60 | 18.8 / 17 / 28 · 26 / 39 |
+
+### What drives it
+
+- **The spread is real, not bot noise.** A 40-run mean moves 6–8% between batches; the seeds move 19–25%. Taking the noise out barely changes the CV (19.2 → 19.0%, 24.7 → 24.6%).
+- **Most of the spread is a few "killer drop" days.**
+  - On each of them, one early gate sits ~170 px below the one before, and almost every run dies on that gate's top wall:
+    - VOLT 12-03: 37 of 40 runs at gate 7 (gap centre 211 → 387).
+    - VOLT 12-07: 35 of 40 at gate 6 (201 → 376).
+    - ZERO 12-06: 29 of 40 at gate 9 (228 → 399).
+    - ZERO 12-15: 27 of 40 at gates 8–9 (192 → a moving gate at 322).
+  - Without the 2 hardest seeds, the CV of mean gates falls to 14% (ZERO) and 17% (VOLT).
+  - The daily course uses the endless layout (`spawnGate`, non-stage branch). It allows a climb or fall of up to `170 + d·60` px. The stage course has a smaller fall cap (`md`, the "stage 44 gate 24 trap" fix); the daily course does not.
+- **Bot limit:** the bot's flap cycle sits ~30 px high (see "Tune to the 100-gate curve" above), so a big fall is harder for it than for a player. The killer days are probably milder for people, so the real CV is likely at or below the one measured here.
+- **Which day is hard depends on the unit.** Between ZERO and VOLT, the per-seed means correlate at only 0.40 and the p90 scores at 0.48. VOLT's killer days are fine for ZERO, and the other way round. Seed luck therefore also depends on which unit a player flies that day.
+- **For the all-time board, the hard days matter less than the easy ones.** A best-ever score comes from the best days. The best seed's p90 score is only ×1.20 (ZERO) and ×1.25 (VOLT) the median seed's, so no single day gives a runaway record.
+- **Optional lever if the 11-30 data still shows seed luck:** give the daily layout a fall cap like the stage course's. This takes away the killer drops, but it re-rolls every daily course, so measure it again first.
+- **n and time:** 40-run pass 2,400 runs (1.3 min), 200-run pass 12,000 runs (9.3 min), noise floor 240 runs (0.2 min), `--jobs 8`. Supabase was blocked for every request.

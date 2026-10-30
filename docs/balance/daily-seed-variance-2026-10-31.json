@@ -1,0 +1,1275 @@
+{
+ "date": "2026-10-31",
+ "branch": "balance/daily-seed-variance (from origin/main 0fca76c)",
+ "mode": "daily (fair mode, no goal, run ends at death or 600 s)",
+ "days": [
+  "2026-11-17",
+  "2026-11-18",
+  "2026-11-19",
+  "2026-11-20",
+  "2026-11-21",
+  "2026-11-22",
+  "2026-11-23",
+  "2026-11-24",
+  "2026-11-25",
+  "2026-11-26",
+  "2026-11-27",
+  "2026-11-28",
+  "2026-11-29",
+  "2026-11-30",
+  "2026-12-01",
+  "2026-12-02",
+  "2026-12-03",
+  "2026-12-04",
+  "2026-12-05",
+  "2026-12-06",
+  "2026-12-07",
+  "2026-12-08",
+  "2026-12-09",
+  "2026-12-10",
+  "2026-12-11",
+  "2026-12-12",
+  "2026-12-13",
+  "2026-12-14",
+  "2026-12-15",
+  "2026-12-16"
+ ],
+ "units": [
+  "zero",
+  "volt"
+ ],
+ "aim": 6,
+ "bot": "scripts/balance.mjs --daily (course bot, see on)",
+ "passes": {
+  "n40": {
+   "runsPerSeed": 40,
+   "summary": {
+    "volt": {
+     "days": 30,
+     "cvGates": 0.251,
+     "cvScoreP90": 0.295,
+     "cvScore": 0.288,
+     "cvGatesP90": 0.265,
+     "meanGates": 22.3,
+     "easiest": {
+      "day": "2026-12-08",
+      "gates": 29.1,
+      "scoreP90": 69
+     },
+     "hardest": {
+      "day": "2026-12-07",
+      "gates": 7.3,
+      "scoreP90": 16
+     },
+     "ratio": 3.99,
+     "ratioScoreP90": 8.56
+    },
+    "zero": {
+     "days": 30,
+     "cvGates": 0.2,
+     "cvScoreP90": 0.19,
+     "cvScore": 0.217,
+     "cvGatesP90": 0.156,
+     "meanGates": 26.8,
+     "easiest": {
+      "day": "2026-11-22",
+      "gates": 33.9,
+      "scoreP90": 73
+     },
+     "hardest": {
+      "day": "2026-12-15",
+      "gates": 11.3,
+      "scoreP90": 33
+     },
+     "ratio": 3,
+     "ratioScoreP90": 2.7
+    }
+   },
+   "perSeed": {
+    "zero": [
+     {
+      "day": "2026-11-17",
+      "gates": 28.1,
+      "gatesMed": 25,
+      "gatesP90": 46,
+      "score": 40,
+      "scoreP90": 67
+     },
+     {
+      "day": "2026-11-18",
+      "gates": 32.4,
+      "gatesMed": 29,
+      "gatesP90": 43,
+      "score": 48,
+      "scoreP90": 69
+     },
+     {
+      "day": "2026-11-19",
+      "gates": 28.4,
+      "gatesMed": 23,
+      "gatesP90": 45,
+      "score": 42,
+      "scoreP90": 72
+     },
+     {
+      "day": "2026-11-20",
+      "gates": 19.4,
+      "gatesMed": 18,
+      "gatesP90": 37,
+      "score": 28,
+      "scoreP90": 60
+     },
+     {
+      "day": "2026-11-21",
+      "gates": 26.4,
+      "gatesMed": 23,
+      "gatesP90": 42,
+      "score": 39,
+      "scoreP90": 65
+     },
+     {
+      "day": "2026-11-22",
+      "gates": 33.9,
+      "gatesMed": 31,
+      "gatesP90": 47,
+      "score": 50,
+      "scoreP90": 73
+     },
+     {
+      "day": "2026-11-23",
+      "gates": 25.4,
+      "gatesMed": 23,
+      "gatesP90": 44,
+      "score": 37,
+      "scoreP90": 75
+     },
+     {
+      "day": "2026-11-24",
+      "gates": 29.1,
+      "gatesMed": 26,
+      "gatesP90": 44,
+      "score": 43,
+      "scoreP90": 73
+     },
+     {
+      "day": "2026-11-25",
+      "gates": 24,
+      "gatesMed": 22,
+      "gatesP90": 37,
+      "score": 33,
+      "scoreP90": 49
+     },
+     {
+      "day": "2026-11-26",
+      "gates": 29.3,
+      "gatesMed": 27,
+      "gatesP90": 50,
+      "score": 45,
+      "scoreP90": 80
+     },
+     {
+      "day": "2026-11-27",
+      "gates": 30.5,
+      "gatesMed": 30,
+      "gatesP90": 42,
+      "score": 46,
+      "scoreP90": 67
+     },
+     {
+      "day": "2026-11-28",
+      "gates": 33.4,
+      "gatesMed": 33,
+      "gatesP90": 43,
+      "score": 49,
+      "scoreP90": 68
+     },
+     {
+      "day": "2026-11-29",
+      "gates": 31.9,
+      "gatesMed": 33,
+      "gatesP90": 44,
+      "score": 47,
+      "scoreP90": 71
+     },
+     {
+      "day": "2026-11-30",
+      "gates": 26.9,
+      "gatesMed": 27,
+      "gatesP90": 46,
+      "score": 39,
+      "scoreP90": 66
+     },
+     {
+      "day": "2026-12-01",
+      "gates": 29.8,
+      "gatesMed": 28,
+      "gatesP90": 43,
+      "score": 44,
+      "scoreP90": 67
+     },
+     {
+      "day": "2026-12-02",
+      "gates": 33.7,
+      "gatesMed": 33,
+      "gatesP90": 44,
+      "score": 49,
+      "scoreP90": 71
+     },
+     {
+      "day": "2026-12-03",
+      "gates": 23.1,
+      "gatesMed": 23,
+      "gatesP90": 36,
+      "score": 32,
+      "scoreP90": 55
+     },
+     {
+      "day": "2026-12-04",
+      "gates": 26.5,
+      "gatesMed": 23,
+      "gatesP90": 40,
+      "score": 39,
+      "scoreP90": 65
+     },
+     {
+      "day": "2026-12-05",
+      "gates": 25.1,
+      "gatesMed": 26,
+      "gatesP90": 30,
+      "score": 35,
+      "scoreP90": 42
+     },
+     {
+      "day": "2026-12-06",
+      "gates": 14.3,
+      "gatesMed": 9,
+      "gatesP90": 30,
+      "score": 19,
+      "scoreP90": 41
+     },
+     {
+      "day": "2026-12-07",
+      "gates": 22.8,
+      "gatesMed": 23,
+      "gatesP90": 39,
+      "score": 32,
+      "scoreP90": 58
+     },
+     {
+      "day": "2026-12-08",
+      "gates": 31.1,
+      "gatesMed": 37,
+      "gatesP90": 45,
+      "score": 46,
+      "scoreP90": 69
+     },
+     {
+      "day": "2026-12-09",
+      "gates": 26.1,
+      "gatesMed": 25,
+      "gatesP90": 42,
+      "score": 39,
+      "scoreP90": 70
+     },
+     {
+      "day": "2026-12-10",
+      "gates": 31.1,
+      "gatesMed": 27,
+      "gatesP90": 58,
+      "score": 46,
+      "scoreP90": 89
+     },
+     {
+      "day": "2026-12-11",
+      "gates": 27.7,
+      "gatesMed": 24,
+      "gatesP90": 40,
+      "score": 40,
+      "scoreP90": 61
+     },
+     {
+      "day": "2026-12-12",
+      "gates": 32.1,
+      "gatesMed": 31,
+      "gatesP90": 40,
+      "score": 47,
+      "scoreP90": 65
+     },
+     {
+      "day": "2026-12-13",
+      "gates": 23.2,
+      "gatesMed": 25,
+      "gatesP90": 47,
+      "score": 35,
+      "scoreP90": 72
+     },
+     {
+      "day": "2026-12-14",
+      "gates": 21.8,
+      "gatesMed": 20,
+      "gatesP90": 32,
+      "score": 31,
+      "scoreP90": 43
+     },
+     {
+      "day": "2026-12-15",
+      "gates": 11.3,
+      "gatesMed": 8,
+      "gatesP90": 25,
+      "score": 15,
+      "scoreP90": 33
+     },
+     {
+      "day": "2026-12-16",
+      "gates": 26.6,
+      "gatesMed": 23,
+      "gatesP90": 40,
+      "score": 39,
+      "scoreP90": 64
+     }
+    ],
+    "volt": [
+     {
+      "day": "2026-11-17",
+      "gates": 28.4,
+      "gatesMed": 30,
+      "gatesP90": 44,
+      "score": 40,
+      "scoreP90": 66
+     },
+     {
+      "day": "2026-11-18",
+      "gates": 24.2,
+      "gatesMed": 25,
+      "gatesP90": 31,
+      "score": 35,
+      "scoreP90": 58
+     },
+     {
+      "day": "2026-11-19",
+      "gates": 16.8,
+      "gatesMed": 16,
+      "gatesP90": 39,
+      "score": 23,
+      "scoreP90": 58
+     },
+     {
+      "day": "2026-11-20",
+      "gates": 20.8,
+      "gatesMed": 20,
+      "gatesP90": 30,
+      "score": 28,
+      "scoreP90": 43
+     },
+     {
+      "day": "2026-11-21",
+      "gates": 23.9,
+      "gatesMed": 23,
+      "gatesP90": 39,
+      "score": 34,
+      "scoreP90": 62
+     },
+     {
+      "day": "2026-11-22",
+      "gates": 25.9,
+      "gatesMed": 25,
+      "gatesP90": 39,
+      "score": 36,
+      "scoreP90": 61
+     },
+     {
+      "day": "2026-11-23",
+      "gates": 22.9,
+      "gatesMed": 23,
+      "gatesP90": 38,
+      "score": 34,
+      "scoreP90": 62
+     },
+     {
+      "day": "2026-11-24",
+      "gates": 28.8,
+      "gatesMed": 31,
+      "gatesP90": 38,
+      "score": 45,
+      "scoreP90": 76
+     },
+     {
+      "day": "2026-11-25",
+      "gates": 19.4,
+      "gatesMed": 19,
+      "gatesP90": 25,
+      "score": 27,
+      "scoreP90": 37
+     },
+     {
+      "day": "2026-11-26",
+      "gates": 28,
+      "gatesMed": 27,
+      "gatesP90": 36,
+      "score": 39,
+      "scoreP90": 57
+     },
+     {
+      "day": "2026-11-27",
+      "gates": 18.2,
+      "gatesMed": 17,
+      "gatesP90": 26,
+      "score": 25,
+      "scoreP90": 39
+     },
+     {
+      "day": "2026-11-28",
+      "gates": 21.8,
+      "gatesMed": 21,
+      "gatesP90": 36,
+      "score": 29,
+      "scoreP90": 54
+     },
+     {
+      "day": "2026-11-29",
+      "gates": 24.9,
+      "gatesMed": 25,
+      "gatesP90": 42,
+      "score": 36,
+      "scoreP90": 62
+     },
+     {
+      "day": "2026-11-30",
+      "gates": 26.5,
+      "gatesMed": 25,
+      "gatesP90": 43,
+      "score": 38,
+      "scoreP90": 69
+     },
+     {
+      "day": "2026-12-01",
+      "gates": 16.6,
+      "gatesMed": 15,
+      "gatesP90": 20,
+      "score": 22,
+      "scoreP90": 29
+     },
+     {
+      "day": "2026-12-02",
+      "gates": 27.9,
+      "gatesMed": 27,
+      "gatesP90": 40,
+      "score": 41,
+      "scoreP90": 62
+     },
+     {
+      "day": "2026-12-03",
+      "gates": 8.1,
+      "gatesMed": 7,
+      "gatesP90": 7,
+      "score": 10,
+      "scoreP90": 9
+     },
+     {
+      "day": "2026-12-04",
+      "gates": 19,
+      "gatesMed": 19,
+      "gatesP90": 35,
+      "score": 26,
+      "scoreP90": 52
+     },
+     {
+      "day": "2026-12-05",
+      "gates": 20,
+      "gatesMed": 19,
+      "gatesP90": 30,
+      "score": 26,
+      "scoreP90": 45
+     },
+     {
+      "day": "2026-12-06",
+      "gates": 21.9,
+      "gatesMed": 20,
+      "gatesP90": 42,
+      "score": 30,
+      "scoreP90": 59
+     },
+     {
+      "day": "2026-12-07",
+      "gates": 7.3,
+      "gatesMed": 6,
+      "gatesP90": 12,
+      "score": 9,
+      "scoreP90": 16
+     },
+     {
+      "day": "2026-12-08",
+      "gates": 29.1,
+      "gatesMed": 34,
+      "gatesP90": 44,
+      "score": 43,
+      "scoreP90": 69
+     },
+     {
+      "day": "2026-12-09",
+      "gates": 28.7,
+      "gatesMed": 27,
+      "gatesP90": 44,
+      "score": 45,
+      "scoreP90": 77
+     },
+     {
+      "day": "2026-12-10",
+      "gates": 28.9,
+      "gatesMed": 30,
+      "gatesP90": 41,
+      "score": 41,
+      "scoreP90": 65
+     },
+     {
+      "day": "2026-12-11",
+      "gates": 27.1,
+      "gatesMed": 25,
+      "gatesP90": 38,
+      "score": 41,
+      "scoreP90": 67
+     },
+     {
+      "day": "2026-12-12",
+      "gates": 22.7,
+      "gatesMed": 23,
+      "gatesP90": 31,
+      "score": 35,
+      "scoreP90": 55
+     },
+     {
+      "day": "2026-12-13",
+      "gates": 18.4,
+      "gatesMed": 23,
+      "gatesP90": 30,
+      "score": 25,
+      "scoreP90": 45
+     },
+     {
+      "day": "2026-12-14",
+      "gates": 20.6,
+      "gatesMed": 20,
+      "gatesP90": 37,
+      "score": 27,
+      "scoreP90": 56
+     },
+     {
+      "day": "2026-12-15",
+      "gates": 23.6,
+      "gatesMed": 24,
+      "gatesP90": 38,
+      "score": 37,
+      "scoreP90": 68
+     },
+     {
+      "day": "2026-12-16",
+      "gates": 18.4,
+      "gatesMed": 17,
+      "gatesP90": 30,
+      "score": 25,
+      "scoreP90": 48
+     }
+    ]
+   }
+  },
+  "n200": {
+   "runsPerSeed": 200,
+   "summary": {
+    "volt": {
+     "days": 30,
+     "cvGates": 0.247,
+     "cvScoreP90": 0.281,
+     "cvScore": 0.281,
+     "cvGatesP90": 0.238,
+     "meanGates": 21.8,
+     "easiest": {
+      "day": "2026-12-02",
+      "gates": 29.4,
+      "scoreP90": 66
+     },
+     "hardest": {
+      "day": "2026-12-07",
+      "gates": 7.4,
+      "scoreP90": 16
+     },
+     "ratio": 3.97,
+     "ratioScoreP90": 8.63
+    },
+    "zero": {
+     "days": 30,
+     "cvGates": 0.192,
+     "cvScoreP90": 0.181,
+     "cvScore": 0.215,
+     "cvGatesP90": 0.157,
+     "meanGates": 27,
+     "easiest": {
+      "day": "2026-12-02",
+      "gates": 35.5,
+      "scoreP90": 73
+     },
+     "hardest": {
+      "day": "2026-12-15",
+      "gates": 13.2,
+      "scoreP90": 51
+     },
+     "ratio": 2.69,
+     "ratioScoreP90": 2.19
+    }
+   },
+   "perSeed": {
+    "zero": [
+     {
+      "day": "2026-11-17",
+      "gates": 29.8,
+      "gatesMed": 25,
+      "gatesP90": 46,
+      "score": 42,
+      "scoreP90": 68,
+      "batchCv": 0.055
+     },
+     {
+      "day": "2026-11-18",
+      "gates": 31.7,
+      "gatesMed": 29,
+      "gatesP90": 45,
+      "score": 47,
+      "scoreP90": 72,
+      "batchCv": 0.042
+     },
+     {
+      "day": "2026-11-19",
+      "gates": 26.4,
+      "gatesMed": 23,
+      "gatesP90": 42,
+      "score": 38,
+      "scoreP90": 64,
+      "batchCv": 0.064
+     },
+     {
+      "day": "2026-11-20",
+      "gates": 21,
+      "gatesMed": 24,
+      "gatesP90": 37,
+      "score": 30,
+      "scoreP90": 59,
+      "batchCv": 0.064
+     },
+     {
+      "day": "2026-11-21",
+      "gates": 28.9,
+      "gatesMed": 23,
+      "gatesP90": 43,
+      "score": 43,
+      "scoreP90": 69,
+      "batchCv": 0.066
+     },
+     {
+      "day": "2026-11-22",
+      "gates": 34.8,
+      "gatesMed": 33,
+      "gatesP90": 49,
+      "score": 51,
+      "scoreP90": 75,
+      "batchCv": 0.051
+     },
+     {
+      "day": "2026-11-23",
+      "gates": 24.2,
+      "gatesMed": 23,
+      "gatesP90": 35,
+      "score": 34,
+      "scoreP90": 54,
+      "batchCv": 0.05
+     },
+     {
+      "day": "2026-11-24",
+      "gates": 29.4,
+      "gatesMed": 25,
+      "gatesP90": 45,
+      "score": 43,
+      "scoreP90": 72,
+      "batchCv": 0.075
+     },
+     {
+      "day": "2026-11-25",
+      "gates": 24.4,
+      "gatesMed": 23,
+      "gatesP90": 29,
+      "score": 33,
+      "scoreP90": 42,
+      "batchCv": 0.015
+     },
+     {
+      "day": "2026-11-26",
+      "gates": 31,
+      "gatesMed": 30,
+      "gatesP90": 47,
+      "score": 48,
+      "scoreP90": 79,
+      "batchCv": 0.092
+     },
+     {
+      "day": "2026-11-27",
+      "gates": 30.7,
+      "gatesMed": 29,
+      "gatesP90": 42,
+      "score": 46,
+      "scoreP90": 70,
+      "batchCv": 0.084
+     },
+     {
+      "day": "2026-11-28",
+      "gates": 33.2,
+      "gatesMed": 31,
+      "gatesP90": 46,
+      "score": 48,
+      "scoreP90": 71,
+      "batchCv": 0.062
+     },
+     {
+      "day": "2026-11-29",
+      "gates": 30.6,
+      "gatesMed": 28,
+      "gatesP90": 43,
+      "score": 45,
+      "scoreP90": 67,
+      "batchCv": 0.039
+     },
+     {
+      "day": "2026-11-30",
+      "gates": 25.2,
+      "gatesMed": 25,
+      "gatesP90": 43,
+      "score": 36,
+      "scoreP90": 65,
+      "batchCv": 0.128
+     },
+     {
+      "day": "2026-12-01",
+      "gates": 27.7,
+      "gatesMed": 26,
+      "gatesP90": 39,
+      "score": 40,
+      "scoreP90": 62,
+      "batchCv": 0.035
+     },
+     {
+      "day": "2026-12-02",
+      "gates": 35.5,
+      "gatesMed": 37,
+      "gatesP90": 48,
+      "score": 53,
+      "scoreP90": 73,
+      "batchCv": 0.066
+     },
+     {
+      "day": "2026-12-03",
+      "gates": 24.1,
+      "gatesMed": 23,
+      "gatesP90": 36,
+      "score": 34,
+      "scoreP90": 56,
+      "batchCv": 0.077
+     },
+     {
+      "day": "2026-12-04",
+      "gates": 27.7,
+      "gatesMed": 24,
+      "gatesP90": 42,
+      "score": 40,
+      "scoreP90": 66,
+      "batchCv": 0.043
+     },
+     {
+      "day": "2026-12-05",
+      "gates": 25.9,
+      "gatesMed": 27,
+      "gatesP90": 35,
+      "score": 36,
+      "scoreP90": 51,
+      "batchCv": 0.018
+     },
+     {
+      "day": "2026-12-06",
+      "gates": 14.9,
+      "gatesMed": 9,
+      "gatesP90": 26,
+      "score": 19,
+      "scoreP90": 36,
+      "batchCv": 0.049
+     },
+     {
+      "day": "2026-12-07",
+      "gates": 22.2,
+      "gatesMed": 23,
+      "gatesP90": 31,
+      "score": 31,
+      "scoreP90": 45,
+      "batchCv": 0.022
+     },
+     {
+      "day": "2026-12-08",
+      "gates": 29.5,
+      "gatesMed": 24,
+      "gatesP90": 45,
+      "score": 43,
+      "scoreP90": 71,
+      "batchCv": 0.033
+     },
+     {
+      "day": "2026-12-09",
+      "gates": 25.5,
+      "gatesMed": 25,
+      "gatesP90": 42,
+      "score": 37,
+      "scoreP90": 67,
+      "batchCv": 0.056
+     },
+     {
+      "day": "2026-12-10",
+      "gates": 30.4,
+      "gatesMed": 28,
+      "gatesP90": 49,
+      "score": 44,
+      "scoreP90": 78,
+      "batchCv": 0.087
+     },
+     {
+      "day": "2026-12-11",
+      "gates": 27.4,
+      "gatesMed": 24,
+      "gatesP90": 42,
+      "score": 39,
+      "scoreP90": 61,
+      "batchCv": 0.019
+     },
+     {
+      "day": "2026-12-12",
+      "gates": 33.2,
+      "gatesMed": 33,
+      "gatesP90": 45,
+      "score": 50,
+      "scoreP90": 70,
+      "batchCv": 0.031
+     },
+     {
+      "day": "2026-12-13",
+      "gates": 24.2,
+      "gatesMed": 25,
+      "gatesP90": 43,
+      "score": 36,
+      "scoreP90": 66,
+      "batchCv": 0.102
+     },
+     {
+      "day": "2026-12-14",
+      "gates": 21.4,
+      "gatesMed": 20,
+      "gatesP90": 27,
+      "score": 30,
+      "scoreP90": 39,
+      "batchCv": 0.026
+     },
+     {
+      "day": "2026-12-15",
+      "gates": 13.2,
+      "gatesMed": 8,
+      "gatesP90": 34,
+      "score": 18,
+      "scoreP90": 51,
+      "batchCv": 0.163
+     },
+     {
+      "day": "2026-12-16",
+      "gates": 26.4,
+      "gatesMed": 23,
+      "gatesP90": 40,
+      "score": 38,
+      "scoreP90": 60,
+      "batchCv": 0.078
+     }
+    ],
+    "volt": [
+     {
+      "day": "2026-11-17",
+      "gates": 28,
+      "gatesMed": 29,
+      "gatesP90": 43,
+      "score": 40,
+      "scoreP90": 69,
+      "batchCv": 0.044
+     },
+     {
+      "day": "2026-11-18",
+      "gates": 23.5,
+      "gatesMed": 22,
+      "gatesP90": 36,
+      "score": 34,
+      "scoreP90": 57,
+      "batchCv": 0.056
+     },
+     {
+      "day": "2026-11-19",
+      "gates": 15.8,
+      "gatesMed": 16,
+      "gatesP90": 30,
+      "score": 21,
+      "scoreP90": 43,
+      "batchCv": 0.106
+     },
+     {
+      "day": "2026-11-20",
+      "gates": 19.9,
+      "gatesMed": 17,
+      "gatesP90": 29,
+      "score": 27,
+      "scoreP90": 43,
+      "batchCv": 0.045
+     },
+     {
+      "day": "2026-11-21",
+      "gates": 24.3,
+      "gatesMed": 23,
+      "gatesP90": 40,
+      "score": 36,
+      "scoreP90": 65,
+      "batchCv": 0.057
+     },
+     {
+      "day": "2026-11-22",
+      "gates": 26.1,
+      "gatesMed": 27,
+      "gatesP90": 39,
+      "score": 37,
+      "scoreP90": 62,
+      "batchCv": 0.065
+     },
+     {
+      "day": "2026-11-23",
+      "gates": 22,
+      "gatesMed": 23,
+      "gatesP90": 30,
+      "score": 32,
+      "scoreP90": 53,
+      "batchCv": 0.052
+     },
+     {
+      "day": "2026-11-24",
+      "gates": 24.1,
+      "gatesMed": 21,
+      "gatesP90": 36,
+      "score": 35,
+      "scoreP90": 58,
+      "batchCv": 0.066
+     },
+     {
+      "day": "2026-11-25",
+      "gates": 19.8,
+      "gatesMed": 22,
+      "gatesP90": 29,
+      "score": 28,
+      "scoreP90": 39,
+      "batchCv": 0.033
+     },
+     {
+      "day": "2026-11-26",
+      "gates": 28.5,
+      "gatesMed": 28,
+      "gatesP90": 36,
+      "score": 41,
+      "scoreP90": 58,
+      "batchCv": 0.059
+     },
+     {
+      "day": "2026-11-27",
+      "gates": 18.9,
+      "gatesMed": 17,
+      "gatesP90": 29,
+      "score": 26,
+      "scoreP90": 40,
+      "batchCv": 0.026
+     },
+     {
+      "day": "2026-11-28",
+      "gates": 20.2,
+      "gatesMed": 18,
+      "gatesP90": 36,
+      "score": 27,
+      "scoreP90": 53,
+      "batchCv": 0.044
+     },
+     {
+      "day": "2026-11-29",
+      "gates": 24.2,
+      "gatesMed": 23,
+      "gatesP90": 41,
+      "score": 34,
+      "scoreP90": 61,
+      "batchCv": 0.074
+     },
+     {
+      "day": "2026-11-30",
+      "gates": 26.2,
+      "gatesMed": 27,
+      "gatesP90": 36,
+      "score": 37,
+      "scoreP90": 53,
+      "batchCv": 0.057
+     },
+     {
+      "day": "2026-12-01",
+      "gates": 17,
+      "gatesMed": 15,
+      "gatesP90": 26,
+      "score": 23,
+      "scoreP90": 35,
+      "batchCv": 0.045
+     },
+     {
+      "day": "2026-12-02",
+      "gates": 29.4,
+      "gatesMed": 32,
+      "gatesP90": 40,
+      "score": 45,
+      "scoreP90": 66,
+      "batchCv": 0.02
+     },
+     {
+      "day": "2026-12-03",
+      "gates": 7.9,
+      "gatesMed": 7,
+      "gatesP90": 7,
+      "score": 9,
+      "scoreP90": 8,
+      "batchCv": 0.076
+     },
+     {
+      "day": "2026-12-04",
+      "gates": 18.4,
+      "gatesMed": 17,
+      "gatesP90": 36,
+      "score": 26,
+      "scoreP90": 57,
+      "batchCv": 0.037
+     },
+     {
+      "day": "2026-12-05",
+      "gates": 20.7,
+      "gatesMed": 19,
+      "gatesP90": 30,
+      "score": 28,
+      "scoreP90": 45,
+      "batchCv": 0.061
+     },
+     {
+      "day": "2026-12-06",
+      "gates": 20.2,
+      "gatesMed": 20,
+      "gatesP90": 38,
+      "score": 27,
+      "scoreP90": 55,
+      "batchCv": 0.089
+     },
+     {
+      "day": "2026-12-07",
+      "gates": 7.4,
+      "gatesMed": 6,
+      "gatesP90": 12,
+      "score": 9,
+      "scoreP90": 16,
+      "batchCv": 0.081
+     },
+     {
+      "day": "2026-12-08",
+      "gates": 25.8,
+      "gatesMed": 23,
+      "gatesP90": 40,
+      "score": 37,
+      "scoreP90": 67,
+      "batchCv": 0.045
+     },
+     {
+      "day": "2026-12-09",
+      "gates": 28.2,
+      "gatesMed": 27,
+      "gatesP90": 39,
+      "score": 41,
+      "scoreP90": 64,
+      "batchCv": 0.084
+     },
+     {
+      "day": "2026-12-10",
+      "gates": 28.1,
+      "gatesMed": 27,
+      "gatesP90": 41,
+      "score": 41,
+      "scoreP90": 69,
+      "batchCv": 0.074
+     },
+     {
+      "day": "2026-12-11",
+      "gates": 27.1,
+      "gatesMed": 25,
+      "gatesP90": 38,
+      "score": 41,
+      "scoreP90": 66,
+      "batchCv": 0.067
+     },
+     {
+      "day": "2026-12-12",
+      "gates": 22.1,
+      "gatesMed": 23,
+      "gatesP90": 31,
+      "score": 33,
+      "scoreP90": 49,
+      "batchCv": 0.094
+     },
+     {
+      "day": "2026-12-13",
+      "gates": 18.6,
+      "gatesMed": 14,
+      "gatesP90": 35,
+      "score": 26,
+      "scoreP90": 50,
+      "batchCv": 0.025
+     },
+     {
+      "day": "2026-12-14",
+      "gates": 19.7,
+      "gatesMed": 20,
+      "gatesP90": 35,
+      "score": 26,
+      "scoreP90": 50,
+      "batchCv": 0.067
+     },
+     {
+      "day": "2026-12-15",
+      "gates": 22.6,
+      "gatesMed": 24,
+      "gatesP90": 34,
+      "score": 33,
+      "scoreP90": 56,
+      "batchCv": 0.114
+     },
+     {
+      "day": "2026-12-16",
+      "gates": 18.8,
+      "gatesMed": 17,
+      "gatesP90": 28,
+      "score": 26,
+      "scoreP90": 39,
+      "batchCv": 0.021
+     }
+    ]
+   },
+   "noise40": {
+    "zero": {
+     "meanGatesCvMedian": 0.056,
+     "meanGatesCvMean": 0.06,
+     "p90ScoreCvMedian": 0.092,
+     "p90ScoreCvMean": 0.112
+    },
+    "volt": {
+     "meanGatesCvMedian": 0.059,
+     "meanGatesCvMean": 0.059,
+     "p90ScoreCvMedian": 0.124,
+     "p90ScoreCvMean": 0.137
+    }
+   },
+   "seedOnly": {
+    "zero": {
+     "cvGatesNoiseCorrected": 0.19,
+     "cvGatesWithout2Worst": 0.14
+    },
+    "volt": {
+     "cvGatesNoiseCorrected": 0.246,
+     "cvGatesWithout2Worst": 0.172
+    }
+   }
+  }
+ },
+ "noise": {
+  "zero": {
+   "day": "2026-11-17",
+   "batches": 3,
+   "batchMeanGates": [
+    28.7,
+    32.8,
+    31.6
+   ],
+   "cvMeanGates": 0.068,
+   "batchP90Score": [
+    67,
+    80,
+    76
+   ],
+   "cvP90Score": 0.09
+  },
+  "volt": {
+   "day": "2026-11-17",
+   "batches": 3,
+   "batchMeanGates": [
+    27.7,
+    24.6,
+    28.6
+   ],
+   "cvMeanGates": 0.079,
+   "batchP90Score": [
+    65,
+    63,
+    73
+   ],
+   "cvP90Score": 0.079
+  }
+ },
+ "verdict": {
+  "zero": {
+   "meanGates": {
+    "n40": 0.2,
+    "n200": 0.192,
+    "band": "keep (<=25%)"
+   },
+   "p90Score": {
+    "n40": 0.19,
+    "n200": 0.181,
+    "band": "keep (<=25%)"
+   }
+  },
+  "volt": {
+   "meanGates": {
+    "n40": 0.251,
+    "n200": 0.247,
+    "band": "keep (<=25%)"
+   },
+   "p90Score": {
+    "n40": 0.295,
+    "n200": 0.281,
+    "band": "combine with post-launch data (25-40%)"
+   }
+  }
+ },
+ "wallMin": {
+  "n40": 1.3,
+  "n200": 9.3,
+  "noise": 0.2
+ },
+ "unitCorrelation": {
+  "perSeedMeanGates": 0.4,
+  "perSeedP90Score": 0.48
+ },
+ "killers": {
+  "volt": {
+   "2026-12-03": "37/40 deaths at gate 7 (top wall, base 211 -> 387)",
+   "2026-12-07": "35/40 deaths at gate 6 (top wall, 201 -> 376)"
+  },
+  "zero": {
+   "2026-12-06": "29/40 deaths at gate 9 (top wall, 228 -> 399)",
+   "2026-12-15": "27/40 deaths at gates 8-9 (192 -> 322 moving)"
+  }
+ },
+ "commands": [
+  "PORT=5263 node scripts/balance.mjs --daily --days 2026-11-17..2026-12-16 --units zero,volt --runs 40 --jobs 8",
+  "... --runs 200 --batch 40 --jobs 8",
+  "... --days 2026-11-17 --runs 120 --batch 40 --jobs 8"
+ ]
+}
