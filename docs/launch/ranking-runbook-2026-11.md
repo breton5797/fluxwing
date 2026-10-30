@@ -8,6 +8,20 @@
 
 클라이언트 변경 없음 → iOS 빌드 7 그대로 11-10 제출. 모든 SQL은 Supabase SQL Editor(운영)에서 **대표님이 실행**한다.
 
+## 진행 상황 · 자동화 (2026-10-31, 오너 지시 "스케줄표에 남기고 그 날짜에 자동 실행·보고")
+| 단계 | 상태 |
+|---|---|
+| 1 진단 | **완료** 10-31(Claude, MCP): 47행 전부 베타 — gates>100 9행, 테스터 7, hidden 4 |
+| 2 함수 교체 | **완료** 10-31(Claude, `apply_migration`) — 적용 전 운영 함수가 schema.sql과 일치함을 확인 |
+| 3 확인 | **완료** 10-31: applied=true, 오버로드 1, authenticated 실행 유지·anon 없음; 롤백 블록 동작 시험(QA-C3: endless 900/60 → best 3 유지, daily 300 → best 300) |
+| 4 보관+리셋 | **자동 예약**: 운영 pg_cron `fw_launch_reset` `5 0 17 11 *`(11-17 09:05 KST) → `private.fw_launch_reset()` — 2026-11-17에만, 1회만(재호출은 건너뜀), 실행 후 예약 자동 삭제. `supabase/migrations-pending/launch-reset-cron.sql` |
+| 5 부활 점검 | **자동 예약**: pg_cron `fw_launch_check` `0 0 18 11 *`(11-18 09:00 KST) → `private.fw_launch_check()` — 2026-11-18에만, 되살아난 best를 0으로, 실행 후 예약 삭제 |
+| 보고 | 클라우드 루틴이 공개 키로 읽기 전용 `public.fw_launch_status()`(집계만, 개인정보 없음; `launch-status-rpc.sql`)를 불러 Gmail로 보고: 11-17 09:30, 11-18 09:30, 11-30 09:00 KST(실험 2·3 판정 권고) |
+| 일정표 | Google 캘린더: 11-09 10:00 GC 이름 변경, 11-17 09:05, 11-18 09:00, 11-30 09:00 |
+
+10-31 드라이런(롤백): 다른 날짜 → 건너뜀, 11-17 → 47행 보관·리셋, 같은 날 재실행 → 건너뜀, 11-18 → 되살아난 1행 원복, 다른 날짜 → 건너뜀. 실행 기록은 `private.fw_launch_log`.
+보고 메일이 안 오거나 "확인 필요"면 Claude Code에서 "리셋 실행해"(4단계) 또는 "점검 실행해"(5단계)라고 하면 수동으로 같은 함수를 실행한다. 예약 취소: `select cron.unschedule('fw_launch_reset'); select cron.unschedule('fw_launch_check');`
+
 ## 1. 진단 (읽기 전용, 11-01 일)
 ```sql
 select count(*) total,
