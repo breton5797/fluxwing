@@ -113,10 +113,83 @@ for k, (stem, tip) in OB.items():
         '1:1' if k == 'magma-bot' else '3:4', 'transparent')
 
 
+# A2 flat neon restyle (ART_STYLE=neon): one full object per obstacle (pack.py slices it into stem + tip), surprises and bosses,
+# every call with the approved style references attached so all assets share one look.
+REFS = [os.path.join(os.environ.get('ART_REFS', ''), f) for f in ('A2-trim.png', 'canyon-trim.png')]
+NZ = {  # interior fills, neon outline (the zone's gate hue), accents
+ 'grove':  ('dark navy-teal (#0f2a33, #123f45)', 'bright neon green (#5cff3a)', 'small aqua (#3dffd8) glowing accents'),
+ 'canyon': ('dark plum-navy (#2a1830, #3a2040) with flat slightly lighter plum facets', 'bright orange (#ff8a3d)', 'thin cyan (#3de8ff) neon accent stripes'),
+ 'magma':  ('near-black basalt (#1a1216, #2a1c20) with flat dark facets', 'bright red-orange (#ff4b1f)', 'glowing yellow (#ffd23d) lava cracks and highlights'),
+ 'palace': ('deep navy (#141a3a, #20285a) with flat violet (#5a3a9a) facets', 'bright gold (#f5c43d)', 'violet (#da77f8) and pale cyan (#a1e3ff) glowing accents'),
+}
+NSTYLE = ('Match the art style of the attached reference images (flat vector neon arcade art): same simplicity and the same thick glowing '
+          'edge treatment. Original design. FLAT NEON VECTOR: flat 2-3 tone fills only, no gradients, no texture, no painterly shading, no 3D render; '
+          'interior {fill}; a thick {line} neon outline with a soft outer glow tracing the full outer silhouette; {acc}; simple geometric shapes, '
+          'minimal detail, crisp clean silhouette, isolated on a fully transparent background, no text, no letters, no watermark, no ground, no shadow.')
+NCOL = ('The body is ONE THICK SOLID column that fills about 40 percent of the image width, the SAME width along its whole length, '
+        'with smooth parallel vertical sides and NOTHING sticking out of its sides; all decoration ({deco}) is drawn INSIDE the column outline as '
+        'simple flat shapes repeating evenly along it. The column runs off the {edge} edge of the image (cut off flat there). The end piece '
+        '({end}) stays as wide as the column where it joins, then narrows only near its very end, pointing {dir}. Front view, centered, vertical.')
+NOB = {
+ 'grove-bot':  ('a carnivorous-plant stalk rising straight up from the ground', 'flat leaf shapes pressed flat on the stalk and a few straight vein lines',
+                'a closed pointed glowing flower bud only about 1.4 times as wide as the column, with straight vein lines'),
+ 'grove-top':  ('a thick bundle of hanging vines and roots hanging straight down from the ceiling', 'braided vine bands and small flat leaf shapes',
+                'a cluster of thorny seed pods with glowing cores'),
+ 'canyon-bot': ('a desert hoodoo: a column of stacked balanced rounded boulders rising from the ground', 'flat-sided boulders stacked flush so the column edge stays straight, each boulder outlined, flat lighter facets',
+                'a flat cap rock slab only about 1.4 times as wide as the column, with a cyan stripe across it'),
+ 'canyon-top': ('a hanging column of layered rock hanging straight down from the ceiling', 'horizontal rock layers with flat facets and cyan mineral stripes',
+                'a cluster of sharp stalactites'),
+ 'magma-bot':  ('a rising column of lava fire erupting from the ground', 'flat dark basalt crust plates with glowing yellow lava cracks between them',
+                'a crest of stylised flames'),
+ 'magma-top':  ('a thick flow of molten lava hanging straight down from the ceiling', 'flat dark crust plates with glowing yellow lava seams',
+                'heavy glowing lava drips'),
+ 'palace-bot': ('a crystal spire rising from the ground', 'faceted crystal panels and a thin spiral gold band',
+                'a polished gold ring then a sharp faceted crystal point'),
+ 'palace-top': ('a bundle of crystal icicles hanging straight down from the ceiling', 'long faceted crystal panels bound by thin gold bands',
+                'a wide ornate gold chandelier pendant, as wide as the column for most of its length, ending in a short crystal drop'),
+}
+N = {}
+for k, (subj, deco, end) in NOB.items():
+    z, side = k.split('-')
+    bot = side == 'bot'
+    N[f'ob-{k}'] = ('Game obstacle sprite for a 2D mobile arcade flyer: ' + subj + '. ' + NCOL.format(
+        deco=deco, end=end, edge='bottom' if bot else 'top', dir='UP' if bot else 'DOWN') + ' ' + NSTYLE.format(
+        fill=NZ[z][0], line=NZ[z][1], acc=NZ[z][2]) + ' Not a pipe.', '9:16')
+NSUR = dict(SUR, **{
+ 'snap-grove':  'the head of a carnivorous flytrap plant bursting upward, big open jaws with a row of triangular thorn teeth, mouth facing UP toward the top of the image, thick stem at the bottom, two big glowing eyes',
+ 'snap-canyon': 'the head of a giant sandworm bursting upward, round open maw with a ring of triangular teeth facing UP toward the top of the image, segmented body at the bottom',
+ 'snap-magma':  'the head of a lava serpent bursting upward, open jaws with a glowing mouth facing UP toward the top of the image, scaly neck at the bottom, glowing eyes',
+ 'shot-grove':  'a spiky seed pod projectile flying to the LEFT, round pod with short spikes and a glowing core, a short streak trail to the right',
+ 'shot-canyon': 'a round boulder projectile flying to the LEFT, cracked facets and a short speed-line trail to the right',
+ 'shot-magma':  'a fireball projectile flying to the LEFT, round molten core with stylised flame tail streaming to the right',
+ 'shot-palace': 'a chunky ice spear projectile flying to the LEFT, a thick crystal arrowhead pointing left and a short frosty tail to the right, about twice as wide as tall',
+})
+for k, v in NSUR.items():
+    z = k.split('-')[1]
+    N[f'sur-{k}'] = (f'Game hazard sprite for a 2D mobile arcade flyer: {v}. Bold simple silhouette that reads at 32 pixels, centered. '
+                     + NSTYLE.format(fill=NZ[z][0], line=NZ[z][1], acc=NZ[z][2]), '1:1')
+NBOSS = {
+ 'mawbloom':   'a giant carnivorous flower monster with a huge toothy flower-head maw ringed by thick petals, thorny vine arms and leaf hands',
+ 'dunehulk':   'a hulking rock golem built of big stacked boulders, glowing cyan eyes and cyan rune stripes, massive fists',
+ 'cinderwyrm': 'a lava serpent-dragon with a coiled serpentine body, basalt scale plates, glowing lava belly, horned head and open jaws',
+ 'moltenking': 'a towering magma titan king with a cracked basalt body full of glowing lava seams and a crown of fire on its head',
+ 'stormcrown': 'a thunder sovereign whose body is a swirling dark storm cloud with big glowing eyes, a crackling lightning crown and gold armour pieces',
+}
+for k, v in NBOSS.items():
+    z = BOSS[k][1]
+    N[f'boss-{k}'] = (f'Boss monster for a 2D mobile arcade flyer: {v}. Facing LEFT in side view, looking toward the left edge of the image, '
+                      'cartoon menace, not gore, big readable eyes and mouth, full body visible, taller than wide, bold silhouette that reads at 150 pixels. '
+                      + NSTYLE.format(fill=NZ[z][0], line=NZ[z][1], acc=NZ[z][2]), '3:4')
+
+
 def run(name):
-    prompt, ar, bg = A[name]
+    if os.environ.get('ART_STYLE') == 'neon':
+        prompt, ar = N[name]
+        bg, refs = 'transparent', [x for r in REFS for x in ('--image', r)]
+    else:
+        (prompt, ar, bg), refs = A[name], []
     ids = json.loads(subprocess.check_output(['higgsfield', 'generate', 'create', 'gpt_image_2_5', '--prompt', prompt,
-        '--background', bg, '--quality', 'high', '--aspect_ratio', ar, '--json']))
+        '--background', bg, '--quality', 'high', '--aspect_ratio', ar, *refs, '--json']))
     jid = ids[0]
     res = json.loads(subprocess.check_output(['higgsfield', 'generate', 'wait', jid, '--json'], timeout=900))
     url = res.get('result_url')
@@ -135,7 +208,9 @@ def safe(name):
 
 
 if __name__ == '__main__':
-    names = list(A) if sys.argv[1:] == ['all'] else sys.argv[1:]
+    RAW.mkdir(parents=True, exist_ok=True)
+    pool = N if os.environ.get('ART_STYLE') == 'neon' else A
+    names = list(pool) if sys.argv[1:] == ['all'] else sys.argv[1:]
     with ThreadPoolExecutor(8) as ex:
         for n, s in ex.map(safe, names):
             print(n, s, flush=True)

@@ -73,9 +73,8 @@ test('the fits: every anchor sits inside its sprite, and the sprites come out at
 });
 
 // The obstacle fits against the measured alpha. A piece is a stem (drawn sw px wide, its column scx on the gate's centre line) and a tip (tw px wide,
-// its column tcx on the centre line, pad transparent rows on the gap side, join transparent rows on the stem side). A tip is drawn at its stem's px
-// scale, except CANYON RUN's hoodoo cap (CAP): its 192 px cap rock is scaled down to the stem's width.
-const CAP = 'canyon bot';
+// its column tcx on the centre line, pad transparent rows on the gap side, join transparent rows on the stem side). A tip is drawn at its stem's
+// px scale, or a little under it where its widest row would otherwise overhang the hit width by more than 14 px a side.
 const obPieces = () => A.ART_Z.flatMap((z, i) => [0, 1].map(e => { const f = A.ART_FIT.ob[i][e], o = A.ART_OB[i];
   return {z, end: e ? 'top' : 'bot', f, stem: OBM[o[e*2]], tip: OBM[o[e*2 + 1]], ks: f[0] / OBM[o[e*2]].w, kt: f[2] / OBM[o[e*2 + 1]].w}; }));
 // The share of the 68 px hit width the stem's opaque pixels cover, averaged down the stem
@@ -103,10 +102,10 @@ test('fairness: each stem covers at least 85 % of the hit width, each tip ends w
     assert.ok(Math.abs(tcx - p.tip.cx) * p.kt <= 3, `${at}: the tip is centred on its base`);
     assert.ok(Math.abs(pad - p.tip.pad) * p.kt <= 3, `${at}: the tip ends ${((pad - p.tip.pad) * p.kt).toFixed(1)} px off the gap edge`);
     assert.ok(Math.abs(join - p.tip.join) * p.kt <= 3, `${at}: the stem starts where the tip's base is`);
-    assert.ok(tw <= sw && p.tip.h * p.kt <= 200, `${at}: the tip stays a tip, no wider than its stem`);
-    if (at === CAP) continue;
-    assert.ok(Math.abs(p.kt - p.ks) < .005, `${at}: the tip is drawn at its stem's scale`);
     const base = (p.tip.base[1] - p.tip.base[0]) * p.kt, core = (p.stem.core[1] - p.stem.core[0]) * p.ks;
+    const wide = p.tip.wide * p.kt;
+    assert.ok((wide - hit) / 2 <= 14 && p.tip.h * p.kt <= 200, `${at}: the tip stays a tip, its widest row overhangs the hit width by ${((wide - hit) / 2).toFixed(1)} px a side`);
+    assert.ok(p.kt <= p.ks + .005 && p.kt >= p.ks * .9, `${at}: the tip is drawn at its stem's scale, or a little under it`);
     assert.ok(base > core * .7 && base < core * 1.5, `${at}: the tip's base (${base.toFixed(0)} px) meets the stem (${core.toFixed(0)} px)`);
   }
 });
@@ -116,7 +115,7 @@ test('sw.js precaches every art file, under a new cache version', () => {
   const pre = vm.runInContext(src + '\n;PRECACHE', vm.createContext({ self: { addEventListener(){}, location: { origin: 'https://swishby.com' } }, URL }));
   for (const n of A.ART_NAMES) assert.ok(pre.includes(`/art/${n}.webp`), n);
   for (const n of ['pillar', 'cap']) assert.ok(!pre.some(u => u.startsWith(`/art/${n}-`)), n + ' files are gone');
-  assert.ok(!['2026-10-28.1', '2026-10-29.1'].includes(src.match(/const VERSION = '([^']+)';/)[1]), 'bumped: the cache-first images changed');
+  assert.ok(!['2026-10-28.1', '2026-10-29.1', '2026-10-29.2'].includes(src.match(/const VERSION = '([^']+)';/)[1]), 'bumped: the cache-first images changed');
 });
 
 test('the iOS bundle and the portal build copy every art file; Vercel deploys the folder', () => {
