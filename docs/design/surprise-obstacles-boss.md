@@ -377,3 +377,28 @@ clears; on a boss stage the boss comes after gate 100 instead. Verified, no engi
   TEMPEST, QUASAR, AURORA, PULSAR, VALKYRIE, GARUDA and AEGIS were forced to cast the ultimate at gate 97 and the skill at gate 98. Each got
   its boss right after gate 100, with no gate laid after it, and the fight started. Where the bot could not dodge stage 10's shots and
   branches, it rode the dash (`FW.setRun({dash: 1})` back to back), so that run took every gate at 2.6x speed.
+
+## 13. Flat neon restyle (2026-10-31)
+
+The 33 obstacle, surprise and boss sprites were redrawn in a flat neon vector style: dark flat fills with a thick outline in the zone's colour, to
+match the units and the UI. The file names, sizes and counts are unchanged, as are the backdrops (`art/bg-*`). `sw.js` `VERSION` is `2026-10-31.1`.
+
+- **Stems are 74 px wide (scale .578), down from 96.** The new stems are straight columns with a solid core of 117–118 of their 128 px. At 74 px
+  that core is 67.6–68.2 px over the 68 px hit width, so the drawn wall and the hit wall now match within 0.2 px a side (at 96 px they overshot by
+  10 px a side). The neon rim is the wall's edge.
+- **Tips** are centred on their stems at the stem's scale, or a little under it. `scripts/art/metrics.py` now also writes each tip's widest solid
+  row (`wide`), and `tests/art.test.js` asks that it overhang the hit width by at most 14 px a side. That scales five tips down to .53–.545: the
+  grove bud and roots, the canyon cap, the magma flame and the palace top. The canyon cap no longer needs its own exception. Every other fairness
+  rule from section 11 is unchanged. Section 11's tip rule ("no wider than its stem") measured the image width; it is now the widest solid row.
+- **Surprises and bosses** were re-measured from the new files' alpha. `ART_FIT.snap` puts each jaw line (canyon and magma at the neck, the palace
+  talons at row 84) about 32–35 px from the reach. `shot` and `drop` put the round body on the hit circle, and `boss` uses each sprite's mass centre.
+- **Backdrops are calmer.** `artBg` draws a copy of the painting, made once per zone (`artDim`, like `artTint`). The copy is blurred 2.5 px
+  (`ctx.filter`; where that is missing, the painting is drawn small and scaled back up), has 40 % of its saturation taken out (a `saturation`
+  composite) and is 35 % darker, and it is drawn at 70 % alpha. There is no per-frame cost. The procedural mid-ground (trees, mesas, towers,
+  moon) and the gates now lead.
+- **Kept:** the gap-edge line, `artLava` (its embers and flicker still read well against the flat column) and `drawGateDeco`. The deco only
+  draws in the procedural fallback, so it never meets the flat art. Translucent edge decoration was not added: it would blur the hit edge that the
+  restyle had just made exact.
+- **Measured in Chromium** (`tests/e2e/ob-smoke.mjs`): stem cover of the hit width, bot / top: NEON GROVE 100 / 100 %, CANYON RUN 99.6 / 100 %,
+  MAGMA CORE 100 / 100 %, SKY PALACE 100 / 100 %. Every tip ends 0 px from its gap edge, and nothing opaque reaches more than 2.3 px into the gap
+  (the outline's glow).

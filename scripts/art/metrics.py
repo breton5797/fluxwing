@@ -7,7 +7,7 @@ A pixel is opaque at alpha >= 128. Per file: w, h, bytes, and
         least half the rows), solid ([min, 10th percentile, median] over the rows of the row's count of solid pixels, alpha > 200);
   tip:  pad (transparent rows on the gap side: the top for a bot tip, the bottom for a top tip), join (transparent rows on the stem side),
         base ([l, r], the opaque extent averaged over the 8 rows next to the join), cx (the base's centre), end ([l, r], the opaque extent over
-        the 12 rows next to the gap end)."""
+        the 12 rows next to the gap end), wide (the widest row's count of solid pixels, alpha > 200)."""
 import json
 from statistics import median
 from pathlib import Path
@@ -65,7 +65,9 @@ def tip(im, pos):
     near_join = rows[join_end - 7:join_end + 1] if pos == 'bot' else rows[join_end:join_end + 8]
     near_gap = rows[gap_end:gap_end + 12] if pos == 'bot' else rows[gap_end - 11:gap_end + 1]
     base = extent(near_join)
-    return {'pad': pad, 'join': join, 'base': base, 'cx': round((base[0] + base[1]) / 2, 1), 'end': extent(near_gap)}
+    px = im.getchannel('A').load()
+    wide = max(sum(px[x, y] > SOLID for x in range(im.width)) for y in range(h))
+    return {'pad': pad, 'join': join, 'base': base, 'cx': round((base[0] + base[1]) / 2, 1), 'end': extent(near_gap), 'wide': wide}
 
 
 def main():

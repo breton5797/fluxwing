@@ -2,7 +2,7 @@
 // index.html registers it only on swishby.com and *.vercel.app previews (swOk), never on the dev server or in the iOS app.
 // The game page is network-first (a deploy shows up on the next launch); same-origin images and fonts are cache-first,
 // so bump VERSION when one of them changes in place. Supabase, admin.html and any request but GET are never touched.
-const VERSION = '2026-10-29.2';
+const VERSION = '2026-10-31.1';
 const CACHE = `swishby-${VERSION}`;
 const NAV_TIMEOUT_MS = 3000;
 const PAGE = '/index.html';

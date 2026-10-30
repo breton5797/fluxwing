@@ -3164,8 +3164,9 @@ const ramBack = (x0, home, t) => { const k = Math.min(1, t / BOSS.back); return 
    talons start); shot / drop: [cx, cy, scale], the body's centre
    and the scale that makes the body about the hit circle; ob: per zone, the bottom piece then the top one, each [sw, scx, tw, tcx, pad, join]: the
    stem drawn sw screen px wide with its column scx on the gate's centre line, the tip tw screen px wide with its column tcx there, pad transparent rows
-   on its gap side and join on its stem side (scripts/art/metrics.py measures them). Stems are 96 px wide (scale .75): even the 10th-percentile row
-   is 85 % solid over the 68 px hit width. A tip is drawn at its stem's scale, but CANYON RUN's 192 px hoodoo cap is scaled down to the stem's 96 px;
+   on its gap side and join on its stem side (scripts/art/metrics.py measures them). Stems are 74 px wide (scale .578): their flat solid core
+   (117-118 of 128 px) then covers the 68 px hit width, the neon rim on its edge. A tip is centred on its stem, drawn at the stem's scale or a little
+   under it, so that its widest solid row overhangs the hit width by at most 14 px a side;
    boss: [cx, cy], the body's centre as fractions, put on the hit circle's centre; bossH: a boss's height on screen. */
 const ART_Z = Object.freeze(['grove', 'canyon', 'magma', 'palace']);
 const ART_OB = Object.freeze(ART_Z.map(z => Object.freeze(['bot-stem', 'bot-tip', 'top-stem', 'top-tip'].map(k => `ob-${z}-${k}`)))), ART_BG = Object.freeze(ART_Z.map(z => 'bg-' + z));
@@ -3173,16 +3174,16 @@ const ART_SUR = Object.freeze({snap: Object.freeze(ART_Z.map(z => 'sur-snap-' + 
 const ART_BOSS = Object.freeze(Object.fromEntries(['mawbloom', 'dunehulk', 'cinderwyrm', 'moltenking', 'stormcrown'].map(id => [id, 'boss-' + id])));
 const ART_NAMES = Object.freeze([...ART_OB.flat(), ...ART_BG, ...ART_SUR.snap, ...ART_SUR.shot, ...ART_SUR.drop, ...Object.values(ART_BOSS)]);
 const ART_FIT = Object.freeze({
-  snap: Object.freeze([[.38, 105], [.345, 100], [.38, 105], [.32, 100]]),
-  shot: Object.freeze([[44, 52, .375], [72, 68, .24], [42, 52, .34], [62, 38, .41]]),
-  drop: Object.freeze([[56, 85, .36], [48, 50, .4], [37, 155, .51], [65, 96, .36]]),
+  snap: Object.freeze([[.32, 106], [.37, 90], [.41, 86], [.295, 84]]),
+  shot: Object.freeze([[78, 66, .3], [55, 60, .27], [53, 54, .27], [84, 42, .3]]),
+  drop: Object.freeze([[52, 80, .34], [55, 40, .38], [39, 156, .5], [95, 90, .33]]),
   ob: Object.freeze([
-    [[96, 65.1, 79.5, 53.2, 1, 0], [96, 64.2, 78, 51, 3, 0]],
-    [[96, 62.3, 96, 94.8, 0, 0], [96, 65.1, 78, 51.5, 3, 0]],
-    [[96, 64.5, 78, 52.3, 2, 0], [96, 64.1, 78, 52.1, 0, 0]],
-    [[96, 63.8, 79.5, 53, 2, 1], [96, 62.5, 79.5, 53, 1, 0]]
+    [[74, 63.9, 102.5, 96, 4, 0], [74, 63.9, 104.5, 96.4, 5, 0]],
+    [[74, 64, 101.5, 96.5, 4, 0], [74, 64, 89, 76.7, 7, 0]],
+    [[74, 63.7, 104.5, 96.5, 5, 0], [74, 64, 85.6, 74.5, 7, 0]],
+    [[74, 64, 105.2, 90.7, 6, 0], [74, 63.6, 104.5, 96, 4, 0]]
   ].map(z => Object.freeze(z.map(Object.freeze)))),
-  boss: Object.freeze({mawbloom: [.52, .53], dunehulk: [.53, .5], cinderwyrm: [.46, .59], moltenking: [.5, .55], stormcrown: [.52, .54]}), bossH: 160
+  boss: Object.freeze({mawbloom: [.5, .49], dunehulk: [.52, .515], cinderwyrm: [.54, .53], moltenking: [.455, .53], stormcrown: [.51, .5]}), bossH: 160
 });
 /* art:end */
 const ST_SCOIN = [30,40,55,67], ST_ORBP = [.30,.40,.50,.67];   // coin income by tier: coins per 50 score at the end of a run, chance that a gate spawns its field-coin orb row
@@ -3558,11 +3559,25 @@ function artSur(k, z, a, b){
   return true;
 }
 const surDraw = (k, z, a, b) => { if (!artSur(k, z, a, b)) SUR_SKIN[k][z](a, b); };
-// The zone's painting, the farthest layer: cover-fit to the sky, dimmed so the neon gates and the bird keep their contrast
+// The zone's painting, the farthest layer: cover-fit to the sky, a calm copy of it (artDim) so the flat neon foreground and the bird keep their contrast
 function artBg(){
   const img = artOk(ART_BG[zoneIdx]); if (!img) return;
   const k = Math.max((LW + 40) / img.width, (GROUND + 20) / img.height), w = img.width * k, h = img.height * k;
-  ctx.globalAlpha = .6; ctx.drawImage(img, (LW - w) / 2, GROUND - h, w, h); ctx.globalAlpha = 1;
+  ctx.globalAlpha = BG_DIM.a; ctx.drawImage(artDim(ART[ART_BG[zoneIdx]]), (LW - w) / 2, GROUND - h, w, h); ctx.globalAlpha = 1;
+}
+// A painting made calm once, like artTint: blurred (ctx.filter where the browser has it, else drawn small and scaled back up), BG_DIM.sat of its
+// saturation taken out and BG_DIM.dark darker, so the painted detail sits back behind the flat neon layers. No per-frame cost.
+const BG_DIM = Object.freeze({blur: 2.5, sat: .4, dark: .35, a: .7});
+function artDim(a){
+  if (a.fx.dim) return a.fx.dim;
+  const img = a.img, w = img.width, h = img.height, c = document.createElement('canvas'), x = c.getContext('2d'); c.width = w; c.height = h;
+  if ('filter' in CanvasRenderingContext2D.prototype){ x.filter = `blur(${BG_DIM.blur}px)`; x.drawImage(img, 0, 0); x.filter = 'none'; }
+  else { const sm = document.createElement('canvas'), q = 1 / (1 + BG_DIM.blur); sm.width = Math.ceil(w * q); sm.height = Math.ceil(h * q);
+    sm.getContext('2d').drawImage(img, 0, 0, sm.width, sm.height); x.imageSmoothingEnabled = true; x.drawImage(sm, 0, 0, w, h); }
+  x.globalCompositeOperation = 'saturation'; x.globalAlpha = BG_DIM.sat; x.fillStyle = '#808080'; x.fillRect(0, 0, w, h);
+  x.globalCompositeOperation = 'source-over'; x.globalAlpha = BG_DIM.dark; x.fillStyle = '#000'; x.fillRect(0, 0, w, h);
+  a.fx.dim = c;
+  return c;
 }
 // A boss from its sprite (drawBoss hands over once the image has loaded): bossH tall with its body on the hit circle, and drawBoss's states: a glow while
 // it telegraphs (red before a charge), a red tint when enraged, white while hit, fading and shaking as it dies. Low quality: no glow, a steady tint.

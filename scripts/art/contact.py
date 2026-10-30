@@ -87,6 +87,64 @@ def ob_sheets():
     print('ob sheets written', sheet.size)
 
 
+# --- A2 flat neon restyle: `contact.py neon [bird.png]` writes neon-contact-{obstacles,sprites,bosses}.png next to ART_RAW ---
+def neon_sheets(bird=None):
+    zones = ('grove', 'canyon', 'magma', 'palace')
+    out = RAW_DIR.parent
+    ld = lambda n: Image.open(ART / f'{n}.webp').convert('RGBA')
+    sc = lambda im, k: im.resize((max(1, round(im.width * k)), max(1, round(im.height * k))), Image.LANCZOS)
+    # obstacles: per zone, the top obstacle (stem x2 + tip), a gap, the bottom one (tip + stem x2), at the engine's 96 px stem width
+    k, gap, pw = 96 / 128, 170, 260
+    panels = []
+    for z in zones:
+        bst, btp, tst, ttp = (sc(ld(f'ob-{z}-{n}'), k) for n in ('bot-stem', 'bot-tip', 'top-stem', 'top-tip'))
+        H = 2 * tst.height + ttp.height + gap + btp.height + 2 * bst.height
+        p = ld(f'bg-{z}').resize((pw, H))
+        y = 0
+        for _ in range(2): p.alpha_composite(tst, (pw // 2 - tst.width // 2, y)); y += tst.height
+        p.alpha_composite(ttp, (pw // 2 - ttp.width // 2, y)); y += ttp.height + gap
+        p.alpha_composite(btp, (pw // 2 - btp.width // 2, y)); y += btp.height
+        for _ in range(2): p.alpha_composite(bst, (pw // 2 - bst.width // 2, y)); y += bst.height
+        panels.append(p)
+    sheet = Image.new('RGBA', (4 * (pw + 10), max(p.height for p in panels) + 20), (20, 20, 28, 255))
+    for i, p in enumerate(panels):
+        sheet.alpha_composite(p, (i * (pw + 10), 20)); ImageDraw.Draw(sheet).text((i * (pw + 10) + 4, 4), zones[i], fill=(255, 255, 255, 255))
+    sheet.convert('RGB').save(str(out / 'neon-contact-obstacles.png'))
+    # surprises: each at 1x, and below it at 40 px (longest side), on the zone's backdrop colour
+    names = [f'sur-{k}-{z}' for k in ('snap', 'shot', 'drop') for z in zones]
+    sheet = Image.new('RGBA', (12 * 206 + 10, 290), (20, 20, 28, 255))
+    d = ImageDraw.Draw(sheet)
+    for i, n in enumerate(names):
+        im = ld(n)
+        bgc = ld(f'bg-{n.split("-")[2]}').resize((200, 270))
+        sheet.alpha_composite(bgc, (10 + i * 206, 14))
+        sheet.alpha_composite(im, (10 + i * 206 + (200 - im.width) // 2, 16))
+        s40 = sc(im, 40 / max(im.size))
+        sheet.alpha_composite(s40, (10 + i * 206 + (200 - s40.width) // 2, 228))
+        d.text((10 + i * 206, 0), n, fill=(255, 255, 255, 255))
+    sheet.convert('RGB').save(str(out / 'neon-contact-sprites.png'))
+    # bosses at 160 px tall beside the player bird at ~26 px, on the zone backdrop, then each at 1x
+    bz = {'mawbloom': 'grove', 'dunehulk': 'canyon', 'cinderwyrm': 'magma', 'moltenking': 'magma', 'stormcrown': 'palace'}
+    sheet = Image.new('RGBA', (5 * 400 + 10, 640), (20, 20, 28, 255))
+    d = ImageDraw.Draw(sheet)
+    bird_im = Image.open(bird).convert('RGBA') if bird else None
+    for i, (b, z) in enumerate(bz.items()):
+        x0 = 10 + i * 400
+        p = ld(f'bg-{z}').resize((390, 220))
+        bs = sc(ld(f'boss-{b}'), 160 / 384)
+        p.alpha_composite(bs, (390 - bs.width - 20, 30))
+        if bird_im:
+            bb = sc(bird_im.crop((180, 60, 440, 240)), 26 / 180)   # the bird's body in the ref crop
+            p.alpha_composite(bb, (40, 100))
+        sheet.alpha_composite(p, (x0, 16)); d.text((x0, 2), f'boss-{b} @160px, bird @26px', fill=(255, 255, 255, 255))
+        im = ld(f'boss-{b}')
+        sheet.alpha_composite(sc(im, 390 / max(im.width, 390) * min(1, 384 / im.height)), (x0, 246))
+    sheet.convert('RGB').save(str(out / 'neon-contact-bosses.png'))
+    print('neon sheets written to', out)
+
+
 import sys
 if sys.argv[1:] == ['ob']:
     ob_sheets()
+if sys.argv[1:2] == ['neon']:
+    neon_sheets(*sys.argv[2:3])
