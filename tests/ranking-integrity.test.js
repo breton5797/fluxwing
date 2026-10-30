@@ -197,3 +197,22 @@ test('the rehearsal walks guests, rivals, nonces and set_nick as the API role', 
   assert.match(r, /set role authenticated;/);
   for (const s of ['fw_need_account', 'versus_claim', 'referral_claim', 'set_nick', 'rivals', 'fw_implausible']) assert.ok(r.includes(s), s);
 });
+
+// ---------- all-time board = all-time daily best (owner's decision 2026-10-31) ----------
+test('server: only a daily run raises best; an endless (stage) run, or a local best resent as endless, never does', () => {
+  const b = body('private.fw_submit_score');
+  assert.match(b, /if p_mode = 'daily' and p_score > v_row\.best then\s+v_row\.best := p_score;/);
+  assert.doesNotMatch(b, /^\s*if p_score > v_row\.best then/m, 'no mode-blind best update is left');
+  assert.match(b, /if v_row\.daily_key is null or v_day > v_row\.daily_key then/, 'the daily board keeps its own update');
+});
+
+test('server: the pending production migration is the same function, unchanged signature', () => {
+  const m = read('supabase/migrations-pending/alltime-daily-best.sql');
+  const f = body('private.fw_submit_score');
+  assert.ok(m.includes(f), 'migration carries the schema function verbatim');
+  assert.doesNotMatch(m, /p_stage|drop function/, 'no new parameter, no drop: create or replace keeps the grants');
+});
+
+test('client: syncLocal still resends the local best as endless (harmless now: the server ignores endless for best)', () => {
+  assert.match(html, /submitScore\(best, [^)]*'endless'/);
+});

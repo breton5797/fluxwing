@@ -313,8 +313,9 @@ begin
     raise exception 'fw_rate_limited: daily submit limit reached' using errcode = 'P0001';
   end if;
 
-  -- best only ever goes up
-  if p_score > v_row.best then
+  -- best only ever goes up, and only from daily runs (owner's decision 2026-10-31): the all-time board is the fair, uncapped
+  -- daily; stage runs end at gate 100 and the client resends its local best as 'endless', so endless never touches best
+  if p_mode = 'daily' and p_score > v_row.best then
     v_row.best := p_score; v_row.gates := p_gates; v_row.bird := p_bird;
   end if;
   -- daily: a newer day replaces the stored one (resetting its score); the same day only ever goes up; an older day is ignored
